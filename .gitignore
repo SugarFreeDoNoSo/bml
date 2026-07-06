@@ -1,0 +1,23 @@
+# Rust
+/target
+/**/target
+**/*.rs.bk
+Cargo.bak
+
+# Perf / profiling
+perf.data*
+*.perf
+flamegraph.svg
+
+# OpenSpec local artifacts
+openspec/.cache/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# /dev/shm test artifacts
+*.bmlgraph
