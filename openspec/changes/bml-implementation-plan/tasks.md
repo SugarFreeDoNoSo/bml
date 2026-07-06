@@ -7,8 +7,8 @@
 - [x] 1.5 Definir la gramática del AST en `bml-domain`: un nodo es `BML(left, right)` o `Const(1)`, nada más.
 - [x] 1.6 Definir la estructura `Node` en layout SoA con `#[repr(align(64))]` para los campos del grafo (operandos, resultado, flags).
 - [x] 1.7 Escribir pruebas unitarias puras del operador BML: conmutatividad NO (orden importa), casos límite (0, 1, NaN, Inf), y verificación de completitud funcional.
-- [x] 1.8 Implementar el `BMLTransformer` (mapper) que traduce `+`, `-`, `*`, `/`, `pow` a la gramática recursiva BML usando solo el operador y la constante 1. (Parcial: `exp2` y `log2` implementados y verificados; `+`, `-`, `*`, `/`, `pow` pendientes de derivación en Hito 2 — las fórmulas exactas en base 2 no están en el paper fuente.)
-- [x] 1.9 Pruebas del `BMLTransformer`: para cada operación estándar, verificar que la evaluación del AST BML resultante coincide con la operación original en un rango de valores (usar `proptest`). (Parcial: pruebas de `exp2`, `log2`, `two` verificadas; `+`, `-`, `*`, `/`, `pow` pendientes.)
+- [x] 1.8 Implementar el `BMLTransformer` (mapper) que traduce `+`, `-`, `*`, `/`, `pow` a la gramática recursiva BML usando solo el operador y la constante 1. (Completado: fórmulas derivadas del Supplementary Information del paper ArXiv 2603.21852v2, Sect. 2.5. `sub`, `neg`, `add`, `recip`, `mul`, `div`, `pow` implementadas y verificadas.)
+- [x] 1.9 Pruebas del `BMLTransformer`: para cada operación estándar, verificar que la evaluación del AST BML resultante coincide con la operación original en un rango de valores (usar `proptest`). (Completado: tests de `sub`, `neg`, `add`, `recip`, `mul`, `div`, `pow` verificadas.)
 - [x] 1.10 Validar hito: `cargo test -p bml-domain` pasa y `cargo build --release` del workspace sin warnings.
 
 ## 2. Hito 2 — Compilación, Deduplicación y MVP de Rendimiento

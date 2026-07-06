@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-07-06
+goal: Permitir correr un modelo GGUF con el runtime BML en entorno distribuido
+  con API equivalente a llama.cpp

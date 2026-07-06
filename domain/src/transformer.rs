@@ -107,44 +107,110 @@ impl BMLTransformer {
     }
 
     // =====================================================================
-    // Operaciones estándar (TODO: derivar del Supplementary Information)
+    // Operaciones estándar (derivadas del Supplementary Information del paper)
     // =====================================================================
+    //
+    // Cadena de reconstrucción (Supplementary Information, Sect. 2.5):
+    //
+    //   exp2(z) = bml(z, 1)                    [Lemma 1]
+    //   log2(x) = bml(1, bml(bml(1, x), 1))    [Lemma 2]
+    //   x - y   = bml(log2(x), exp2(y))        [Lemma 3]
+    //   -x      = bml(log2(0), exp2(x)) = bml(-inf, exp2(x)) = 0 - x
+    //   x + y   = x - (-y) = sub(x, neg(y))
+    //   1/x     = exp2(-log2(x)) = exp2(neg(log2(x)))
+    //   x * y   = exp2(log2(x) + log2(y)) = exp2(add(log2(x), log2(y)))
+    //   x / y   = x * (1/y) = mul(x, recip(y))
+    //   x^y     = exp2(y * log2(x)) = exp2(mul(y, log2(x)))
+    //
+    // Nota: log2(0) = -inf, 2^(-inf) = 0. Estas fórmulas funcionan en f64
+    // con la convención IEEE 754 de infinitos. Requieren x > 0 para que
+    // log2(x) esté definido en los reales.
 
-    /// `x + y` en base BML.
+    /// `x - y = bml(log2(x), exp2(y))`.
     ///
-    /// TODO: La fórmula exacta en base 2 no está en el paper fuente.
-    /// El paper reporta profundidad 27 (direct search: 19) para `x + y`
-    /// en base E. Se derivará en Hito 2.
-    pub fn add(&mut self, _x: NodeId, _y: NodeId) -> NodeId {
-        unimplemented!("BMLTransformer::add: fórmula pendiente de derivación (Hito 2)")
+    /// Requiere `x > 0` (para que `log2(x)` esté definido en los reales).
+    /// Identidad del Lemma 3 del Supplementary Information.
+    pub fn sub(&mut self, x: NodeId, y: NodeId) -> NodeId {
+        let log2_x = self.log2(x); // log2(x)
+        let exp2_y = self.exp2(y); // exp2(y) = 2^y
+        self.bml(log2_x, exp2_y) // 2^log2(x) - log2(2^y) = x - y
     }
 
-    /// `x - y` en base BML.
+    /// `-x = bml(log2(0), exp2(x)) = 0 - x`.
     ///
-    /// TODO: Profundidad 83 (direct search: 11) en base E. Pendiente.
-    pub fn sub(&mut self, _x: NodeId, _y: NodeId) -> NodeId {
-        unimplemented!("BMLTransformer::sub: fórmula pendiente de derivación (Hito 2)")
+    /// Usa la convención `log2(0) = -inf`, `2^(-inf) = 0`.
+    /// Identidad del Remark después del Lemma 3.
+    pub fn neg(&mut self, x: NodeId) -> NodeId {
+        // 0 = log2(1). Construimos el nodo 0 primero.
+        let one = self.one();
+        let zero = self.log2(one); // log2(1) = 0
+                                   // -x = 0 - x = sub(0, x) = bml(log2(0), exp2(x))
+                                   // Pero sub(0, x) requiere log2(0) = -inf, que no es representable.
+                                   //
+                                   // Alternativa: -x = bml(bml(1,1), exp2(x)) no funciona (da 4-x).
+                                   //
+                                   // El paper usa L(0) = -inf como convención. En f64, log2(0.0) = -inf.
+                                   // Pero en la gramática BML pura, no hay nodo que evalúe a -inf.
+                                   //
+                                   // Solución: usar sub(ONE, x) solo cuando x < 1... no general.
+                                   //
+                                   // Para el transformer, neg se usa sobre log2(x) que puede ser
+                                   // negativo. Pero sub requiere log2 del primer arg, que sería
+                                   // log2(log2(x))... que no está definido si log2(x) < 0.
+                                   //
+                                   // La forma más limpia: -x = 1/x^(-1)... circular.
+                                   //
+                                   // Por ahora, implementamos neg como 0 - x usando la convención
+                                   // de que el runtime maneja -inf. En la gramática BML, usamos
+                                   // sub(zero, x) que expande a bml(log2(0), exp2(x)).
+                                   // El nodo log2(0) se construye como log2(zero) donde zero = log2(1).
+        let neg_zero = self.log2(zero); // log2(0) = -inf (en f64)
+        let exp2_x = self.exp2(x); // 2^x
+        self.bml(neg_zero, exp2_x) // 2^(-inf) - log2(2^x) = 0 - x = -x
     }
 
-    /// `x * y` en base BML.
+    /// `x + y = x - (-y) = sub(x, neg(y))`.
     ///
-    /// TODO: Profundidad 41 (direct search: 17) en base E. Pendiente.
-    pub fn mul(&mut self, _x: NodeId, _y: NodeId) -> NodeId {
-        unimplemented!("BMLTransformer::mul: fórmula pendiente de derivación (Hito 2)")
+    /// Requiere `x > 0` (para `log2(x)` en `sub`).
+    pub fn add(&mut self, x: NodeId, y: NodeId) -> NodeId {
+        let neg_y = self.neg(y); // -y
+        self.sub(x, neg_y) // x - (-y) = x + y
     }
 
-    /// `x / y` en base BML.
+    /// `1/x = exp2(-log2(x)) = exp2(neg(log2(x)))`.
     ///
-    /// TODO: Profundidad 105 (direct search: 17) en base E. Pendiente.
-    pub fn div(&mut self, _x: NodeId, _y: NodeId) -> NodeId {
-        unimplemented!("BMLTransformer::div: fórmula pendiente de derivación (Hito 2)")
+    /// Requiere `x > 0`.
+    pub fn recip(&mut self, x: NodeId) -> NodeId {
+        let log2_x = self.log2(x); // log2(x)
+        let neg_log2_x = self.neg(log2_x); // -log2(x)
+        self.exp2(neg_log2_x) // 2^(-log2(x)) = 1/x
     }
 
-    /// `x^y` en base BML.
+    /// `x * y = exp2(log2(x) + log2(y)) = exp2(add(log2(x), log2(y)))`.
     ///
-    /// TODO: Profundidad 49 (direct search: 25) en base E. Pendiente.
-    pub fn pow(&mut self, _x: NodeId, _y: NodeId) -> NodeId {
-        unimplemented!("BMLTransformer::pow: fórmula pendiente de derivación (Hito 2)")
+    /// Requiere `x > 0` y `y > 0`.
+    pub fn mul(&mut self, x: NodeId, y: NodeId) -> NodeId {
+        let log2_x = self.log2(x); // log2(x)
+        let log2_y = self.log2(y); // log2(y)
+        let sum = self.add(log2_x, log2_y); // log2(x) + log2(y)
+        self.exp2(sum) // 2^(log2(x) + log2(y)) = x * y
+    }
+
+    /// `x / y = x * (1/y) = mul(x, recip(y))`.
+    ///
+    /// Requiere `x > 0` y `y > 0`.
+    pub fn div(&mut self, x: NodeId, y: NodeId) -> NodeId {
+        let recip_y = self.recip(y); // 1/y
+        self.mul(x, recip_y) // x * (1/y) = x / y
+    }
+
+    /// `x^y = exp2(y * log2(x)) = exp2(mul(y, log2(x)))`.
+    ///
+    /// Requiere `x > 0`.
+    pub fn pow(&mut self, x: NodeId, y: NodeId) -> NodeId {
+        let log2_x = self.log2(x); // log2(x)
+        let product = self.mul(y, log2_x); // y * log2(x)
+        self.exp2(product) // 2^(y * log2(x)) = x^y
     }
 }
 
@@ -264,5 +330,124 @@ mod tests {
         let soa = t.into_soa();
         let nodes: Vec<Node> = (0..soa.len() as NodeId).map(|i| soa.get(i)).collect();
         assert_eq!(evaluate(&nodes, one, 0.0), ONE);
+    }
+
+    // =====================================================================
+    // Tests de operaciones aritméticas (Supplementary Information, Sect. 2.5)
+    // =====================================================================
+
+    /// Helper: evalúa un nodo del transformer.
+    fn eval_node(t: BMLTransformer, root: NodeId) -> f64 {
+        let soa = t.into_soa();
+        let nodes: Vec<Node> = (0..soa.len() as NodeId).map(|i| soa.get(i)).collect();
+        evaluate(&nodes, root, 0.0)
+    }
+
+    #[test]
+    fn sub_works() {
+        // x - y = bml(log2(x), exp2(y))
+        // 8 - 3 = 5
+        let mut t = BMLTransformer::new();
+        let two = t.two();
+        let two2 = t.two();
+        let three = t.bml(two, two2); // 3
+        let two3 = t.two();
+        let two4 = t.two();
+        let three2 = t.bml(two3, two4); // 3
+        let eight = t.exp2(three); // 8
+        let result = t.sub(eight, three2); // 8 - 3 = 5
+        let val = eval_node(t, result);
+        assert!((val - 5.0).abs() < 1e-9, "sub(8,3) = {val}, expected 5");
+    }
+
+    #[test]
+    fn neg_works() {
+        // -x = 0 - x = bml(log2(0), exp2(x))
+        // -3 = -3
+        let mut t = BMLTransformer::new();
+        let two = t.two();
+        let two2 = t.two();
+        let three = t.bml(two, two2); // 3
+        let result = t.neg(three); // -3
+        let val = eval_node(t, result);
+        assert!((val - (-3.0)).abs() < 1e-9, "neg(3) = {val}, expected -3");
+    }
+
+    #[test]
+    fn add_works() {
+        // x + y = x - (-y) = sub(x, neg(y))
+        // 5 + 3 = 8
+        let mut t = BMLTransformer::new();
+        let two = t.two();
+        let two2 = t.two();
+        let three = t.bml(two, two2); // 3
+        let two3 = t.two();
+        let two4 = t.two();
+        let three2 = t.bml(two3, two4); // 3
+        let two5 = t.two();
+        let two6 = t.two();
+        let three3 = t.bml(two5, two6); // 3
+        let eight = t.exp2(three); // 8
+        let five = t.sub(eight, three2); // 8 - 3 = 5
+        let result = t.add(five, three3); // 5 + 3 = 8
+        let val = eval_node(t, result);
+        assert!((val - 8.0).abs() < 1e-9, "add(5,3) = {val}, expected 8");
+    }
+
+    #[test]
+    fn recip_works() {
+        // 1/x = exp2(-log2(x))
+        // 1/4 = 0.25
+        let mut t = BMLTransformer::new();
+        let two = t.two();
+        let four = t.exp2(two); // 4
+        let result = t.recip(four); // 1/4 = 0.25
+        let val = eval_node(t, result);
+        assert!((val - 0.25).abs() < 1e-9, "recip(4) = {val}, expected 0.25");
+    }
+
+    #[test]
+    fn mul_works() {
+        // x * y = exp2(log2(x) + log2(y))
+        // 3 * 4 = 12
+        let mut t = BMLTransformer::new();
+        let two = t.two();
+        let two2 = t.two();
+        let three = t.bml(two, two2); // 3
+        let two3 = t.two();
+        let four = t.exp2(two3); // 4
+        let result = t.mul(three, four); // 3 * 4 = 12
+        let val = eval_node(t, result);
+        assert!((val - 12.0).abs() < 1e-9, "mul(3,4) = {val}, expected 12");
+    }
+
+    #[test]
+    fn div_works() {
+        // x / y = x * (1/y)
+        // 12 / 4 = 3
+        let mut t = BMLTransformer::new();
+        let two = t.two();
+        let two2 = t.two();
+        let three = t.bml(two, two2); // 3
+        let two3 = t.two();
+        let four = t.exp2(two3); // 4
+        let twelve = t.mul(three, four); // 12
+        let result = t.div(twelve, four); // 12 / 4 = 3
+        let val = eval_node(t, result);
+        assert!((val - 3.0).abs() < 1e-9, "div(12,4) = {val}, expected 3");
+    }
+
+    #[test]
+    fn pow_works() {
+        // x^y = exp2(y * log2(x))
+        // 2^3 = 8
+        let mut t = BMLTransformer::new();
+        let two = t.two(); // 2
+        let two2 = t.two();
+        let two3 = t.two();
+        let three = t.bml(two2, two3); // 3
+        let result = t.pow(two, three); // 2^3 = 8
+        let val = eval_node(t, result);
+        assert!((val - 8.0).abs() < 1e-9, "pow(2,3) = {val}, expected 8");
     }
 }

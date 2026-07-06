@@ -39,20 +39,25 @@
 /// # Semántica
 ///
 /// - `2^x` se calcula con `f64::exp2` (FPU nativa).
-/// - `log2(y)` se calcula con `f64::log2`. Para `y <= 0` el logaritmo no
-///   está definido en los reales y se retorna `f64::NAN`, reflejando que
-///   la evaluación debe moverse al dominio complejo (rama principal).
+/// - `log2(y)` se calcula con `f64::log2`. Para `y == 0` se retorna
+///   `f64::NEG_INFINITY` (convención `log2(0) = -inf` del paper).
+///   Para `y < 0` o `y = NaN` se retorna `f64::NAN` (dominio complejo).
 /// - El orden de los operandos importa: `bml(a, b) != bml(b, a)` en general.
 #[inline]
 pub fn bml(x: f64, y: f64) -> f64 {
-    if y <= 0.0 || y.is_nan() {
-        // log2(y) no está definido en los reales para y <= 0.
+    if y < 0.0 || y.is_nan() {
+        // log2(y) no está definido en los reales para y < 0.
         // El operador BML opera sobre C (rama principal); aquí reflejamos
         // la imposibilidad de evaluar en los reales como NAN.
         return f64::NAN;
     }
+    // y == 0: log2(0) = -inf (convención del paper, Supplementary Information Sect. 2.5)
+    let log2_y = if y == 0.0 {
+        f64::NEG_INFINITY
+    } else {
+        y.log2()
+    };
     let exp_x = if x.is_nan() { f64::NAN } else { x.exp2() };
-    let log2_y = y.log2();
     exp_x - log2_y
 }
 
@@ -119,7 +124,7 @@ fn non_commutative() {
 #[test]
 fn edge_cases_no_panic() {
     let _ = bml(0.0, 1.0);
-    let _ = bml(1.0, 0.0); // y=0 -> NAN
+    let _ = bml(1.0, 0.0); // y=0 -> log2(0) = -inf, bml = 2 - (-inf) = inf
     let _ = bml(f64::NAN, 1.0);
     let _ = bml(1.0, f64::NAN);
     let _ = bml(f64::INFINITY, 1.0);
@@ -127,4 +132,6 @@ fn edge_cases_no_panic() {
     let _ = bml(f64::NEG_INFINITY, 1.0);
     // y negativo -> NAN (log2 no definido en reales)
     assert!(bml(1.0, -1.0).is_nan());
+    // y = 0 -> log2(0) = -inf, bml(1, 0) = 2 - (-inf) = inf
+    assert!(bml(1.0, 0.0).is_infinite());
 }

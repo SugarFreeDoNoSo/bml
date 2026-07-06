@@ -5,6 +5,7 @@ members = [
     "parser",
     "compiler",
     "runtime",
+    "bench",
 ]
 
 [workspace.package]
