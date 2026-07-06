@@ -1,10 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "bml-domain",
-    "bml-parser",
-    "bml-compiler",
-    "bml-runtime",
+    "domain",
+    "parser",
+    "compiler",
+    "runtime",
 ]
 
 [workspace.package]

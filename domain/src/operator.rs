@@ -1,13 +1,13 @@
-//! Operador BML fundamental (base 2, `f64`).
+//! Operador BML fundamental (Binary-Minus-Log, base 2, `f64`).
 //!
 //! `bml(x, y) = 2^x - log2(y)`
 //!
-//! El operador original del paper (ArXiv 2603.21852v2) se define en base E
-//! como `eml(x, y) = exp(x) - ln(y)`. BML lo reescribe en **base 2** para
-//! alinearse con el formato IEEE 754 de `f64` (cuyo exponente nativo es
-//! base 2), usando `exp2`/`log2` en lugar de `exp`/`ln`. Esto preserva
-//! la completitud funcional del operador (análogo continuo del NAND) y
-//! todas las identidades del paper, adaptadas a base 2.
+//! BML es el análogo de EML (Exp-Minus-Log, `eml(x, y) = exp(x) - ln(y)`)
+//! reescrito en **base 2**. La base 2 se alinea con el formato IEEE 754 de
+//! `f64` (cuyo exponente nativo es base 2), permitiendo usar `exp2`/`log2`
+//! nativos de la FPU en lugar de `exp`/`ln`. Esto preserva la completitud
+//! funcional del operador (análogo continuo del NAND) y todas las
+//! identidades del paper, adaptadas a base 2.
 //!
 //! # Propiedades
 //!

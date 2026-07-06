@@ -24,7 +24,7 @@ El proyecto BML parte de `draft.md`, que define un compilador y motor de ejecuci
 
 ## Decisions
 
-- **D1 — Workspace con 4 crates.** Se replica la topología del draft (`bml-domain`, `bml-parser`, `bml-compiler`, `bml-runtime`). `bml-domain` tiene cero dependencias para garantizar reutilización sin acoplamiento. *Racional:* separación de responsabilidades que permite compilar y testear cada capa de forma independiente y aplicar LTO por crate.
+- **D1 — Workspace con 4 crates.** Se replica la topología del draft con 4 crates (`bml-domain`, `bml-parser`, `bml-compiler`, `bml-runtime`). Las **carpetas** del workspace no llevan prefijo `bml-` (es redundante dentro del workspace `bml`); los **nombres de paquete** sí lo conservan para el namespace en crates.io. `bml-domain` tiene cero dependencias para garantizar reutilización sin acoplamiento. *Racional:* separación de responsabilidades que permite compilar y testear cada capa de forma independiente y aplicar LTO por crate.
 - **D2 — Perfil release extremo en el Cargo.toml raíz.** `lto = "fat"`, `panic = "abort"`, `codegen-units = 1`, `opt-level = 3`. *Racional:* maximizar inlining y reducir el tamaño del binario del hot loop; `panic = "abort"` elimina la tabla de unwinding.
 - **D3 — Data-Oriented Design, prohibido OOP en la capa de ejecución.** *Racional:* el draft lo prohíbe explícitamente; el rendimiento depende del layout de memoria, no de abstracciones de objeto.
 - **D4 — SoA + `#[repr(align(64))]` para nodos del grafo.** Las estructuras de nodos se almacenan como Struct of Arrays alineadas a 64 bytes (línea de caché típica). *Racional:* evita false sharing entre hilos y garantiza que la CPU solo cargue en caché los bytes estrictamente necesarios para la evaluación matemática.
@@ -38,6 +38,7 @@ El proyecto BML parte de `draft.md`, que define un compilador y motor de ejecuci
 - **D12 — Interfaz RPC/binaria (gRPC u otro) para distribución.** El runtime expone RPC para recibir y transmitir fragmentos `.bmlgraph` entre nodos. *Racional:* habilita el escalado horizontal append-only del Hito 2 y el runtime distribuido del Hito 5.
 - **D13 — Benchmarks con `criterion`.** Se usa `criterion` como dev-dependency para los benchmarks comparativos FMA vs BML del Hito 2. *Racional:* es el estándar de facto en el ecosistema Rust y produce reportes estadísticamente significativos.
 - **D14 — Pruebas de cache hit/miss con `perf`.** Se usan `perf stat` y `perf record` sobre los tests de estrés multicore para medir L1/L2 hit/miss. *Racional:* es la única forma de validar empíricamente D5 y D10.
+- **D15 — BML = Binary-Minus-Log.** El operador se nombra BML (Binary-Minus-Log) como análogo de EML (Exp-Minus-Log) en base 2: `bml(x, y) = 2^x - log2(y)`. La base 2 se alinea con el formato IEEE 754 de `f64` y permite usar `exp2`/`log2` nativos de la FPU. *Racional:* preserva la completitud funcional del operador EML (paper ArXiv 2603.21852v2) adaptándolo a base 2, evitando `exp`/`ln` que son más costosos y no se alinean con el formato nativo de `f64`.
 
 ## Risks / Trade-offs
 

@@ -8,7 +8,7 @@ El `draft.md` define la arquitectura y los 5 hitos del proyecto BML (un compilad
 - Se descompone la hoja de ruta del draft (5 hitos) en fases con tareas granulares y verificables en `tasks.md`.
 - Se registran las decisiones técnicas estrictas del draft (DOD, SoA, `#[repr(align(64))]`, hot loop < 32 KB, append-only, Hash Consing, Zero-Copy mmap) en `design.md` como decisiones explícitas con su racional.
 - Se establecen los criterios de aceptación por hito (pruebas del operador, benchmarks FMA vs BML, pruebas de cache hit/miss con `perf`, prueba distribuida con `/dev/shm`, decodificación GGUF, fragmentación AOT < 32 KB, hot loop RPN).
-- **BREAKING (organización del repo):** se introducirá un workspace Cargo con 4 crates (`bml-domain`, `bml-parser`, `bml-compiler`, `bml-runtime`) en hitos sucesivos. No se elimina código existente; el cambio es aditivo.
+- **BREAKING (organización del repo):** se introducirá un workspace Cargo con 4 crates (`bml-domain`, `bml-parser`, `bml-compiler`, `bml-runtime`) en hitos sucesivos. Las carpetas del workspace no llevan prefijo `bml-` (es redundante); los nombres de paquete sí lo conservan para el namespace en crates.io. No se elimina código existente; el cambio es aditivo.
 
 ## Capabilities
 
