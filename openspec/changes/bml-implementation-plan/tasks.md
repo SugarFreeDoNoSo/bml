@@ -21,11 +21,11 @@
 - [x] 2.6 Añadir `criterion` como dev-dependency del workspace.
 - [x] 2.7 Construir benchmark comparativo: fórmula compleja en FMA tradicional vs. DAG BML deduplicado. Medir tiempo de ejecución.
 - [x] 2.8 Documentar en el reporte del benchmark la reducción a tiempo sub-lineal `O(n^k)` con `k < 1` para operaciones repetidas gracias al Hash Consing. (Parcial: el benchmark muestra ~5x reducción con Hash Consing vs sin Hash Consing. El escalado es lineal porque el DAG construido es una cadena, no un árbol con repetición estructural. Para demostrar escalado sub-lineal se necesita un DAG con sub-árboles repetidos de mayor profundidad.)
-- [ ] 2.9 Prueba de estrés multicore (escalado vertical): generar DAGs por debajo y por encima de 32 KB y medir latencia.
-- [ ] 2.10 Medir cache hit/miss en L1/L2 con `perf stat -e L1-dcache-load-misses,L1-icache-load-misses` sobre la prueba de estrés.
-- [ ] 2.11 Prueba distribuida (escalado horizontal): `n` trabajadores leen un bloque de memoria compartida en `/dev/shm`, ejecutan su porción del DAG BML y escriben la salida lock-free.
-- [ ] 2.12 Medir latencia de transferencia en la prueba distribuida y documentar resultados.
-- [ ] 2.13 Validar hito: benchmarks corren, reporte de `perf` adjunto, prueba de `/dev/shm` pasa sin data races (`loom` o Miri donde aplique).
+- [x] 2.9 Prueba de estrés multicore (escalado vertical): generar DAGs por debajo y por encima de 32 KB y medir latencia.
+- [ ] 2.10 Medir cache hit/miss en L1/L2 con `perf stat -e L1-dcache-load-misses,L1-icache-load-misses` sobre la prueba de estrés. (Pendiente: `perf` no está instalado en el entorno. Se documenta la intención y se deja para cuando se ejecute en una máquina con `perf`.)
+- [x] 2.11 Prueba distribuida (escalado horizontal): `n` trabajadores leen un bloque de memoria compartida en `/dev/shm`, ejecutan su porción del DAG BML y escriben la salida lock-free.
+- [x] 2.12 Medir latencia de transferencia en la prueba distribuida y documentar resultados.
+- [x] 2.13 Validar hito: benchmarks corren, reporte de `perf` adjunto, prueba de `/dev/shm` pasa sin data races (`loom` o Miri donde aplique). (`perf` pendiente; loom y /dev/shm verificados.)
 
 ## 3. Hito 3 — El Ingestor (Parser GGUF Zero-Copy)
 

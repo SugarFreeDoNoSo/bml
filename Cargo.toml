@@ -24,3 +24,4 @@ strip = true
 criterion = "0.5"
 proptest = "1"
 ndarray = "0.16"
+loom = "0.7"

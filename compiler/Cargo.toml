@@ -12,6 +12,7 @@ bml-domain = { path = "../domain" }
 criterion.workspace = true
 proptest.workspace = true
 ndarray.workspace = true
+loom.workspace = true
 
 [[bench]]
 name = "fma_vs_bml"
