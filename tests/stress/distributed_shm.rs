@@ -47,6 +47,7 @@ fn serialize_program(program: &RpnProgram) -> Vec<u8> {
             RpnOp::One => 0,
             RpnOp::Bml => 1,
             RpnOp::Dup => 2,
+            RpnOp::Loop { .. } => 3,
         };
         bytes.push(tag);
     }

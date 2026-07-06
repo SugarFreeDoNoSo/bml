@@ -56,14 +56,11 @@ impl HotLoop {
         self.stack.clear();
         let _ = x; // reservado para nodos de variable (futuro)
 
-        for &op in &program.ops {
-            match op {
+        let mut i = 0;
+        while i < program.ops.len() {
+            match program.ops[i] {
                 RpnOp::One => self.stack.push(1.0),
                 RpnOp::Bml => {
-                    // SAFETY: el programa RPN válido garantiza que hay
-                    // al menos 2 elementos en la pila antes de Bml.
-                    // Usamos acceso directo para evitar el check de bounds
-                    // en el hot path.
                     let len = self.stack.len();
                     let b = self.stack[len - 1];
                     let a = self.stack[len - 2];
@@ -75,7 +72,38 @@ impl HotLoop {
                     let v = self.stack[len - 1];
                     self.stack.push(v);
                 }
+                RpnOp::Loop { count, body_len } => {
+                    let body_start = i + 1;
+                    let body_end = body_start + body_len as usize;
+                    for _ in 0..count {
+                        let mut j = body_start;
+                        while j < body_end {
+                            match program.ops[j] {
+                                RpnOp::One => self.stack.push(1.0),
+                                RpnOp::Bml => {
+                                    let len = self.stack.len();
+                                    let b = self.stack[len - 1];
+                                    let a = self.stack[len - 2];
+                                    self.stack.truncate(len - 2);
+                                    self.stack.push(bml_domain::bml(a, b));
+                                }
+                                RpnOp::Dup => {
+                                    let len = self.stack.len();
+                                    let v = self.stack[len - 1];
+                                    self.stack.push(v);
+                                }
+                                RpnOp::Loop { .. } => {
+                                    panic!("loops anidados no soportados");
+                                }
+                            }
+                            j += 1;
+                        }
+                    }
+                    i = body_end;
+                    continue;
+                }
             }
+            i += 1;
         }
 
         self.stack.pop().unwrap_or(f64::NAN)
@@ -88,8 +116,9 @@ impl HotLoop {
     /// el estado de la pila entre ellos.
     #[inline]
     pub fn execute_fragment(&mut self, fragment: &Fragment) {
-        for &op in &fragment.ops {
-            match op {
+        let mut i = 0;
+        while i < fragment.ops.len() {
+            match fragment.ops[i] {
                 RpnOp::One => self.stack.push(1.0),
                 RpnOp::Bml => {
                     let len = self.stack.len();
@@ -103,7 +132,38 @@ impl HotLoop {
                     let v = self.stack[len - 1];
                     self.stack.push(v);
                 }
+                RpnOp::Loop { count, body_len } => {
+                    let body_start = i + 1;
+                    let body_end = body_start + body_len as usize;
+                    for _ in 0..count {
+                        let mut j = body_start;
+                        while j < body_end {
+                            match fragment.ops[j] {
+                                RpnOp::One => self.stack.push(1.0),
+                                RpnOp::Bml => {
+                                    let len = self.stack.len();
+                                    let b = self.stack[len - 1];
+                                    let a = self.stack[len - 2];
+                                    self.stack.truncate(len - 2);
+                                    self.stack.push(bml_domain::bml(a, b));
+                                }
+                                RpnOp::Dup => {
+                                    let len = self.stack.len();
+                                    let v = self.stack[len - 1];
+                                    self.stack.push(v);
+                                }
+                                RpnOp::Loop { .. } => {
+                                    panic!("loops anidados no soportados");
+                                }
+                            }
+                            j += 1;
+                        }
+                    }
+                    i = body_end;
+                    continue;
+                }
             }
+            i += 1;
         }
     }
 

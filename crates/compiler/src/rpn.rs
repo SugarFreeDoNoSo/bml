@@ -29,6 +29,27 @@ pub enum RpnOp {
     /// Se emite antes de un sub-árbol compartido para reutilizar el
     /// resultado ya computado sin recalcularlo.
     Dup,
+    /// Repite un bloque de `body_len` operaciones `count` veces.
+    ///
+    /// El bloque empieza en la posición inmediatamente siguiente al
+    /// `Loop` en el arreglo de ops. Entre iteraciones, la pila mantiene
+    /// su estado (no se limpia). Esto permite patrones repetidos con
+    /// distintos operandos sin expandir el programa RPN.
+    ///
+    /// # Semántica
+    ///
+    /// ```text
+    /// Loop(count, body_len)
+    /// [body: body_len ops]
+    /// ```
+    ///
+    /// El runtime ejecuta `body` `count` veces secuencialmente.
+    Loop {
+        /// Número de veces que se repite el cuerpo.
+        count: u32,
+        /// Número de operaciones del cuerpo (que siguen al Loop).
+        body_len: u32,
+    },
 }
 
 /// Programa RPN: arreglo unidimensional de operaciones.
@@ -69,8 +90,9 @@ impl RpnProgram {
     /// Panics si el programa es inválido (pila vacía al hacer `Bml` o `Dup`).
     pub fn evaluate(&self, x: f64) -> f64 {
         let mut stack: Vec<f64> = Vec::with_capacity(self.ops.len());
-        for &op in &self.ops {
-            match op {
+        let mut i = 0;
+        while i < self.ops.len() {
+            match self.ops[i] {
                 RpnOp::One => stack.push(1.0),
                 RpnOp::Bml => {
                     let b = stack.pop().unwrap();
@@ -81,9 +103,40 @@ impl RpnProgram {
                     let v = *stack.last().unwrap();
                     stack.push(v);
                 }
+                RpnOp::Loop { count, body_len } => {
+                    let body_start = i + 1;
+                    let body_end = body_start + body_len as usize;
+                    for _ in 0..count {
+                        // Ejecutar el cuerpo del loop
+                        let mut j = body_start;
+                        while j < body_end {
+                            match self.ops[j] {
+                                RpnOp::One => stack.push(1.0),
+                                RpnOp::Bml => {
+                                    let b = stack.pop().unwrap();
+                                    let a = stack.pop().unwrap();
+                                    stack.push(bml_domain::bml(a, b));
+                                }
+                                RpnOp::Dup => {
+                                    let v = *stack.last().unwrap();
+                                    stack.push(v);
+                                }
+                                RpnOp::Loop { .. } => {
+                                    // Loops anidados no soportados en el cuerpo por simplicidad.
+                                    // Se podrían soportar con un stack de loop frames.
+                                    panic!("loops anidados no soportados");
+                                }
+                            }
+                            j += 1;
+                        }
+                    }
+                    i = body_end;
+                    continue;
+                }
             }
+            i += 1;
         }
-        // El parámetro x se reserva para nodos de variable (Hito 2 futuro).
+        // El parámetro x se reserva para nodos de variable (futuro).
         let _ = x;
         stack.pop().unwrap_or(f64::NAN)
     }
@@ -256,5 +309,125 @@ mod tests {
                 prop_assert_eq!(rpn_val.is_infinite(), dag_val.is_infinite());
             }
         }
+    }
+
+    // =====================================================================
+    // Tests de Loop (opcode para patrones repetidos)
+    // =====================================================================
+
+    #[test]
+    fn loop_repeats_body() {
+        // Loop(3, 2) repite [One, Bml] 3 veces.
+        // Antes del loop, empujamos 1 (valor inicial).
+        // Iter 1: push 1 -> [1,1], bml(1,1)=2 -> [2]
+        // Iter 2: push 1 -> [2,1], bml(2,1)=4 -> [4]
+        // Iter 3: push 1 -> [4,1], bml(4,1)=16 -> [16]
+        let mut program = RpnProgram::new();
+        program.push(RpnOp::One); // valor inicial
+        program.push(RpnOp::Loop {
+            count: 3,
+            body_len: 2,
+        });
+        program.push(RpnOp::One);
+        program.push(RpnOp::Bml);
+        let result = program.evaluate(0.0);
+        assert!(
+            (result - 16.0).abs() < 1e-9,
+            "Loop result = {result}, expected 16"
+        );
+    }
+
+    #[test]
+    fn loop_count_zero() {
+        // Loop(0, 2) no ejecuta el cuerpo. Queda el valor inicial.
+        let mut program = RpnProgram::new();
+        program.push(RpnOp::One); // valor inicial
+        program.push(RpnOp::Loop {
+            count: 0,
+            body_len: 2,
+        });
+        program.push(RpnOp::One);
+        program.push(RpnOp::Bml);
+        let result = program.evaluate(0.0);
+        assert!(
+            (result - 1.0).abs() < 1e-9,
+            "Loop(0) = {result}, expected 1"
+        );
+    }
+
+    #[test]
+    fn loop_count_one() {
+        let mut program = RpnProgram::new();
+        program.push(RpnOp::One); // valor inicial
+        program.push(RpnOp::Loop {
+            count: 1,
+            body_len: 2,
+        });
+        program.push(RpnOp::One);
+        program.push(RpnOp::Bml);
+        let result = program.evaluate(0.0);
+        assert!(
+            (result - 2.0).abs() < 1e-9,
+            "Loop(1) = {result}, expected 2"
+        );
+    }
+
+    #[test]
+    fn loop_equivalent_to_unrolled() {
+        let mut loop_prog = RpnProgram::new();
+        loop_prog.push(RpnOp::One); // valor inicial
+        loop_prog.push(RpnOp::Loop {
+            count: 3,
+            body_len: 2,
+        });
+        loop_prog.push(RpnOp::One);
+        loop_prog.push(RpnOp::Bml);
+
+        let mut unrolled = RpnProgram::new();
+        unrolled.push(RpnOp::One); // valor inicial
+        for _ in 0..3 {
+            unrolled.push(RpnOp::One);
+            unrolled.push(RpnOp::Bml);
+        }
+
+        let loop_val = loop_prog.evaluate(0.0);
+        let unrolled_val = unrolled.evaluate(0.0);
+        assert_eq!(
+            loop_val.to_bits(),
+            unrolled_val.to_bits(),
+            "Loop = {loop_val}, unrolled = {unrolled_val}"
+        );
+    }
+
+    #[test]
+    fn loop_program_smaller_than_unrolled() {
+        let n: usize = 100;
+        let m: usize = 3;
+
+        let mut loop_prog = RpnProgram::new();
+        loop_prog.push(RpnOp::One); // valor inicial
+        loop_prog.push(RpnOp::One); // segundo valor inicial
+        loop_prog.push(RpnOp::Loop {
+            count: n as u32,
+            body_len: m as u32,
+        });
+        loop_prog.push(RpnOp::One);
+        loop_prog.push(RpnOp::One);
+        loop_prog.push(RpnOp::Bml);
+
+        let mut unrolled = RpnProgram::new();
+        unrolled.push(RpnOp::One); // valor inicial
+        unrolled.push(RpnOp::One); // segundo valor inicial
+        for _ in 0..n {
+            unrolled.push(RpnOp::One);
+            unrolled.push(RpnOp::One);
+            unrolled.push(RpnOp::Bml);
+        }
+
+        // Loop prog: 2 init + 1 Loop + 3 body = 6 ops
+        assert_eq!(loop_prog.len(), m + 3, "Loop program should be M+3 ops");
+        // Unrolled: 2 init + N*M body = 2 + 300 = 302 ops
+        assert_eq!(unrolled.len(), n * m + 2, "Unrolled should be N*M+2 ops");
+        assert!(loop_prog.len() < unrolled.len(), "Loop should be smaller");
     }
 }

@@ -58,19 +58,24 @@ N varía en progresión geométrica: 4, 8, 16, 32, 64, 128, 256.
 
 **Análisis:** BML es **O(1)** — el programa RPN es constante (~4 ops) porque `bml(two, two)` se deduplica completamente. El naive es O(n). Para n ≥ 128, BML supera al naive. Para n=256, BML es 5x más rápido.
 
-### 4. Capa densa O(n·m)
+### 4. Capa densa O(n·m) — con Loop
 
-| n | naive | bml_cons | ratio |
+| n | naive | bml_loop | ratio |
 |---|---|---|---|
-| 4 | 40 ns | 179 ns | 0.22x |
-| 8 | 75 ns | 442 ns | 0.17x |
-| 16 | 230 ns | 1.25 µs | 0.18x |
-| 32 | 898 ns | 4.58 µs | 0.20x |
-| 64 | 3.84 µs | 18.1 µs | 0.21x |
-| 128 | 17.5 µs | ~72 µs | 0.24x |
-| 256 | 72.1 µs | ~288 µs | 0.25x |
+| 4 | 41 ns | 221 ns | 0.19x |
+| 8 | 84 ns | 801 ns | 0.10x |
+| 16 | 232 ns | 3.33 µs | 0.07x |
+| 32 | 928 ns | 13.4 µs | 0.07x |
+| 64 | 4.08 µs | 53.0 µs | 0.08x |
+| 128 | 17.4 µs | ~212 µs | 0.08x |
+| 256 | 72.2 µs | ~848 µs | 0.09x |
 
-**Análisis:** BML es ~5x más lento que naive. Aquí no hay repetición estructural real (cada peso es distinto en el naive), así que el Hash Consing no ayuda. El overhead del intérprete RPN domina.
+**Análisis:** El Loop reduce el **tamaño del programa** RPN de O(n·m) a O(1) (4 ops: One + Loop + One + Bml), pero el **tiempo de ejecución** sigue siendo O(n·m) porque cada iteración del loop ejecuta el cuerpo. El Loop optimiza memoria (mejor para L1i) pero no reduce el cómputo. BML es ~10-14x más lento que naive aquí porque cada `bml` hace `exp2` + `log2` (más costoso que `*` + `+`).
+
+**Conclusión:** El Loop es útil para reducir el tamaño del programa (cabe en L1i) pero no para reducir el tiempo de ejecución. Para reducir el cómputo se necesita:
+- SIMD en el cuerpo del loop (procesar múltiples elementos a la vez).
+- Hash Consing que colapse iteraciones idénticas (cuando los operandos sean los mismos).
+- Hot loop nativo que evite el overhead del intérprete RPN.
 
 ### 5. Compile vs Execute (fases separadas)
 

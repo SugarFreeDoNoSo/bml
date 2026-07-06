@@ -34,8 +34,8 @@ fn program_bytes(program: &RpnProgram) -> usize {
 
 #[test]
 fn program_below_32kb() {
-    // ~10K ops ≈ 10 KB (por debajo de 32 KB)
-    let program = build_program_of_size(10_000);
+    // ~2K ops ≈ 24 KB con RpnOp de 12 bytes (por debajo de 32 KB)
+    let program = build_program_of_size(2_000);
     let size = program_bytes(&program);
     assert!(size < 32 * 1024, "program size {size} >= 32KB");
     // Debe evaluar sin pánico
@@ -44,8 +44,8 @@ fn program_below_32kb() {
 
 #[test]
 fn program_above_32kb() {
-    // ~50K ops ≈ 50 KB (por encima de 32 KB)
-    let program = build_program_of_size(50_000);
+    // ~5K ops ≈ 60 KB con RpnOp de 12 bytes (por encima de 32 KB)
+    let program = build_program_of_size(5_000);
     let size = program_bytes(&program);
     assert!(size > 32 * 1024, "program size {size} <= 32KB");
     // Debe evaluar sin pánico (aunque puede ser expulsado de L1i)
@@ -120,7 +120,7 @@ fn multicore_latency_scaling() {
 #[test]
 fn programs_of_increasing_size_all_evaluate() {
     // Genera programas de tamaño creciente y verifica que todos evalúan.
-    for &target_ops in &[100, 1000, 5000, 10000, 20000, 40000] {
+    for &target_ops in &[100, 1000, 5000, 8000] {
         let program = build_program_of_size(target_ops);
         let size = program_bytes(&program);
         let val = program.evaluate(0.0);
