@@ -12,14 +12,15 @@
 - [x] 0.10 Actualizar hot loop del runtime para resolver `Var` y `Const` desde buffers pre-asignados.
 - [x] 0.11 Pruebas: construir un DAG con `Var` y `Const`, evaluarlo con inputs distintos, verificar resultados.
 
-## 1. Derivación de fórmulas BML para operaciones del transformer
+## 1. Operaciones del transformer (EML compile-time + BML runtime)
 
-- [ ] 1.1 Derivar `softmax(x) = exp(x) / sum(exp(x))` en BML usando `exp2`, `log2`, `add`, `div`.
-- [ ] 1.2 Derivar `RMSNorm(x) = x / sqrt(mean(x^2) + eps)` en BML usando `mul`, `div`, `pow`, `add`.
-- [ ] 1.3 Derivar `RoPE(x, pos)` (rotary positional embedding) en BML usando `mul`, `add`, `sin`/`cos` (que se derivan de Euler).
-- [ ] 1.4 Derivar `SwiGLU(x) = x * sigmoid(1.7 * x)` en BML usando `mul`, `add`, `div`, `pow`.
-- [ ] 1.5 Derivar `sin(x)` y `cos(x)` via Euler (`e^(ix)`) — requiere extensión al dominio complejo o aproximación polinomial.
-- [ ] 1.6 Pruebas de cada fórmula con `proptest` sobre un rango de valores.
+- [x] 1.1 Crear `crates/compiler/src/eml.rs` con funciones de compile-time: `eml(x,y)`, `exp(x)`, `ln(x)`, `sin(x)`, `cos(x)`, `pi()`, `i_unit()`, `rope(x, pos, freq)`.
+- [x] 1.2 Derivar `softmax(x) = exp(x) / sum(exp(x))` en BML usando `exp2`, `add`, `div` (no necesita EML).
+- [x] 1.3 Derivar `RMSNorm(x) = x / sqrt(mean(x^2) + eps)` en BML usando `mul`, `div`, `pow`, `add` (no necesita EML).
+- [x] 1.4 Derivar `SwiGLU(x) = x * sigmoid(1.7 * x)` en BML usando `mul`, `add`, `div`, `neg` (no necesita EML).
+- [x] 1.5 Derivar `RoPE(x, pos, freq)` usando EML en compile-time: precomputar `cos(pos*freq)` y `sin(pos*freq)` como `Const`, luego `x * Const + rotate(x) * Const` en BML runtime.
+- [x] 1.6 Derivar `sin(x)` y `cos(x)` via Euler en EML compile-time (usa Complex<f64>). El resultado se almacena como `Const`.
+- [x] 1.7 Pruebas de cada fórmula: verificar que BML runtime produce el mismo resultado que la referencia directa.
 
 ## 2. Compilador GGUF → .bmlgraph
 

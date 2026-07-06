@@ -10,6 +10,7 @@
 #![warn(missing_docs)]
 
 pub mod dag;
+pub mod eml;
 pub mod fragment;
 pub mod hash_cons;
 pub mod rpn;
