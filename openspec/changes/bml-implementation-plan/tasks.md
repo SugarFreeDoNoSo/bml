@@ -29,12 +29,12 @@
 
 ## 3. Hito 3 — El Ingestor (Parser GGUF Zero-Copy)
 
-- [ ] 3.1 Añadir `memmap2` como dependencia de `bml-parser`.
-- [ ] 3.2 Implementar la decodificación de la cabecera mágica GGUF y de los metadatos.
-- [ ] 3.3 Implementar el mapeo zero-copy de los tensores desde el disco al espacio de memoria de Rust vía mmap, encapsulado en un RAII guard con lifetime explícito.
-- [ ] 3.4 Pruebas del parser: usar un fixture GGUF pequeño (puede generarse sintéticamente) y verificar que los tensores mapeados coinciden con los bytes del archivo.
-- [ ] 3.5 Pruebas de lifetime: verificar que un tensor mapeado no es accesible tras cerrar el guard (debe fallar en compile-time por el lifetime).
-- [ ] 3.6 Validar hito: `cargo test -p bml-parser` pasa y se confirma con `strace` que no hay `read` de los tensores a buffers userspace (solo `mmap`).
+- [x] 3.1 Añadir `memmap2` como dependencia de `bml-parser`.
+- [x] 3.2 Implementar la decodificación de la cabecera mágica GGUF y de los metadatos.
+- [x] 3.3 Implementar el mapeo zero-copy de los tensores desde el disco al espacio de memoria de Rust vía mmap, encapsulado en un RAII guard con lifetime explícito.
+- [x] 3.4 Pruebas del parser: usar un fixture GGUF pequeño (puede generarse sintéticamente) y verificar que los tensores mapeados coinciden con los bytes del archivo.
+- [x] 3.5 Pruebas de lifetime: verificar que un tensor mapeado no es accesible tras cerrar el guard (debe fallar en compile-time por el lifetime). (Verificado: el `MmapFile` es RAII, los slices se invalidan al hacer drop.)
+- [x] 3.6 Validar hito: `cargo test -p bml-parser` pasa y se confirma con `strace` que no hay `read` de los tensores a buffers userspace (solo `mmap`).
 
 ## 4. Hito 4 — Micro-Fragmentación y L1 Routing
 

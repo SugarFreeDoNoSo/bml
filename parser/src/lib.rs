@@ -1,14 +1,23 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! # bml-parser
+//!
+//! Ingesta de archivos GGUF (GPT-Generated Unified Format) mediante
+//! mapeo directo a memoria (`memmap2`) sin copias a RAM. Decodifica
+//! cabeceras mágicas, metadatos y referencias a tensores.
+//!
+//! # Zero-Copy
+//!
+//! Los tensores se referencian desde el disco directo al espacio de
+//! memoria de Rust vía mmap. No hay syscalls `read` de los tensores a
+//! buffers userspace; solo `mmap`.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#![deny(unsafe_code)]
+#![warn(missing_docs)]
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod gguf;
+pub mod mmap;
+
+pub use gguf::{
+    GgufDataType, GgufHeader, GgufMetadataValue, GgufParser, GgufTensorInfo, GGUF_MAGIC,
+    GGUF_SUPPORTED_VERSION,
+};
+pub use mmap::MmapFile;

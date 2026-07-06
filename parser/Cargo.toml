@@ -6,3 +6,5 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+bml-domain = { path = "../domain" }
+memmap2 = "0.9"
