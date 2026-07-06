@@ -13,6 +13,7 @@ criterion.workspace = true
 proptest.workspace = true
 ndarray.workspace = true
 loom.workspace = true
+bml-runtime = { path = "../runtime" }
 
 [[bench]]
 name = "fma_vs_bml"
@@ -24,4 +25,8 @@ harness = false
 
 [[bench]]
 name = "complex_functions"
+harness = false
+
+[[bench]]
+name = "final_benchmark"
 harness = false
