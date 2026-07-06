@@ -12,6 +12,8 @@
 pub mod dag;
 pub mod eml;
 pub mod fragment;
+pub mod gguf_compiler;
+pub mod hardware;
 pub mod hash_cons;
 pub mod rpn;
 

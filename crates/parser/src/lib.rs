@@ -17,7 +17,7 @@ pub mod gguf;
 pub mod mmap;
 
 pub use gguf::{
-    GgufDataType, GgufHeader, GgufMetadataValue, GgufParser, GgufTensorInfo, GGUF_MAGIC,
-    GGUF_SUPPORTED_VERSION,
+    create_gguf_with_metadata, GgufDataType, GgufHeader, GgufMetadataValue, GgufParser,
+    GgufTensorInfo, GGUF_MAGIC, GGUF_SUPPORTED_VERSION,
 };
 pub use mmap::MmapFile;

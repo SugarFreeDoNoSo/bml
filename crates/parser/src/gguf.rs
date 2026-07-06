@@ -560,7 +560,6 @@ fn decode_tensor_info(bytes: &[u8], offset: usize) -> Result<(GgufTensorInfo, us
 // ===========================================================================
 
 /// Genera un GGUF sintético con metadatos y un tensor.
-#[cfg(test)]
 pub fn create_gguf_with_metadata() -> std::path::PathBuf {
     use std::io::Write;
     use std::sync::atomic::{AtomicU64, Ordering};

@@ -59,6 +59,7 @@ name = "bml-compiler"
 version = "0.1.0"
 dependencies = [
  "bml-domain",
+ "bml-parser",
  "bml-runtime",
  "criterion",
  "loom",
