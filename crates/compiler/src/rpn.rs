@@ -22,6 +22,8 @@ use bml_domain::{NodeId, NodeKind, NodeSoA};
 pub enum RpnOp {
     /// Empuja la constante `1` a la pila.
     One,
+    /// Empuja la constante `0` a la pila.
+    Zero,
     /// Saca dos valores `a, b` de la pila y empuja `bml(a, b)`.
     Bml,
     /// Duplica el valor en el tope de la pila.
@@ -108,6 +110,7 @@ impl RpnProgram {
         while i < self.ops.len() {
             match self.ops[i] {
                 RpnOp::One => stack.push(1.0),
+                RpnOp::Zero => stack.push(0.0),
                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                 RpnOp::Bml => {
@@ -127,6 +130,7 @@ impl RpnProgram {
                         while j < body_end {
                             match self.ops[j] {
                                 RpnOp::One => stack.push(1.0),
+                RpnOp::Zero => stack.push(0.0),
                                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                                 RpnOp::Bml => {
@@ -194,6 +198,7 @@ fn emit(soa: &NodeSoA, id: NodeId, visited: &mut [bool], program: &mut RpnProgra
     visited[idx] = true;
     match soa.kinds[idx] {
         NodeKind::One => program.push(RpnOp::One),
+        NodeKind::Zero => program.push(RpnOp::Zero),
         NodeKind::Var(var_id) => program.push(RpnOp::Var(var_id)),
         NodeKind::Const(const_id) => program.push(RpnOp::Const(const_id)),
         NodeKind::Bml => {
@@ -228,7 +233,10 @@ mod tests {
         assert_eq!(program.evaluate(0.0), 2.0);
         // Coincide con la evaluación del DAG
         let dag = crate::Dag::new(soa, root);
-        assert!((program.evaluate(0.0) - dag.evaluate(&bml_domain::EvalContext::new(&[], &[]))).abs() < 1e-12);
+        assert!(
+            (program.evaluate(0.0) - dag.evaluate(&bml_domain::EvalContext::new(&[], &[]))).abs()
+                < 1e-12
+        );
     }
 
     #[test]
@@ -243,7 +251,10 @@ mod tests {
         let program = linearize(&soa, root);
         assert!((program.evaluate(0.0) - 8.0).abs() < 1e-9);
         let dag = crate::Dag::new(soa, root);
-        assert!((program.evaluate(0.0) - dag.evaluate(&bml_domain::EvalContext::new(&[], &[]))).abs() < 1e-9);
+        assert!(
+            (program.evaluate(0.0) - dag.evaluate(&bml_domain::EvalContext::new(&[], &[]))).abs()
+                < 1e-9
+        );
     }
 
     #[test]

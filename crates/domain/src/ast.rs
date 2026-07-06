@@ -26,6 +26,8 @@ pub type ConstId = u32;
 pub enum NodeKind {
     /// Constante distinguida `1`. Terminal de la gramática.
     One,
+    /// Constante distinguida `0`. Terminal de la gramática.
+    Zero,
     /// Input variable. Resuelto desde un contexto de inputs.
     Var(VarId),
     /// Constante arbitraria (peso del modelo). Resuelto desde un pool de pesos.
@@ -59,6 +61,17 @@ impl Node {
         Self {
             id,
             kind: NodeKind::One,
+            left: None,
+            right: None,
+        }
+    }
+
+    /// Crea un nodo constante `0`.
+    #[inline]
+    pub fn zero(id: NodeId) -> Self {
+        Self {
+            id,
+            kind: NodeKind::Zero,
             left: None,
             right: None,
         }
@@ -161,6 +174,7 @@ pub fn evaluate(nodes: &[Node], root: NodeId, ctx: &EvalContext) -> f64 {
     let node = nodes[root as usize];
     match node.kind {
         NodeKind::One => 1.0,
+        NodeKind::Zero => 0.0,
         NodeKind::Var(id) => ctx.get_var(id),
         NodeKind::Const(id) => ctx.get_const(id),
         NodeKind::Bml => {

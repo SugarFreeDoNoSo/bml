@@ -92,6 +92,13 @@ impl NodeSoA {
         id
     }
 
+    /// Agrega un nodo constante `0` y retorna su `NodeId`.
+    pub fn push_zero(&mut self) -> NodeId {
+        let id = self.len() as NodeId;
+        self.push(Node::zero(id));
+        id
+    }
+
     /// Agrega un nodo de variable `Var(var_id)` y retorna su `NodeId`.
     pub fn push_var(&mut self, var_id: VarId) -> NodeId {
         let id = self.len() as NodeId;
@@ -119,6 +126,7 @@ impl NodeSoA {
         let kind = self.kinds[idx];
         match kind {
             NodeKind::One => Node::one(id),
+            NodeKind::Zero => Node::zero(id),
             NodeKind::Var(var_id) => Node::var(id, var_id),
             NodeKind::Const(const_id) => Node::const_(id, const_id),
             NodeKind::Bml => Node::bml(id, self.lefts[idx], self.rights[idx]),

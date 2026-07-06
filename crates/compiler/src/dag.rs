@@ -59,6 +59,7 @@ fn evaluate_soa(soa: &NodeSoA, id: NodeId, ctx: &EvalContext) -> f64 {
     let idx = id as usize;
     match soa.kinds[idx] {
         NodeKind::One => 1.0,
+        NodeKind::Zero => 0.0,
         NodeKind::Var(var_id) => ctx.get_var(var_id),
         NodeKind::Const(const_id) => ctx.get_const(const_id),
         NodeKind::Bml => {

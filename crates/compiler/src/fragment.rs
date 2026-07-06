@@ -87,6 +87,7 @@ impl Fragment {
         while i < self.ops.len() {
             match self.ops[i] {
                 RpnOp::One => stack.push(1.0),
+                RpnOp::Zero => stack.push(0.0),
                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                 RpnOp::Bml => {
@@ -106,6 +107,7 @@ impl Fragment {
                         while j < body_end {
                             match self.ops[j] {
                                 RpnOp::One => stack.push(1.0),
+                RpnOp::Zero => stack.push(0.0),
                                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                                 RpnOp::Bml => {
@@ -200,6 +202,7 @@ impl BmlGraph {
             for op in &fragment.ops {
                 match op {
                     RpnOp::One => bytes.push(0),
+                    RpnOp::Zero => bytes.push(6),
                     RpnOp::Bml => bytes.push(1),
                     RpnOp::Dup => bytes.push(2),
                     RpnOp::Loop { count, body_len } => {
@@ -275,6 +278,7 @@ impl BmlGraph {
                         offset += 4;
                         RpnOp::Var(id)
                     }
+                    6 => RpnOp::Zero,
                     5 => {
                         if offset + 4 > bytes.len() {
                             return Err("offset fuera de rango leyendo Const".to_string());

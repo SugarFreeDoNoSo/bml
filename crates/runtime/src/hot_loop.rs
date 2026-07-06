@@ -66,6 +66,7 @@ impl HotLoop {
         while i < program.ops.len() {
             match program.ops[i] {
                 RpnOp::One => self.stack.push(1.0),
+                RpnOp::Zero => self.stack.push(0.0),
                 RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
                 RpnOp::Bml => {
@@ -88,6 +89,7 @@ impl HotLoop {
                         while j < body_end {
                             match program.ops[j] {
                                 RpnOp::One => self.stack.push(1.0),
+                                RpnOp::Zero => self.stack.push(0.0),
                                 RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
                                 RpnOp::Bml => {
@@ -141,6 +143,7 @@ impl HotLoop {
         while i < fragment.ops.len() {
             match fragment.ops[i] {
                 RpnOp::One => self.stack.push(1.0),
+                RpnOp::Zero => self.stack.push(0.0),
                 RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
                 RpnOp::Bml => {
@@ -163,6 +166,7 @@ impl HotLoop {
                         while j < body_end {
                             match fragment.ops[j] {
                                 RpnOp::One => self.stack.push(1.0),
+                                RpnOp::Zero => self.stack.push(0.0),
                                 RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
                                 RpnOp::Bml => {

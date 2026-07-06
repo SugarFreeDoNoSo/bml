@@ -49,6 +49,7 @@ fn serialize_program(program: &RpnProgram) -> Vec<u8> {
     for op in &program.ops {
         match op {
             RpnOp::One => bytes.push(0),
+            RpnOp::Zero => bytes.push(6),
             RpnOp::Bml => bytes.push(1),
             RpnOp::Dup => bytes.push(2),
             RpnOp::Loop { .. } => bytes.push(3),
@@ -78,6 +79,7 @@ fn deserialize_program(bytes: &[u8]) -> RpnProgram {
         offset += 1;
         let op = match tag {
             0 => RpnOp::One,
+            6 => RpnOp::Zero,
             1 => RpnOp::Bml,
             2 => RpnOp::Dup,
             3 => {

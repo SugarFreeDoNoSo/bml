@@ -31,6 +31,8 @@ use std::collections::HashMap;
 enum ConsKey {
     /// Constante `1`.
     One,
+    /// Constante `0`.
+    Zero,
     /// `BML(left, right)` con `NodeId` canónicos de los hijos.
     Bml(NodeId, NodeId),
 }
@@ -98,15 +100,24 @@ impl HashConsRegistry {
     }
 
     /// Obtiene o crea la constante `1` y retorna su `NodeId`.
-    ///
-    /// Como todos los nodos `One` son idénticos, siempre retorna el mismo
-    /// `NodeId` (típicamente `0`).
     pub fn one(&mut self) -> NodeId {
         match self.table.get(&ConsKey::One) {
             Some(&id) => id,
             None => {
                 let id = self.soa.push_one();
                 self.table.insert(ConsKey::One, id);
+                id
+            }
+        }
+    }
+
+    /// Obtiene o crea la constante `0` y retorna su `NodeId`.
+    pub fn zero(&mut self) -> NodeId {
+        match self.table.get(&ConsKey::Zero) {
+            Some(&id) => id,
+            None => {
+                let id = self.soa.push_zero();
+                self.table.insert(ConsKey::Zero, id);
                 id
             }
         }
@@ -186,6 +197,7 @@ impl HashConsRegistry {
         let node = self.soa.get(id);
         match node.kind {
             NodeKind::One => Some(1.0),
+            NodeKind::Zero => Some(0.0),
             NodeKind::Const(const_id) => self.const_pool.get(const_id as usize).copied(),
             NodeKind::Var(_) | NodeKind::Bml => None,
         }
