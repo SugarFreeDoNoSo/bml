@@ -19,6 +19,7 @@
 //! pendiente para el Hito 5 (runtime distribuido con RPC).
 
 use bml_compiler::{linearize, HashConsRegistry, RpnOp, RpnProgram};
+use bml_domain::BMLTransformer;
 use std::fs;
 use std::io::Write;
 use std::path::Path;
@@ -27,12 +28,15 @@ use std::time::Instant;
 
 /// Construye un programa RPN de prueba.
 fn build_test_program() -> RpnProgram {
-    let mut reg = HashConsRegistry::new();
-    let one = reg.one();
-    let two = reg.bml(one, one);
-    let three = reg.bml(two, two);
-    let root = reg.bml(three, one);
-    let soa = reg.into_soa();
+    // Usar BMLTransformer (sin constant folding) para que el programa
+    // tenga nodos One/Bml/Dup que el serializador simple puede manejar.
+    let mut t = bml_domain::BMLTransformer::new();
+    let two = t.two();
+    let two2 = t.two();
+    let three = t.bml(two, two2);
+    let one = t.one();
+    let root = t.bml(three, one);
+    let soa = t.into_soa();
     linearize(&soa, root)
 }
 
@@ -43,15 +47,20 @@ fn serialize_program(program: &RpnProgram) -> Vec<u8> {
     let mut bytes = Vec::new();
     bytes.extend_from_slice(&(program.ops.len() as u32).to_le_bytes());
     for op in &program.ops {
-        let tag: u8 = match op {
-            RpnOp::One => 0,
-            RpnOp::Bml => 1,
-            RpnOp::Dup => 2,
-            RpnOp::Loop { .. } => 3,
-            RpnOp::Var(_) => 4,
-            RpnOp::Const(_) => 5,
-        };
-        bytes.push(tag);
+        match op {
+            RpnOp::One => bytes.push(0),
+            RpnOp::Bml => bytes.push(1),
+            RpnOp::Dup => bytes.push(2),
+            RpnOp::Loop { .. } => bytes.push(3),
+            RpnOp::Var(id) => {
+                bytes.push(4);
+                bytes.extend_from_slice(&id.to_le_bytes());
+            }
+            RpnOp::Const(id) => {
+                bytes.push(5);
+                bytes.extend_from_slice(&id.to_le_bytes());
+            }
+        }
     }
     bytes
 }
@@ -60,14 +69,31 @@ fn serialize_program(program: &RpnProgram) -> Vec<u8> {
 fn deserialize_program(bytes: &[u8]) -> RpnProgram {
     let num_ops = u32::from_le_bytes(bytes[0..4].try_into().unwrap()) as usize;
     let mut ops = Vec::with_capacity(num_ops);
-    for i in 0..num_ops {
-        let tag = bytes[4 + i];
+    let mut offset = 4;
+    for _ in 0..num_ops {
+        if offset >= bytes.len() {
+            panic!("offset fuera de rango");
+        }
+        let tag = bytes[offset];
+        offset += 1;
         let op = match tag {
             0 => RpnOp::One,
             1 => RpnOp::Bml,
             2 => RpnOp::Dup,
-            // Tags 3/4/5 no soportados en este serializador simple de test.
-            // Los programas de test solo usan One/Bml/Dup.
+            3 => {
+                // Loop: no soportado en este serializador simple
+                panic!("Loop no soportado en serializador de test");
+            }
+            4 => {
+                let id = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                offset += 4;
+                RpnOp::Var(id)
+            }
+            5 => {
+                let id = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                offset += 4;
+                RpnOp::Const(id)
+            }
             _ => panic!("tag desconocido: {tag}"),
         };
         ops.push(op);

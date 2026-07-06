@@ -20,7 +20,7 @@
 //! `NodeId` ya son canónicos (gracias al Hash Consing recursivo), dos
 //! sub-árboles idénticos producen la misma clave.
 
-use bml_domain::{NodeId, NodeSoA};
+use bml_domain::{bml, NodeId, NodeKind, NodeSoA};
 use std::collections::HashMap;
 
 /// Clave canónica de un sub-árbol BML.
@@ -47,6 +47,13 @@ pub struct HashConsRegistry {
     soa: NodeSoA,
     /// Mapa de claves canónicas a `NodeId` en el SoA.
     table: HashMap<ConsKey, NodeId>,
+    /// Pool de valores constantes precalculados.
+    /// Cuando bml(Const(a), Const(b)) se evalúa en compile-time,
+    /// el resultado se almacena aquí y se referencia como Const(id).
+    const_pool: Vec<f64>,
+    /// Mapa de valores constantes a su índice en el pool.
+    /// Evita duplicar constantes con el mismo valor.
+    const_table: HashMap<u64, bml_domain::ConstId>,
 }
 
 impl HashConsRegistry {
@@ -55,6 +62,8 @@ impl HashConsRegistry {
         Self {
             soa: NodeSoA::new(),
             table: HashMap::new(),
+            const_pool: Vec::new(),
+            const_table: HashMap::new(),
         }
     }
 
@@ -63,6 +72,8 @@ impl HashConsRegistry {
         Self {
             soa: NodeSoA::with_capacity(capacity),
             table: HashMap::with_capacity(capacity),
+            const_pool: Vec::with_capacity(capacity),
+            const_table: HashMap::with_capacity(capacity),
         }
     }
 
@@ -105,7 +116,23 @@ impl HashConsRegistry {
     ///
     /// Si ya existe un nodo `BML(left, right)` con los mismos `NodeId`
     /// canónicos, retorna el `NodeId` existente. Si no, lo crea.
+    ///
+    /// **Constant folding**: si ambos hijos son constantes (One o Const),
+    /// el resultado se precalcula en compile-time y se almacena como
+    /// `Const(id)` en el pool de constantes. El nodo `Bml` no se crea —
+    /// se reemplaza por `Const`. Esto elimina el cómputo en runtime.
     pub fn bml(&mut self, left: NodeId, right: NodeId) -> NodeId {
+        // Intentar constant folding: si ambos hijos son constantes,
+        // precalcular el resultado.
+        if let (Some(a), Some(b)) = (self.eval_const_node(left), self.eval_const_node(right)) {
+            let result = bml(a, b);
+            // Solo plegar si el resultado es finito (evitar inf/nan)
+            if result.is_finite() {
+                return self.const_value(result);
+            }
+        }
+
+        // No se puede plegar: crear nodo Bml normal con Hash Consing
         let key = ConsKey::Bml(left, right);
         match self.table.get(&key) {
             Some(&id) => id,
@@ -115,6 +142,65 @@ impl HashConsRegistry {
                 id
             }
         }
+    }
+
+    /// Crea un nodo de variable `Var(var_id)` y retorna su `NodeId`.
+    pub fn var(&mut self, var_id: bml_domain::VarId) -> NodeId {
+        self.soa.push_var(var_id)
+    }
+
+    /// Crea o reutiliza una constante con valor `value` y retorna su `NodeId`.
+    ///
+    /// El valor se almacena en el pool de constantes. Si ya existe una
+    /// constante con el mismo valor (comparado por bits), se reutiliza.
+    pub fn const_value(&mut self, value: f64) -> NodeId {
+        let bits = value.to_bits();
+        if let Some(&const_id) = self.const_table.get(&bits) {
+            // Ya existe un nodo Const con este valor
+            // Buscar el NodeId correspondiente en el SoA
+            // El const_id es el índice en el pool, el NodeId es el del nodo Const
+            // Necesitamos un mapeo const_id -> NodeId
+            // Por simplicidad, buscamos en el SoA
+            for i in 0..self.soa.len() {
+                let node = self.soa.get(i as NodeId);
+                if let NodeKind::Const(cid) = node.kind {
+                    if cid == const_id {
+                        return i as NodeId;
+                    }
+                }
+            }
+        }
+        // Crear nueva constante
+        let const_id = self.const_pool.len() as bml_domain::ConstId;
+        self.const_pool.push(value);
+        self.const_table.insert(bits, const_id);
+        let id = self.soa.push_const(const_id);
+        id
+    }
+
+    /// Evalúa un nodo como constante si es posible.
+    ///
+    /// Retorna `Some(value)` si el nodo es `One` (valor 1.0) o `Const(id)`
+    /// (valor del pool). Retorna `None` si es `Var` o `Bml`.
+    fn eval_const_node(&self, id: NodeId) -> Option<f64> {
+        let node = self.soa.get(id);
+        match node.kind {
+            NodeKind::One => Some(1.0),
+            NodeKind::Const(const_id) => self.const_pool.get(const_id as usize).copied(),
+            NodeKind::Var(_) | NodeKind::Bml => None,
+        }
+    }
+
+    /// Retorna el pool de constantes precalculadas.
+    ///
+    /// El runtime carga este pool al arrancar para resolver `Const(id)`.
+    pub fn const_pool(&self) -> &[f64] {
+        &self.const_pool
+    }
+
+    /// Consume el registro y retorna el SoA y el pool de constantes.
+    pub fn into_soa_and_pool(self) -> (NodeSoA, Vec<f64>) {
+        (self.soa, self.const_pool)
     }
 
     /// Número de deduplicaciones realizadas.
@@ -241,5 +327,114 @@ mod tests {
             // one + two + bml(two,two) = 3 nodos únicos
             assert_eq!(reg.unique_count(), 3);
         }
+    }
+
+    // =====================================================================
+    // Tests de constant folding
+    // =====================================================================
+
+    #[test]
+    fn constant_folding_bml_one_one() {
+        // bml(1, 1) = 2 debe plegarse a Const(2.0), no crear un nodo Bml.
+        let mut reg = HashConsRegistry::new();
+        let one = reg.one();
+        let result = reg.bml(one, one);
+        // El resultado debe ser un nodo Const, no Bml
+        let node = reg.soa().get(result);
+        assert!(
+            node.is_const(),
+            "bml(1,1) debe plegarse a Const, got {:?}",
+            node.kind
+        );
+        // El valor debe ser 2.0
+        let pool = reg.const_pool();
+        let const_id = match node.kind {
+            NodeKind::Const(id) => id,
+            _ => panic!("no es Const"),
+        };
+        assert!((pool[const_id as usize] - 2.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn constant_folding_chained() {
+        // bml(bml(1,1), bml(1,1)) = bml(2, 2) = 3 debe plegarse completamente.
+        let mut reg = HashConsRegistry::new();
+        let one = reg.one();
+        let two = reg.bml(one, one); // plegado a Const(2)
+        let three = reg.bml(two, two); // plegado a Const(3)
+        let node = reg.soa().get(three);
+        assert!(node.is_const(), "bml(2,2) debe plegarse a Const");
+        let pool = reg.const_pool();
+        let const_id = match node.kind {
+            NodeKind::Const(id) => id,
+            _ => panic!("no es Const"),
+        };
+        assert!((pool[const_id as usize] - 3.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn constant_folding_with_var_not_folded() {
+        // bml(Var(0), Const(2)) no debe plegarse (Var no es constante).
+        let mut reg = HashConsRegistry::new();
+        let var = reg.var(0);
+        let one = reg.one();
+        let two = reg.bml(one, one); // Const(2)
+        let result = reg.bml(var, two);
+        // El resultado debe ser Bml, no Const
+        let node = reg.soa().get(result);
+        assert!(node.is_bml(), "bml(Var, Const) no debe plegarse");
+    }
+
+    #[test]
+    fn constant_folding_deduplicates_constants() {
+        // bml(1, 1) = 2 y bml(1, 1) = 2 deben dar el mismo Const.
+        let mut reg = HashConsRegistry::new();
+        let one = reg.one();
+        let a = reg.bml(one, one);
+        let b = reg.bml(one, one);
+        assert_eq!(a, b, "constantes plegadas deben deduplicarse");
+    }
+
+    #[test]
+    fn constant_folding_reduces_node_count() {
+        // Sin folding: bml(bml(1,1), bml(1,1)) = 3 nodos (one, bml, bml)
+        // Con folding: bml(1,1) -> Const(2), bml(Const(2), Const(2)) -> Const(3)
+        // = 3 nodos (one, Const(2), Const(3)) pero 0 nodos Bml
+        let mut reg = HashConsRegistry::new();
+        let one = reg.one();
+        let two = reg.bml(one, one);
+        let _three = reg.bml(two, two);
+        // Verificar que no hay nodos Bml en el SoA
+        let mut bml_count = 0;
+        for i in 0..reg.unique_count() {
+            if reg.soa().get(i as NodeId).is_bml() {
+                bml_count += 1;
+            }
+        }
+        assert_eq!(
+            bml_count, 0,
+            "constant folding debe eliminar todos los Bml const-const"
+        );
+    }
+
+    #[test]
+    fn const_value_creates_and_reuses() {
+        let mut reg = HashConsRegistry::new();
+        let a = reg.const_value(1.5);
+        let b = reg.const_value(1.5);
+        assert_eq!(a, b, "mismo valor debe reutilizar el mismo nodo");
+        let c = reg.const_value(2.5);
+        assert_ne!(a, c, "distinto valor debe crear nodo distinto");
+    }
+
+    #[test]
+    fn const_pool_accessible() {
+        let mut reg = HashConsRegistry::new();
+        reg.const_value(1.5);
+        reg.const_value(2.5);
+        let pool = reg.const_pool();
+        assert_eq!(pool.len(), 2);
+        assert!((pool[0] - 1.5).abs() < 1e-12);
+        assert!((pool[1] - 2.5).abs() < 1e-12);
     }
 }
