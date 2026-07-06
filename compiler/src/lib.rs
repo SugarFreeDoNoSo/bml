@@ -10,9 +10,14 @@
 #![warn(missing_docs)]
 
 pub mod dag;
+pub mod fragment;
 pub mod hash_cons;
 pub mod rpn;
 
 pub use dag::Dag;
+pub use fragment::{
+    fragment_program, BmlGraph, Fragment, BMLGRAPH_MAGIC, BMLGRAPH_VERSION, DEFAULT_L1_THRESHOLD,
+    L3_THRESHOLD,
+};
 pub use hash_cons::HashConsRegistry;
 pub use rpn::{linearize, RpnOp, RpnProgram};

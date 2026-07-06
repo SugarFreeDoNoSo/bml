@@ -38,12 +38,12 @@
 
 ## 4. Hito 4 — Micro-Fragmentación y L1 Routing
 
-- [ ] 4.1 Añadir al `bml-compiler` la lógica de partición AOT (Tensor Parallelism AOT) del DAG.
-- [ ] 4.2 Definir el formato binario `.bmlgraph` (header + fragmentos) y su serialización.
-- [ ] 4.3 Implementar el cálculo del tamaño de cada fragmento y la garantía de que no supera el umbral de caché objetivo (32 KB L1 por defecto, configurable a L3).
-- [ ] 4.4 Pruebas de fragmentación: para DAGs de distintos tamaños, verificar que cada fragmento exportado pesa ≤ 32 KB (o el umbral configurado).
-- [ ] 4.5 Pruebas de routing: verificar que el orden de fragmentos preserva la semántica del DAG original al reconstruirse y ejecutarse.
-- [ ] 4.6 Validar hito: `cargo test -p bml-compiler` pasa y un DAG grande se exporta como N fragmentos todos ≤ 32 KB.
+- [x] 4.1 Añadir al `bml-compiler` la lógica de partición AOT (Tensor Parallelism AOT) del DAG.
+- [x] 4.2 Definir el formato binario `.bmlgraph` (header + fragmentos) y su serialización.
+- [x] 4.3 Implementar el cálculo del tamaño de cada fragmento y la garantía de que no supera el umbral de caché objetivo (32 KB L1 por defecto, configurable a L3).
+- [x] 4.4 Pruebas de fragmentación: para DAGs de distintos tamaños, verificar que cada fragmento exportado pesa ≤ 32 KB (o el umbral configurado).
+- [x] 4.5 Pruebas de routing: verificar que el orden de fragmentos preserva la semántica del DAG original al reconstruirse y ejecutarse.
+- [x] 4.6 Validar hito: `cargo test -p bml-compiler` pasa y un DAG grande se exporta como N fragmentos todos ≤ 32 KB.
 
 ## 5. Hito 5 — El Motor L1 (Runtime)
 
