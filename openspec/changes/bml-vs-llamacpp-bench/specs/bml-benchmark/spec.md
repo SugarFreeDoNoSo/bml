@@ -23,7 +23,7 @@ El sistema SHALL definir una equivalencia entre "tokens" de LLM y operaciones BM
 - **THEN** se documenta cuántas operaciones BML equivalen a un token de llama.cpp, y cómo se calculó
 
 ### Requirement: Reporte comparativo
-El sistema SHALL generar un reporte en `benchmarks/REPORT.md` que compara BML vs llama.cpp con tablas, análisis estadístico y limitaciones documentadas.
+El sistema SHALL generar un reporte en `docs/benchmarks/REPORT.md` que compara BML vs llama.cpp con tablas, análisis estadístico y limitaciones documentadas.
 
 #### Scenario: Reporte completo
 - **WHEN** se completa el benchmark

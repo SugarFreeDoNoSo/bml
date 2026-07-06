@@ -4,8 +4,8 @@ El runtime BML actual (Hito 5) ejecuta programas RPN sobre un DAG fragmentado, p
 
 ## What Changes
 
-- **Compilador GGUF → `.bmlgraph`**: nuevo módulo en `compiler/` que toma un archivo GGUF (parseado con `bml-parser`) y lo compila a un conjunto de archivos `.bmlgraph` fragmentados, optimizados para la máquina de compilación (número de cores, tamaños de caché L1/L2/L3).
-- **Runtime distribuido con gRPC**: nuevo módulo en `runtime/` que expone una API gRPC para recibir fragmentos `.bmlgraph`, ejecutarlos, y coordinarse con otros nodos vía un sistema de colas (channel-based) que evita condiciones de carrera.
+- **Compilador GGUF → `.bmlgraph`**: nuevo módulo en `crates/compiler/` que toma un archivo GGUF (parseado con `bml-parser`) y lo compila a un conjunto de archivos `.bmlgraph` fragmentados, optimizados para la máquina de compilación (número de cores, tamaños de caché L1/L2/L3).
+- **Runtime distribuido con gRPC**: nuevo módulo en `crates/runtime/` que expone una API gRPC para recibir fragmentos `.bmlgraph`, ejecutarlos, y coordinarse con otros nodos vía un sistema de colas (channel-based) que evita condiciones de carrera.
 - **Sistema de colas interno**: cada nodo mantiene una cola de fragmentos pendientes; los nodos se "roban" trabajo entre sí (work-stealing) cuando su cola se vacía, sin locks (lock-free queue).
 - **API compatible con `llama.cpp`**: binario `bml-cli` que expone los mismos flags que `llama-cli` (`-m`, `-p`, `-n`, `-t`, `--temp`, etc.) y produce texto generado, de forma que BML sea un drop-in replacement.
 - **Empaquetado AOT**: el compilador genera el **número mínimo de fragmentos** optimizado para la máquina objetivo (detecta cores y caché en compile-time o con un flag `--target`).
@@ -26,10 +26,10 @@ El runtime BML actual (Hito 5) ejecuta programas RPN sobre un DAG fragmentado, p
 ## Impact
 
 - **Nuevos crates/módulos:**
-  - `compiler/src/gguf_compiler.rs`: traducción GGUF → BML.
-  - `runtime/src/distributed.rs`: runtime distribuido con gRPC.
-  - `runtime/src/queue.rs`: cola lock-free y work-stealing.
-  - `cli/`: nuevo crate con binario `bml-cli`.
+  - `crates/compiler/src/gguf_compiler.rs`: traducción GGUF → BML.
+  - `crates/runtime/src/distributed.rs`: runtime distribuido con gRPC.
+  - `crates/runtime/src/queue.rs`: cola lock-free y work-stealing.
+  - `crates/cli/`: nuevo crate con binario `bml-cli`.
 - **Dependencias nuevas:**
   - `tonic` + `prost` para gRPC.
   - `tokio` para runtime async (gRPC requiere async).

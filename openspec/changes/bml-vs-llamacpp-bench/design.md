@@ -30,7 +30,7 @@ El runtime BML (Hito 5) implementa un intérprete RPN con pila pre-asignada, hot
 - **D4 — Formato de salida JSON.** `bml-bench` produce JSON con la misma estructura que `llama-bench` (`model`, `pp_avg`, `pp_stddev`, `tg_avg`, `tg_stddev`, `samples_ns`). *Racional:* parsing y comparación automatizable.
 - **D5 — Hardware fijado.** Se documenta el hardware exacto (CPU, cores, RAM, kernel) para reproducibilidad. *Racional:* los resultados de rendimiento son hardware-dependientes.
 - **D6 — `criterion` para micro-benchmarks.** Se usa `criterion` para los micro-benchmarks de operaciones individuales (BML vs FMA vs exp2/log2). *Racional:* ya está en el workspace y produce reportes estadísticos.
-- **D7 — Reporte en `benchmarks/REPORT.md`.** El reporte final se escribe en markdown con tablas, gráficos (si es posible) y conclusiones. *Racional:* formato portable y revisable en git.
+- **D7 — Reporte en `docs/benchmarks/REPORT.md`.** El reporte final se escribe en markdown con tablas, gráficos (si es posible) y conclusiones. *Racional:* formato portable y revisable en git.
 - **D8 — BML-bench como binario del workspace.** Se crea `bench/` como miembro del workspace con un binario `bml-bench`. *Racional:* separa el código de benchmark del código de producción.
 
 ## Risks / Trade-offs

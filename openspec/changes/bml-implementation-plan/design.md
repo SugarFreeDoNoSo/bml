@@ -1,6 +1,6 @@
 ## Context
 
-El proyecto BML parte de `draft.md`, que define un compilador y motor de ejecución en Rust basado en un único operador matemático (BML), análogo continuo del NAND lógico, con completitud funcional. El sistema debe ejecutarse sobre la jerarquía de memoria del procesador con énfasis en L1. No existe código previo; el repo contiene solo `draft.md` y `fuentes/`. La hoja de ruta del draft define 5 hitos secuenciales (Cimientos → Compilación/Deduplicación → Parser GGUF → Micro-Fragmentación → Runtime L1).
+El proyecto BML parte de `draft.md`, que define un compilador y motor de ejecución en Rust basado en un único operador matemático (BML), análogo continuo del NAND lógico, con completitud funcional. El sistema debe ejecutarse sobre la jerarquía de memoria del procesador con énfasis en L1. No existe código previo; el repo contiene solo `draft.md` y `references/`. La hoja de ruta del draft define 5 hitos secuenciales (Cimientos → Compilación/Deduplicación → Parser GGUF → Micro-Fragmentación → Runtime L1).
 
 ## Goals / Non-Goals
 

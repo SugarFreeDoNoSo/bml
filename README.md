@@ -33,10 +33,20 @@ Workspace Cargo con 4 crates de responsabilidad aislada:
 
 ```
 bml/
-├── domain/     # Operador BML, gramática AST, layout SoA, BMLTransformer
-├── parser/     # Ingesta GGUF zero-copy (mmap)
-├── compiler/   # DAG, Hash Consing, linealización RPN, micro-fragmentación .bmlgraph
-└── runtime/    # Hot loop RPN, buffers pre-asignados, RPC distribuido
+├── crates/
+│   ├── domain/     # Operador BML, gramática AST, layout SoA, BMLTransformer
+│   ├── parser/     # Ingesta GGUF zero-copy (mmap)
+│   ├── compiler/   # DAG, Hash Consing, linealización RPN, micro-fragmentación .bmlgraph
+│   ├── runtime/    # Hot loop RPN, buffers pre-asignados, RPC distribuido
+│   └── bench/      # Binario bml-bench (futuro)
+├── tests/
+│   ├── integration/  # Tests cross-crate (domain + compiler + runtime)
+│   ├── stress/       # Multicore, perf, /dev/shm
+│   └── concurrency/  # loom, data races
+├── docs/
+│   └── benchmarks/   # Reportes consolidados
+├── references/       # Paper, draft
+└── openspec/         # Specs vivas y plan de ejecución
 ```
 
 | Crate | Responsabilidad | Dependencias |
@@ -85,5 +95,5 @@ cargo clippy --workspace --all-targets
 
 - ["All elementary functions from a single operator"](https://arxiv.org/abs/2603.21852v2) — paper original que define EML.
 - `draft.md` — mapa de requerimientos y arquitectura del proyecto.
-- `fuentes/eml_paper.md` — texto del paper fuente.
+- `references/eml_paper.md` — texto del paper fuente.
 - `openspec/` — specs vivas y plan de ejecución.

@@ -1,6 +1,6 @@
 # Rust
 /target
-/**/target
+/crates/*/target
 **/*.rs.bk
 Cargo.bak
 

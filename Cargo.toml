@@ -1,11 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-    "domain",
-    "parser",
-    "compiler",
-    "runtime",
-    "bench",
+    "crates/domain",
+    "crates/parser",
+    "crates/compiler",
+    "crates/runtime",
+    "crates/bench",
+    "crates/tests",
 ]
 
 [workspace.package]

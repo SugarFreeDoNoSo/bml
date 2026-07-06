@@ -1,0 +1,42 @@
+[package]
+name = "bml-tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+bml-domain = { path = "../domain" }
+bml-parser = { path = "../parser" }
+bml-compiler = { path = "../compiler" }
+bml-runtime = { path = "../runtime" }
+
+[dev-dependencies]
+criterion.workspace = true
+proptest.workspace = true
+loom.workspace = true
+ndarray.workspace = true
+
+[[test]]
+name = "stress_multicore"
+path = "../../tests/stress/stress_multicore.rs"
+
+[[test]]
+name = "distributed_shm"
+path = "../../tests/stress/distributed_shm.rs"
+
+[[test]]
+name = "perf_cache"
+path = "../../tests/stress/perf_cache.rs"
+
+[[test]]
+name = "concurrency_loom"
+path = "../../tests/concurrency/concurrency_loom.rs"
+
+[[test]]
+name = "runtime_concurrency"
+path = "../../tests/concurrency/runtime_concurrency.rs"
+
+[[test]]
+name = "bmlgraph_integration"
+path = "../../tests/integration/bmlgraph_integration.rs"

@@ -11,7 +11,7 @@
 - [ ] 2.1 Ejecutar `llama-bench` con prompt processing: `./llama-bench -m modelo.gguf -p 512 -n 0 -r 5 -t 4 -o json`.
 - [ ] 2.2 Ejecutar `llama-bench` con generation: `./llama-bench -m modelo.gguf -p 0 -n 128 -r 5 -t 4 -o json`.
 - [ ] 2.3 Ejecutar `llama-bench` combinado: `./llama-bench -m modelo.gguf -pg 512,128 -r 5 -t 4 -o json`.
-- [ ] 2.4 Guardar la salida JSON en `benchmarks/llamacpp_results.json`.
+- [ ] 2.4 Guardar la salida JSON en `docs/benchmarks/llamacpp_results.json`.
 - [ ] 2.5 Extraer métricas: `pp_avg`, `pp_stddev`, `tg_avg`, `tg_stddev` (tokens/seg).
 
 ## 3. Implementación de `bml-bench`
@@ -27,21 +27,21 @@
 ## 4. Micro-benchmarks de operaciones individuales
 
 - [ ] 4.1 Benchmark: costo de una operación BML (`2^x - log2(y)`) vs FMA (`a*b + c`) vs `exp2` vs `log2` individuales, con `criterion`.
-- [ ] 4.2 Benchmark: costo de matmul BML RPN vs matmul naive vs matmul ndarray (ya existe en `compiler/benches/matrix_mul.rs`, reutilizar).
+- [ ] 4.2 Benchmark: costo de matmul BML RPN vs matmul naive vs matmul ndarray (ya existe en `crates/compiler/benches/matrix_mul.rs`, reutilizar).
 - [ ] 4.3 Benchmark: costo del hot loop BML con programas de distintos tamaños (10, 100, 1K, 10K, 100K ops).
-- [ ] 4.4 Benchmark: efecto del Hash Consing en programas con repetición estructural (ya existe en `compiler/benches/fma_vs_bml.rs`, reutilizar).
+- [ ] 4.4 Benchmark: efecto del Hash Consing en programas con repetición estructural (ya existe en `crates/compiler/benches/fma_vs_bml.rs`, reutilizar).
 
 ## 5. Ejecución del benchmark BML
 
 - [ ] 5.1 Ejecutar `bml-bench` con prompt processing equivalente al modelo GGUF usado en llama.cpp.
 - [ ] 5.2 Ejecutar `bml-bench` con generation equivalente.
-- [ ] 5.3 Guardar la salida JSON en `benchmarks/bml_results.json`.
+- [ ] 5.3 Guardar la salida JSON en `docs/benchmarks/bml_results.json`.
 - [ ] 5.4 Ejecutar los micro-benchmarks de operaciones individuales.
 - [ ] 5.5 Medir el tamaño del hot loop (`cargo asm` o tamaño del `.rlib`).
 
 ## 6. Análisis y reporte
 
-- [ ] 6.1 Crear `benchmarks/REPORT.md` con la siguiente estructura:
+- [ ] 6.1 Crear `docs/benchmarks/REPORT.md` con la siguiente estructura:
   - Metodología (hardware, modelo, parámetros, definición de token equivalente).
   - Resultados de llama.cpp (tabla con pp_avg, pp_stddev, tg_avg, tg_stddev).
   - Resultados de BML (tabla equivalente).

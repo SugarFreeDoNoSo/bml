@@ -29,4 +29,4 @@ _(Ninguna — el repo arranca desde el draft, no hay specs previas en `openspec/
 - **Dependencias:** `memmap2` (parser), `criterion` (benchmarks, dev-dependency), `perf` (tooling externo, no crate), posiblemente `tonic`/`gRPC` para el runtime distribuido (Hito 5).
 - **Tests:** se introducen pruebas unitarias puras del operador, benchmarks comparativos FMA vs BML, pruebas de estrés multicore con `perf`, y una prueba distribuida con `n` trabajadores leyendo `/dev/shm`.
 - **Documentación:** `draft.md` queda como fuente de verdad histórica; las specs vivas bajo `openspec/specs/` son el contrato funcional actual.
-- **No se rompe nada existente:** el único contenido previo del repo es `draft.md` y `fuentes/`, que se conservan intactos.
+- **No se rompe nada existente:** el único contenido previo del repo es `draft.md` y `references/`, que se conservan intactos.
