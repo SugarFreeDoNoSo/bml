@@ -12,6 +12,9 @@ flamegraph.svg
 # OpenSpec local artifacts
 openspec/.cache/
 
+# Proptest regressions (test artifacts)
+**/proptest-regressions/
+
 # Editor / OS
 .DS_Store
 .idea/

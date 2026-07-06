@@ -36,6 +36,7 @@ const DEFAULT_CAPACITY: usize = 64;
 /// usar un allocator custom en el runtime (Hito 5). Para el Hito 1,
 /// la alineación de la estructura es suficiente para los tests.
 #[repr(align(64))]
+#[derive(Debug, Clone)]
 pub struct NodeSoA {
     /// Clase de cada nodo (`One` o `Bml`).
     pub kinds: Vec<NodeKind>,

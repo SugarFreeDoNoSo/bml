@@ -1,14 +1,18 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! # bml-compiler
+//!
+//! Compilador BML: transforma tensores parseados en un DAG estático,
+//! aplica **Hash Consing** para deduplicar sub-árboles BML idénticos,
+//! linealiza el DAG en Notación Polaca Inversa (RPN), y aplica
+//! micro-fragmentación AOT para que el binario exportado (`.bmlgraph`)
+//! caiga bajo el umbral de caché objetivo.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#![deny(unsafe_code)]
+#![warn(missing_docs)]
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod dag;
+pub mod hash_cons;
+pub mod rpn;
+
+pub use dag::Dag;
+pub use hash_cons::HashConsRegistry;
+pub use rpn::{linearize, RpnOp, RpnProgram};

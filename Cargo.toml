@@ -19,3 +19,7 @@ lto = "fat"
 panic = "abort"
 codegen-units = 1
 strip = true
+
+[workspace.dependencies]
+criterion = "0.5"
+proptest = "1"

@@ -6,3 +6,12 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+bml-domain = { path = "../domain" }
+
+[dev-dependencies]
+criterion.workspace = true
+proptest.workspace = true
+
+[[bench]]
+name = "fma_vs_bml"
+harness = false

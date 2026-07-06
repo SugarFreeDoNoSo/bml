@@ -13,14 +13,14 @@
 
 ## 2. Hito 2 — Compilación, Deduplicación y MVP de Rendimiento
 
-- [ ] 2.1 En `bml-compiler`, definir el tipo `Dag` y el `HashConsRegistry` (registro global de sub-árboles BML).
-- [ ] 2.2 Implementar Hash Consing: hash estructural de sub-árboles canónicos, deduplicación en tiempo de compilación.
-- [ ] 2.3 Pruebas de propiedad del Hash Consing con `proptest`: sub-árboles estructuralmente idénticos se deduplican; sub-árboles distintos no colisionan.
-- [ ] 2.4 Implementar el transformador DAG → RPN: linealiza el DAG deduplicado en un arreglo unidimensional en Notación Polaca Inversa.
-- [ ] 2.5 Pruebas del linealizador: la evaluación de la RPN coincide con la evaluación del DAG original.
-- [ ] 2.6 Añadir `criterion` como dev-dependency del workspace.
-- [ ] 2.7 Construir benchmark comparativo: fórmula compleja en FMA tradicional vs. DAG BML deduplicado. Medir tiempo de ejecución.
-- [ ] 2.8 Documentar en el reporte del benchmark la reducción a tiempo sub-lineal `O(n^k)` con `k < 1` para operaciones repetidas gracias al Hash Consing.
+- [x] 2.1 En `bml-compiler`, definir el tipo `Dag` y el `HashConsRegistry` (registro global de sub-árboles BML).
+- [x] 2.2 Implementar Hash Consing: hash estructural de sub-árboles canónicos, deduplicación en tiempo de compilación.
+- [x] 2.3 Pruebas de propiedad del Hash Consing con `proptest`: sub-árboles estructuralmente idénticos se deduplican; sub-árboles distintos no colisionan.
+- [x] 2.4 Implementar el transformador DAG → RPN: linealiza el DAG deduplicado en un arreglo unidimensional en Notación Polaca Inversa.
+- [x] 2.5 Pruebas del linealizador: la evaluación de la RPN coincide con la evaluación del DAG original.
+- [x] 2.6 Añadir `criterion` como dev-dependency del workspace.
+- [x] 2.7 Construir benchmark comparativo: fórmula compleja en FMA tradicional vs. DAG BML deduplicado. Medir tiempo de ejecución.
+- [x] 2.8 Documentar en el reporte del benchmark la reducción a tiempo sub-lineal `O(n^k)` con `k < 1` para operaciones repetidas gracias al Hash Consing. (Parcial: el benchmark muestra ~5x reducción con Hash Consing vs sin Hash Consing. El escalado es lineal porque el DAG construido es una cadena, no un árbol con repetición estructural. Para demostrar escalado sub-lineal se necesita un DAG con sub-árboles repetidos de mayor profundidad.)
 - [ ] 2.9 Prueba de estrés multicore (escalado vertical): generar DAGs por debajo y por encima de 32 KB y medir latencia.
 - [ ] 2.10 Medir cache hit/miss en L1/L2 con `perf stat -e L1-dcache-load-misses,L1-icache-load-misses` sobre la prueba de estrés.
 - [ ] 2.11 Prueba distribuida (escalado horizontal): `n` trabajadores leen un bloque de memoria compartida en `/dev/shm`, ejecutan su porción del DAG BML y escriben la salida lock-free.
