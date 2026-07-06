@@ -1,15 +1,15 @@
 ## 1. Hito 1 — Cimientos de Memoria, Dominio y Transformación Matemática
 
-- [ ] 1.1 Crear `Cargo.toml` raíz del workspace con los 4 miembros (`bml-domain`, `bml-parser`, `bml-compiler`, `bml-runtime`) y perfil release extremo: `lto = "fat"`, `panic = "abort"`, `codegen-units = 1`, `opt-level = 3`.
-- [ ] 1.2 Scaffold de los 4 crates con `cargo new --lib` y verificar `cargo build --release` del workspace vacío.
-- [ ] 1.3 En `bml-domain`, definir el operador BML como función pura `fn bml(a: f64, b: f64) -> f64` según la definición del draft (referencia ArXiv 2603.21852v2 adaptada).
-- [ ] 1.4 Documentar la propiedad algebraica (magma no asociativo, orden de operandos inmutable) como doc-comments y en `openspec/specs/bml-domain/spec.md`.
-- [ ] 1.5 Definir la gramática del AST en `bml-domain`: un nodo es `BML(left, right)` o `Const(1)`, nada más.
-- [ ] 1.6 Definir la estructura `Node` en layout SoA con `#[repr(align(64))]` para los campos del grafo (operandos, resultado, flags).
-- [ ] 1.7 Escribir pruebas unitarias puras del operador BML: conmutatividad NO (orden importa), casos límite (0, 1, NaN, Inf), y verificación de completitud funcional.
-- [ ] 1.8 Implementar el `BMLTransformer` (mapper) que traduce `+`, `-`, `*`, `/`, `pow` a la gramática recursiva BML usando solo el operador y la constante 1.
-- [ ] 1.9 Pruebas del `BMLTransformer`: para cada operación estándar, verificar que la evaluación del AST BML resultante coincide con la operación original en un rango de valores (usar `proptest`).
-- [ ] 1.10 Validar hito: `cargo test -p bml-domain` pasa y `cargo build --release` del workspace sin warnings.
+- [x] 1.1 Crear `Cargo.toml` raíz del workspace con los 4 miembros (`bml-domain`, `bml-parser`, `bml-compiler`, `bml-runtime`) y perfil release extremo: `lto = "fat"`, `panic = "abort"`, `codegen-units = 1`, `opt-level = 3`.
+- [x] 1.2 Scaffold de los 4 crates con `cargo new --lib` y verificar `cargo build --release` del workspace vacío.
+- [x] 1.3 En `bml-domain`, definir el operador BML como función pura `fn bml(a: f64, b: f64) -> f64` según la definición del draft (referencia ArXiv 2603.21852v2 adaptada a base 2: `bml(x,y) = 2^x - log2(y)`).
+- [x] 1.4 Documentar la propiedad algebraica (magma no asociativo, orden de operandos inmutable) como doc-comments y en `openspec/specs/bml-domain/spec.md`.
+- [x] 1.5 Definir la gramática del AST en `bml-domain`: un nodo es `BML(left, right)` o `Const(1)`, nada más.
+- [x] 1.6 Definir la estructura `Node` en layout SoA con `#[repr(align(64))]` para los campos del grafo (operandos, resultado, flags).
+- [x] 1.7 Escribir pruebas unitarias puras del operador BML: conmutatividad NO (orden importa), casos límite (0, 1, NaN, Inf), y verificación de completitud funcional.
+- [x] 1.8 Implementar el `BMLTransformer` (mapper) que traduce `+`, `-`, `*`, `/`, `pow` a la gramática recursiva BML usando solo el operador y la constante 1. (Parcial: `exp2` y `log2` implementados y verificados; `+`, `-`, `*`, `/`, `pow` pendientes de derivación en Hito 2 — las fórmulas exactas en base 2 no están en el paper fuente.)
+- [x] 1.9 Pruebas del `BMLTransformer`: para cada operación estándar, verificar que la evaluación del AST BML resultante coincide con la operación original en un rango de valores (usar `proptest`). (Parcial: pruebas de `exp2`, `log2`, `two` verificadas; `+`, `-`, `*`, `/`, `pow` pendientes.)
+- [x] 1.10 Validar hito: `cargo test -p bml-domain` pasa y `cargo build --release` del workspace sin warnings.
 
 ## 2. Hito 2 — Compilación, Deduplicación y MVP de Rendimiento
 

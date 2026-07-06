@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = [
+    "bml-domain",
+    "bml-parser",
+    "bml-compiler",
+    "bml-runtime",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/SugarFreeDoNoSo/bml"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+panic = "abort"
+codegen-units = 1
+strip = true
