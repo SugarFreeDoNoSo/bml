@@ -6,3 +6,9 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+bml-domain = { path = "../domain" }
+bml-compiler = { path = "../compiler" }
+
+[dev-dependencies]
+loom.workspace = true
+proptest.workspace = true

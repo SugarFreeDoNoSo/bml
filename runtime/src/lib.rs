@@ -1,14 +1,21 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! # bml-runtime
+//!
+//! Motor de ejecución L1 para grafos BML. Ejecuta programas RPN
+//! linealizados con:
+//!
+//! - **Cero allocs en hot path**: los buffers se inicializan una sola
+//!   vez al arrancar.
+//! - **Hot loop < 32 KB**: el intérprete RPN debe caber en L1i.
+//! - **Append-only**: cada evaluación escribe a una dirección
+//!   pre-asignada nueva, nunca sobrescribe.
+//! - **RPC distribuido**: interfaz para transmitir fragmentos
+//!   `.bmlgraph` entre nodos.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#![deny(unsafe_code)]
+#![warn(missing_docs)]
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod hot_loop;
+pub mod runtime;
+
+pub use hot_loop::HotLoop;
+pub use runtime::Runtime;

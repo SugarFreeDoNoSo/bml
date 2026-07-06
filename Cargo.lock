@@ -76,6 +76,12 @@ dependencies = [
 [[package]]
 name = "bml-runtime"
 version = "0.1.0"
+dependencies = [
+ "bml-compiler",
+ "bml-domain",
+ "loom",
+ "proptest",
+]
 
 [[package]]
 name = "bumpalo"
