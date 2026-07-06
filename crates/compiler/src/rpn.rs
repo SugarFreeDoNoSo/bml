@@ -29,6 +29,12 @@ pub enum RpnOp {
     /// Se emite antes de un sub-árbol compartido para reutilizar el
     /// resultado ya computado sin recalcularlo.
     Dup,
+    /// Empuja el valor de una variable (input) a la pila.
+    /// El índice se resuelve desde el contexto de inputs.
+    Var(u32),
+    /// Empuja el valor de una constante (peso del modelo) a la pila.
+    /// El índice se resuelve desde el pool de pesos.
+    Const(u32),
     /// Repite un bloque de `body_len` operaciones `count` veces.
     ///
     /// El bloque empieza en la posición inmediatamente siguiente al
@@ -82,18 +88,28 @@ impl RpnProgram {
 
     /// Evalúa el programa RPN sobre una pila.
     ///
-    /// Esta es la evaluación de referencia. El hot loop del runtime
-    /// (Hito 5) hará lo mismo pero sobre buffers pre-asignados.
+    /// Esta es la evaluación de referencia sin variables ni constantes.
+    /// Para evaluar con inputs y pesos, usar [`Self::evaluate_with_ctx`].
     ///
     /// # Panics
     ///
     /// Panics si el programa es inválido (pila vacía al hacer `Bml` o `Dup`).
     pub fn evaluate(&self, x: f64) -> f64 {
+        let ctx = bml_domain::EvalContext::new(&[], &[]);
+        self.evaluate_with_ctx(&ctx)
+    }
+
+    /// Evalúa el programa RPN con un contexto de inputs y pesos.
+    ///
+    /// `Var(id)` se resuelve desde `ctx.inputs` y `Const(id)` desde `ctx.weights`.
+    pub fn evaluate_with_ctx(&self, ctx: &bml_domain::EvalContext) -> f64 {
         let mut stack: Vec<f64> = Vec::with_capacity(self.ops.len());
         let mut i = 0;
         while i < self.ops.len() {
             match self.ops[i] {
                 RpnOp::One => stack.push(1.0),
+                RpnOp::Var(id) => stack.push(ctx.get_var(id)),
+                RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                 RpnOp::Bml => {
                     let b = stack.pop().unwrap();
                     let a = stack.pop().unwrap();
@@ -107,11 +123,12 @@ impl RpnProgram {
                     let body_start = i + 1;
                     let body_end = body_start + body_len as usize;
                     for _ in 0..count {
-                        // Ejecutar el cuerpo del loop
                         let mut j = body_start;
                         while j < body_end {
                             match self.ops[j] {
                                 RpnOp::One => stack.push(1.0),
+                                RpnOp::Var(id) => stack.push(ctx.get_var(id)),
+                                RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                                 RpnOp::Bml => {
                                     let b = stack.pop().unwrap();
                                     let a = stack.pop().unwrap();
@@ -122,8 +139,6 @@ impl RpnProgram {
                                     stack.push(v);
                                 }
                                 RpnOp::Loop { .. } => {
-                                    // Loops anidados no soportados en el cuerpo por simplicidad.
-                                    // Se podrían soportar con un stack de loop frames.
                                     panic!("loops anidados no soportados");
                                 }
                             }
@@ -136,8 +151,6 @@ impl RpnProgram {
             }
             i += 1;
         }
-        // El parámetro x se reserva para nodos de variable (futuro).
-        let _ = x;
         stack.pop().unwrap_or(f64::NAN)
     }
 }
@@ -181,6 +194,8 @@ fn emit(soa: &NodeSoA, id: NodeId, visited: &mut [bool], program: &mut RpnProgra
     visited[idx] = true;
     match soa.kinds[idx] {
         NodeKind::One => program.push(RpnOp::One),
+        NodeKind::Var(var_id) => program.push(RpnOp::Var(var_id)),
+        NodeKind::Const(const_id) => program.push(RpnOp::Const(const_id)),
         NodeKind::Bml => {
             // Post-order: left, right, then Bml
             emit(soa, soa.lefts[idx], visited, program);
@@ -213,7 +228,7 @@ mod tests {
         assert_eq!(program.evaluate(0.0), 2.0);
         // Coincide con la evaluación del DAG
         let dag = crate::Dag::new(soa, root);
-        assert!((program.evaluate(0.0) - dag.evaluate(0.0)).abs() < 1e-12);
+        assert!((program.evaluate(0.0) - dag.evaluate(&bml_domain::EvalContext::new(&[], &[]))).abs() < 1e-12);
     }
 
     #[test]
@@ -228,7 +243,7 @@ mod tests {
         let program = linearize(&soa, root);
         assert!((program.evaluate(0.0) - 8.0).abs() < 1e-9);
         let dag = crate::Dag::new(soa, root);
-        assert!((program.evaluate(0.0) - dag.evaluate(0.0)).abs() < 1e-9);
+        assert!((program.evaluate(0.0) - dag.evaluate(&bml_domain::EvalContext::new(&[], &[]))).abs() < 1e-9);
     }
 
     #[test]
@@ -272,7 +287,7 @@ mod tests {
         let program = linearize(&soa, log);
         let dag = crate::Dag::new(soa, log);
         let rpn_val = program.evaluate(0.0);
-        let dag_val = dag.evaluate(0.0);
+        let dag_val = dag.evaluate(&bml_domain::EvalContext::new(&[], &[]));
         assert!(
             (rpn_val - dag_val).abs() < 1e-9,
             "RPN={rpn_val}, DAG={dag_val}"
@@ -299,7 +314,7 @@ mod tests {
             let program = linearize(&soa, node);
             let dag = crate::Dag::new(soa, node);
             let rpn_val = program.evaluate(0.0);
-            let dag_val = dag.evaluate(0.0);
+            let dag_val = dag.evaluate(&bml_domain::EvalContext::new(&[], &[]));
             // Ambos pueden ser inf o nan a profundidades grandes; comparamos
             // solo si son finitos, sino verificamos que ambos coinciden en
             // su clase (inf/nan).

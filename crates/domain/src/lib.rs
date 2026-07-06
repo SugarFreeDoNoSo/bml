@@ -24,7 +24,7 @@ pub mod operator;
 pub mod soa;
 pub mod transformer;
 
-pub use ast::{Node, NodeId, NodeKind};
+pub use ast::{ConstId, EvalContext, Node, NodeId, NodeKind, VarId};
 pub use operator::bml;
 pub use soa::NodeSoA;
 pub use transformer::BMLTransformer;

@@ -5,7 +5,7 @@
 //! construido, no se modifican sus nodos. La deduplicación de sub-árboles
 //! se realiza vía [`crate::HashConsRegistry`] durante la construcción.
 
-use bml_domain::{Node, NodeId, NodeKind, NodeSoA};
+use bml_domain::{EvalContext, Node, NodeId, NodeKind, NodeSoA};
 
 /// DAG estático de nodos BML.
 ///
@@ -46,8 +46,8 @@ impl Dag {
     /// Evalúa el DAG recursivamente (referencia, no hot loop).
     ///
     /// Equivalente a [`bml_domain::ast::evaluate`] pero leyendo del SoA.
-    pub fn evaluate(&self, x: f64) -> f64 {
-        evaluate_soa(&self.soa, self.root, x)
+    pub fn evaluate(&self, ctx: &EvalContext) -> f64 {
+        evaluate_soa(&self.soa, self.root, ctx)
     }
 }
 
@@ -55,13 +55,15 @@ impl Dag {
 ///
 /// Esta es la evaluación de referencia sobre el layout SoA. El hot loop
 /// del runtime (Hito 5) usará la representación RPN en su lugar.
-fn evaluate_soa(soa: &NodeSoA, id: NodeId, x: f64) -> f64 {
+fn evaluate_soa(soa: &NodeSoA, id: NodeId, ctx: &EvalContext) -> f64 {
     let idx = id as usize;
     match soa.kinds[idx] {
         NodeKind::One => 1.0,
+        NodeKind::Var(var_id) => ctx.get_var(var_id),
+        NodeKind::Const(const_id) => ctx.get_const(const_id),
         NodeKind::Bml => {
-            let l = evaluate_soa(soa, soa.lefts[idx], x);
-            let r = evaluate_soa(soa, soa.rights[idx], x);
+            let l = evaluate_soa(soa, soa.lefts[idx], ctx);
+            let r = evaluate_soa(soa, soa.rights[idx], ctx);
             bml_domain::bml(l, r)
         }
     }
@@ -82,7 +84,8 @@ mod tests {
     #[test]
     fn evaluate_two() {
         let dag = build_two_dag();
-        assert!((dag.evaluate(0.0) - 2.0).abs() < 1e-12);
+        let ctx = EvalContext::new(&[], &[]);
+        assert!((dag.evaluate(&ctx) - 2.0).abs() < 1e-12);
     }
 
     #[test]
@@ -94,7 +97,8 @@ mod tests {
         let three = t.bml(two, two2);
         let root = t.exp2(three);
         let dag = Dag::new(t.into_soa(), root);
-        assert!((dag.evaluate(0.0) - 8.0).abs() < 1e-9);
+        let ctx = EvalContext::new(&[], &[]);
+        assert!((dag.evaluate(&ctx) - 8.0).abs() < 1e-9);
     }
 
     #[test]

@@ -224,6 +224,7 @@ impl Default for BMLTransformer {
 mod tests {
     use super::*;
     use crate::ast::evaluate;
+    use crate::ast::EvalContext;
     use crate::ast::Node;
     use crate::operator::ONE;
 
@@ -233,7 +234,7 @@ mod tests {
         let root = t.two();
         let soa = t.into_soa();
         let nodes: Vec<Node> = (0..soa.len() as NodeId).map(|i| soa.get(i)).collect();
-        assert!((evaluate(&nodes, root, 0.0) - 2.0).abs() < 1e-12);
+        assert!((evaluate(&nodes, root, &EvalContext::new(&[], &[])) - 2.0).abs() < 1e-12);
     }
 
     #[test]
@@ -247,7 +248,7 @@ mod tests {
         let exp = t.exp2(three); // 2^3 = 8
         let soa = t.into_soa();
         let nodes: Vec<Node> = (0..soa.len() as NodeId).map(|i| soa.get(i)).collect();
-        assert!((evaluate(&nodes, exp, 0.0) - 8.0).abs() < 1e-9);
+        assert!((evaluate(&nodes, exp, &EvalContext::new(&[], &[])) - 8.0).abs() < 1e-9);
     }
 
     #[test]
@@ -261,7 +262,7 @@ mod tests {
         let log = t.log2(eight); // log2(8) = 3
         let soa = t.into_soa();
         let nodes: Vec<Node> = (0..soa.len() as NodeId).map(|i| soa.get(i)).collect();
-        assert!((evaluate(&nodes, log, 0.0) - 3.0).abs() < 1e-9);
+        assert!((evaluate(&nodes, log, &EvalContext::new(&[], &[])) - 3.0).abs() < 1e-9);
     }
 
     #[test]
@@ -299,7 +300,7 @@ mod tests {
             let log = t.log2(pow); // log2(2^k) = k
             let soa = t.into_soa();
             let nodes: Vec<Node> = (0..soa.len() as NodeId).map(|i| soa.get(i)).collect();
-            let result = evaluate(&nodes, log, 0.0);
+            let result = evaluate(&nodes, log, &EvalContext::new(&[], &[]));
             assert!(
                 (result - k).abs() < 1e-9,
                 "log2(2^{k}) = {result}, expected {k}"
@@ -329,7 +330,7 @@ mod tests {
         let one = t.one();
         let soa = t.into_soa();
         let nodes: Vec<Node> = (0..soa.len() as NodeId).map(|i| soa.get(i)).collect();
-        assert_eq!(evaluate(&nodes, one, 0.0), ONE);
+        assert_eq!(evaluate(&nodes, one, &EvalContext::new(&[], &[])), ONE);
     }
 
     // =====================================================================
@@ -340,7 +341,7 @@ mod tests {
     fn eval_node(t: BMLTransformer, root: NodeId) -> f64 {
         let soa = t.into_soa();
         let nodes: Vec<Node> = (0..soa.len() as NodeId).map(|i| soa.get(i)).collect();
-        evaluate(&nodes, root, 0.0)
+        evaluate(&nodes, root, &EvalContext::new(&[], &[]))
     }
 
     #[test]

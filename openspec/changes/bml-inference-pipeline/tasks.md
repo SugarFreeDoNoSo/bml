@@ -4,13 +4,13 @@
 - [ ] 0.2 Extender parser GGUF: decodificar tensor infos (nombre, n_dims, dims, data_type, offset de cada tensor).
 - [ ] 0.3 Extender parser GGUF: acceso a datos del tensor via slice sobre el mmap (zero-copy).
 - [ ] 0.4 Extender parser GGUF: leer `general.architecture` para saber si es llama, qwen, etc.
-- [ ] 0.5 Extender AST: añadir `Var(id)` para representar inputs variables (tokens del prompt).
-- [ ] 0.6 Extender AST: añadir `Const(f64)` para representar pesos del modelo (constantes arbitrarias).
-- [ ] 0.7 Actualizar gramática: `S -> 1 | Var(id) | Const(f64) | BML(S, S)`.
-- [ ] 0.8 Actualizar `evaluate()` para resolver `Var` desde un contexto de inputs y `Const` desde un pool de pesos.
-- [ ] 0.9 Actualizar `RpnOp` con `Var(u32)` y `Const(u32)` (índices al pool de inputs/pesos).
-- [ ] 0.10 Actualizar hot loop del runtime para resolver `Var` y `Const` desde buffers pre-asignados.
-- [ ] 0.11 Pruebas: construir un DAG con `Var` y `Const`, evaluarlo con inputs distintos, verificar resultados.
+- [x] 0.5 Extender AST: añadir `Var(id)` para representar inputs variables (tokens del prompt).
+- [x] 0.6 Extender AST: añadir `Const(f64)` para representar pesos del modelo (constantes arbitrarias).
+- [x] 0.7 Actualizar gramática: `S -> 1 | Var(id) | Const(f64) | BML(S, S)`.
+- [x] 0.8 Actualizar `evaluate()` para resolver `Var` desde un contexto de inputs y `Const` desde un pool de pesos.
+- [x] 0.9 Actualizar `RpnOp` con `Var(u32)` y `Const(u32)` (índices al pool de inputs/pesos).
+- [x] 0.10 Actualizar hot loop del runtime para resolver `Var` y `Const` desde buffers pre-asignados.
+- [x] 0.11 Pruebas: construir un DAG con `Var` y `Const`, evaluarlo con inputs distintos, verificar resultados.
 
 ## 1. Derivación de fórmulas BML para operaciones del transformer
 

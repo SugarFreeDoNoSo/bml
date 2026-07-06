@@ -48,6 +48,8 @@ fn serialize_program(program: &RpnProgram) -> Vec<u8> {
             RpnOp::Bml => 1,
             RpnOp::Dup => 2,
             RpnOp::Loop { .. } => 3,
+            RpnOp::Var(_) => 4,
+            RpnOp::Const(_) => 5,
         };
         bytes.push(tag);
     }
@@ -64,6 +66,8 @@ fn deserialize_program(bytes: &[u8]) -> RpnProgram {
             0 => RpnOp::One,
             1 => RpnOp::Bml,
             2 => RpnOp::Dup,
+            // Tags 3/4/5 no soportados en este serializador simple de test.
+            // Los programas de test solo usan One/Bml/Dup.
             _ => panic!("tag desconocido: {tag}"),
         };
         ops.push(op);

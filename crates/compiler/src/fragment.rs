@@ -77,10 +77,18 @@ impl Fragment {
     /// una pila preexistente (que puede tener valores de fragmentos
     /// anteriores) y la modifica in-place.
     pub fn evaluate_on_stack(&self, stack: &mut Vec<f64>) {
+        let ctx = bml_domain::EvalContext::new(&[], &[]);
+        self.evaluate_on_stack_with_ctx(stack, &ctx);
+    }
+
+    /// Evalúa el fragmento sobre una pila con contexto de inputs y pesos.
+    pub fn evaluate_on_stack_with_ctx(&self, stack: &mut Vec<f64>, ctx: &bml_domain::EvalContext) {
         let mut i = 0;
         while i < self.ops.len() {
             match self.ops[i] {
                 RpnOp::One => stack.push(1.0),
+                RpnOp::Var(id) => stack.push(ctx.get_var(id)),
+                RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                 RpnOp::Bml => {
                     let b = stack.pop().unwrap();
                     let a = stack.pop().unwrap();
@@ -98,6 +106,8 @@ impl Fragment {
                         while j < body_end {
                             match self.ops[j] {
                                 RpnOp::One => stack.push(1.0),
+                                RpnOp::Var(id) => stack.push(ctx.get_var(id)),
+                                RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                                 RpnOp::Bml => {
                                     let b = stack.pop().unwrap();
                                     let a = stack.pop().unwrap();
@@ -197,6 +207,14 @@ impl BmlGraph {
                         bytes.extend_from_slice(&count.to_le_bytes());
                         bytes.extend_from_slice(&body_len.to_le_bytes());
                     }
+                    RpnOp::Var(id) => {
+                        bytes.push(4);
+                        bytes.extend_from_slice(&id.to_le_bytes());
+                    }
+                    RpnOp::Const(id) => {
+                        bytes.push(5);
+                        bytes.extend_from_slice(&id.to_le_bytes());
+                    }
                 }
             }
         }
@@ -248,6 +266,22 @@ impl BmlGraph {
                             u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
                         offset += 4;
                         RpnOp::Loop { count, body_len }
+                    }
+                    4 => {
+                        if offset + 4 > bytes.len() {
+                            return Err("offset fuera de rango leyendo Var".to_string());
+                        }
+                        let id = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                        offset += 4;
+                        RpnOp::Var(id)
+                    }
+                    5 => {
+                        if offset + 4 > bytes.len() {
+                            return Err("offset fuera de rango leyendo Const".to_string());
+                        }
+                        let id = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                        offset += 4;
+                        RpnOp::Const(id)
                     }
                     _ => return Err(format!("tag desconocido: {tag}")),
                 };

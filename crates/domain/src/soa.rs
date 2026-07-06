@@ -16,7 +16,7 @@
 //! a 64 bytes al inicio, de forma que el primer elemento de cada campo
 //! caiga al inicio de una línea de caché.
 
-use crate::ast::{Node, NodeId, NodeKind};
+use crate::ast::{ConstId, Node, NodeId, NodeKind, VarId};
 
 /// Capacidad inicial por defecto de cada arreglo SoA.
 const DEFAULT_CAPACITY: usize = 64;
@@ -92,6 +92,20 @@ impl NodeSoA {
         id
     }
 
+    /// Agrega un nodo de variable `Var(var_id)` y retorna su `NodeId`.
+    pub fn push_var(&mut self, var_id: VarId) -> NodeId {
+        let id = self.len() as NodeId;
+        self.push(Node::var(id, var_id));
+        id
+    }
+
+    /// Agrega un nodo de constante `Const(const_id)` y retorna su `NodeId`.
+    pub fn push_const(&mut self, const_id: ConstId) -> NodeId {
+        let id = self.len() as NodeId;
+        self.push(Node::const_(id, const_id));
+        id
+    }
+
     /// Agrega un nodo `BML(left, right)` y retorna su `NodeId`.
     pub fn push_bml(&mut self, left: NodeId, right: NodeId) -> NodeId {
         let id = self.len() as NodeId;
@@ -105,6 +119,8 @@ impl NodeSoA {
         let kind = self.kinds[idx];
         match kind {
             NodeKind::One => Node::one(id),
+            NodeKind::Var(var_id) => Node::var(id, var_id),
+            NodeKind::Const(const_id) => Node::const_(id, const_id),
             NodeKind::Bml => Node::bml(id, self.lefts[idx], self.rights[idx]),
         }
     }

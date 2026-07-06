@@ -53,13 +53,21 @@ impl HotLoop {
     /// sobre `RpnOp`. El código compilado debe ser < 32 KB.
     #[inline]
     pub fn execute(&mut self, program: &RpnProgram, x: f64) -> f64 {
+        let ctx = bml_domain::EvalContext::new(&[], &[]);
+        self.execute_with_ctx(program, &ctx)
+    }
+
+    /// Ejecuta un programa RPN con contexto de inputs y pesos.
+    #[inline]
+    pub fn execute_with_ctx(&mut self, program: &RpnProgram, ctx: &bml_domain::EvalContext) -> f64 {
         self.stack.clear();
-        let _ = x; // reservado para nodos de variable (futuro)
 
         let mut i = 0;
         while i < program.ops.len() {
             match program.ops[i] {
                 RpnOp::One => self.stack.push(1.0),
+                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
+                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
                 RpnOp::Bml => {
                     let len = self.stack.len();
                     let b = self.stack[len - 1];
@@ -80,6 +88,8 @@ impl HotLoop {
                         while j < body_end {
                             match program.ops[j] {
                                 RpnOp::One => self.stack.push(1.0),
+                                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
+                                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
                                 RpnOp::Bml => {
                                     let len = self.stack.len();
                                     let b = self.stack[len - 1];
@@ -116,10 +126,23 @@ impl HotLoop {
     /// el estado de la pila entre ellos.
     #[inline]
     pub fn execute_fragment(&mut self, fragment: &Fragment) {
+        let ctx = bml_domain::EvalContext::new(&[], &[]);
+        self.execute_fragment_with_ctx(fragment, &ctx);
+    }
+
+    /// Ejecuta un fragmento con contexto de inputs y pesos.
+    #[inline]
+    pub fn execute_fragment_with_ctx(
+        &mut self,
+        fragment: &Fragment,
+        ctx: &bml_domain::EvalContext,
+    ) {
         let mut i = 0;
         while i < fragment.ops.len() {
             match fragment.ops[i] {
                 RpnOp::One => self.stack.push(1.0),
+                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
+                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
                 RpnOp::Bml => {
                     let len = self.stack.len();
                     let b = self.stack[len - 1];
@@ -140,6 +163,8 @@ impl HotLoop {
                         while j < body_end {
                             match fragment.ops[j] {
                                 RpnOp::One => self.stack.push(1.0),
+                                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
+                                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
                                 RpnOp::Bml => {
                                     let len = self.stack.len();
                                     let b = self.stack[len - 1];
@@ -172,10 +197,20 @@ impl HotLoop {
     /// La pila se mantiene entre fragmentos.
     #[inline]
     pub fn execute_fragments(&mut self, fragments: &[Fragment], x: f64) -> f64 {
+        let ctx = bml_domain::EvalContext::new(&[], &[]);
+        self.execute_fragments_with_ctx(fragments, &ctx)
+    }
+
+    /// Ejecuta una lista de fragmentos con contexto.
+    #[inline]
+    pub fn execute_fragments_with_ctx(
+        &mut self,
+        fragments: &[Fragment],
+        ctx: &bml_domain::EvalContext,
+    ) -> f64 {
         self.stack.clear();
-        let _ = x;
         for fragment in fragments {
-            self.execute_fragment(fragment);
+            self.execute_fragment_with_ctx(fragment, ctx);
         }
         self.stack.pop().unwrap_or(f64::NAN)
     }
