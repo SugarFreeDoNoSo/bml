@@ -1,9 +1,9 @@
 ## 0. Bloqueadores: parser GGUF completo y AST con variables/constantes
 
-- [ ] 0.1 Extender parser GGUF: decodificar metadatos KV (pares clave-valor con tipos: string, int, float, array).
-- [ ] 0.2 Extender parser GGUF: decodificar tensor infos (nombre, n_dims, dims, data_type, offset de cada tensor).
-- [ ] 0.3 Extender parser GGUF: acceso a datos del tensor via slice sobre el mmap (zero-copy).
-- [ ] 0.4 Extender parser GGUF: leer `general.architecture` para saber si es llama, qwen, etc.
+- [x] 0.1 Extender parser GGUF: decodificar metadatos KV (pares clave-valor con tipos: string, int, float, array).
+- [x] 0.2 Extender parser GGUF: decodificar tensor infos (nombre, n_dims, dims, data_type, offset de cada tensor).
+- [x] 0.3 Extender parser GGUF: acceso a datos del tensor via slice sobre el mmap (zero-copy).
+- [x] 0.4 Extender parser GGUF: leer `general.architecture` para saber si es llama, qwen, etc.
 - [x] 0.5 Extender AST: añadir `Var(id)` para representar inputs variables (tokens del prompt).
 - [x] 0.6 Extender AST: añadir `Const(f64)` para representar pesos del modelo (constantes arbitrarias).
 - [x] 0.7 Actualizar gramática: `S -> 1 | Var(id) | Const(f64) | BML(S, S)`.
