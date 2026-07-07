@@ -65,6 +65,19 @@ impl Runtime {
         result
     }
 
+    /// Ejecuta un `BmlGraph` con contexto de inputs y pesos.
+    pub fn execute_graph_with_ctx(
+        &mut self,
+        graph: &BmlGraph,
+        ctx: &bml_domain::EvalContext,
+    ) -> f64 {
+        let result = self
+            .hot_loop
+            .execute_fragments_with_ctx(&graph.fragments, ctx);
+        self.write_result(result);
+        result
+    }
+
     /// Ejecuta un fragmento individual sobre la pila actual.
     pub fn execute_fragment(&mut self, fragment: &Fragment) {
         self.hot_loop.execute_fragment(fragment);

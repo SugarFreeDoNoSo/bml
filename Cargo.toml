@@ -7,6 +7,8 @@ members = [
     "crates/runtime",
     "crates/bench",
     "crates/tests",
+    "crates/api",
+    "crates/cli",
 ]
 
 [workspace.package]
@@ -28,3 +30,8 @@ proptest = "1"
 ndarray = "0.16"
 loom = "0.7"
 crossbeam = "0.8"
+axum = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4", features = ["derive"] }

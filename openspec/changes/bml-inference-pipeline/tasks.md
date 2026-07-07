@@ -46,17 +46,17 @@
 
 ## 4. API externa + CLI (HTTP + SSE, OpenAI-compatible)
 
-- [ ] 4.1 Crear `crates/api/` como nuevo miembro del workspace con binario `bml-server`.
-- [ ] 4.2 Añadir `axum` + `serde_json` como dependencias (ligero, no toca el hot loop).
-- [ ] 4.3 Implementar endpoint `POST /v1/completions` compatible con OpenAI: `{"prompt": "...", "max_tokens": 10, "stream": true}`.
-- [ ] 4.4 Implementar streaming via SSE (Server-Sent Events): `data: {"token": "..."}\n\n`.
+- [x] 4.1 Crear `crates/api/` como nuevo miembro del workspace con binario `bml-server`.
+- [x] 4.2 Añadir `axum` + `serde_json` como dependencias (ligero, no toca el hot loop).
+- [x] 4.3 Implementar endpoint `POST /v1/completions` compatible con OpenAI: `{"prompt": "...", "max_tokens": 10, "stream": true}`.
+- [x] 4.4 Implementar streaming via SSE (Server-Sent Events): `data: {"token": "..."}\n\n`.
 - [ ] 4.5 Implementar batching: múltiples requests HTTP se encolan en el scheduler (Capa 2).
 - [ ] 4.6 Implementar backpressure: si la cola está llena, retornar HTTP 429.
-- [ ] 4.7 Crear `crates/cli/` con binario `bml-cli` (flags `-m`, `-p`, `-n`, `-t`, `--temp`, `-c`).
-- [ ] 4.8 Implementar `bml-cli` que carga `.bmlgraph`, ejecuta inferencia local (sin servidor), produce texto.
-- [ ] 4.9 Implementar sampling greedy + temperatura básica.
-- [ ] 4.10 Pruebas: `bml-cli -m model.bmlgraph/ -p "Hello" -n 10` produce texto.
-- [ ] 4.11 Pruebas: `curl -X POST http://localhost:8080/v1/completions -d '{"prompt":"Hello","stream":true}'` recibe tokens via SSE.
+- [x] 4.7 Crear `crates/cli/` con binario `bml-cli` (flags `-m`, `-p`, `-n`, `-t`, `--temp`, `-c`).
+- [x] 4.8 Implementar `bml-cli` que carga `.bmlgraph`, ejecuta inferencia local (sin servidor), produce texto.
+- [x] 4.9 Implementar sampling greedy + temperatura básica.
+- [x] 4.10 Pruebas: `bml-cli -m model.bmlgraph/ -p "Hello" -n 10` produce texto.
+- [x] 4.11 Pruebas: `curl -X POST http://localhost:8080/v1/completions -d '{"prompt":"Hello","stream":true}'` recibe tokens via SSE.
 
 ## 5. Scheduler con batching dinámico
 
