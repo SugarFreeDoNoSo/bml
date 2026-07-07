@@ -7,6 +7,7 @@
 ///
 /// Tiene `n_slots` slots, cada uno de `slot_size` elementos `f64`.
 /// Todos pre-asignados al crear el buffer.
+#[derive(Debug)]
 pub struct ResultBuffer {
     /// Datos planos: slot[i] está en data[i*slot_size..(i+1)*slot_size].
     data: Vec<f64>,

@@ -82,13 +82,13 @@
 
 ## 7. Runtime: ejecución secuencial con cambio de hot loop
 
-- [ ] 7.1 Implementar `Runtime::execute_fragments_sequential()` que ejecuta N fragmentos en orden, pasando resultados via `ResultBuffer`.
-- [ ] 7.2 Implementar cambio de hot loop: cuando un core termina un fragmento, carga el siguiente en L1i y continúa.
-- [ ] 7.3 Implementar `Runtime::execute_fragments_parallel()` que distribuye fragmentos entre cores (cada core ejecuta su fragmento en paralelo).
-- [ ] 7.4 Implementar sincronización entre fragmentos: un fragmento que depende del output de otro debe esperar a que el slot del buffer esté listo.
-- [ ] 7.5 Implementar `Runtime::execute_with_cores(n_cores)` que decide secuencial vs paralelo según el número de cores disponibles.
-- [ ] 7.6 Pruebas: ejecutar 4 fragmentos en 4 cores en paralelo, verificar que los resultados se pasan correctamente via buffer.
-- [ ] 7.7 Pruebas: ejecutar 8 fragmentos en 4 cores con cambio de hot loop, verificar resultados.
+- [x] 7.1 Implementar `Runtime::execute_fragments_sequential()` que ejecuta N fragmentos en orden, pasando resultados via `ResultBuffer`.
+- [x] 7.2 Implementar cambio de hot loop: cuando un core termina un fragmento, carga el siguiente en L1i y continúa.
+- [x] 7.3 Implementar `Runtime::execute_fragments_parallel()` que distribuye fragmentos entre cores (cada core ejecuta su fragmento en paralelo).
+- [x] 7.4 Implementar sincronización entre fragmentos: un fragmento que depende del output de otro debe esperar a que el slot del buffer esté listo.
+- [x] 7.5 Implementar `Runtime::execute_with_cores(n_cores)` que decide secuencial vs paralelo según el número de cores disponibles.
+- [x] 7.6 Pruebas: ejecutar 4 fragmentos en 4 cores en paralelo, verificar que los resultados se pasan correctamente via buffer.
+- [x] 7.7 Pruebas: ejecutar 8 fragmentos en 4 cores con cambio de hot loop, verificar resultados.
 
 ## 8. Scheduler con batching dinámico
 

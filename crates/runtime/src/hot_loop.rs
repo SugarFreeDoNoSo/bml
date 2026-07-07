@@ -93,9 +93,9 @@ impl HotLoop {
                 }
                 RpnOp::Bml => {
                     let len = self.stack.len();
-                    let b = self.stack[len - 1];
-                    let a = self.stack[len - 2];
-                    self.stack.truncate(len - 2);
+                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                    if len >= 2 { self.stack.truncate(len - 2); }
                     self.stack.push(bml_domain::bml(a, b));
                 }
                 RpnOp::Dup => {
@@ -106,7 +106,8 @@ impl HotLoop {
                 RpnOp::Loop { count, body_len } => {
                     let body_start = i + 1;
                     let body_end = body_start + body_len as usize;
-                    for _ in 0..count {
+                    for iter in 0..count {
+                        self.stack.push(iter as f64);
                         let mut j = body_start;
                         while j < body_end {
                             match program.ops[j] {
@@ -125,9 +126,9 @@ impl HotLoop {
                                 }
                                 RpnOp::Bml => {
                                     let len = self.stack.len();
-                                    let b = self.stack[len - 1];
-                                    let a = self.stack[len - 2];
-                                    self.stack.truncate(len - 2);
+                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                    if len >= 2 { self.stack.truncate(len - 2); }
                                     self.stack.push(bml_domain::bml(a, b));
                                 }
                                 RpnOp::Dup => {
@@ -201,9 +202,9 @@ impl HotLoop {
                 }
                 RpnOp::Bml => {
                     let len = self.stack.len();
-                    let b = self.stack[len - 1];
-                    let a = self.stack[len - 2];
-                    self.stack.truncate(len - 2);
+                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                    if len >= 2 { self.stack.truncate(len - 2); }
                     self.stack.push(bml_domain::bml(a, b));
                 }
                 RpnOp::Dup => {
@@ -214,7 +215,8 @@ impl HotLoop {
                 RpnOp::Loop { count, body_len } => {
                     let body_start = i + 1;
                     let body_end = body_start + body_len as usize;
-                    for _ in 0..count {
+                    for iter in 0..count {
+                        self.stack.push(iter as f64);
                         let mut j = body_start;
                         while j < body_end {
                             match fragment.ops[j] {
@@ -233,9 +235,9 @@ impl HotLoop {
                                 }
                                 RpnOp::Bml => {
                                     let len = self.stack.len();
-                                    let b = self.stack[len - 1];
-                                    let a = self.stack[len - 2];
-                                    self.stack.truncate(len - 2);
+                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                    if len >= 2 { self.stack.truncate(len - 2); }
                                     self.stack.push(bml_domain::bml(a, b));
                                 }
                                 RpnOp::Dup => {
