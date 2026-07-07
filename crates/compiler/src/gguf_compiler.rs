@@ -23,13 +23,14 @@
 //! 8. Serializar a `.bmlgraph`.
 
 use crate::eml;
-use crate::fragment::{fragment_program, BmlGraph};
+use crate::fragment::{fragment_program, BmlGraph, BMLGRAPH_MAGIC, BMLGRAPH_VERSION};
 use crate::hardware::HardwareSpec;
 use crate::hash_cons::HashConsRegistry;
 use crate::rpn::linearize;
 use bml_domain::{ConstId, NodeId, VarId};
 use bml_parser::{GgufDataType, GgufMetadataValue, GgufParser};
-use std::path::Path;
+use std::io::Write as IoWrite;
+use std::path::{Path, PathBuf};
 
 /// Configuración del modelo leída del GGUF.
 #[derive(Debug, Clone)]
@@ -268,6 +269,203 @@ pub fn read_tensor_f32(parser: &GgufParser, name: &str) -> Option<Vec<f32>> {
     }
 }
 
+/// Serializa un `CompilationResult` a un directorio `.bmlgraph`.
+///
+/// Crea un directorio con:
+/// - `header.bmlgraph`: magic, version, n_fragments, config, const_pool
+/// - `fragment_0.bmlgraph`, `fragment_1.bmlgraph`, ...: cada fragmento serializado
+pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result<(), String> {
+    std::fs::create_dir_all(output_dir).map_err(|e| format!("crear dir: {e}"))?;
+
+    // Header: magic, version, n_fragments, config, const_pool
+    let header_path = output_dir.join("header.bmlgraph");
+    let mut f = std::fs::File::create(&header_path).map_err(|e| format!("crear header: {e}"))?;
+
+    // Magic y version
+    f.write_all(&BMLGRAPH_MAGIC.to_le_bytes())
+        .map_err(|e| format!("write magic: {e}"))?;
+    f.write_all(&BMLGRAPH_VERSION.to_le_bytes())
+        .map_err(|e| format!("write version: {e}"))?;
+
+    // Número de fragmentos
+    f.write_all(&(result.num_fragments as u32).to_le_bytes())
+        .map_err(|e| format!("write n_frag: {e}"))?;
+
+    // Config del modelo
+    let arch_bytes = result.config.architecture.as_bytes();
+    f.write_all(&(arch_bytes.len() as u64).to_le_bytes())
+        .map_err(|e| format!("write arch len: {e}"))?;
+    f.write_all(arch_bytes)
+        .map_err(|e| format!("write arch: {e}"))?;
+    f.write_all(&result.config.n_layers.to_le_bytes())
+        .map_err(|e| format!("write n_layers: {e}"))?;
+    f.write_all(&result.config.n_heads.to_le_bytes())
+        .map_err(|e| format!("write n_heads: {e}"))?;
+    f.write_all(&result.config.n_embd.to_le_bytes())
+        .map_err(|e| format!("write n_embd: {e}"))?;
+    f.write_all(&result.config.context_length.to_le_bytes())
+        .map_err(|e| format!("write ctx: {e}"))?;
+    f.write_all(&result.config.vocab_size.to_le_bytes())
+        .map_err(|e| format!("write vocab: {e}"))?;
+
+    // Pool de constantes
+    f.write_all(&(result.const_pool.len() as u64).to_le_bytes())
+        .map_err(|e| format!("write pool len: {e}"))?;
+    for &val in &result.const_pool {
+        f.write_all(&val.to_le_bytes())
+            .map_err(|e| format!("write pool val: {e}"))?;
+    }
+
+    // Fragmentos
+    for (i, fragment) in result.graph.fragments.iter().enumerate() {
+        let frag_path = output_dir.join(format!("fragment_{i}.bmlgraph"));
+        let mut ff =
+            std::fs::File::create(&frag_path).map_err(|e| format!("crear frag {i}: {e}"))?;
+        ff.write_all(&(fragment.ops.len() as u32).to_le_bytes())
+            .map_err(|e| format!("write frag {i} len: {e}"))?;
+        for op in &fragment.ops {
+            use crate::rpn::RpnOp;
+            match op {
+                RpnOp::One => {
+                    ff.write_all(&[0]).map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::Zero => {
+                    ff.write_all(&[6]).map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::Bml => {
+                    ff.write_all(&[1]).map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::Dup => {
+                    ff.write_all(&[2]).map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::Loop { count, body_len } => {
+                    ff.write_all(&[3]).map_err(|e| format!("write op: {e}"))?;
+                    ff.write_all(&count.to_le_bytes())
+                        .map_err(|e| format!("write op: {e}"))?;
+                    ff.write_all(&body_len.to_le_bytes())
+                        .map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::Var(id) => {
+                    ff.write_all(&[4]).map_err(|e| format!("write op: {e}"))?;
+                    ff.write_all(&id.to_le_bytes())
+                        .map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::Const(id) => {
+                    ff.write_all(&[5]).map_err(|e| format!("write op: {e}"))?;
+                    ff.write_all(&id.to_le_bytes())
+                        .map_err(|e| format!("write op: {e}"))?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Carga un `.bmlgraph` desde un directorio.
+///
+/// Lee el header (config + const_pool) y los fragmentos.
+pub fn load_from_dir(input_dir: &Path) -> Result<(BmlGraph, Vec<f64>, ModelConfig), String> {
+    let header_path = input_dir.join("header.bmlgraph");
+    let header_bytes = std::fs::read(&header_path).map_err(|e| format!("leer header: {e}"))?;
+    if header_bytes.len() < 12 {
+        return Err("header demasiado pequeño".into());
+    }
+    let magic = u32::from_le_bytes(header_bytes[0..4].try_into().unwrap());
+    if magic != BMLGRAPH_MAGIC {
+        return Err(format!("magic inválido: 0x{magic:08X}"));
+    }
+    let _version = u32::from_le_bytes(header_bytes[4..8].try_into().unwrap());
+    let n_fragments = u32::from_le_bytes(header_bytes[8..12].try_into().unwrap()) as usize;
+    let mut offset = 12;
+
+    // Config
+    let arch_len =
+        u64::from_le_bytes(header_bytes[offset..offset + 8].try_into().unwrap()) as usize;
+    offset += 8;
+    let architecture =
+        String::from_utf8_lossy(&header_bytes[offset..offset + arch_len]).to_string();
+    offset += arch_len;
+    let n_layers = u32::from_le_bytes(header_bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+    let n_heads = u32::from_le_bytes(header_bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+    let n_embd = u32::from_le_bytes(header_bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+    let context_length = u32::from_le_bytes(header_bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+    let vocab_size = u32::from_le_bytes(header_bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+
+    // Const pool
+    let pool_len =
+        u64::from_le_bytes(header_bytes[offset..offset + 8].try_into().unwrap()) as usize;
+    offset += 8;
+    let mut const_pool = Vec::with_capacity(pool_len);
+    for _ in 0..pool_len {
+        let val = f64::from_le_bytes(header_bytes[offset..offset + 8].try_into().unwrap());
+        offset += 8;
+        const_pool.push(val);
+    }
+
+    let config = ModelConfig {
+        architecture,
+        n_layers,
+        n_heads,
+        n_embd,
+        context_length,
+        vocab_size,
+    };
+
+    // Fragmentos
+    use crate::fragment::Fragment;
+    use crate::rpn::RpnOp;
+    let mut fragments = Vec::with_capacity(n_fragments);
+    for i in 0..n_fragments {
+        let frag_path = input_dir.join(format!("fragment_{i}.bmlgraph"));
+        let frag_bytes = std::fs::read(&frag_path).map_err(|e| format!("leer frag {i}: {e}"))?;
+        let n_ops = u32::from_le_bytes(frag_bytes[0..4].try_into().unwrap()) as usize;
+        let mut ops = Vec::with_capacity(n_ops);
+        let mut off = 4;
+        for _ in 0..n_ops {
+            let tag = frag_bytes[off];
+            off += 1;
+            let op = match tag {
+                0 => RpnOp::One,
+                6 => RpnOp::Zero,
+                1 => RpnOp::Bml,
+                2 => RpnOp::Dup,
+                3 => {
+                    let count = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
+                    off += 4;
+                    let body_len = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
+                    off += 4;
+                    RpnOp::Loop { count, body_len }
+                }
+                4 => {
+                    let id = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
+                    off += 4;
+                    RpnOp::Var(id)
+                }
+                5 => {
+                    let id = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
+                    off += 4;
+                    RpnOp::Const(id)
+                }
+                _ => return Err(format!("tag desconocido: {tag}")),
+            };
+            ops.push(op);
+        }
+        fragments.push(Fragment { ops });
+    }
+
+    let graph = BmlGraph {
+        fragments,
+        threshold: 0,
+    };
+    Ok((graph, const_pool, config))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -339,5 +537,96 @@ mod tests {
         assert_eq!(values[0], 0.0);
         assert_eq!(values[7], 7.0);
         let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn serialize_load_roundtrip() {
+        let path = "/root/tinyllama.gguf";
+        if !Path::new(path).exists() {
+            eprintln!("SKIP: {path} no disponible");
+            return;
+        }
+        let hw = HardwareSpec::detect_local();
+        let result = compile_gguf(path, &hw).expect("compilar");
+
+        // Serializar a disco
+        let out_dir =
+            std::env::temp_dir().join(format!("bml_test_bmlgraph_{}", std::process::id()));
+        serialize_to_dir(&result, &out_dir).expect("serializar");
+
+        // Verificar que el directorio existe
+        assert!(out_dir.exists());
+        assert!(out_dir.join("header.bmlgraph").exists());
+
+        // Cargar de disco
+        let (graph, const_pool, config) = load_from_dir(&out_dir).expect("cargar");
+
+        // Verificar que los datos coinciden
+        assert_eq!(graph.num_fragments(), result.num_fragments);
+        assert_eq!(const_pool.len(), result.const_pool.len());
+        assert_eq!(config.architecture, result.config.architecture);
+        assert_eq!(config.n_layers, result.config.n_layers);
+
+        // Verificar que el grafo cargado evalúa igual que el original
+        let ctx = bml_domain::EvalContext::new(&[], &const_pool);
+        let val_original = result.graph.evaluate(0.0);
+        let val_loaded = graph.evaluate(0.0);
+        assert_eq!(
+            val_original.to_bits(),
+            val_loaded.to_bits(),
+            "evaluación no coincide: original={val_original}, loaded={val_loaded}"
+        );
+
+        // Limpiar
+        std::fs::remove_dir_all(&out_dir).ok();
+    }
+
+    #[test]
+    fn compile_serialize_load_tinyllama() {
+        let path = "/root/tinyllama.gguf";
+        if !Path::new(path).exists() {
+            eprintln!("SKIP: {path} no disponible");
+            return;
+        }
+        let hw = HardwareSpec::detect_local();
+        let result = compile_gguf(path, &hw).expect("compilar");
+
+        println!(
+            "Model: {} ({} layers, {} heads, {} embd)",
+            result.config.architecture,
+            result.config.n_layers,
+            result.config.n_heads,
+            result.config.n_embd
+        );
+        println!("Fragments: {}", result.num_fragments);
+        println!("Const pool: {} values", result.const_pool.len());
+
+        // Serializar
+        let out_dir =
+            std::env::temp_dir().join(format!("bml_tinyllama_bmlgraph_{}", std::process::id()));
+        serialize_to_dir(&result, &out_dir).expect("serializar");
+        println!("Serialized to: {:?}", out_dir);
+
+        // Listar archivos generados
+        for entry in std::fs::read_dir(&out_dir).unwrap() {
+            let entry = entry.unwrap();
+            let meta = entry.metadata().unwrap();
+            println!("  {:?} ({} bytes)", entry.file_name(), meta.len());
+        }
+
+        // Cargar y verificar
+        let (graph, const_pool, config) = load_from_dir(&out_dir).expect("cargar");
+        println!(
+            "Loaded: {} fragments, {} consts, arch={}",
+            graph.num_fragments(),
+            const_pool.len(),
+            config.architecture
+        );
+
+        assert!(graph.num_fragments() > 0);
+        assert!(config.n_layers > 0);
+
+        // Limpiar
+        std::fs::remove_dir_all(&out_dir).ok();
     }
 }

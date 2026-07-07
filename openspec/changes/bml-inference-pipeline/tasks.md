@@ -29,7 +29,7 @@
 - [x] 2.3 Implementar el cálculo del número mínimo de fragmentos: `max(1, ceil(total_ops / (L1_threshold * cores)))`.
 - [x] 2.4 Implementar la traducción de cada capa del transformer (attention, MLP, norm) a sub-DAGs BML usando los pesos como `Const` y los inputs como `Var`.
 - [x] 2.5 Concatenar los sub-DAGs y aplicar Hash Consing + fragmentación AOT existente.
-- [ ] 2.6 Serializar los `.bmlgraph` a disco (un archivo por fragmento o un directorio). Los pesos se referencian desde el GGUF mmap (zero-copy), no se copian.
+- [x] 2.6 Serializar los `.bmlgraph` a disco (un archivo por fragmento o un directorio). Los pesos se referencian desde el GGUF mmap (zero-copy), no se copian.
 - [x] 2.7 Pruebas: compilar un GGUF sintético y verificar que los `.bmlgraph` se generan correctamente.
 
 ## 3. Runtime distribuido con gRPC
