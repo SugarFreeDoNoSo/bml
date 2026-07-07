@@ -1,0 +1,58 @@
+[
+  {
+    "model": "TinyLlama-1.1B (BML extrapolated)",
+    "backend": "BML-RPN",
+    "cpu_info": "Intel Xeon Processor (Cascadelake)",
+    "n_threads": 4,
+    "n_prompt": 512,
+    "n_gen": 0,
+    "reps": 5,
+    "avg_ns": 183604312.8,
+    "stddev_ns": 4730621.37661451,
+    "avg_ts": 0.4954608331398808,
+    "stddev_ts": 0.012610910987959346,
+    "samples_ns": [
+      190585843.0,
+      188004300.0,
+      180442175.0,
+      179410880.0,
+      179578366.0
+    ],
+    "samples_ts": [
+      0.47699813101590605,
+      0.4835479343243261,
+      0.5038128747289313,
+      0.5067089070021333,
+      0.5062363186281075
+    ],
+    "bml_ops_per_token": 1100000000.0
+  },
+  {
+    "model": "TinyLlama-1.1B (BML extrapolated)",
+    "backend": "BML-RPN",
+    "cpu_info": "Intel Xeon Processor (Cascadelake)",
+    "n_threads": 4,
+    "n_prompt": 0,
+    "n_gen": 128,
+    "reps": 5,
+    "avg_ns": 182727550.4,
+    "stddev_ns": 5552677.07083517,
+    "avg_ts": 0.49795280921579793,
+    "stddev_ts": 0.014517624648543713,
+    "samples_ns": [
+      179940532.0,
+      178954892.0,
+      179368948.0,
+      193673941.0,
+      181699439.0
+    ],
+    "samples_ts": [
+      0.5052174176582457,
+      0.5080000322600341,
+      0.5068273629451788,
+      0.46939247706582743,
+      0.5003267561497035
+    ],
+    "bml_ops_per_token": 1100000000.0
+  }
+]
