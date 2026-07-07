@@ -32,39 +32,50 @@
 - [x] 2.6 Serializar los `.bmlgraph` a disco (un archivo por fragmento o un directorio). Los pesos se referencian desde el GGUF mmap (zero-copy), no se copian.
 - [x] 2.7 Pruebas: compilar un GGUF sintético y verificar que los `.bmlgraph` se generan correctamente.
 
-## 3. Runtime distribuido con gRPC
+## 3. Comunicación interna entre nodos (TCP raw + /dev/shm)
 
-- [ ] 3.1 Añadir `tonic`, `prost`, `tokio` como dependencias de `crates/runtime`.
-- [ ] 3.2 Definir `crates/runtime/proto/bml.proto` con servicios `ExecuteFragment`, `StealWork`, `ReportResult`, `HealthCheck`.
-- [ ] 3.3 Generar código gRPC con `tonic-build` en `build.rs`.
-- [ ] 3.4 Implementar `crates/runtime/src/distributed.rs` con el servidor gRPC.
-- [ ] 3.5 Implementar `crates/runtime/src/queue.rs` con cola lock-free (Chase-Lev o `crossbeam-deque`).
-- [ ] 3.6 Implementar work-stealing: cuando un nodo vacía su cola, roba trabajo de otro vía `StealWork`.
-- [ ] 3.7 Aislar el código gRPC en un módulo separado del hot loop (no impactar D5: < 32 KB).
-- [ ] 3.8 Pruebas de integración del RPC: un nodo envía un fragmento, otro lo recibe, lo ejecuta y devuelve el resultado.
+- [ ] 3.1 Implementar `crates/runtime/src/net.rs` con protocolo TCP raw: framing `[u32 msg_type][u32 payload_len][payload]`.
+- [ ] 3.2 Implementar tipos de mensaje: `ExecuteFragment`, `ReportResult`, `StealWork`, `HealthCheck`, `BatchRequest`, `BatchResult`.
+- [ ] 3.3 Implementar `NodeHandle` que envuelve `TcpStream` con métodos `send_fragment()`, `recv_result()`.
+- [ ] 3.4 Implementar `/dev/shm` para same-machine: fragmentos en memoria compartida, cero copia, cero serialización.
+- [ ] 3.5 Implementar `crates/runtime/src/queue.rs` con cola lock-free (`crossbeam-deque` Chase-Lev).
+- [ ] 3.6 Implementar work-stealing: cuando un nodo vacía su cola, roba trabajo de otro vía TCP `StealWork`.
+- [ ] 3.7 Aislar el código de red del hot loop (módulo separado, no impactar D5: < 32 KB).
+- [ ] 3.8 Pruebas de integración: 2 nodos se comunican via TCP, uno envía un fragmento, el otro lo ejecuta y devuelve el resultado.
+- [ ] 3.9 Pruebas de `/dev/shm`: 4 workers leen un fragmento de memoria compartida, lo ejecutan y escriben resultados append-only.
 
-## 4. CLI compatible con llama.cpp
+## 4. API externa + CLI (HTTP + SSE, OpenAI-compatible)
 
-- [ ] 4.1 Crear `crates/cli/` como nuevo miembro del workspace con binario `bml-cli`.
-- [ ] 4.2 Añadir `clap` como dependencia.
-- [ ] 4.3 Implementar flags core: `-m` (modelo), `-p` (prompt), `-n` (n tokens), `-t` (threads), `--temp` (temperatura), `-c` (context size).
-- [ ] 4.4 Implementar el flujo: cargar `.bmlgraph`, cargar GGUF mmap para pesos, ejecutar inferencia con inputs variables, producir texto.
-- [ ] 4.5 Implementar sampling greedy + temperatura básica.
-- [ ] 4.6 Pruebas: `bml-cli -m model.bmlgraph/ -p "Hello" -n 10` produce texto.
+- [ ] 4.1 Crear `crates/api/` como nuevo miembro del workspace con binario `bml-server`.
+- [ ] 4.2 Añadir `axum` + `serde_json` como dependencias (ligero, no toca el hot loop).
+- [ ] 4.3 Implementar endpoint `POST /v1/completions` compatible con OpenAI: `{"prompt": "...", "max_tokens": 10, "stream": true}`.
+- [ ] 4.4 Implementar streaming via SSE (Server-Sent Events): `data: {"token": "..."}\n\n`.
+- [ ] 4.5 Implementar batching: múltiples requests HTTP se encolan en el scheduler (Capa 2).
+- [ ] 4.6 Implementar backpressure: si la cola está llena, retornar HTTP 429.
+- [ ] 4.7 Crear `crates/cli/` con binario `bml-cli` (flags `-m`, `-p`, `-n`, `-t`, `--temp`, `-c`).
+- [ ] 4.8 Implementar `bml-cli` que carga `.bmlgraph`, ejecuta inferencia local (sin servidor), produce texto.
+- [ ] 4.9 Implementar sampling greedy + temperatura básica.
+- [ ] 4.10 Pruebas: `bml-cli -m model.bmlgraph/ -p "Hello" -n 10` produce texto.
+- [ ] 4.11 Pruebas: `curl -X POST http://localhost:8080/v1/completions -d '{"prompt":"Hello","stream":true}'` recibe tokens via SSE.
 
-## 5. Coordinador y workers
+## 5. Scheduler con batching dinámico
 
-- [ ] 5.1 Implementar el rol de coordinador: recibe el prompt, particiona el trabajo, agrega resultados.
-- [ ] 5.2 Implementar el rol de worker: ejecuta fragmentos, reporta resultados, roba trabajo.
-- [ ] 5.3 El coordinador también puede ejecutar fragmentos localmente.
-- [ ] 5.4 Pruebas: 1 coordinador + 3 workers ejecutan un `.bmlgraph` y producen el resultado correcto.
+- [ ] 5.1 Implementar `crates/runtime/src/scheduler.rs` con cola de requests (`crossbeam-channel`).
+- [ ] 5.2 Implementar batching dinámico: agrupa N prompts en una ventana de 10ms y los procesa juntos.
+- [ ] 5.3 Implementar distribución de batches a nodos: round-robin o least-loaded.
+- [ ] 5.4 Implementar el rol de coordinador: recibe batches, particiona el trabajo, agrega resultados.
+- [ ] 5.5 Implementar el rol de worker: ejecuta fragmentos, reporta resultados, roba trabajo.
+- [ ] 5.6 El coordinador también puede ejecutar fragmentos localmente.
+- [ ] 5.7 Pruebas: 1 coordinador + 3 workers ejecutan un `.bmlgraph` y producen el resultado correcto.
+- [ ] 5.8 Pruebas de batching: 10 requests concurrentes se agrupan en 1-2 batches.
 
 ## 6. Pruebas de concurrencia
 
 - [ ] 6.1 Pruebas con `loom` de la cola lock-free.
 - [ ] 6.2 Pruebas con `loom` del work-stealing.
 - [ ] 6.3 Pruebas de append-only bajo estrés multicore.
-- [ ] 6.4 Pruebas de que el hot loop no toca el stack gRPC (aislamiento).
+- [ ] 6.4 Pruebas de que el hot loop no toca el código de red (aislamiento).
+- [ ] 6.5 Pruebas de backpressure: saturar la cola y verificar HTTP 429.
 
 ## 7. Cierre
 

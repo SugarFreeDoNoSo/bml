@@ -5,7 +5,9 @@ El runtime BML actual (Hito 5) ejecuta programas RPN sobre un DAG fragmentado, p
 ## What Changes
 
 - **Compilador GGUF → `.bmlgraph`**: nuevo módulo en `crates/compiler/` que toma un archivo GGUF (parseado con `bml-parser`) y lo compila a un conjunto de archivos `.bmlgraph` fragmentados, optimizados para la máquina de compilación (número de cores, tamaños de caché L1/L2/L3).
-- **Runtime distribuido con gRPC**: nuevo módulo en `crates/runtime/` que expone una API gRPC para recibir fragmentos `.bmlgraph`, ejecutarlos, y coordinarse con otros nodos vía un sistema de colas (channel-based) que evita condiciones de carrera.
+- **Runtime distribuido con TCP raw + /dev/shm**: nuevo módulo en `crates/runtime/` que expone comunicación entre nodos via TCP raw (formato `.bmlgraph` nativo) para cross-machine y `/dev/shm` para same-machine, con sistema de colas lock-free y work-stealing.
+- **API externa HTTP + SSE**: nuevo crate `crates/api/` con `axum` que expone endpoint OpenAI-compatible `POST /v1/completions` con streaming SSE.
+- **Scheduler con batching dinámico**: nuevo módulo en `crates/runtime/` que agrupa múltiples prompts en batches para maximizar throughput.
 - **Sistema de colas interno**: cada nodo mantiene una cola de fragmentos pendientes; los nodos se "roban" trabajo entre sí (work-stealing) cuando su cola se vacía, sin locks (lock-free queue).
 - **API compatible con `llama.cpp`**: binario `bml-cli` que expone los mismos flags que `llama-cli` (`-m`, `-p`, `-n`, `-t`, `--temp`, etc.) y produce texto generado, de forma que BML sea un drop-in replacement.
 - **Empaquetado AOT**: el compilador genera el **número mínimo de fragmentos** optimizado para la máquina objetivo (detecta cores y caché en compile-time o con un flag `--target`).

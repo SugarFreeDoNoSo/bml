@@ -28,18 +28,15 @@ El runtime BML actual ejecuta programas RPN sobre DAGs fragmentados con Hash Con
 - **D1 — Compilador GGUF → BML por capa.** El transformer se compila capa por capa: cada capa (attention + MLP + norm) se traduce a un sub-DAG BML, y el compilador concatena los sub-DAGs. *Racional:* permite fragmentación natural por capa y paralelismo entre capas independientes.
 - **D2 — Traducción de operaciones estándar a BML.** Cada operación del transformer (matmul, RMSNorm, RoPE, softmax, SwiGLU) se traduce a la gramática BML usando el `BMLTransformer` del Hito 1. Las fórmulas exactas de `+`, `-`, `*`, `/`, `pow` en base 2 se derivan del Supplementary Information del paper. *Racional:* preserva la completitud funcional del operador BML.
 - **D3 — Número mínimo de fragmentos por máquina.** El compilador detecta el hardware objetivo (`num_cpus`, `/sys/devices/system/cpu/...`, `lscpu`) y calcula el número mínimo de fragmentos: `max(1, ceil(total_ops / (L1_threshold * cores)))`. *Racional:* cada core ejecuta un fragmento que cabe en su L1i.
-- **D4 — gRPC con tonic + tokio.** El runtime distribuido usa `tonic` (gRPC) sobre `tokio` (async runtime). *Racional:* es el stack gRPC estándar en Rust, con soporte para streaming bidireccional.
-- **D5 — Cola lock-free con work-stealing.** Cada nodo mantiene una cola local (lock-free, tipo Chase-Lev o `crossbeam-deque`) de fragmentos pendientes. Cuando un nodo vacía su cola, "roba" trabajo de otro nodo vía RPC `StealWork`. *Racional:* balancea carga sin locks centrales, evita cuellos de botella.
-- **D6 — Append-only para resultados.** Cada nodo escribe resultados a un buffer pre-asignado (patrón append-only del Hito 5). Los resultados se propagan al nodo coordinador vía RPC `ReportResult`. *Racional:* evita condiciones de carrera en escritura; cada nodo escribe solo a su buffer.
-- **D7 — Protocolo gRPC.** Se define `bml.proto` con servicios:
-  - `ExecuteFragment(FragmentRequest) -> FragmentResult`: ejecuta un fragmento y devuelve el resultado.
-  - `StealWork(StealRequest) -> StealResponse`: roba un fragmento de la cola del nodo remoto.
-  - `ReportResult(ResultRequest) -> Ack`: reporta un resultado al coordinador.
-  - `HealthCheck(Empty) -> HealthStatus`: verifica que un nodo está vivo.
-- **D8 — CLI compatible con llama.cpp.** `bml-cli` usa `clap` con los mismos flags que `llama-cli`: `-m` (modelo), `-p` (prompt), `-n` (n tokens), `-t` (threads), `--temp` (temperatura), `-c` (context size), `--top-k`, `--top-p`. *Racional:* drop-in replacement.
-- **D9 — Compilación AOT separada de ejecución.** El compilador genera los `.bmlgraph` en una fase separada (`bml-compile model.gguf --target local`), y el runtime los carga (`bml-cli -m model.bmlgraph/`). *Racional:* permite optimizar una vez y ejecutar muchas.
-- **D10 — Coordinador vs worker.** Un nodo actúa como coordinador (recibe el prompt, particiona el trabajo, agrega resultados) y los demás como workers (ejecutan fragmentos). El coordinador también puede ejecutar fragmentos. *Racional:* simplifica la topología sin un scheduler externo.
-- **D11 — Detección de hardware en compile-time.** El compilador acepta `--target local` (detecta hardware actual), `--target specs:<cores>:<L1>:<L2>:<L3>` (especifica manualmente), o `--target cloud-gcp-n2` (presets). *Racional:* flexibilidad para compilar en una máquina y ejecutar en otra.
+- **D4 — TCP raw + /dev/shm para comunicación interna.** El runtime distribuido usa TCP raw con formato `.bmlgraph` nativo para cross-machine, y `/dev/shm` para same-machine. *Racional:* gRPC (tonic + tokio + prost) añade ~2-3MB al binario y overhead de protobuf. TCP raw + formato nativo es 10x más rápido y cero deps. El hot loop queda puro.
+- **D5 — Cola lock-free con work-stealing.** Cada nodo mantiene una cola local (lock-free, tipo Chase-Lev o `crossbeam-deque`) de fragmentos pendientes. Cuando un nodo vacía su cola, "roba" trabajo de otro nodo vía TCP `StealWork`. *Racional:* balancea carga sin locks centrales, evita cuellos de botella.
+- **D6 — Append-only para resultados.** Cada nodo escribe resultados a un buffer pre-asignado (patrón append-only del Hito 5). Los resultados se propagan al nodo coordinador vía TCP `ReportResult`. *Racional:* evita condiciones de carrera en escritura; cada nodo escribe solo a su buffer.
+- **D7 — Protocolo TCP raw.** Framing: `[u32 msg_type][u32 payload_len][payload]`. Mensajes: `ExecuteFragment`, `ReportResult`, `StealWork`, `HealthCheck`, `BatchRequest`, `BatchResult`. *Racional:* mínimo overhead, sin serialización protobuf.
+- **D8 — API externa HTTP + SSE.** `axum` + `serde_json` para endpoint OpenAI-compatible `POST /v1/completions` con streaming SSE. *Racional:* compatible con cualquier cliente HTTP, streaming nativo, sin gRPC.
+- **D9 — Scheduler con batching dinámico.** `crossbeam-channel` para cola de requests. Agrupa N prompts en ventana de 10ms. *Racional:* maximiza throughput sin sacrificar latencia.
+- **D10 — Backpressure.** Si la cola del scheduler está llena, la API retorna HTTP 429. *Racional:* evita OOM bajo carga.
+- **D11 — CLI local.** `bml-cli` con `clap` ejecuta inferencia local sin servidor. *Racional:* drop-in replacement de `llama-cli` para uso interactivo.
+- **D12 — Arquitectura de 3 capas.** Capa 1: API HTTP (axum). Capa 2: Scheduler con batching (crossbeam). Capa 3: Nodos BML con TCP raw + hot loop puro. *Racional:* separa concerns, el hot loop no tiene deps de red.
 
 ## Risks / Trade-offs
 
