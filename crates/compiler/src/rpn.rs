@@ -37,6 +37,24 @@ pub enum RpnOp {
     /// Empuja el valor de una constante (peso del modelo) a la pila.
     /// El índice se resuelve desde el pool de pesos.
     Const(u32),
+    /// Empuja el valor de `Var(base + offset)` a la pila.
+    ///
+    /// `base` es fijo (del bytecode), `offset` se lee del tope de la pila
+    /// (y se consume). Esto permite indexación dinámica en loops:
+    /// el contador del loop determina qué peso/input leer.
+    VarIndexed {
+        /// Base del índice.
+        base: u32,
+    },
+    /// Escribe el tope de la pila al `ResultBuffer` en `slot[offset]`.
+    ///
+    /// `offset` se lee del tope de la pila (debajo del valor a escribir).
+    /// El valor a escribir queda en el nuevo tope después de consumir `offset`.
+    /// Esto permite que los loops escriban resultados por índice dinámico.
+    StoreResult {
+        /// Slot del buffer donde escribir.
+        slot: u32,
+    },
     /// Repite un bloque de `body_len` operaciones `count` veces.
     ///
     /// El bloque empieza en la posición inmediatamente siguiente al
@@ -113,6 +131,14 @@ impl RpnProgram {
                 RpnOp::Zero => stack.push(0.0),
                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                RpnOp::VarIndexed { base } => {
+                    let offset = stack.pop().unwrap_or(0.0) as u32;
+                    stack.push(0.0); // placeholder: sin buffer en evaluate_with_ctx
+                }
+                RpnOp::StoreResult { slot: _ } => {
+                    let _offset = stack.pop().unwrap_or(0.0);
+                    let _value = stack.pop().unwrap_or(0.0);
+                }
                 RpnOp::Bml => {
                     let b = stack.pop().unwrap();
                     let a = stack.pop().unwrap();
@@ -130,9 +156,17 @@ impl RpnProgram {
                         while j < body_end {
                             match self.ops[j] {
                                 RpnOp::One => stack.push(1.0),
-                RpnOp::Zero => stack.push(0.0),
+                                RpnOp::Zero => stack.push(0.0),
                                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                RpnOp::VarIndexed { base } => {
+                    let offset = stack.pop().unwrap_or(0.0) as u32;
+                    stack.push(0.0); // placeholder: sin buffer en evaluate_with_ctx
+                }
+                RpnOp::StoreResult { slot: _ } => {
+                    let _offset = stack.pop().unwrap_or(0.0);
+                    let _value = stack.pop().unwrap_or(0.0);
+                }
                                 RpnOp::Bml => {
                                     let b = stack.pop().unwrap();
                                     let a = stack.pop().unwrap();

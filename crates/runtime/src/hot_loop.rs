@@ -54,12 +54,25 @@ impl HotLoop {
     #[inline]
     pub fn execute(&mut self, program: &RpnProgram, x: f64) -> f64 {
         let ctx = bml_domain::EvalContext::new(&[], &[]);
-        self.execute_with_ctx(program, &ctx)
+        let mut buf = crate::buffer::ResultBuffer::new(0, 0);
+        self.execute_full(program, &ctx, &mut buf)
     }
 
     /// Ejecuta un programa RPN con contexto de inputs y pesos.
     #[inline]
     pub fn execute_with_ctx(&mut self, program: &RpnProgram, ctx: &bml_domain::EvalContext) -> f64 {
+        let mut buf = crate::buffer::ResultBuffer::new(0, 0);
+        self.execute_full(program, ctx, &mut buf)
+    }
+
+    /// Ejecuta un programa RPN con contexto, buffer de resultados, y pool de pesos.
+    #[inline]
+    pub fn execute_full(
+        &mut self,
+        program: &RpnProgram,
+        ctx: &bml_domain::EvalContext,
+        buf: &mut crate::buffer::ResultBuffer,
+    ) -> f64 {
         self.stack.clear();
 
         let mut i = 0;
@@ -69,6 +82,15 @@ impl HotLoop {
                 RpnOp::Zero => self.stack.push(0.0),
                 RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
+                RpnOp::VarIndexed { base } => {
+                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                    self.stack.push(buf.read_indexed(base, offset));
+                }
+                RpnOp::StoreResult { slot } => {
+                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                    let value = self.stack.pop().unwrap_or(f64::NAN);
+                    buf.write(slot, offset, value);
+                }
                 RpnOp::Bml => {
                     let len = self.stack.len();
                     let b = self.stack[len - 1];
@@ -92,6 +114,15 @@ impl HotLoop {
                                 RpnOp::Zero => self.stack.push(0.0),
                                 RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
+                                RpnOp::VarIndexed { base } => {
+                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                                    self.stack.push(buf.read_indexed(base, offset));
+                                }
+                                RpnOp::StoreResult { slot } => {
+                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                                    let value = self.stack.pop().unwrap_or(f64::NAN);
+                                    buf.write(slot, offset, value);
+                                }
                                 RpnOp::Bml => {
                                     let len = self.stack.len();
                                     let b = self.stack[len - 1];
@@ -129,7 +160,8 @@ impl HotLoop {
     #[inline]
     pub fn execute_fragment(&mut self, fragment: &Fragment) {
         let ctx = bml_domain::EvalContext::new(&[], &[]);
-        self.execute_fragment_with_ctx(fragment, &ctx);
+        let mut buf = crate::buffer::ResultBuffer::new(0, 0);
+        self.execute_fragment_full(fragment, &ctx, &mut buf);
     }
 
     /// Ejecuta un fragmento con contexto de inputs y pesos.
@@ -139,6 +171,18 @@ impl HotLoop {
         fragment: &Fragment,
         ctx: &bml_domain::EvalContext,
     ) {
+        let mut buf = crate::buffer::ResultBuffer::new(0, 0);
+        self.execute_fragment_full(fragment, ctx, &mut buf);
+    }
+
+    /// Ejecuta un fragmento con contexto, buffer, y pool completos.
+    #[inline]
+    pub fn execute_fragment_full(
+        &mut self,
+        fragment: &Fragment,
+        ctx: &bml_domain::EvalContext,
+        buf: &mut crate::buffer::ResultBuffer,
+    ) {
         let mut i = 0;
         while i < fragment.ops.len() {
             match fragment.ops[i] {
@@ -146,6 +190,15 @@ impl HotLoop {
                 RpnOp::Zero => self.stack.push(0.0),
                 RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
+                RpnOp::VarIndexed { base } => {
+                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                    self.stack.push(buf.read_indexed(base, offset));
+                }
+                RpnOp::StoreResult { slot } => {
+                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                    let value = self.stack.pop().unwrap_or(f64::NAN);
+                    buf.write(slot, offset, value);
+                }
                 RpnOp::Bml => {
                     let len = self.stack.len();
                     let b = self.stack[len - 1];
@@ -169,6 +222,15 @@ impl HotLoop {
                                 RpnOp::Zero => self.stack.push(0.0),
                                 RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
+                                RpnOp::VarIndexed { base } => {
+                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                                    self.stack.push(buf.read_indexed(base, offset));
+                                }
+                                RpnOp::StoreResult { slot } => {
+                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                                    let value = self.stack.pop().unwrap_or(f64::NAN);
+                                    buf.write(slot, offset, value);
+                                }
                                 RpnOp::Bml => {
                                     let len = self.stack.len();
                                     let b = self.stack[len - 1];
@@ -202,7 +264,8 @@ impl HotLoop {
     #[inline]
     pub fn execute_fragments(&mut self, fragments: &[Fragment], x: f64) -> f64 {
         let ctx = bml_domain::EvalContext::new(&[], &[]);
-        self.execute_fragments_with_ctx(fragments, &ctx)
+        let mut buf = crate::buffer::ResultBuffer::new(0, 0);
+        self.execute_fragments_full(fragments, &ctx, &mut buf)
     }
 
     /// Ejecuta una lista de fragmentos con contexto.
@@ -212,9 +275,21 @@ impl HotLoop {
         fragments: &[Fragment],
         ctx: &bml_domain::EvalContext,
     ) -> f64 {
+        let mut buf = crate::buffer::ResultBuffer::new(0, 0);
+        self.execute_fragments_full(fragments, ctx, &mut buf)
+    }
+
+    /// Ejecuta una lista de fragmentos con contexto y buffer completos.
+    #[inline]
+    pub fn execute_fragments_full(
+        &mut self,
+        fragments: &[Fragment],
+        ctx: &bml_domain::EvalContext,
+        buf: &mut crate::buffer::ResultBuffer,
+    ) -> f64 {
         self.stack.clear();
         for fragment in fragments {
-            self.execute_fragment_with_ctx(fragment, ctx);
+            self.execute_fragment_full(fragment, ctx, buf);
         }
         self.stack.pop().unwrap_or(f64::NAN)
     }

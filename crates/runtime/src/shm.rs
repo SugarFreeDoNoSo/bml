@@ -90,6 +90,14 @@ impl ShmChannel {
                     f.write_all(&[5])?;
                     f.write_all(&id.to_le_bytes())?;
                 }
+                RpnOp::VarIndexed { base } => {
+                    f.write_all(&[7])?;
+                    f.write_all(&base.to_le_bytes())?;
+                }
+                RpnOp::StoreResult { slot } => {
+                    f.write_all(&[8])?;
+                    f.write_all(&slot.to_le_bytes())?;
+                }
             }
         }
         f.flush()?;
@@ -139,6 +147,16 @@ impl ShmChannel {
                     let id = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
                     offset += 4;
                     RpnOp::Const(id)
+                }
+                7 => {
+                    let base = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                    offset += 4;
+                    RpnOp::VarIndexed { base }
+                }
+                8 => {
+                    let slot = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                    offset += 4;
+                    RpnOp::StoreResult { slot }
                 }
                 _ => {
                     return Err(io::Error::new(

@@ -530,6 +530,16 @@ pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result
                     ff.write_all(&id.to_le_bytes())
                         .map_err(|e| format!("write op: {e}"))?;
                 }
+                RpnOp::VarIndexed { base } => {
+                    ff.write_all(&[7]).map_err(|e| format!("write op: {e}"))?;
+                    ff.write_all(&base.to_le_bytes())
+                        .map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::StoreResult { slot } => {
+                    ff.write_all(&[8]).map_err(|e| format!("write op: {e}"))?;
+                    ff.write_all(&slot.to_le_bytes())
+                        .map_err(|e| format!("write op: {e}"))?;
+                }
             }
         }
     }

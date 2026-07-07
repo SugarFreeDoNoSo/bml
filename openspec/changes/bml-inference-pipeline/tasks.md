@@ -60,14 +60,14 @@
 
 ## 5. N hot loops + buffer circular entre cores
 
-- [ ] 5.1 Implementar `RpnOp::VarIndexed { base: u32 }` — indexación dinámica de pesos: lee `Var(base + offset)` donde `offset` viene del tope de la pila.
-- [ ] 5.2 Implementar `RpnOp::StoreResult { slot: u32, offset: u32 }` — escribe el tope de la pila al buffer de resultados en la posición `slot[offset]`.
-- [ ] 5.3 Implementar `crates/runtime/src/buffer.rs` con `ResultBuffer`: buffer circular pre-asignado de N slots, cada slot es un `Vec<f64>` de tamaño `n_embd`. Cero allocs en hot path.
-- [ ] 5.4 Implementar `ResultBuffer::write(slot, offset, value)` y `read(slot, offset) -> f64` — escritura/lectura directa al buffer pre-asignado.
-- [ ] 5.5 Implementar `ResultBuffer::slot_ptr(slot) -> *mut f64` — puntero directo al slot para acceso sin bounds-check en el hot loop.
-- [ ] 5.6 Actualizar `HotLoop::execute_with_ctx()` para aceptar `&mut ResultBuffer` además de `&EvalContext`.
-- [ ] 5.7 Actualizar `bml_fast()` para resolver `VarIndexed` desde el buffer de resultados (no solo desde `EvalContext.inputs`).
-- [ ] 5.8 Pruebas: construir un DAG con `VarIndexed` y `StoreResult`, ejecutarlo, verificar que los resultados se pasan entre hot loops correctamente.
+- [x] 5.1 Implementar `RpnOp::VarIndexed { base: u32 }` — indexación dinámica de pesos: lee `Var(base + offset)` donde `offset` viene del tope de la pila.
+- [x] 5.2 Implementar `RpnOp::StoreResult { slot: u32, offset: u32 }` — escribe el tope de la pila al buffer de resultados en la posición `slot[offset]`.
+- [x] 5.3 Implementar `crates/runtime/src/buffer.rs` con `ResultBuffer`: buffer circular pre-asignado de N slots, cada slot es un `Vec<f64>` de tamaño `n_embd`. Cero allocs en hot path.
+- [x] 5.4 Implementar `ResultBuffer::write(slot, offset, value)` y `read(slot, offset) -> f64` — escritura/lectura directa al buffer pre-asignado.
+- [x] 5.5 Implementar `ResultBuffer::slot_ptr(slot) -> *mut f64` — puntero directo al slot para acceso sin bounds-check en el hot loop.
+- [x] 5.6 Actualizar `HotLoop::execute_with_ctx()` para aceptar `&mut ResultBuffer` además de `&EvalContext`.
+- [x] 5.7 Actualizar `bml_fast()` para resolver `VarIndexed` desde el buffer de resultados (no solo desde `EvalContext.inputs`).
+- [x] 5.8 Pruebas: construir un DAG con `VarIndexed` y `StoreResult`, ejecutarlo, verificar que los resultados se pasan entre hot loops correctamente.
 
 ## 6. Compilador: fragmentación por operación (N hot loops)
 

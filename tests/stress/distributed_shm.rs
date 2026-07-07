@@ -61,6 +61,14 @@ fn serialize_program(program: &RpnProgram) -> Vec<u8> {
                 bytes.push(5);
                 bytes.extend_from_slice(&id.to_le_bytes());
             }
+            RpnOp::VarIndexed { base } => {
+                bytes.push(7);
+                bytes.extend_from_slice(&base.to_le_bytes());
+            }
+            RpnOp::StoreResult { slot } => {
+                bytes.push(8);
+                bytes.extend_from_slice(&slot.to_le_bytes());
+            }
         }
     }
     bytes
@@ -95,6 +103,16 @@ fn deserialize_program(bytes: &[u8]) -> RpnProgram {
                 let id = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
                 offset += 4;
                 RpnOp::Const(id)
+            }
+            7 => {
+                let base = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                offset += 4;
+                RpnOp::VarIndexed { base }
+            }
+            8 => {
+                let slot = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                offset += 4;
+                RpnOp::StoreResult { slot }
             }
             _ => panic!("tag desconocido: {tag}"),
         };

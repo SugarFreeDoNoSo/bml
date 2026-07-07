@@ -14,6 +14,7 @@
 #![deny(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod buffer;
 pub mod hot_loop;
 pub mod net;
 pub mod queue;

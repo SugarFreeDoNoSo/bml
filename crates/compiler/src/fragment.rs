@@ -90,6 +90,14 @@ impl Fragment {
                 RpnOp::Zero => stack.push(0.0),
                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                RpnOp::VarIndexed { base: _ } => {
+                    let _offset = stack.pop().unwrap_or(0.0);
+                    stack.push(0.0);
+                }
+                RpnOp::StoreResult { slot: _ } => {
+                    let _offset = stack.pop().unwrap_or(0.0);
+                    let _value = stack.pop().unwrap_or(0.0);
+                }
                 RpnOp::Bml => {
                     let b = stack.pop().unwrap();
                     let a = stack.pop().unwrap();
@@ -107,9 +115,17 @@ impl Fragment {
                         while j < body_end {
                             match self.ops[j] {
                                 RpnOp::One => stack.push(1.0),
-                RpnOp::Zero => stack.push(0.0),
+                                RpnOp::Zero => stack.push(0.0),
                                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                                RpnOp::VarIndexed { base: _ } => {
+                                    let _offset = stack.pop().unwrap_or(0.0);
+                                    stack.push(0.0);
+                                }
+                                RpnOp::StoreResult { slot: _ } => {
+                                    let _offset = stack.pop().unwrap_or(0.0);
+                                    let _value = stack.pop().unwrap_or(0.0);
+                                }
                                 RpnOp::Bml => {
                                     let b = stack.pop().unwrap();
                                     let a = stack.pop().unwrap();
@@ -218,6 +234,14 @@ impl BmlGraph {
                         bytes.push(5);
                         bytes.extend_from_slice(&id.to_le_bytes());
                     }
+                    RpnOp::VarIndexed { base } => {
+                        bytes.push(7);
+                        bytes.extend_from_slice(&base.to_le_bytes());
+                    }
+                    RpnOp::StoreResult { slot } => {
+                        bytes.push(8);
+                        bytes.extend_from_slice(&slot.to_le_bytes());
+                    }
                 }
             }
         }
@@ -286,6 +310,24 @@ impl BmlGraph {
                         let id = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
                         offset += 4;
                         RpnOp::Const(id)
+                    }
+                    7 => {
+                        if offset + 4 > bytes.len() {
+                            return Err("offset fuera de rango leyendo VarIndexed".to_string());
+                        }
+                        let base =
+                            u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                        offset += 4;
+                        RpnOp::VarIndexed { base }
+                    }
+                    8 => {
+                        if offset + 4 > bytes.len() {
+                            return Err("offset fuera de rango leyendo StoreResult".to_string());
+                        }
+                        let slot =
+                            u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                        offset += 4;
+                        RpnOp::StoreResult { slot }
                     }
                     _ => return Err(format!("tag desconocido: {tag}")),
                 };
