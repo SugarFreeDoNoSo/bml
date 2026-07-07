@@ -14,3 +14,7 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }
+
+[[bench]]
+name = "bml_ops"
+harness = false
