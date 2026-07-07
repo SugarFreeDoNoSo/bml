@@ -6,3 +6,11 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+bml-domain = { path = "../domain" }
+bml-compiler = { path = "../compiler" }
+bml-runtime = { path = "../runtime" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
