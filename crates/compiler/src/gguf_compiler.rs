@@ -252,10 +252,10 @@ fn build_transformer_dag(
     Ok(hidden)
 }
 
-/// Lee un tensor del GGUF y retorna sus valores como f64.
+/// Lee un tensor del GGUF y retorna sus valores como f32.
 ///
-/// Para tipos estándar (F32), lee directamente.
-/// Para tipos cuantizados, dequantiza a f32.
+/// Para tipos estándar (F32, F16), lee directamente.
+/// Para tipos cuantizados (Q4_0, Q8_0), dequantiza a f32.
 pub fn read_tensor_f32(parser: &GgufParser, name: &str) -> Option<Vec<f32>> {
     let info = parser.find_tensor(name)?;
     let data = parser.tensor_data(info)?;
@@ -265,8 +265,116 @@ pub fn read_tensor_f32(parser: &GgufParser, name: &str) -> Option<Vec<f32>> {
                 .map(|c| f32::from_le_bytes(c.try_into().unwrap()))
                 .collect(),
         ),
-        _ => None, // Cuantización: requiere dequantización específica por tipo
+        GgufDataType::F16 => Some(
+            data.chunks_exact(2)
+                .map(|c| f16_to_f32(u16::from_le_bytes(c.try_into().unwrap())))
+                .collect(),
+        ),
+        GgufDataType::Q4_0 => Some(dequantize_q4_0(data, &info.dims)),
+        GgufDataType::Q8_0 => Some(dequantize_q8_0(data, &info.dims)),
+        _ => None,
     }
+}
+
+/// Convierte f16 (half) a f32.
+fn f16_to_f32(h: u16) -> f32 {
+    let sign = (h >> 15) & 1;
+    let exp = (h >> 10) & 0x1F;
+    let mant = h & 0x3FF;
+    if exp == 0 {
+        if mant == 0 {
+            return if sign != 0 { -0.0 } else { 0.0 };
+        }
+        // Subnormal
+        let val = (mant as f32) * (2.0_f32.powi(-24));
+        return if sign != 0 { -val } else { val };
+    }
+    if exp == 0x1F {
+        return if mant == 0 {
+            if sign != 0 {
+                f32::NEG_INFINITY
+            } else {
+                f32::INFINITY
+            }
+        } else {
+            f32::NAN
+        };
+    }
+    let val = (1.0 + mant as f32 / 1024.0) * 2.0_f32.powi(exp as i32 - 15);
+    if sign != 0 {
+        -val
+    } else {
+        val
+    }
+}
+
+/// Dequantiza Q4_0 a f32.
+///
+/// Q4_0: bloques de 32 elementos.
+/// Cada bloque: [f16 scale][16 x uint4] = 18 bytes.
+/// valor = (q - 8) * scale
+fn dequantize_q4_0(data: &[u8], dims: &[u64]) -> Vec<f32> {
+    let total_elems: usize = dims.iter().map(|d| *d as usize).product();
+    let block_size = 32;
+    let block_bytes = 18; // 2 (f16 scale) + 16 (16 x 4-bit packed)
+    let n_blocks = total_elems / block_size;
+    let mut result = Vec::with_capacity(total_elems);
+
+    for block in 0..n_blocks {
+        let offset = block * block_bytes;
+        if offset + block_bytes > data.len() {
+            break;
+        }
+        let scale = f16_to_f32(u16::from_le_bytes(
+            data[offset..offset + 2].try_into().unwrap(),
+        ));
+        // 16 bytes = 32 nibbles (4-bit each)
+        for i in 0..16 {
+            let byte = data[offset + 2 + i];
+            let q0 = (byte & 0x0F) as i32 - 8;
+            let q1 = ((byte >> 4) & 0x0F) as i32 - 8;
+            result.push(q0 as f32 * scale);
+            result.push(q1 as f32 * scale);
+        }
+    }
+
+    // Rellenar si faltan elementos
+    while result.len() < total_elems {
+        result.push(0.0);
+    }
+    result
+}
+
+/// Dequantiza Q8_0 a f32.
+///
+/// Q8_0: bloques de 32 elementos.
+/// Cada bloque: [f16 scale][32 x int8] = 34 bytes.
+/// valor = q * scale
+fn dequantize_q8_0(data: &[u8], dims: &[u64]) -> Vec<f32> {
+    let total_elems: usize = dims.iter().map(|d| *d as usize).product();
+    let block_size = 32;
+    let block_bytes = 34; // 2 (f16 scale) + 32 (int8)
+    let n_blocks = total_elems / block_size;
+    let mut result = Vec::with_capacity(total_elems);
+
+    for block in 0..n_blocks {
+        let offset = block * block_bytes;
+        if offset + block_bytes > data.len() {
+            break;
+        }
+        let scale = f16_to_f32(u16::from_le_bytes(
+            data[offset..offset + 2].try_into().unwrap(),
+        ));
+        for i in 0..32 {
+            let q = data[offset + 2 + i] as i8 as f32;
+            result.push(q * scale);
+        }
+    }
+
+    while result.len() < total_elems {
+        result.push(0.0);
+    }
+    result
 }
 
 /// Serializa un `CompilationResult` a un directorio `.bmlgraph`.
@@ -537,6 +645,41 @@ mod tests {
         assert_eq!(values[0], 0.0);
         assert_eq!(values[7], 7.0);
         let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn read_real_tinyllama_weights() {
+        let path = "/root/tinyllama.gguf";
+        if !Path::new(path).exists() {
+            eprintln!("SKIP: {path} no disponible");
+            return;
+        }
+        let parser = GgufParser::open(path).unwrap();
+
+        // Leer attn_norm (F32, 2048 elementos)
+        let norm = read_tensor_f32(&parser, "blk.0.attn_norm.weight");
+        assert!(norm.is_some(), "attn_norm debe ser legible");
+        let norm_vals = norm.unwrap();
+        assert_eq!(norm_vals.len(), 2048);
+        println!("attn_norm[0..5]: {:?}", &norm_vals[0..5]);
+
+        // Leer attn_q (Q4_0, 2048x2048 = 4M elementos)
+        let q = read_tensor_f32(&parser, "blk.0.attn_q.weight");
+        assert!(q.is_some(), "attn_q debe ser legible (Q4_0)");
+        let q_vals = q.unwrap();
+        assert_eq!(q_vals.len(), 2048 * 2048);
+        println!("attn_q[0..5]: {:?}", &q_vals[0..5]);
+        // Los valores dequantizados no deben ser todos cero
+        let nonzero = q_vals.iter().filter(|v| **v != 0.0).count();
+        assert!(
+            nonzero > 0,
+            "debe haber valores no cero despues de dequantizar"
+        );
+        println!(
+            "attn_q: {} non-zero values out of {}",
+            nonzero,
+            q_vals.len()
+        );
     }
 
     #[test]

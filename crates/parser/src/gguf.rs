@@ -25,46 +25,91 @@ use std::io;
 pub const GGUF_MAGIC: u32 = 0x46554747;
 pub const GGUF_SUPPORTED_VERSION: u32 = 3;
 
-/// Tipos de datos de GGUF.
+/// Tipos de datos de GGUF/GGML.
+///
+/// Sigue el mapeo oficial de ggml.h:
+/// 0=F32, 1=F16, 2=Q4_0, 3=Q4_1, 6=Q5_0, 7=Q5_1, 8=Q8_0, 9=Q8_1,
+/// 10=Q2_K, 11=Q3_K, 12=Q4_K, 13=Q5_K, 14=Q6_K, 15=Q8_K,
+/// 24=I8, 25=I16, 26=I32, 27=I64, 28=F64, 29=BF16
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum GgufDataType {
-    U8 = 0,
-    I8 = 1,
-    U16 = 2,
-    I16 = 3,
-    U32 = 4,
-    I32 = 5,
-    F32 = 6,
-    Bool = 7,
-    String = 8,
-    Array = 9,
-    U64 = 10,
-    I64 = 11,
-    F64 = 12,
-    // Cuantización GGUF
-    Q4_0 = 14,
-    Q4_1 = 15,
-    Q5_0 = 16,
-    Q5_1 = 17,
-    Q8_0 = 18,
-    Q8_1 = 19,
-    Q2_K = 20,
-    Q3_K = 21,
-    Q4_K = 22,
-    Q5_K = 23,
-    Q6_K = 24,
-    Q8_K = 25,
-    Iq2Xxs = 28,
-    Iq3Xxs = 29,
-    Iq4Nl = 30,
-    Iq3S = 31,
-    Iq2S = 32,
-    Iq4Xs = 33,
+    F32 = 0,
+    F16 = 1,
+    Q4_0 = 2,
+    Q4_1 = 3,
+    Q5_0 = 6,
+    Q5_1 = 7,
+    Q8_0 = 8,
+    Q8_1 = 9,
+    Q2_K = 10,
+    Q3_K = 11,
+    Q4_K = 12,
+    Q5_K = 13,
+    Q6_K = 14,
+    Q8_K = 15,
+    Iq2Xxs = 16,
+    Iq2Xs = 17,
+    Iq3Xxs = 18,
+    Iq1S = 19,
+    Iq4Nl = 20,
+    Iq3S = 21,
+    Iq2S = 22,
+    Iq4Xs = 23,
+    I8 = 24,
+    I16 = 25,
+    I32 = 26,
+    I64 = 27,
+    F64 = 28,
+    Bf16 = 29,
+    // Tipos solo para metadatos (no tensores)
+    String = 30, // originalmente 8 en GGUF metadata
+    Bool = 31,   // originalmente 7
+    Array = 32,  // originalmente 9
+    U8 = 33,     // originalmente 0 en metadatos
+    U16 = 34,    // originalmente 2 en metadatos
+    U32 = 35,    // originalmente 4 en metadatos
+    U64 = 36,    // originalmente 10 en metadatos
 }
 
 impl GgufDataType {
+    /// Mapea un tipo de tensor GGML (estándar ggml.h).
     pub fn from_u32(v: u32) -> Option<Self> {
+        match v {
+            0 => Some(Self::F32),
+            1 => Some(Self::F16),
+            2 => Some(Self::Q4_0),
+            3 => Some(Self::Q4_1),
+            6 => Some(Self::Q5_0),
+            7 => Some(Self::Q5_1),
+            8 => Some(Self::Q8_0),
+            9 => Some(Self::Q8_1),
+            10 => Some(Self::Q2_K),
+            11 => Some(Self::Q3_K),
+            12 => Some(Self::Q4_K),
+            13 => Some(Self::Q5_K),
+            14 => Some(Self::Q6_K),
+            15 => Some(Self::Q8_K),
+            16 => Some(Self::Iq2Xxs),
+            17 => Some(Self::Iq2Xs),
+            18 => Some(Self::Iq3Xxs),
+            19 => Some(Self::Iq1S),
+            20 => Some(Self::Iq4Nl),
+            21 => Some(Self::Iq3S),
+            22 => Some(Self::Iq2S),
+            23 => Some(Self::Iq4Xs),
+            24 => Some(Self::I8),
+            25 => Some(Self::I16),
+            26 => Some(Self::I32),
+            27 => Some(Self::I64),
+            28 => Some(Self::F64),
+            29 => Some(Self::Bf16),
+            _ => None,
+        }
+    }
+
+    /// Mapea un tipo de metadato GGUF (valores 0-12 originales).
+    pub fn from_metadata_u32(v: u32) -> Option<Self> {
         match v {
             0 => Some(Self::U8),
             1 => Some(Self::I8),
@@ -79,35 +124,18 @@ impl GgufDataType {
             10 => Some(Self::U64),
             11 => Some(Self::I64),
             12 => Some(Self::F64),
-            14 => Some(Self::Q4_0),
-            15 => Some(Self::Q4_1),
-            16 => Some(Self::Q5_0),
-            17 => Some(Self::Q5_1),
-            18 => Some(Self::Q8_0),
-            19 => Some(Self::Q8_1),
-            20 => Some(Self::Q2_K),
-            21 => Some(Self::Q3_K),
-            22 => Some(Self::Q4_K),
-            23 => Some(Self::Q5_K),
-            24 => Some(Self::Q6_K),
-            25 => Some(Self::Q8_K),
-            28 => Some(Self::Iq2Xxs),
-            29 => Some(Self::Iq3Xxs),
-            30 => Some(Self::Iq4Nl),
-            31 => Some(Self::Iq3S),
-            32 => Some(Self::Iq2S),
-            33 => Some(Self::Iq4Xs),
             _ => None,
         }
     }
 
+    /// Tamaño en bytes de un elemento de este tipo.
     pub fn element_size(&self) -> usize {
         match self {
-            Self::U8 | Self::I8 | Self::Bool => 1,
-            Self::U16 | Self::I16 => 2,
-            Self::U32 | Self::I32 | Self::F32 => 4,
-            Self::U64 | Self::I64 | Self::F64 => 8,
-            Self::String | Self::Array => 0,
+            Self::F32 | Self::I32 | Self::U32 => 4,
+            Self::F16 | Self::I16 | Self::U16 | Self::Bf16 => 2,
+            Self::I8 | Self::U8 => 1,
+            Self::I64 | Self::U64 | Self::F64 => 8,
+            Self::String | Self::Array | Self::Bool => 0,
             // Tipos cuantizados: tamaño depende del bloque, no por elemento.
             _ => 0,
         }
@@ -115,21 +143,30 @@ impl GgufDataType {
 
     /// Returns true si el tipo es cuantizado (no estándar).
     pub fn is_quantized(&self) -> bool {
-        !matches!(
+        matches!(
             self,
-            Self::U8
-                | Self::I8
-                | Self::U16
-                | Self::I16
-                | Self::U32
-                | Self::I32
-                | Self::F32
-                | Self::Bool
-                | Self::String
-                | Self::Array
-                | Self::U64
-                | Self::I64
-                | Self::F64
+            Self::Q4_0
+                | Self::Q4_1
+                | Self::Q5_0
+                | Self::Q5_1
+                | Self::Q8_0
+                | Self::Q8_1
+                | Self::Q2_K
+                | Self::Q3_K
+                | Self::Q4_K
+                | Self::Q5_K
+                | Self::Q6_K
+                | Self::Q8_K
+                | Self::Iq2Xxs
+                | Self::Iq2Xs
+                | Self::Iq3Xxs
+                | Self::Iq1S
+                | Self::Iq4Nl
+                | Self::Iq3S
+                | Self::Iq2S
+                | Self::Iq4Xs
+                | Self::F16
+                | Self::Bf16
         )
     }
 }
@@ -376,7 +413,8 @@ fn decode_metadata_value(
     offset: usize,
     type_id: u32,
 ) -> Result<(GgufMetadataValue, usize), String> {
-    let dt = GgufDataType::from_u32(type_id).ok_or(format!("tipo desconocido: {type_id}"))?;
+    let dt =
+        GgufDataType::from_metadata_u32(type_id).ok_or(format!("tipo desconocido: {type_id}"))?;
     match dt {
         GgufDataType::U8 => {
             if offset >= bytes.len() {
@@ -503,7 +541,7 @@ fn decode_metadata_value(
                 values.push(v);
                 offset = new_offset;
             }
-            let elem_dt = GgufDataType::from_u32(elem_type)
+            let elem_dt = GgufDataType::from_metadata_u32(elem_type)
                 .ok_or(format!("tipo array desconocido: {elem_type}"))?;
             Ok((GgufMetadataValue::Array(elem_dt, values), offset))
         }
@@ -597,7 +635,7 @@ pub fn create_gguf_with_metadata() -> std::path::PathBuf {
     f.write_all(&2u32.to_le_bytes()).unwrap(); // n_dims
     f.write_all(&4u64.to_le_bytes()).unwrap(); // dim 0
     f.write_all(&2u64.to_le_bytes()).unwrap(); // dim 1
-    f.write_all(&6u32.to_le_bytes()).unwrap(); // F32
+    f.write_all(&0u32.to_le_bytes()).unwrap(); // F32 (GGML type 0)
     f.write_all(&0u64.to_le_bytes()).unwrap(); // offset
 
     // Alinear a 32 bytes
@@ -723,9 +761,18 @@ mod tests {
 
     #[test]
     fn data_type_from_u32() {
-        assert_eq!(GgufDataType::from_u32(0), Some(GgufDataType::U8));
-        assert_eq!(GgufDataType::from_u32(6), Some(GgufDataType::F32));
+        // Tipos de tensor (GGML)
+        assert_eq!(GgufDataType::from_u32(0), Some(GgufDataType::F32));
+        assert_eq!(GgufDataType::from_u32(2), Some(GgufDataType::Q4_0));
+        assert_eq!(GgufDataType::from_u32(8), Some(GgufDataType::Q8_0));
         assert_eq!(GgufDataType::from_u32(99), None);
+        // Tipos de metadatos
+        assert_eq!(GgufDataType::from_metadata_u32(0), Some(GgufDataType::U8));
+        assert_eq!(GgufDataType::from_metadata_u32(6), Some(GgufDataType::F32));
+        assert_eq!(
+            GgufDataType::from_metadata_u32(8),
+            Some(GgufDataType::String)
+        );
     }
 
     #[test]
