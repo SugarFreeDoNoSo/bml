@@ -73,10 +73,40 @@ Plan de ejecución gestionado con [OpenSpec](https://openspec.dev/). Ver `opensp
 | Hito | Estado | Descripción |
 |---|---|---|
 | 1 — Cimientos | ✅ | Operador BML, AST, SoA, transformer (`exp2`/`log2` verificados) |
-| 2 — Compilación | ⏳ | Hash Consing, RPN, benchmarks FMA vs BML, fórmulas `+`/`-`/`*`/`/`/`pow` |
-| 3 — Parser | ⏳ | Ingesta GGUF zero-copy |
-| 4 — Fragmentación | ⏳ | Micro-fragmentación AOT, formato `.bmlgraph` |
-| 5 — Runtime | ⏳ | Hot loop RPN, RPC distribuido |
+| 2 — Compilación | ✅ | Hash Consing, RPN, benchmarks FMA vs BML, fórmulas `+`/`-`/`*`/`/`/`pow` |
+| 3 — Parser | ✅ | Ingesta GGUF zero-copy |
+| 4 — Fragmentación | ✅ | Micro-fragmentación AOT, formato `.bmlgraph` |
+| 5 — Runtime | ✅ | Hot loop RPN, RPC distribuido |
+| 6 — Benchmark | ✅ | [BML vs llama.cpp](docs/benchmarks/REPORT.md) — reporte comparativo |
+
+## Benchmark
+
+El reporte comparativo BML vs llama.cpp está en [`docs/benchmarks/REPORT.md`](docs/benchmarks/REPORT.md).
+
+Resultados clave (TinyLlama-1.1B Q4_0, 4 vCPU Intel Xeon):
+
+| Métrica | llama.cpp | BML | Ratio |
+|---|---|---|---|
+| pp tokens/seg | 119.69 | 0.480 | 0.0040x |
+| tg tokens/seg | 17.12 | 0.461 | 0.0269x |
+| Ops/seg (crudo) | — | 511M | — |
+| Hot loop size | — | 5.26 KB | < 32 KB L1i ✅ |
+
+Para reproducir:
+
+```sh
+# llama.cpp baseline
+cd /root/llama.cpp && ./build/bin/llama-bench -m /root/tinyllama.gguf -p 512 -n 0 -r 5 -t 4 -o json
+cd /root/llama.cpp && ./build/bin/llama-bench -m /root/tinyllama.gguf -p 0 -n 128 -r 5 -t 4 -o json
+
+# BML benchmark
+cargo run --release -p bml-bench -- --json --pp 512 --tg 128 --reps 5
+
+# Micro-benchmarks
+cargo bench -p bml-bench --bench bml_ops
+cargo bench -p bml-compiler --bench matrix_mul
+cargo bench -p bml-compiler --bench fma_vs_bml
+```
 
 ## Desarrollo
 
