@@ -58,27 +58,57 @@
 - [x] 4.10 Pruebas: `bml-cli -m model.bmlgraph/ -p "Hello" -n 10` produce texto.
 - [x] 4.11 Pruebas: `curl -X POST http://localhost:8080/v1/completions -d '{"prompt":"Hello","stream":true}'` recibe tokens via SSE.
 
-## 5. Scheduler con batching dinámico
+## 5. N hot loops + buffer circular entre cores
 
-- [ ] 5.1 Implementar `crates/runtime/src/scheduler.rs` con cola de requests (`crossbeam-channel`).
-- [ ] 5.2 Implementar batching dinámico: agrupa N prompts en una ventana de 10ms y los procesa juntos.
-- [ ] 5.3 Implementar distribución de batches a nodos: round-robin o least-loaded.
-- [ ] 5.4 Implementar el rol de coordinador: recibe batches, particiona el trabajo, agrega resultados.
-- [ ] 5.5 Implementar el rol de worker: ejecuta fragmentos, reporta resultados, roba trabajo.
-- [ ] 5.6 El coordinador también puede ejecutar fragmentos localmente.
-- [ ] 5.7 Pruebas: 1 coordinador + 3 workers ejecutan un `.bmlgraph` y producen el resultado correcto.
-- [ ] 5.8 Pruebas de batching: 10 requests concurrentes se agrupan en 1-2 batches.
+- [ ] 5.1 Implementar `RpnOp::VarIndexed { base: u32 }` — indexación dinámica de pesos: lee `Var(base + offset)` donde `offset` viene del tope de la pila.
+- [ ] 5.2 Implementar `RpnOp::StoreResult { slot: u32, offset: u32 }` — escribe el tope de la pila al buffer de resultados en la posición `slot[offset]`.
+- [ ] 5.3 Implementar `crates/runtime/src/buffer.rs` con `ResultBuffer`: buffer circular pre-asignado de N slots, cada slot es un `Vec<f64>` de tamaño `n_embd`. Cero allocs en hot path.
+- [ ] 5.4 Implementar `ResultBuffer::write(slot, offset, value)` y `read(slot, offset) -> f64` — escritura/lectura directa al buffer pre-asignado.
+- [ ] 5.5 Implementar `ResultBuffer::slot_ptr(slot) -> *mut f64` — puntero directo al slot para acceso sin bounds-check en el hot loop.
+- [ ] 5.6 Actualizar `HotLoop::execute_with_ctx()` para aceptar `&mut ResultBuffer` además de `&EvalContext`.
+- [ ] 5.7 Actualizar `bml_fast()` para resolver `VarIndexed` desde el buffer de resultados (no solo desde `EvalContext.inputs`).
+- [ ] 5.8 Pruebas: construir un DAG con `VarIndexed` y `StoreResult`, ejecutarlo, verificar que los resultados se pasan entre hot loops correctamente.
 
-## 6. Pruebas de concurrencia
+## 6. Compilador: fragmentación por operación (N hot loops)
 
-- [ ] 6.1 Pruebas con `loom` de la cola lock-free.
-- [ ] 6.2 Pruebas con `loom` del work-stealing.
-- [ ] 6.3 Pruebas de append-only bajo estrés multicore.
-- [ ] 6.4 Pruebas de que el hot loop no toca el código de red (aislamiento).
-- [ ] 6.5 Pruebas de backpressure: saturar la cola y verificar HTTP 429.
+- [ ] 6.1 Actualizar `build_transformer_dag()` para generar un fragmento por operación (matmul Q, matmul K, matmul V, attention, etc.) en lugar de un solo grafo monolítico.
+- [ ] 6.2 Implementar `compile_matmul_fragment()` que genera un fragmento con `Loop(n_rows, body=[Loop(n_cols, body=[VarIndexed, VarIndexed, Bml, StoreResult])])`.
+- [ ] 6.3 Implementar `compile_rmsnorm_fragment()` que genera un fragmento para RMSNorm.
+- [ ] 6.4 Implementar `compile_attention_fragment()` que genera un fragmento para attention scores + softmax.
+- [ ] 6.5 Implementar `compile_mlp_fragment()` que genera un fragmento para MLP (gate + SwiGLU + down).
+- [ ] 6.6 Asignar slots del buffer circular a cada fragmento: input slot, output slot, pesos base.
+- [ ] 6.7 Serializar los fragmentos con metadatos de slots (input_slot, output_slot, weight_base).
+- [ ] 6.8 Pruebas: compilar tinyllama con fragmentación por operación, verificar que cada fragmento es < 32KB.
 
-## 7. Cierre
+## 7. Runtime: ejecución secuencial con cambio de hot loop
 
-- [ ] 7.1 `openspec validate bml-inference-pipeline` pasa sin errores.
-- [ ] 7.2 `cargo test --workspace` pasa.
-- [ ] 7.3 Commit y push.
+- [ ] 7.1 Implementar `Runtime::execute_fragments_sequential()` que ejecuta N fragmentos en orden, pasando resultados via `ResultBuffer`.
+- [ ] 7.2 Implementar cambio de hot loop: cuando un core termina un fragmento, carga el siguiente en L1i y continúa.
+- [ ] 7.3 Implementar `Runtime::execute_fragments_parallel()` que distribuye fragmentos entre cores (cada core ejecuta su fragmento en paralelo).
+- [ ] 7.4 Implementar sincronización entre fragmentos: un fragmento que depende del output de otro debe esperar a que el slot del buffer esté listo.
+- [ ] 7.5 Implementar `Runtime::execute_with_cores(n_cores)` que decide secuencial vs paralelo según el número de cores disponibles.
+- [ ] 7.6 Pruebas: ejecutar 4 fragmentos en 4 cores en paralelo, verificar que los resultados se pasan correctamente via buffer.
+- [ ] 7.7 Pruebas: ejecutar 8 fragmentos en 4 cores con cambio de hot loop, verificar resultados.
+
+## 8. Scheduler con batching dinámico
+
+- [ ] 8.1 Implementar `crates/runtime/src/scheduler.rs` con cola de requests (`crossbeam-channel`).
+- [ ] 8.2 Implementar batching dinámico: agrupa N prompts en una ventana de 10ms y los procesa juntos.
+- [ ] 8.3 Implementar distribución de batches a nodos: round-robin o least-loaded.
+- [ ] 8.4 Implementar backpressure: si la cola está llena, retornar HTTP 429.
+- [ ] 8.5 Pruebas de batching: 10 requests concurrentes se agrupan en 1-2 batches.
+
+## 9. Pruebas de concurrencia
+
+- [ ] 9.1 Pruebas con `loom` de la cola lock-free.
+- [ ] 9.2 Pruebas con `loom` del work-stealing.
+- [ ] 9.3 Pruebas de append-only bajo estrés multicore.
+- [ ] 9.4 Pruebas de que el hot loop no toca el código de red (aislamiento).
+- [ ] 9.5 Pruebas de backpressure: saturar la cola y verificar HTTP 429.
+- [ ] 9.6 Pruebas de cambio de hot loop: verificar que L1i no se contamina entre fragmentos.
+
+## 10. Cierre
+
+- [ ] 10.1 `openspec validate bml-inference-pipeline` pasa sin errores.
+- [ ] 10.2 `cargo test --workspace` pasa.
+- [ ] 10.3 Commit y push.

@@ -54,3 +54,33 @@ El sistema SHALL agrupar múltiples prompts en batches para maximizar throughput
 #### Scenario: Batching
 - **WHEN** llegan 10 prompts en 10ms
 - **THEN** se agrupan en 1-2 batches para procesamiento conjunto
+
+### Requirement: N hot loops especializados
+El sistema SHALL compilar cada operación del transformer como un fragmento separado con su propio hot loop < 32KB, ejecutable secuencialmente o en paralelo entre cores.
+
+#### Scenario: Fragmentación por operación
+- **WHEN** se compila un transformer de 22 capas
+- **THEN** se generan N fragmentos (uno por matmul, norm, attention, MLP), cada uno < 32KB
+
+#### Scenario: Cambio de hot loop
+- **WHEN** hay más fragmentos que cores
+- **THEN** un core ejecuta varios fragmentos secuencialmente, cargando cada uno en L1i
+
+#### Scenario: Paralelismo entre cores
+- **WHEN** hay N cores y N fragmentos independientes
+- **THEN** cada core ejecuta un fragmento en paralelo
+
+### Requirement: Buffer circular entre cores
+El sistema SHALL mantener un buffer circular pre-asignado para pasar resultados entre hot loops sin copias ni allocs.
+
+#### Scenario: Escritura de resultados
+- **WHEN** un hot loop termina de computar un output
+- **THEN** lo escribe al buffer con `StoreResult { slot, offset }`
+
+#### Scenario: Lectura de inputs
+- **WHEN** un hot loop necesita el output del anterior
+- **THEN** lo lee del buffer con `VarIndexed { base }`
+
+#### Scenario: Cero allocs
+- **WHEN** se ejecutan N hot loops secuencialmente
+- **THEN** no hay allocs de memoria (buffer pre-asignado)

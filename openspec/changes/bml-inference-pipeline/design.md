@@ -37,6 +37,11 @@ El runtime BML actual ejecuta programas RPN sobre DAGs fragmentados con Hash Con
 - **D10 — Backpressure.** Si la cola del scheduler está llena, la API retorna HTTP 429. *Racional:* evita OOM bajo carga.
 - **D11 — CLI local.** `bml-cli` con `clap` ejecuta inferencia local sin servidor. *Racional:* drop-in replacement de `llama-cli` para uso interactivo.
 - **D12 — Arquitectura de 3 capas.** Capa 1: API HTTP (axum). Capa 2: Scheduler con batching (crossbeam). Capa 3: Nodos BML con TCP raw + hot loop puro. *Racional:* separa concerns, el hot loop no tiene deps de red.
+- **D13 — N hot loops especializados.** Cada operación del transformer (matmul, RMSNorm, attention, MLP) se compila como un fragmento separado con su propio hot loop < 32KB. Los fragmentos se ejecutan secuencialmente o en paralelo según los cores disponibles. *Racional:* preserva el operador BML puro (sin kernel nativo), permite paralelismo natural entre cores, y el cambio de hot loop es instantáneo (cargar < 32KB en L1i).
+- **D14 — Buffer circular entre cores.** `ResultBuffer` con N slots pre-asignados, cada slot es un `Vec<f64>` de tamaño `n_embd`. Los hot loops escriben outputs con `StoreResult { slot, offset }` y leen inputs del siguiente con `VarIndexed { base }`. *Racional:* cero allocs, cero copias, comunicación directa entre cores via memoria compartida.
+- **D15 — VarIndexed para indexación dinámica.** `RpnOp::VarIndexed { base }` lee `Var(base + offset)` donde `offset` viene del tope de la pila. *Racional:* permite que los loops accedan a pesos e inputs por índice dinámico (i*cols + j) sin expandir el DAG.
+- **D16 — StoreResult para escritura de resultados.** `RpnOp::StoreResult { slot, offset }` escribe el tope de la pila al `ResultBuffer`. *Racional:* cada hot loop escribe su output al buffer para que el siguiente lo lea.
+- **D17 — Cambio de hot loop.** Cuando hay más fragmentos que cores, un core ejecuta varios fragmentos secuencialmente. El cambio es cargar el siguiente fragmento (< 32KB) en L1i. *Racional:* sin context switching del OS, solo cambio de código en L1i.
 
 ## Risks / Trade-offs
 
