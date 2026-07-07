@@ -17,6 +17,8 @@ pub mod hardware;
 pub mod hash_cons;
 pub mod op_fragments;
 pub mod rpn;
+pub mod sampler;
+pub mod tokenizer;
 
 pub use dag::Dag;
 pub use fragment::{

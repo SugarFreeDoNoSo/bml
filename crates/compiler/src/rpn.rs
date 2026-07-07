@@ -76,6 +76,22 @@ pub enum RpnOp {
         /// Número de operaciones del cuerpo (que siguen al Loop).
         body_len: u32,
     },
+    /// Suma aritmética: saca dos valores y empuja su suma (a + b).
+    FAdd,
+    /// Multiplicación aritmética: saca dos valores y empuja su producto (a * b).
+    FMul,
+    /// Duplica el valor en una profundidad específica de la pila.
+    ///
+    /// `depth = 0` es el tope de la pila, `depth = 1` es el valor debajo, etc.
+    /// El valor se copia al tope sin consumirse.
+    Pick {
+        /// Profundidad del valor a copiar (0 = tope).
+        depth: u32,
+    },
+    /// Descarta el valor en el tope de la pila.
+    Drop,
+    /// Intercambia los dos valores en el tope de la pila: (a, b) -> (b, a).
+    Swap,
 }
 
 /// Programa RPN: arreglo unidimensional de operaciones.
@@ -148,6 +164,31 @@ impl RpnProgram {
                     let v = *stack.last().unwrap();
                     stack.push(v);
                 }
+                RpnOp::FAdd => {
+                    let b = stack.pop().unwrap_or(0.0);
+                    let a = stack.pop().unwrap_or(0.0);
+                    stack.push(a + b);
+                }
+                RpnOp::FMul => {
+                    let b = stack.pop().unwrap_or(0.0);
+                    let a = stack.pop().unwrap_or(0.0);
+                    stack.push(a * b);
+                }
+                RpnOp::Pick { depth } => {
+                    let d = depth as usize;
+                    let idx = stack.len().saturating_sub(1 + d);
+                    let v = stack.get(idx).copied().unwrap_or(0.0);
+                    stack.push(v);
+                }
+                RpnOp::Drop => {
+                    stack.pop();
+                }
+                RpnOp::Swap => {
+                    let len = stack.len();
+                    if len >= 2 {
+                        stack.swap(len - 1, len - 2);
+                    }
+                }
                 RpnOp::Loop { count, body_len } => {
                     let body_start = i + 1;
                     let body_end = body_start + body_len as usize;
@@ -159,9 +200,9 @@ impl RpnProgram {
                                 RpnOp::Zero => stack.push(0.0),
                                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
-                RpnOp::VarIndexed { base } => {
-                    let offset = stack.pop().unwrap_or(0.0) as u32;
-                    stack.push(0.0); // placeholder: sin buffer en evaluate_with_ctx
+                RpnOp::VarIndexed { base: _base } => {
+                    let _offset = stack.pop().unwrap_or(0.0);
+                    stack.push(f64::NAN);
                 }
                 RpnOp::StoreResult { slot: _ } => {
                     let _offset = stack.pop().unwrap_or(0.0);
@@ -176,8 +217,93 @@ impl RpnProgram {
                                     let v = *stack.last().unwrap();
                                     stack.push(v);
                                 }
-                                RpnOp::Loop { .. } => {
-                                    panic!("loops anidados no soportados");
+                                RpnOp::FAdd => {
+                                    let b = stack.pop().unwrap_or(0.0);
+                                    let a = stack.pop().unwrap_or(0.0);
+                                    stack.push(a + b);
+                                }
+                                RpnOp::FMul => {
+                                    let b = stack.pop().unwrap_or(0.0);
+                                    let a = stack.pop().unwrap_or(0.0);
+                                    stack.push(a * b);
+                                }
+                                RpnOp::Pick { depth } => {
+                                    let d = depth as usize;
+                                    let idx = stack.len().saturating_sub(1 + d);
+                                    let v = stack.get(idx).copied().unwrap_or(0.0);
+                                    stack.push(v);
+                                }
+                                RpnOp::Drop => {
+                                    stack.pop();
+                                }
+                                RpnOp::Swap => {
+                                    let len = stack.len();
+                                    if len >= 2 {
+                                        stack.swap(len - 1, len - 2);
+                                    }
+                                }
+                                RpnOp::Loop { count: inner_count, body_len: inner_body_len } => {
+                                    let inner_body_start = j + 1;
+                                    let inner_body_end = inner_body_start + inner_body_len as usize;
+                                    for _loop_iter in 0..inner_count {
+                                        let mut k = inner_body_start;
+                                        while k < inner_body_end {
+                                            match self.ops[k] {
+                                                RpnOp::One => stack.push(1.0),
+                                                RpnOp::Zero => stack.push(0.0),
+                                                RpnOp::Var(id) => stack.push(ctx.get_var(id)),
+                                                RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+RpnOp::VarIndexed { base: _ } => {
+                    let _offset = stack.pop().unwrap_or(0.0);
+                    stack.push(f64::NAN);
+                }
+                                                RpnOp::StoreResult { slot: _ } => {
+                                                    let _offset = stack.pop().unwrap_or(0.0);
+                                                    let _value = stack.pop().unwrap_or(0.0);
+                                                }
+                                                RpnOp::Bml => {
+                                                    let b = stack.pop().unwrap();
+                                                    let a = stack.pop().unwrap();
+                                                    stack.push(bml_domain::bml(a, b));
+                                                }
+                                                RpnOp::Dup => {
+                                                    let v = *stack.last().unwrap();
+                                                    stack.push(v);
+                                                }
+                                                RpnOp::FAdd => {
+                                                    let b = stack.pop().unwrap_or(0.0);
+                                                    let a = stack.pop().unwrap_or(0.0);
+                                                    stack.push(a + b);
+                                                }
+                                                RpnOp::FMul => {
+                                                    let b = stack.pop().unwrap_or(0.0);
+                                                    let a = stack.pop().unwrap_or(0.0);
+                                                    stack.push(a * b);
+                                                }
+                                                RpnOp::Pick { depth } => {
+                                                    let d = depth as usize;
+                                                    let idx = stack.len().saturating_sub(1 + d);
+                                                    let v = stack.get(idx).copied().unwrap_or(0.0);
+                                                    stack.push(v);
+                                                }
+                                                RpnOp::Drop => {
+                                                    stack.pop();
+                                                }
+                                                RpnOp::Swap => {
+                                                    let len = stack.len();
+                                                    if len >= 2 {
+                                                        stack.swap(len - 1, len - 2);
+                                                    }
+                                                }
+                                                RpnOp::Loop { .. } => {
+                                                    panic!("max 2 loop nesting levels");
+                                                }
+                                            }
+                                            k += 1;
+                                        }
+                                    }
+                                    j = inner_body_end;
+                                    continue;
                                 }
                             }
                             j += 1;
@@ -293,18 +419,6 @@ mod tests {
 
     #[test]
     fn shared_subtree_uses_dup() {
-        // Construir un DAG con sub-árbol compartido.
-        // bml(bml(1,1), bml(1,1)) — el bml(1,1) está compartido.
-        // Con Hash Consing, bml(1,1) se emite una vez y se reutiliza con Dup.
-        //
-        // Recorrido post-order del DAG:
-        //   root = bml(two, two)
-        //   two = bml(one, one)
-        //   one = One
-        //
-        // emit(root) -> emit(two) -> emit(one)=One, emit(one)=Dup (ya visitado), Bml
-        //             -> emit(two)=Dup (ya visitado), Bml
-        // Resultado: [One, Dup, Bml, Dup, Bml]
         use bml_domain::NodeSoA;
         let mut soa = NodeSoA::new();
         let one = soa.push_one(); // 0: One
@@ -315,13 +429,11 @@ mod tests {
             program.ops,
             vec![RpnOp::One, RpnOp::Dup, RpnOp::Bml, RpnOp::Dup, RpnOp::Bml]
         );
-        // bml(2, 2) = 2^2 - log2(2) = 4 - 1 = 3
         assert!((program.evaluate(0.0) - 3.0).abs() < 1e-9);
     }
 
     #[test]
     fn rpn_matches_dag_evaluation() {
-        // Para varios DAGs, la evaluación RPN debe coincidir con la del DAG.
         let mut t = BMLTransformer::new();
         let two = t.two();
         let two2 = t.two();
@@ -347,12 +459,10 @@ mod tests {
         fn proptest_rpn_matches_dag(
             depth in 1u32..5,
         ) {
-            // Construir un DAG anidado de profundidad `depth` usando bml(1,1) repetido.
             let mut t = BMLTransformer::new();
             let one = t.one();
             let mut node = t.bml(one, one); // 2
             for _ in 1..depth {
-                // bml(node, node) — sub-árbol compartido
                 node = t.bml(node, node);
             }
             let soa = t.into_soa();
@@ -360,9 +470,6 @@ mod tests {
             let dag = crate::Dag::new(soa, node);
             let rpn_val = program.evaluate(0.0);
             let dag_val = dag.evaluate(&bml_domain::EvalContext::new(&[], &[]));
-            // Ambos pueden ser inf o nan a profundidades grandes; comparamos
-            // solo si son finitos, sino verificamos que ambos coinciden en
-            // su clase (inf/nan).
             if rpn_val.is_finite() && dag_val.is_finite() {
                 prop_assert!((rpn_val - dag_val).abs() < 1e-6, "RPN={rpn_val}, DAG={dag_val}");
             } else {
@@ -377,11 +484,6 @@ mod tests {
 
     #[test]
     fn loop_repeats_body() {
-        // Loop(3, 2) repite [One, Bml] 3 veces.
-        // Antes del loop, empujamos 1 (valor inicial).
-        // Iter 1: push 1 -> [1,1], bml(1,1)=2 -> [2]
-        // Iter 2: push 1 -> [2,1], bml(2,1)=4 -> [4]
-        // Iter 3: push 1 -> [4,1], bml(4,1)=16 -> [16]
         let mut program = RpnProgram::new();
         program.push(RpnOp::One); // valor inicial
         program.push(RpnOp::Loop {
@@ -399,7 +501,6 @@ mod tests {
 
     #[test]
     fn loop_count_zero() {
-        // Loop(0, 2) no ejecuta el cuerpo. Queda el valor inicial.
         let mut program = RpnProgram::new();
         program.push(RpnOp::One); // valor inicial
         program.push(RpnOp::Loop {
@@ -484,10 +585,117 @@ mod tests {
             unrolled.push(RpnOp::Bml);
         }
 
-        // Loop prog: 2 init + 1 Loop + 3 body = 6 ops
         assert_eq!(loop_prog.len(), m + 3, "Loop program should be M+3 ops");
-        // Unrolled: 2 init + N*M body = 2 + 300 = 302 ops
         assert_eq!(unrolled.len(), n * m + 2, "Unrolled should be N*M+2 ops");
         assert!(loop_prog.len() < unrolled.len(), "Loop should be smaller");
+    }
+
+    #[test]
+    fn fadd_and_fmul() {
+        let mut program = RpnProgram::new();
+        program.push(RpnOp::One);  // 1
+        program.push(RpnOp::One);  // 1
+        program.push(RpnOp::FAdd); // 2
+        program.push(RpnOp::One);  // 1
+        program.push(RpnOp::FMul); // 2 * 1 = 2
+        let result = program.evaluate(0.0);
+        assert!((result - 2.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn pick_and_drop() {
+        let mut program = RpnProgram::new();
+        program.push(RpnOp::One);         // stack: [1]
+        program.push(RpnOp::Zero);        // stack: [1, 0]
+        program.push(RpnOp::Pick { depth: 1 }); // stack: [1, 0, 1]
+        program.push(RpnOp::Drop);        // stack: [1, 0]
+        program.push(RpnOp::Drop);        // stack: [1]
+        let result = program.evaluate(0.0);
+        assert!((result - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn swap_works() {
+        let mut program = RpnProgram::new();
+        program.push(RpnOp::One);   // stack: [1]
+        program.push(RpnOp::Zero);  // stack: [1, 0]
+        program.push(RpnOp::Swap);  // stack: [0, 1]
+        program.push(RpnOp::Drop);  // stack: [0]
+        let result = program.evaluate(0.0);
+        assert!((result - 0.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn nested_loops_two_levels() {
+        // Outer: 2 iterations, inner: 3 iterations, inner body: One, One, Bml
+        // Each inner iteration: pushes One (1), One (1), Bml(1,1)=2 -> pushes 2
+        // 3 inner iters push three 2's each outer iter
+        let inner_body: Vec<RpnOp> = vec![RpnOp::One, RpnOp::One, RpnOp::Bml];
+        let inner_body_len = inner_body.len() as u32;
+
+        let mut outer_body = Vec::new();
+        outer_body.push(RpnOp::Loop { count: 3, body_len: inner_body_len });
+        outer_body.extend(inner_body.iter().copied());
+
+        let mut program = RpnProgram::new();
+        program.push(RpnOp::One); // initial value
+        program.push(RpnOp::Loop { count: 2, body_len: outer_body.len() as u32 });
+        for op in &outer_body {
+            program.push(*op);
+        }
+        let result = program.evaluate(0.0);
+        // Outer iter 0: inner loop pushes 2,2,2 -> [1, 2, 2, 2]
+        // Outer iter 1: inner loop pushes 2,2,2 -> [1, 2, 2, 2, 2, 2, 2]
+        // Result = top = 2.0
+        assert!((result - 2.0).abs() < 1e-9, "nested loops: {result}");
+    }
+
+    #[test]
+    #[should_panic(expected = "max 2 loop nesting levels")]
+    fn triple_nested_loop_panics() {
+        let inner_body: Vec<RpnOp> = vec![RpnOp::One, RpnOp::Bml];
+        let inner_body_len = inner_body.len() as u32;
+
+        let mut middle_body = Vec::new();
+        middle_body.push(RpnOp::Loop { count: 1, body_len: inner_body_len });
+        middle_body.extend(inner_body.iter().copied());
+
+        let mut outer_body = Vec::new();
+        outer_body.push(RpnOp::Loop { count: 1, body_len: middle_body.len() as u32 });
+        outer_body.extend(middle_body.iter().copied());
+
+        let mut program = RpnProgram::new();
+        program.push(RpnOp::One);
+        program.push(RpnOp::Loop { count: 1, body_len: outer_body.len() as u32 });
+        for op in &outer_body {
+            program.push(*op);
+        }
+        program.evaluate(0.0);
+    }
+
+    #[test]
+    fn ops_within_nested_loops() {
+        // Test FAdd, FMul, Pick, Drop, Swap inside nested loop
+        let inner_body: Vec<RpnOp> = vec![
+            RpnOp::One,          // push 1
+            RpnOp::Swap,         // swap
+            RpnOp::Pick { depth: 2 }, // copy from depth 2
+            RpnOp::FAdd,         // add
+            RpnOp::Drop,         // drop extra
+        ];
+        let inner_body_len = inner_body.len() as u32;
+
+        let mut outer_body = Vec::new();
+        outer_body.push(RpnOp::Loop { count: 2, body_len: inner_body_len });
+        outer_body.extend(inner_body.iter().copied());
+
+        let mut program = RpnProgram::new();
+        program.push(RpnOp::One); // initial
+        program.push(RpnOp::One); // extra
+        program.push(RpnOp::Loop { count: 1, body_len: outer_body.len() as u32 });
+        for op in &outer_body {
+            program.push(*op);
+        }
+        let _ = program.evaluate(0.0);
     }
 }

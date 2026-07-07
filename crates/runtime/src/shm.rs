@@ -98,6 +98,14 @@ impl ShmChannel {
                     f.write_all(&[8])?;
                     f.write_all(&slot.to_le_bytes())?;
                 }
+                RpnOp::FAdd => f.write_all(&[9])?,
+                RpnOp::FMul => f.write_all(&[10])?,
+                RpnOp::Pick { depth } => {
+                    f.write_all(&[11])?;
+                    f.write_all(&depth.to_le_bytes())?;
+                }
+                RpnOp::Drop => f.write_all(&[12])?,
+                RpnOp::Swap => f.write_all(&[13])?,
             }
         }
         f.flush()?;
@@ -153,12 +161,21 @@ impl ShmChannel {
                     offset += 4;
                     RpnOp::VarIndexed { base }
                 }
-                8 => {
-                    let slot = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-                    offset += 4;
-                    RpnOp::StoreResult { slot }
-                }
-                _ => {
+8 => {
+                        let slot = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                        offset += 4;
+                        RpnOp::StoreResult { slot }
+                    }
+                    9 => RpnOp::FAdd,
+                    10 => RpnOp::FMul,
+                    11 => {
+                        let depth = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                        offset += 4;
+                        RpnOp::Pick { depth }
+                    }
+                    12 => RpnOp::Drop,
+                    13 => RpnOp::Swap,
+                    _ => {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidData,
                         format!("tag desconocido: {tag}"),

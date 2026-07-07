@@ -103,6 +103,36 @@ impl HotLoop {
                     let v = self.stack[len - 1];
                     self.stack.push(v);
                 }
+                RpnOp::FAdd => {
+                    let len = self.stack.len();
+                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                    if len >= 2 { self.stack.truncate(len - 2); }
+                    self.stack.push(a + b);
+                }
+                RpnOp::FMul => {
+                    let len = self.stack.len();
+                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                    if len >= 2 { self.stack.truncate(len - 2); }
+                    self.stack.push(a * b);
+                }
+                RpnOp::Pick { depth } => {
+                    let d = depth as usize;
+                    let len = self.stack.len();
+                    let idx = len.saturating_sub(1 + d);
+                    let v = if idx < len { self.stack[idx] } else { 0.0 };
+                    self.stack.push(v);
+                }
+                RpnOp::Drop => {
+                    self.stack.pop();
+                }
+                RpnOp::Swap => {
+                    let len = self.stack.len();
+                    if len >= 2 {
+                        self.stack.swap(len - 1, len - 2);
+                    }
+                }
                 RpnOp::Loop { count, body_len } => {
                     let body_start = i + 1;
                     let body_end = body_start + body_len as usize;
@@ -136,8 +166,108 @@ impl HotLoop {
                                     let v = self.stack[len - 1];
                                     self.stack.push(v);
                                 }
-                                RpnOp::Loop { .. } => {
-                                    panic!("loops anidados no soportados");
+                                RpnOp::FAdd => {
+                                    let len = self.stack.len();
+                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                    if len >= 2 { self.stack.truncate(len - 2); }
+                                    self.stack.push(a + b);
+                                }
+                                RpnOp::FMul => {
+                                    let len = self.stack.len();
+                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                    if len >= 2 { self.stack.truncate(len - 2); }
+                                    self.stack.push(a * b);
+                                }
+                                RpnOp::Pick { depth } => {
+                                    let d = depth as usize;
+                                    let len = self.stack.len();
+                                    let idx = len.saturating_sub(1 + d);
+                                    let v = if idx < len { self.stack[idx] } else { 0.0 };
+                                    self.stack.push(v);
+                                }
+                                RpnOp::Drop => {
+                                    self.stack.pop();
+                                }
+                                RpnOp::Swap => {
+                                    let len = self.stack.len();
+                                    if len >= 2 {
+                                        self.stack.swap(len - 1, len - 2);
+                                    }
+                                }
+                                RpnOp::Loop { count: inner_count, body_len: inner_body_len } => {
+                                    let inner_body_start = j + 1;
+                                    let inner_body_end = inner_body_start + inner_body_len as usize;
+                                    for inner_iter in 0..inner_count {
+                                        self.stack.push(inner_iter as f64);
+                                        let mut k = inner_body_start;
+                                        while k < inner_body_end {
+                                            match program.ops[k] {
+                                                RpnOp::One => self.stack.push(1.0),
+                                                RpnOp::Zero => self.stack.push(0.0),
+                                                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
+                                                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
+                                                RpnOp::VarIndexed { base } => {
+                                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                                                    self.stack.push(buf.read_indexed(base, offset));
+                                                }
+                                                RpnOp::StoreResult { slot } => {
+                                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                                                    let value = self.stack.pop().unwrap_or(f64::NAN);
+                                                    buf.write(slot, offset, value);
+                                                }
+                                                RpnOp::Bml => {
+                                                    let len = self.stack.len();
+                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                                    if len >= 2 { self.stack.truncate(len - 2); }
+                                                    self.stack.push(bml_domain::bml(a, b));
+                                                }
+                                                RpnOp::Dup => {
+                                                    let len = self.stack.len();
+                                                    let v = self.stack[len - 1];
+                                                    self.stack.push(v);
+                                                }
+                                                RpnOp::FAdd => {
+                                                    let len = self.stack.len();
+                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                                    if len >= 2 { self.stack.truncate(len - 2); }
+                                                    self.stack.push(a + b);
+                                                }
+                                                RpnOp::FMul => {
+                                                    let len = self.stack.len();
+                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                                    if len >= 2 { self.stack.truncate(len - 2); }
+                                                    self.stack.push(a * b);
+                                                }
+                                                RpnOp::Pick { depth } => {
+                                                    let d = depth as usize;
+                                                    let len = self.stack.len();
+                                                    let idx = len.saturating_sub(1 + d);
+                                                    let v = if idx < len { self.stack[idx] } else { 0.0 };
+                                                    self.stack.push(v);
+                                                }
+                                                RpnOp::Drop => {
+                                                    self.stack.pop();
+                                                }
+                                                RpnOp::Swap => {
+                                                    let len = self.stack.len();
+                                                    if len >= 2 {
+                                                        self.stack.swap(len - 1, len - 2);
+                                                    }
+                                                }
+                                                RpnOp::Loop { .. } => {
+                                                    panic!("max 2 loop nesting levels");
+                                                }
+                                            }
+                                            k += 1;
+                                        }
+                                    }
+                                    j = inner_body_end;
+                                    continue;
                                 }
                             }
                             j += 1;
@@ -154,10 +284,6 @@ impl HotLoop {
     }
 
     /// Ejecuta un fragmento sobre la pila actual (sin limpiar).
-    ///
-    /// A diferencia de `execute`, esta función no limpia la pila al
-    /// inicio. Permite ejecutar fragmentos consecutivos manteniendo
-    /// el estado de la pila entre ellos.
     #[inline]
     pub fn execute_fragment(&mut self, fragment: &Fragment) {
         let ctx = bml_domain::EvalContext::new(&[], &[]);
@@ -212,6 +338,36 @@ impl HotLoop {
                     let v = self.stack[len - 1];
                     self.stack.push(v);
                 }
+                RpnOp::FAdd => {
+                    let len = self.stack.len();
+                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                    if len >= 2 { self.stack.truncate(len - 2); }
+                    self.stack.push(a + b);
+                }
+                RpnOp::FMul => {
+                    let len = self.stack.len();
+                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                    if len >= 2 { self.stack.truncate(len - 2); }
+                    self.stack.push(a * b);
+                }
+                RpnOp::Pick { depth } => {
+                    let d = depth as usize;
+                    let len = self.stack.len();
+                    let idx = len.saturating_sub(1 + d);
+                    let v = if idx < len { self.stack[idx] } else { 0.0 };
+                    self.stack.push(v);
+                }
+                RpnOp::Drop => {
+                    self.stack.pop();
+                }
+                RpnOp::Swap => {
+                    let len = self.stack.len();
+                    if len >= 2 {
+                        self.stack.swap(len - 1, len - 2);
+                    }
+                }
                 RpnOp::Loop { count, body_len } => {
                     let body_start = i + 1;
                     let body_end = body_start + body_len as usize;
@@ -245,8 +401,108 @@ impl HotLoop {
                                     let v = self.stack[len - 1];
                                     self.stack.push(v);
                                 }
-                                RpnOp::Loop { .. } => {
-                                    panic!("loops anidados no soportados");
+                                RpnOp::FAdd => {
+                                    let len = self.stack.len();
+                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                    if len >= 2 { self.stack.truncate(len - 2); }
+                                    self.stack.push(a + b);
+                                }
+                                RpnOp::FMul => {
+                                    let len = self.stack.len();
+                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                    if len >= 2 { self.stack.truncate(len - 2); }
+                                    self.stack.push(a * b);
+                                }
+                                RpnOp::Pick { depth } => {
+                                    let d = depth as usize;
+                                    let len = self.stack.len();
+                                    let idx = len.saturating_sub(1 + d);
+                                    let v = if idx < len { self.stack[idx] } else { 0.0 };
+                                    self.stack.push(v);
+                                }
+                                RpnOp::Drop => {
+                                    self.stack.pop();
+                                }
+                                RpnOp::Swap => {
+                                    let len = self.stack.len();
+                                    if len >= 2 {
+                                        self.stack.swap(len - 1, len - 2);
+                                    }
+                                }
+                                RpnOp::Loop { count: inner_count, body_len: inner_body_len } => {
+                                    let inner_body_start = j + 1;
+                                    let inner_body_end = inner_body_start + inner_body_len as usize;
+                                    for inner_iter in 0..inner_count {
+                                        self.stack.push(inner_iter as f64);
+                                        let mut k = inner_body_start;
+                                        while k < inner_body_end {
+                                            match fragment.ops[k] {
+                                                RpnOp::One => self.stack.push(1.0),
+                                                RpnOp::Zero => self.stack.push(0.0),
+                                                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
+                                                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
+                                                RpnOp::VarIndexed { base } => {
+                                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                                                    self.stack.push(buf.read_indexed(base, offset));
+                                                }
+                                                RpnOp::StoreResult { slot } => {
+                                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
+                                                    let value = self.stack.pop().unwrap_or(f64::NAN);
+                                                    buf.write(slot, offset, value);
+                                                }
+                                                RpnOp::Bml => {
+                                                    let len = self.stack.len();
+                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                                    if len >= 2 { self.stack.truncate(len - 2); }
+                                                    self.stack.push(bml_domain::bml(a, b));
+                                                }
+                                                RpnOp::Dup => {
+                                                    let len = self.stack.len();
+                                                    let v = self.stack[len - 1];
+                                                    self.stack.push(v);
+                                                }
+                                                RpnOp::FAdd => {
+                                                    let len = self.stack.len();
+                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                                    if len >= 2 { self.stack.truncate(len - 2); }
+                                                    self.stack.push(a + b);
+                                                }
+                                                RpnOp::FMul => {
+                                                    let len = self.stack.len();
+                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
+                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
+                                                    if len >= 2 { self.stack.truncate(len - 2); }
+                                                    self.stack.push(a * b);
+                                                }
+                                                RpnOp::Pick { depth } => {
+                                                    let d = depth as usize;
+                                                    let len = self.stack.len();
+                                                    let idx = len.saturating_sub(1 + d);
+                                                    let v = if idx < len { self.stack[idx] } else { 0.0 };
+                                                    self.stack.push(v);
+                                                }
+                                                RpnOp::Drop => {
+                                                    self.stack.pop();
+                                                }
+                                                RpnOp::Swap => {
+                                                    let len = self.stack.len();
+                                                    if len >= 2 {
+                                                        self.stack.swap(len - 1, len - 2);
+                                                    }
+                                                }
+                                                RpnOp::Loop { .. } => {
+                                                    panic!("max 2 loop nesting levels");
+                                                }
+                                            }
+                                            k += 1;
+                                        }
+                                    }
+                                    j = inner_body_end;
+                                    continue;
                                 }
                             }
                             j += 1;
@@ -261,8 +517,6 @@ impl HotLoop {
     }
 
     /// Ejecuta una lista de fragmentos en orden.
-    ///
-    /// La pila se mantiene entre fragmentos.
     #[inline]
     pub fn execute_fragments(&mut self, fragments: &[Fragment], x: f64) -> f64 {
         let ctx = bml_domain::EvalContext::new(&[], &[]);
@@ -358,7 +612,6 @@ mod tests {
 
     #[test]
     fn zero_allocs_in_hot_path() {
-        // Verificamos que la pila no crece durante execute.
         let program = build_exp2_program();
         let mut hot = HotLoop::with_capacity(256);
         let cap_before = hot.stack_capacity();
@@ -381,7 +634,6 @@ mod tests {
 
     #[test]
     fn execute_fragments_preserves_stack() {
-        // Construir un programa y partirlo en fragmentos.
         use bml_compiler::{fragment_program, DEFAULT_L1_THRESHOLD};
         let program = build_exp2_program();
         let graph = fragment_program(&program, DEFAULT_L1_THRESHOLD);

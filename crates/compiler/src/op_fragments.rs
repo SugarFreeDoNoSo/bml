@@ -33,26 +33,36 @@ pub struct OperationFragment {
 
 /// Compila un fragmento de matmul: y = W · x
 ///
-/// Estructura del fragmento:
+/// Estructura del fragmento (con acumulador):
 /// ```text
 /// Loop(n_rows, body=[
-///   // i = contador del loop (en la pila)
-///   Loop(n_cols, body=[
-///     // j = contador del loop
-///     VarIndexed(weight_base)  // W[i*n_cols + j] (offset = i*n_cols + j en la pila)
-///     VarIndexed(input_base)   // x[j] (offset = j)
-///     Bml                      // mul = W[i*n_cols+j] * x[j]
-///     // acumular...
+///   Zero                    // push 0.0 (accumulator)
+///   Dup                     // dup i (outer loop counter)
+///   Const(n_cols_const_id)  // push n_cols  
+///   FMul                    // row_start = i * n_cols
+///   Loop(n_cols, body=[     // inner loop over columns
+///     Dup                   // save j
+///     VarIndexed(input)     // read x[j]
+///     Swap                  // bring j to top for offset
+///     Pick(2)               // get row_start
+///     FAdd                  // weight_offset = row_start + j
+///     VarIndexed(weight)    // read w[offset]
+///     Pick(3)               // get 0.0 (accumulator)
+///     Swap                  // reorder
+///     Swap                  // reorder for bml
+///     Bml                   // bml(x_j, w)
+///     Bml                   // bml(0.0, bml_result) = accumulate
 ///   ])
-///   StoreResult(output_slot)   // y[i] = acc
+///   Pick(3)                 // get i (outer loop counter)
+///   Swap                    // swap with acc  
+///   StoreResult(output_slot) // store acc at row i
+///   Drop                    // cleanup row_start
+///   Drop                    // cleanup 0.0
+///   Drop                    // cleanup i
 /// ])
 /// ```
 ///
-/// # Nota
-///
-/// Esta versión simplificada no implementa la acumulación completa
-/// (sum de productos). Usa un solo `bml` por elemento. La versión
-/// completa requiere un acumulador en la pila.
+/// `n_cols_const_id` es el ID de constante en el pool para el valor `n_cols as f64`.
 pub fn compile_matmul_fragment(
     name: &str,
     input_slot: u32,
@@ -60,52 +70,53 @@ pub fn compile_matmul_fragment(
     weight_base: u32,
     n_rows: u32,
     n_cols: u32,
+    n_cols_const_id: u32,
 ) -> OperationFragment {
-    let mut ops = Vec::new();
-
-    // Loop externo: n_rows iteraciones
-    // Cuerpo: para cada i, computar y[i] = sum_j(W[i*n_cols+j] * x[j])
-    //
-    // Versión simplificada: para cada (i,j), hacer bml(W[idx], x[j])
-    // y almacenar el resultado. La acumulación completa requiere
-    // un patrón más complejo con suma.
-
-    // Por ahora, generamos un fragmento que hace:
-    // Para cada i, para cada j:
-    //   leer W[i*n_cols + j] via VarIndexed
-    //   leer x[j] via VarIndexed
-    //   bml(w, x)
-    //   StoreResult(output_slot, i)  // sobrescribe (último producto)
-
-    // El cuerpo del loop interno (n_cols ops):
-    let inner_body_len = 4; // VarIndexed, VarIndexed, Bml, StoreResult
+    // Inner body: 11 ops
     let inner_body: Vec<RpnOp> = vec![
-        RpnOp::VarIndexed { base: weight_base }, // lee W[offset] (offset en pila)
-        RpnOp::VarIndexed { base: input_slot },  // lee x[offset] (offset en pila)
-        RpnOp::Bml,                              // mul
-        RpnOp::StoreResult { slot: output_slot }, // escribe resultado
+        RpnOp::Dup,                                    // 1: dup j
+        RpnOp::VarIndexed { base: input_slot },         // 2: read x[j]
+        RpnOp::Swap,                                    // 3: bring j to top for offset
+        RpnOp::Pick { depth: 2 },                       // 4: get row_start
+        RpnOp::FAdd,                                    // 5: weight_offset = row_start + j
+        RpnOp::VarIndexed { base: weight_base },         // 6: read w[offset]
+        RpnOp::Pick { depth: 3 },                       // 7: get acc (0.0)
+        RpnOp::Swap,                                    // 8: reorder
+        RpnOp::Swap,                                    // 9: reorder
+        RpnOp::Bml,                                     // 10: bml(x_j, w)
+        RpnOp::Bml,                                     // 11: bml(acc, bml_result) = accumulate
     ];
+    let inner_body_len: u32 = inner_body.len() as u32;
 
-    // Loop interno: n_cols iteraciones
-    ops.push(RpnOp::Loop {
-        count: n_cols,
-        body_len: inner_body_len,
-    });
-    ops.extend(inner_body.iter().copied());
-
-    // Loop externo: n_rows iteraciones (envuelve el loop interno)
-    let outer_body_len = 1 + inner_body_len + 1; // Loop + inner_body + (nada extra)
-    let mut outer_body = Vec::new();
+    // Outer body: 22 ops total (including inner Loop + inner body)
+    let mut outer_body = Vec::with_capacity(22);
+    // Steps before inner loop
+    outer_body.push(RpnOp::Zero);                              // push 0.0 accumulator
+    outer_body.push(RpnOp::Dup);                               // dup i
+    outer_body.push(RpnOp::Const(n_cols_const_id));            // push n_cols
+    outer_body.push(RpnOp::FMul);                              // row_start = i * n_cols
+    // Inner loop + body
     outer_body.push(RpnOp::Loop {
         count: n_cols,
         body_len: inner_body_len,
     });
     outer_body.extend(inner_body.iter().copied());
+    // Steps after inner loop
+    outer_body.push(RpnOp::Pick { depth: 3 });                 // get i (outer loop counter)
+    outer_body.push(RpnOp::Swap);                              // swap with acc
+    outer_body.push(RpnOp::StoreResult { slot: output_slot }); // store acc at row i
+    // cleanup stack for next outer iteration
+    outer_body.push(RpnOp::Drop);                              // drop row_start
+    outer_body.push(RpnOp::Drop);                              // drop 0.0
+    outer_body.push(RpnOp::Drop);                              // drop i
 
-    ops = vec![RpnOp::Loop {
+    let outer_body_len: u32 = outer_body.len() as u32;
+
+    let mut ops = Vec::with_capacity(1 + outer_body.len());
+    ops.push(RpnOp::Loop {
         count: n_rows,
         body_len: outer_body_len,
-    }];
+    });
     ops.extend(outer_body.iter().copied());
 
     OperationFragment {
@@ -228,27 +239,6 @@ pub fn compile_mlp_fragment(
     down_base: u32,
     n_elems: u32,
 ) -> OperationFragment {
-    // Para cada elemento:
-    // gate = bml(x[i], gate_w[i])
-    // up = bml(x[i], up_w[i])
-    // act = bml(gate, up)
-    // out = bml(act, down_w[i])
-    // store out
-    let body_len = 9;
-    let body: Vec<RpnOp> = vec![
-        RpnOp::VarIndexed { base: input_slot }, // x[i]
-        RpnOp::VarIndexed { base: gate_base },  // gate_w[i]
-        RpnOp::Bml,                             // gate
-        RpnOp::VarIndexed { base: input_slot }, // x[i] de nuevo
-        RpnOp::VarIndexed { base: up_base },    // up_w[i]
-        RpnOp::Bml,                             // up
-        RpnOp::Bml,                             // act = bml(gate, up)
-        RpnOp::VarIndexed { base: down_base },  // down_w[i]
-                                                // Falta: Bml(act, down) + StoreResult
-                                                // Pero el cuerpo tiene que ser exacto. Simplificamos:
-    ];
-
-    // Versión simplificada: solo gate * up, sin down
     let body_len = 6;
     let body: Vec<RpnOp> = vec![
         RpnOp::VarIndexed { base: input_slot },   // x[i]
@@ -303,6 +293,7 @@ pub fn compile_layer_fragments(
     gate_base: u32,
     up_base: u32,
     down_base: u32,
+    n_cols_const_id: u32,
 ) -> Vec<OperationFragment> {
     let mut fragments = Vec::new();
     let mut next_slot = input_slot + 1; // slots se asignan secuencialmente
@@ -328,6 +319,7 @@ pub fn compile_layer_fragments(
         q_base,
         n_embd,
         n_embd,
+        n_cols_const_id,
     ));
 
     // 3. Matmul K
@@ -340,6 +332,7 @@ pub fn compile_layer_fragments(
         k_base,
         n_embd,
         n_embd,
+        n_cols_const_id,
     ));
 
     // 4. Matmul V
@@ -352,6 +345,7 @@ pub fn compile_layer_fragments(
         v_base,
         n_embd,
         n_embd,
+        n_cols_const_id,
     ));
 
     // 5. Attention (Q·K^T · V)
@@ -376,6 +370,7 @@ pub fn compile_layer_fragments(
         o_base,
         n_embd,
         n_embd,
+        n_cols_const_id,
     ));
 
     // 7. MLP RMSNorm
@@ -412,7 +407,7 @@ mod tests {
 
     #[test]
     fn matmul_fragment_structure() {
-        let frag = compile_matmul_fragment("test_q", 0, 1, 100, 4, 4);
+        let frag = compile_matmul_fragment("test_q", 0, 1, 100, 4, 4, 0);
         assert_eq!(frag.meta.name, "test_q");
         assert_eq!(frag.meta.input_slot, 0);
         assert_eq!(frag.meta.output_slot, 1);
@@ -450,7 +445,7 @@ mod tests {
 
     #[test]
     fn layer_fragments_count() {
-        let frags = compile_layer_fragments(0, 0, 2048, 0, 100, 200, 300, 400, 500, 600, 700, 800);
+        let frags = compile_layer_fragments(0, 0, 2048, 0, 100, 200, 300, 400, 500, 600, 700, 800, 0);
         // 8 fragmentos: norm, Q, K, V, attention, output, mlp_norm, mlp
         assert_eq!(frags.len(), 8);
 
@@ -464,7 +459,7 @@ mod tests {
     #[test]
     fn fragment_size_under_32kb() {
         // Un fragmento de matmul 2048x2048 con Loop
-        let frag = compile_matmul_fragment("test", 0, 1, 0, 2048, 2048);
+        let frag = compile_matmul_fragment("test", 0, 1, 0, 2048, 2048, 0);
         let size = frag.fragment.ops.len() * std::mem::size_of::<RpnOp>();
         // Con Loop, el tamaño es O(1), no O(n*m)
         assert!(size < 32 * 1024, "fragment size {size} >= 32KB");

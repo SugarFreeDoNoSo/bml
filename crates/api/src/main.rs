@@ -13,8 +13,8 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use bml_compiler::gguf_compiler::{load_from_dir, ModelConfig};
-use bml_runtime::Runtime;
+use bml_compiler::gguf_compiler::InferenceCompiler;
+use bml_compiler::sampler::sample;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -24,15 +24,10 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 
-/// Capacidad máxima de la cola de requests pendientes.
 const MAX_PENDING_REQUESTS: usize = 64;
 
 struct ServerState {
-    graph: bml_compiler::BmlGraph,
-    const_pool: Vec<f64>,
-    config: ModelConfig,
-    runtime: Mutex<Runtime>,
-    /// Número de requests pendientes (para backpressure).
+    compiler: Mutex<InferenceCompiler>,
     pending_requests: AtomicUsize,
 }
 
@@ -91,7 +86,7 @@ struct ErrorDetail {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
-    let mut model_path = PathBuf::from("model.bmlgraph");
+    let mut model_path = PathBuf::from("model.gguf");
     let mut port: u16 = 8080;
 
     let mut i = 1;
@@ -111,21 +106,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     println!("Loading model from {:?}...", model_path);
-    let (graph, const_pool, config) =
-        load_from_dir(&model_path).map_err(|e| format!("Error loading model: {e}"))?;
+    let compiler = InferenceCompiler::open(&model_path)
+        .map_err(|e| format!("Error loading model: {e}"))?;
 
+    let config = compiler.config();
     println!(
         "Model: {} ({} layers, {} heads, {} embd)",
         config.architecture, config.n_layers, config.n_heads, config.n_embd
     );
-    println!("Fragments: {}", graph.num_fragments());
     println!("Max pending requests: {MAX_PENDING_REQUESTS}");
 
     let state = Arc::new(ServerState {
-        graph,
-        const_pool,
-        config,
-        runtime: Mutex::new(Runtime::new(8192, 64)),
+        compiler: Mutex::new(compiler),
         pending_requests: AtomicUsize::new(0),
     });
 
@@ -148,7 +140,6 @@ async fn completions(
     State(state): State<Arc<ServerState>>,
     Json(req): Json<CompletionRequest>,
 ) -> Response {
-    // Backpressure: si hay demasiados requests pendientes, rechazar.
     let pending = state.pending_requests.fetch_add(1, Ordering::SeqCst);
     if pending >= MAX_PENDING_REQUESTS {
         state.pending_requests.fetch_sub(1, Ordering::SeqCst);
@@ -165,33 +156,22 @@ async fn completions(
     }
 
     if req.stream {
-        let (tx, rx) = mpsc::channel::<Result<String, std::convert::Infallible>>(32);
+        let (tx, rx) = mpsc::channel::<Result<String, std::convert::Infallible>>(256);
 
         let state_clone = Arc::clone(&state);
         tokio::spawn(async move {
-            // Generar tokens (placeholder)
-            let tokens = vec!["B", "M", "L"];
-            for token in tokens {
+            let result = generate_streaming(&state_clone, &req, tx.clone());
+            if let Err(e) = result {
                 let event = StreamEvent {
                     choices: vec![StreamChoice {
-                        text: token.to_string(),
-                        finish_reason: None,
+                        text: String::new(),
+                        finish_reason: Some(format!("error: {e}")),
                     }],
                 };
                 let json = serde_json::to_string(&event).unwrap();
                 let _ = tx.send(Ok(format!("data: {json}\n\n"))).await;
             }
-            let done = StreamEvent {
-                choices: vec![StreamChoice {
-                    text: String::new(),
-                    finish_reason: Some("stop".to_string()),
-                }],
-            };
-            let json = serde_json::to_string(&done).unwrap();
-            let _ = tx.send(Ok(format!("data: {json}\n\n"))).await;
             let _ = tx.send(Ok("data: [DONE]\n\n".to_string())).await;
-
-            // Liberar slot de backpressure
             state_clone.pending_requests.fetch_sub(1, Ordering::SeqCst);
         });
 
@@ -201,12 +181,12 @@ async fn completions(
         )
         .into_response()
     } else {
-        let result = generate_tokens(&state, &req);
+        let text = generate_text(&state, &req);
         state.pending_requests.fetch_sub(1, Ordering::SeqCst);
 
         let response = CompletionResponse {
             choices: vec![Choice {
-                text: result,
+                text,
                 finish_reason: "stop".to_string(),
             }],
         };
@@ -216,29 +196,100 @@ async fn completions(
 
 async fn health(State(state): State<Arc<ServerState>>) -> impl IntoResponse {
     let pending = state.pending_requests.load(Ordering::SeqCst);
+    let config = state.compiler.lock().unwrap().config().clone();
     (
         StatusCode::OK,
         Json(serde_json::json!({
             "status": "ok",
-            "model": state.config.architecture,
-            "layers": state.config.n_layers,
-            "fragments": state.graph.num_fragments(),
+            "model": config.architecture,
+            "layers": config.n_layers,
+            "fragments": 1,
             "pending_requests": pending,
             "capacity": MAX_PENDING_REQUESTS,
         })),
     )
 }
 
-fn generate_tokens(state: &ServerState, req: &CompletionRequest) -> String {
-    let inputs = vec![req.prompt.len() as f64];
-    let ctx = bml_domain::EvalContext::new(&inputs, &state.const_pool);
-    let _result = state
-        .runtime
-        .lock()
-        .unwrap()
-        .execute_graph_with_ctx(&state.graph, &ctx);
-    format!(
-        "{} [BML placeholder: {} tokens]",
-        req.prompt, req.max_tokens
-    )
+fn generate_text(state: &ServerState, req: &CompletionRequest) -> String {
+    let compiler = state.compiler.lock().unwrap();
+    let vocab = compiler.vocab();
+    let input_ids = vocab.encode(&req.prompt);
+    let mut tokens = input_ids.clone();
+    let mut output_parts: Vec<String> = Vec::new();
+    let max = req.max_tokens as usize;
+
+    for _ in 0..max {
+        let logits = compiler.forward(&tokens);
+        if logits.is_empty() {
+            break;
+        }
+        let token_id = match sample(&logits, req.temperature, 0) {
+            Some(id) => id,
+            None => break,
+        };
+        let piece = vocab.decode_single(token_id);
+        output_parts.push(piece.to_string());
+        tokens.push(token_id);
+        if tokens.len() > 4096 {
+            tokens.drain(0..(tokens.len() - 2048));
+        }
+    }
+    output_parts.join("")
+}
+
+fn generate_streaming(
+    state: &ServerState,
+    req: &CompletionRequest,
+    tx: mpsc::Sender<Result<String, std::convert::Infallible>>,
+) -> Result<(), String> {
+    let compiler = state.compiler.lock().map_err(|e| format!("lock: {e}"))?;
+    let vocab = compiler.vocab();
+    let input_ids = vocab.encode(&req.prompt);
+    let mut tokens = input_ids.clone();
+    let max = req.max_tokens as usize;
+
+    let first = StreamEvent {
+        choices: vec![StreamChoice {
+            text: req.prompt.clone(),
+            finish_reason: None,
+        }],
+    };
+    let json = serde_json::to_string(&first).unwrap();
+    let _ = tx.blocking_send(Ok(format!("data: {json}\n\n")));
+
+    for _ in 0..max {
+        let logits = compiler.forward(&tokens);
+        if logits.is_empty() {
+            break;
+        }
+        let token_id = match sample(&logits, req.temperature, 0) {
+            Some(id) => id,
+            None => break,
+        };
+        let piece = vocab.decode_single(token_id);
+        let event = StreamEvent {
+            choices: vec![StreamChoice {
+                text: piece.to_string(),
+                finish_reason: None,
+            }],
+        };
+        let json = serde_json::to_string(&event).unwrap();
+        if tx.blocking_send(Ok(format!("data: {json}\n\n"))).is_err() {
+            break;
+        }
+        tokens.push(token_id);
+        if tokens.len() > 4096 {
+            tokens.drain(0..(tokens.len() - 2048));
+        }
+    }
+
+    let done = StreamEvent {
+        choices: vec![StreamChoice {
+            text: String::new(),
+            finish_reason: Some("stop".to_string()),
+        }],
+    };
+    let json = serde_json::to_string(&done).unwrap();
+    let _ = tx.blocking_send(Ok(format!("data: {json}\n\n")));
+    Ok(())
 }

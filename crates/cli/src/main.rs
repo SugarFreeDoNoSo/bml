@@ -5,14 +5,13 @@
 //! # Uso
 //!
 //! ```sh
-//! bml-cli -m model.bmlgraph/ -p "Hello" -n 10
+//! bml-cli -m /root/tinyllama.gguf -p "Hello" -n 10
 //! ```
 
-use bml_compiler::gguf_compiler::load_from_dir;
-use bml_runtime::Runtime;
+use bml_compiler::gguf_compiler::InferenceCompiler;
+use bml_compiler::sampler;
 use clap::Parser;
 
-/// BML CLI — ejecuta inferencia local con un modelo .bmlgraph.
 #[derive(Parser, Debug)]
 #[command(
     name = "bml-cli",
@@ -20,27 +19,16 @@ use clap::Parser;
     about = "BML inference CLI (llama.cpp compatible)"
 )]
 struct Args {
-    /// Ruta al directorio .bmlgraph.
     #[arg(short = 'm', long = "model")]
     model: String,
-
-    /// Prompt de entrada.
     #[arg(short = 'p', long = "prompt")]
     prompt: String,
-
-    /// Número de tokens a generar.
     #[arg(short = 'n', long = "num-tokens", default_value_t = 128)]
     num_tokens: u32,
-
-    /// Número de threads.
     #[arg(short = 't', long = "threads", default_value_t = 4)]
     threads: u32,
-
-    /// Temperatura de sampling (0 = greedy).
     #[arg(long = "temp", default_value_t = 0.8)]
     temp: f64,
-
-    /// Tamaño de contexto.
     #[arg(short = 'c', long = "context-size", default_value_t = 2048)]
     context_size: u32,
 }
@@ -49,42 +37,90 @@ fn main() {
     let args = Args::parse();
 
     println!("Loading model from {}...", args.model);
-    let (graph, const_pool, config) = match load_from_dir(std::path::Path::new(&args.model)) {
-        Ok(result) => result,
+    println!("This may take a while for large models (dequantizing weights)...");
+
+    let compiler = match InferenceCompiler::open(&args.model) {
+        Ok(c) => c,
         Err(e) => {
             eprintln!("Error loading model: {e}");
             std::process::exit(1);
         }
     };
 
+    let config = compiler.config();
+    let vocab = compiler.vocab();
     println!(
-        "Model: {} ({} layers, {} heads, {} embd)",
-        config.architecture, config.n_layers, config.n_heads, config.n_embd
+        "Model: {} ({} layers, {} heads, {} embd, {} vocab)",
+        config.architecture,
+        config.n_layers,
+        config.n_heads,
+        config.n_embd,
+        vocab.len(),
     );
-    println!("Fragments: {}", graph.num_fragments());
-    println!("Const pool: {} values", const_pool.len());
-    println!();
-
-    // Crear runtime
-    let mut runtime = Runtime::new(8192, 64);
-
-    // Ejecutar inferencia (placeholder)
+    println!(
+        "Weight pool: {} values ({:.1} MB)",
+        compiler.weight_pool().len(),
+        compiler.weight_pool().len() as f64 * 8.0 / (1024.0 * 1024.0)
+    );
     println!("Prompt: {}", args.prompt);
     println!(
         "Generating {} tokens (temp={})...",
         args.num_tokens, args.temp
     );
+    println!();
 
-    // Ejecutar el grafo con el prompt como input
-    let inputs = vec![args.prompt.len() as f64];
-    let ctx = bml_domain::EvalContext::new(&inputs, &const_pool);
-    let result = runtime.execute_graph_with_ctx(&graph, &ctx);
+    let prompt_ids = vocab.encode(&args.prompt);
+    println!("Tokenized: {} tokens", prompt_ids.len());
+
+    let mut sequence = prompt_ids.clone();
+    let max_ctx = args.context_size.min(512) as usize;
+
+    for step in 0..args.num_tokens {
+        // Truncar al context size
+        let ctx_start = if sequence.len() > max_ctx {
+            sequence.len() - max_ctx
+        } else {
+            0
+        };
+        let context = &sequence[ctx_start..];
+
+        // Forward pass
+        let logits = compiler.forward(context);
+
+        // Sample next token
+        let next_id = sampler::sample(&logits, args.temp, step as u64)
+            .unwrap_or(vocab.eos_token_id);
+
+        // Print token text
+        let token_text = vocab.decode_single(next_id)
+            .strip_prefix('▁')
+            .unwrap_or("<unk>");
+
+        if token_text == "<|eot_id|>" || token_text == "<|endoftext|>" {
+            print!("\n");
+            break;
+        }
+        if token_text == "<0x0A>" {
+            println!();
+        } else {
+            print!("{}", token_text);
+        }
+        std::io::Write::flush(&mut std::io::stdout()).ok();
+
+        sequence.push(next_id);
+
+        // Stop on EOS
+        if next_id == vocab.eos_token_id {
+            println!("\n[EOS]");
+            break;
+        }
+    }
 
     println!();
-    println!("Result (raw): {result}");
     println!();
     println!(
-        "{} [BML placeholder: {} tokens generated]",
-        args.prompt, args.num_tokens
+        "Generated {} tokens from prompt '{}'",
+        sequence.len() - prompt_ids.len(),
+        args.prompt
     );
 }

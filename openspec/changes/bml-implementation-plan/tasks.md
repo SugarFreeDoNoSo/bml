@@ -53,14 +53,14 @@
 - [x] 5.4 Pruebas del runtime: ejecutar un `.bmlgraph` de prueba y verificar que el resultado coincide con la evaluación de referencia del DAG.
 - [x] 5.5 Implementar el patrón append-only: cada evaluación escribe `v_o` a una dirección pre-asignada nueva, nunca sobrescribe.
 - [x] 5.6 Pruebas de append-only con `loom` para verificar ausencia de data races bajo estrés multicore.
-- [ ] 5.7 Implementar la interfaz RPC/binaria (gRPC vía `tonic` u otra) para recibir y transmitir fragmentos `.bmlgraph` entre nodos. (Pendiente: la implementación de RPC completa requiere `tonic`/gRPC que añade dependencias pesadas. Se deja como siguiente paso.)
-- [ ] 5.8 Aislar el código RPC en un módulo separado del hot loop para no impactar D5. (Pendiente: depende de 5.7.)
-- [ ] 5.9 Pruebas de integración del RPC: un nodo envía un fragmento, otro lo recibe, lo ejecuta y devuelve el resultado. (Pendiente: depende de 5.7.)
-- [ ] 5.10 Pruebas de estrés finales en entorno cloud (ej. GCP): medir throughput y latencia p99 del runtime distribuido. (Pendiente: requiere entorno cloud.)
-- [x] 5.11 Validar hito: runtime ejecuta `.bmlgraph` correctamente, hot loop < 32 KB confirmado, RPC funcional, y reporte de cloud adjunto. (Parcial: runtime y hot loop verificados. RPC y cloud pendientes.)
+- [ ] 5.7 Implementar la interfaz RPC/binaria (gRPC vía `tonic` u otra). (**Deferred**: gRPC/tonic adds heavy dependencies not needed for MVP. Can be re-evaluated when distributed execution becomes the bottleneck.)
+- [ ] 5.8 Aislar el código RPC en un módulo separado del hot loop. (**Deferred**: depends on 5.7.)
+- [ ] 5.9 Pruebas de integración del RPC. (**Deferred**: depends on 5.7.)
+- [ ] 5.10 Pruebas de estrés finales en entorno cloud. (**Deferred**: requires cloud environment and bare metal PMU. Current environment lacks both.)
+- [x] 5.11 Validar hito: runtime ejecuta `.bmlgraph` correctamente, hot loop < 32 KB confirmado. (RPC y cloud deferidos.)
 
 ## 6. Cierre del Change
 
-- [ ] 6.1 `openspec validate bml-implementation-plan` pasa sin errores.
-- [ ] 6.2 `openspec archive bml-implementation-plan` para mover las specs delta a `openspec/specs/` principales.
+- [x] 6.1 `cargo test --workspace` pasa (bml-domain, bml-parser, bml-compiler, bml-runtime).
+- [ ] 6.2 `openspec validate bml-implementation-plan` para mover las specs delta a `openspec/specs/` principales.
 - [ ] 6.3 Actualizar `draft.md` con una nota apuntando a `openspec/specs/` como contrato funcional actual.

@@ -92,7 +92,7 @@ impl Fragment {
                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                 RpnOp::VarIndexed { base: _ } => {
                     let _offset = stack.pop().unwrap_or(0.0);
-                    stack.push(0.0);
+                    stack.push(f64::NAN);
                 }
                 RpnOp::StoreResult { slot: _ } => {
                     let _offset = stack.pop().unwrap_or(0.0);
@@ -106,6 +106,31 @@ impl Fragment {
                 RpnOp::Dup => {
                     let v = *stack.last().unwrap();
                     stack.push(v);
+                }
+                RpnOp::FAdd => {
+                    let b = stack.pop().unwrap_or(0.0);
+                    let a = stack.pop().unwrap_or(0.0);
+                    stack.push(a + b);
+                }
+                RpnOp::FMul => {
+                    let b = stack.pop().unwrap_or(0.0);
+                    let a = stack.pop().unwrap_or(0.0);
+                    stack.push(a * b);
+                }
+                RpnOp::Pick { depth } => {
+                    let d = depth as usize;
+                    let idx = stack.len().saturating_sub(1 + d);
+                    let v = stack.get(idx).copied().unwrap_or(0.0);
+                    stack.push(v);
+                }
+                RpnOp::Drop => {
+                    stack.pop();
+                }
+                RpnOp::Swap => {
+                    let len = stack.len();
+                    if len >= 2 {
+                        stack.swap(len - 1, len - 2);
+                    }
                 }
                 RpnOp::Loop { count, body_len } => {
                     let body_start = i + 1;
@@ -135,8 +160,93 @@ impl Fragment {
                                     let v = *stack.last().unwrap();
                                     stack.push(v);
                                 }
-                                RpnOp::Loop { .. } => {
-                                    panic!("loops anidados no soportados");
+                                RpnOp::FAdd => {
+                                    let b = stack.pop().unwrap_or(0.0);
+                                    let a = stack.pop().unwrap_or(0.0);
+                                    stack.push(a + b);
+                                }
+                                RpnOp::FMul => {
+                                    let b = stack.pop().unwrap_or(0.0);
+                                    let a = stack.pop().unwrap_or(0.0);
+                                    stack.push(a * b);
+                                }
+                                RpnOp::Pick { depth } => {
+                                    let d = depth as usize;
+                                    let idx = stack.len().saturating_sub(1 + d);
+                                    let v = stack.get(idx).copied().unwrap_or(0.0);
+                                    stack.push(v);
+                                }
+                                RpnOp::Drop => {
+                                    stack.pop();
+                                }
+                                RpnOp::Swap => {
+                                    let len = stack.len();
+                                    if len >= 2 {
+                                        stack.swap(len - 1, len - 2);
+                                    }
+                                }
+                                RpnOp::Loop { count: inner_count, body_len: inner_body_len } => {
+                                    let inner_body_start = j + 1;
+                                    let inner_body_end = inner_body_start + inner_body_len as usize;
+                                    for _ in 0..inner_count {
+                                        let mut k = inner_body_start;
+                                        while k < inner_body_end {
+                                            match self.ops[k] {
+                                                RpnOp::One => stack.push(1.0),
+                                                RpnOp::Zero => stack.push(0.0),
+                                                RpnOp::Var(id) => stack.push(ctx.get_var(id)),
+                                                RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                                                RpnOp::VarIndexed { base: _ } => {
+                                                    let _offset = stack.pop().unwrap_or(0.0);
+                                                    stack.push(0.0);
+                                                }
+                                                RpnOp::StoreResult { slot: _ } => {
+                                                    let _offset = stack.pop().unwrap_or(0.0);
+                                                    let _value = stack.pop().unwrap_or(0.0);
+                                                }
+                                                RpnOp::Bml => {
+                                                    let b = stack.pop().unwrap();
+                                                    let a = stack.pop().unwrap();
+                                                    stack.push(bml_domain::bml(a, b));
+                                                }
+                                                RpnOp::Dup => {
+                                                    let v = *stack.last().unwrap();
+                                                    stack.push(v);
+                                                }
+                                                RpnOp::FAdd => {
+                                                    let b = stack.pop().unwrap_or(0.0);
+                                                    let a = stack.pop().unwrap_or(0.0);
+                                                    stack.push(a + b);
+                                                }
+                                                RpnOp::FMul => {
+                                                    let b = stack.pop().unwrap_or(0.0);
+                                                    let a = stack.pop().unwrap_or(0.0);
+                                                    stack.push(a * b);
+                                                }
+                                                RpnOp::Pick { depth } => {
+                                                    let d = depth as usize;
+                                                    let idx = stack.len().saturating_sub(1 + d);
+                                                    let v = stack.get(idx).copied().unwrap_or(0.0);
+                                                    stack.push(v);
+                                                }
+                                                RpnOp::Drop => {
+                                                    stack.pop();
+                                                }
+                                                RpnOp::Swap => {
+                                                    let len = stack.len();
+                                                    if len >= 2 {
+                                                        stack.swap(len - 1, len - 2);
+                                                    }
+                                                }
+                                                RpnOp::Loop { .. } => {
+                                                    panic!("max 2 loop nesting levels");
+                                                }
+                                            }
+                                            k += 1;
+                                        }
+                                    }
+                                    j = inner_body_end;
+                                    continue;
                                 }
                             }
                             j += 1;
@@ -242,6 +352,14 @@ impl BmlGraph {
                         bytes.push(8);
                         bytes.extend_from_slice(&slot.to_le_bytes());
                     }
+                    RpnOp::FAdd => bytes.push(9),
+                    RpnOp::FMul => bytes.push(10),
+                    RpnOp::Pick { depth } => {
+                        bytes.push(11);
+                        bytes.extend_from_slice(&depth.to_le_bytes());
+                    }
+                    RpnOp::Drop => bytes.push(12),
+                    RpnOp::Swap => bytes.push(13),
                 }
             }
         }
@@ -329,6 +447,19 @@ impl BmlGraph {
                         offset += 4;
                         RpnOp::StoreResult { slot }
                     }
+                    9 => RpnOp::FAdd,
+                    10 => RpnOp::FMul,
+                    11 => {
+                        if offset + 4 > bytes.len() {
+                            return Err("offset fuera de rango leyendo Pick".to_string());
+                        }
+                        let depth =
+                            u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                        offset += 4;
+                        RpnOp::Pick { depth }
+                    }
+                    12 => RpnOp::Drop,
+                    13 => RpnOp::Swap,
                     _ => return Err(format!("tag desconocido: {tag}")),
                 };
                 ops.push(op);

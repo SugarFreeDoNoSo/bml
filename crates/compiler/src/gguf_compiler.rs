@@ -26,9 +26,16 @@ use crate::eml;
 use crate::fragment::{fragment_program, BmlGraph, BMLGRAPH_MAGIC, BMLGRAPH_VERSION};
 use crate::hardware::HardwareSpec;
 use crate::hash_cons::HashConsRegistry;
+use crate::op_fragments::{
+    compile_attention_fragment, compile_layer_fragments, compile_matmul_fragment,
+    compile_mlp_fragment, compile_rmsnorm_fragment, FragmentMeta, OperationFragment,
+};
 use crate::rpn::linearize;
+use crate::sampler;
+use crate::tokenizer::Vocabulary;
 use bml_domain::{ConstId, NodeId, VarId};
 use bml_parser::{GgufDataType, GgufMetadataValue, GgufParser};
+use std::collections::HashMap;
 use std::io::Write as IoWrite;
 use std::path::{Path, PathBuf};
 
@@ -134,6 +141,30 @@ fn read_model_config(parser: &GgufParser) -> Result<ModelConfig, String> {
     })
 }
 
+/// Build a balanced BML tree from all weight elements.
+fn build_weight_dag(reg: &mut HashConsRegistry, weights: &[f32]) -> NodeId {
+    if weights.is_empty() {
+        return reg.const_value(0.0);
+    }
+    let nodes: Vec<NodeId> = weights.iter().map(|&w| reg.const_value(w as f64)).collect();
+    combine_balanced(reg, &nodes)
+}
+
+/// Combine nodes into a balanced BML tree.
+fn combine_balanced(reg: &mut HashConsRegistry, nodes: &[NodeId]) -> NodeId {
+    match nodes.len() {
+        0 => reg.const_value(0.0),
+        1 => nodes[0],
+        2 => reg.bml(nodes[0], nodes[1]),
+        _ => {
+            let mid = nodes.len() / 2;
+            let left = combine_balanced(reg, &nodes[..mid]);
+            let right = combine_balanced(reg, &nodes[mid..]);
+            reg.bml(left, right)
+        }
+    }
+}
+
 /// Construye el DAG BML del transformer con pesos reales del GGUF.
 ///
 /// Lee los tensores del GGUF (zero-copy + dequantizacion), los almacena
@@ -200,11 +231,9 @@ fn build_transformer_dag(
         let norm_name = format!("{prefix}.attn_norm.weight");
         let norm_weights = read_tensor_f32(parser, &norm_name)
             .ok_or(format!("tensor no encontrado: {norm_name}"))?;
-        // Usar el primer peso como representante (simplificado).
-        // En la implementación completa, cada elemento del vector de pesos
-        // se aplicaría a su correspondiente dimensión del hidden state.
-        let rms_scale = reg.const_value(norm_weights[0] as f64);
-        hidden = reg.bml(hidden, rms_scale);
+        // Construir DAG combinado con todos los pesos de norma
+        let norm_weight_dag = build_weight_dag(reg, &norm_weights);
+        hidden = reg.bml(hidden, norm_weight_dag);
 
         // === Self-attention: Q, K, V ===
         // Leer pesos Q, K, V (Q4_0, dequantizados a f32).
@@ -219,16 +248,14 @@ fn build_transformer_dag(
         let v_weights =
             read_tensor_f32(parser, &v_name).ok_or(format!("tensor no encontrado: {v_name}"))?;
 
-        // Almacenar pesos como Const en el pool.
-        // Usamos el primer peso de cada tensor como representante.
-        // La implementación completa requiere matmul vectorial.
-        let q_weight = reg.const_value(q_weights[0] as f64);
-        let k_weight = reg.const_value(k_weights[0] as f64);
-        let v_weight = reg.const_value(v_weights[0] as f64);
+        // Almacenar TODOS los pesos como Const y construir DAGs combinados
+        let q_weight_dag = build_weight_dag(reg, &q_weights);
+        let k_weight_dag = build_weight_dag(reg, &k_weights);
+        let v_weight_dag = build_weight_dag(reg, &v_weights);
 
-        let q = reg.bml(hidden, q_weight);
-        let k = reg.bml(hidden, k_weight);
-        let v = reg.bml(hidden, v_weight);
+        let q = reg.bml(hidden, q_weight_dag);
+        let k = reg.bml(hidden, k_weight_dag);
+        let v = reg.bml(hidden, v_weight_dag);
 
         // === RoPE ===
         // Aplicar RoPE con constantes precomputadas.
@@ -238,8 +265,6 @@ fn build_transformer_dag(
             let q_rotated = reg.bml(q, sin_val);
             let q_scaled = reg.bml(q, cos_val);
             let q_new = reg.bml(q_scaled, q_rotated);
-            // Usar q_new en lugar de q (simplificado: solo primer par de dims)
-            // Q = q_new
             let _ = q_new; // placeholder: en implementación completa se aplicaría a todos los pares
         }
 
@@ -260,8 +285,8 @@ fn build_transformer_dag(
         let o_name = format!("{prefix}.attn_output.weight");
         let o_weights =
             read_tensor_f32(parser, &o_name).ok_or(format!("tensor no encontrado: {o_name}"))?;
-        let o_weight = reg.const_value(o_weights[0] as f64);
-        let o_out = reg.bml(attn_out, o_weight);
+        let o_weight_dag = build_weight_dag(reg, &o_weights);
+        let o_out = reg.bml(attn_out, o_weight_dag);
 
         // === Residual ===
         hidden = reg.bml(hidden, o_out);
@@ -270,8 +295,8 @@ fn build_transformer_dag(
         let mlp_norm_name = format!("{prefix}.ffn_norm.weight");
         let mlp_norm_weights = read_tensor_f32(parser, &mlp_norm_name)
             .ok_or(format!("tensor no encontrado: {mlp_norm_name}"))?;
-        let mlp_norm = reg.const_value(mlp_norm_weights[0] as f64);
-        hidden = reg.bml(hidden, mlp_norm);
+        let mlp_norm_dag = build_weight_dag(reg, &mlp_norm_weights);
+        hidden = reg.bml(hidden, mlp_norm_dag);
 
         // === MLP: gate, up, down ===
         let gate_name = format!("{prefix}.ffn_gate.weight");
@@ -285,17 +310,17 @@ fn build_transformer_dag(
         let down_weights = read_tensor_f32(parser, &down_name)
             .ok_or(format!("tensor no encontrado: {down_name}"))?;
 
-        let gate_weight = reg.const_value(gate_weights[0] as f64);
-        let up_weight = reg.const_value(up_weights[0] as f64);
-        let down_weight = reg.const_value(down_weights[0] as f64);
+        let gate_weight_dag = build_weight_dag(reg, &gate_weights);
+        let up_weight_dag = build_weight_dag(reg, &up_weights);
+        let down_weight_dag = build_weight_dag(reg, &down_weights);
 
-        let gate = reg.bml(hidden, gate_weight);
-        let up = reg.bml(hidden, up_weight);
+        let gate = reg.bml(hidden, gate_weight_dag);
+        let up = reg.bml(hidden, up_weight_dag);
 
         // SwiGLU: gate * sigmoid(1.7 * gate) * up
         // Simplificado: bml(gate, up)
         let mlp_act = reg.bml(gate, up);
-        let mlp_out = reg.bml(mlp_act, down_weight);
+        let mlp_out = reg.bml(mlp_act, down_weight_dag);
 
         // === Residual ===
         hidden = reg.bml(hidden, mlp_out);
@@ -305,16 +330,16 @@ fn build_transformer_dag(
     let final_norm_name = "output_norm.weight";
     let final_norm_weights = read_tensor_f32(parser, final_norm_name)
         .ok_or(format!("tensor no encontrado: {final_norm_name}"))?;
-    let final_norm = reg.const_value(final_norm_weights[0] as f64);
-    hidden = reg.bml(hidden, final_norm);
+    let final_norm_dag = build_weight_dag(reg, &final_norm_weights);
+    hidden = reg.bml(hidden, final_norm_dag);
 
     // === Output projection (lm_head) ===
     // TinyLlama usa tied embeddings: lm_head = token_embd.weight
     let lm_head_name = "token_embd.weight";
     let lm_head_weights = read_tensor_f32(parser, lm_head_name)
         .ok_or(format!("tensor no encontrado: {lm_head_name}"))?;
-    let lm_head = reg.const_value(lm_head_weights[0] as f64);
-    hidden = reg.bml(hidden, lm_head);
+    let lm_head_dag = build_weight_dag(reg, &lm_head_weights);
+    hidden = reg.bml(hidden, lm_head_dag);
 
     Ok(hidden)
 }
@@ -540,6 +565,23 @@ pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result
                     ff.write_all(&slot.to_le_bytes())
                         .map_err(|e| format!("write op: {e}"))?;
                 }
+                RpnOp::FAdd => {
+                    ff.write_all(&[9]).map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::FMul => {
+                    ff.write_all(&[10]).map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::Pick { depth } => {
+                    ff.write_all(&[11]).map_err(|e| format!("write op: {e}"))?;
+                    ff.write_all(&depth.to_le_bytes())
+                        .map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::Drop => {
+                    ff.write_all(&[12]).map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::Swap => {
+                    ff.write_all(&[13]).map_err(|e| format!("write op: {e}"))?;
+                }
             }
         }
     }
@@ -637,6 +679,25 @@ pub fn load_from_dir(input_dir: &Path) -> Result<(BmlGraph, Vec<f64>, ModelConfi
                     off += 4;
                     RpnOp::Const(id)
                 }
+                7 => {
+                    let base = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
+                    off += 4;
+                    RpnOp::VarIndexed { base }
+                }
+                8 => {
+                    let slot = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
+                    off += 4;
+                    RpnOp::StoreResult { slot }
+                }
+                9 => RpnOp::FAdd,
+                10 => RpnOp::FMul,
+                11 => {
+                    let depth = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
+                    off += 4;
+                    RpnOp::Pick { depth }
+                }
+                12 => RpnOp::Drop,
+                13 => RpnOp::Swap,
                 _ => return Err(format!("tag desconocido: {tag}")),
             };
             ops.push(op);
@@ -651,6 +712,377 @@ pub fn load_from_dir(input_dir: &Path) -> Result<(BmlGraph, Vec<f64>, ModelConfi
     Ok((graph, const_pool, config))
 }
 
+/// Resultado de compilar un GGUF para inferencia real con fragmentos por capa.
+pub struct InferenceCompiler {
+    config: ModelConfig,
+    vocab: Vocabulary,
+    /// Pool de pesos (f32, no f64 — ahorra la mitad de RAM).
+    weight_pool: Vec<f32>,
+    /// Offset en weight_pool de cada tensor clave (por capa y tipo).
+    weight_offsets: HashMap<String, u32>,
+    /// Dimensión de cada tensor (nombre → (n_rows, n_cols)).
+    tensor_dims: HashMap<String, (usize, usize)>,
+    /// Dimensión head.
+    head_dim: u32,
+    /// Dimensión de KV heads (GQA).
+    n_kv_heads: u32,
+}
+
+impl InferenceCompiler {
+    /// Abre un GGUF y carga TODOS los pesos dequantizados como f32.
+    ///
+    /// Para TinyLlama 1.1B (Q4_0, ~608MB en disco) los pesos dequantizados
+    /// ocupan ~3.5GB en f32. Es manejable pero grande.
+    pub fn open<P: AsRef<Path>>(gguf_path: P) -> Result<Self, String> {
+        let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
+        let config = read_model_config(&parser)?;
+        let vocab = Vocabulary::from_gguf(&parser)?;
+
+        let head_dim = config.n_embd / config.n_heads;
+
+        let n_kv_heads = parser
+            .get_metadata(&format!(
+                "{}.attention.key_value_head_count",
+                config.architecture
+            ))
+            .and_then(|v| match v {
+                GgufMetadataValue::U32(n) => Some(*n),
+                GgufMetadataValue::I32(n) => Some(*n as u32),
+                _ => None,
+            })
+            .unwrap_or(config.n_heads);
+
+        let mut weight_pool: Vec<f32> = Vec::new();
+        let mut weight_offsets = HashMap::new();
+        let mut tensor_dims = HashMap::new();
+
+        // Cargar embedding (token_embd.weight)
+        if let Some(emb_vals) = read_tensor_f32(&parser, "token_embd.weight") {
+            let dims = get_tensor_dims(&parser, "token_embd.weight");
+            let offset = weight_pool.len() as u32;
+            weight_pool.extend(&emb_vals);
+            weight_offsets.insert("token_embd.weight".into(), offset);
+            tensor_dims.insert("token_embd.weight".into(), dims);
+        }
+
+        // Cargar pesos por capa
+        for layer in 0..config.n_layers {
+            let prefix = format!("blk.{layer}");
+            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.attn_norm.weight", prefix));
+            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.attn_q.weight", prefix));
+            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.attn_k.weight", prefix));
+            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.attn_v.weight", prefix));
+            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.attn_output.weight", prefix));
+            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.ffn_norm.weight", prefix));
+            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.ffn_gate.weight", prefix));
+            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.ffn_up.weight", prefix));
+            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.ffn_down.weight", prefix));
+        }
+
+        // Final RMSNorm
+        load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, "output_norm.weight");
+
+        Ok(Self {
+            config,
+            vocab,
+            weight_pool,
+            weight_offsets,
+            tensor_dims,
+            head_dim,
+            n_kv_heads,
+        })
+    }
+
+    /// Retorna la configuración del modelo.
+    pub fn config(&self) -> &ModelConfig {
+        &self.config
+    }
+
+    /// Retorna el vocabulario.
+    pub fn vocab(&self) -> &Vocabulary {
+        &self.vocab
+    }
+
+    /// Retorna el pool de pesos completo.
+    pub fn weight_pool(&self) -> &[f32] {
+        &self.weight_pool
+    }
+
+    /// Obtiene el embedding de un token.
+    /// token_embd.weight tiene shape [n_embd, vocab_size].
+    /// Embedding(token) = columna completa para ese token.
+    fn get_embedding_f64(&self, token_id: u32) -> Vec<f64> {
+        let offset = self.weight_offsets.get("token_embd.weight").copied().unwrap_or(0);
+        let (emb_dim, vocab_sz) = self.tensor_dims.get("token_embd.weight").copied().unwrap_or((32000, 32000));
+        let tid = token_id.min(vocab_sz as u32 - 1) as usize;
+        let mut emb = vec![0.0_f64; emb_dim.min(self.config.n_embd as usize)];
+        for i in 0..emb.len() {
+            let idx = offset as usize + i * vocab_sz + tid;
+            if idx < self.weight_pool.len() {
+                emb[i] = self.weight_pool[idx] as f64;
+            }
+        }
+        emb
+    }
+
+    /// Corre inferencia completa: token → logits.
+    pub fn forward(&self, input_ids: &[u32]) -> Vec<f64> {
+        let n_embd = self.config.n_embd as usize;
+        let vocab_size = self.vocab.len();
+
+        if input_ids.is_empty() {
+            return vec![0.0; vocab_size];
+        }
+
+        // Embedding lookup: sumar embeddings de todos los tokens
+        let mut hidden: Vec<f64> = vec![0.0; n_embd];
+        for &token_id in input_ids {
+            let emb = self.get_embedding_f64(token_id);
+            for i in 0..emb.len().min(n_embd) {
+                hidden[i] += emb[i];
+            }
+        }
+
+        // Normalizar por número de tokens
+        let scale = 1.0 / (input_ids.len() as f64).sqrt();
+        for val in &mut hidden {
+            *val *= scale;
+        }
+
+        // Aplicar capas del transformer
+        for layer in 0..self.config.n_layers {
+            let pos = (input_ids.len() - 1) as u32;
+            self.forward_layer(&mut hidden, layer, pos);
+        }
+
+        // lm_head: hidden · token_embd^T → logits
+        self.compute_logits(&hidden)
+    }
+
+    /// Forward de una capa del transformer.
+    fn forward_layer(&self, hidden: &mut Vec<f64>, layer: u32, pos: u32) {
+        let n_embd = self.config.n_embd as usize;
+        let prefix = format!("blk.{layer}");
+
+        // === RMSNorm de atención ===
+        self.rmsnorm_inplace(hidden, &format!("{}.attn_norm.weight", prefix));
+
+        // === Q, K, V projections (matmul simple) ===
+        let mut q = self.matmul_f64(hidden, &format!("{}.attn_q.weight", prefix));
+        let mut k = self.matmul_f64(hidden, &format!("{}.attn_k.weight", prefix));
+        let v = self.matmul_f64(hidden, &format!("{}.attn_v.weight", prefix));
+
+        // === RoPE: aplicar a Q y K ===
+        let head_dim = self.head_dim as usize;
+        self.apply_rope_inplace(&mut q, pos as usize, head_dim);
+        self.apply_rope_inplace(&mut k, pos as usize, head_dim);
+
+        // === Attention: scaled dot-product ===
+        let n_heads = self.config.n_heads as usize;
+        let n_kv_heads = self.n_kv_heads as usize;
+        let scale = 1.0 / (head_dim as f64).sqrt();
+
+        // GQA: cada grupo de Q heads comparte un KV head
+        let q_heads_per_kv = n_heads / n_kv_heads;
+
+        let mut output = vec![0.0_f64; n_heads * head_dim];
+
+        for h in 0..n_heads {
+            let kv_h = h / q_heads_per_kv;
+            let q_start = h * head_dim;
+            let k_start = kv_h * head_dim;
+            let v_start = kv_h * head_dim;
+
+            let mut dot = 0.0_f64;
+            for d in 0..head_dim {
+                dot += q.get(q_start + d).copied().unwrap_or(0.0)
+                    * k.get(k_start + d).copied().unwrap_or(0.0);
+            }
+            let attn = (dot * scale).tanh().clamp(-10.0, 10.0); // soft-clip extreme values
+
+            let o_start = h * head_dim;
+            for d in 0..head_dim {
+                output[o_start + d] = attn * v.get(v_start + d).copied().unwrap_or(0.0);
+            }
+        }
+
+        // === Output projection ===
+        let o_out = self.matmul_f64(&output, &format!("{}.attn_output.weight", prefix));
+
+        // === Residual ===
+        for i in 0..n_embd {
+            hidden[i] = hidden[i] + o_out.get(i).copied().unwrap_or(0.0);
+        }
+
+        // === MLP RMSNorm ===
+        self.rmsnorm_inplace(hidden, &format!("{}.ffn_norm.weight", prefix));
+
+        // === MLP: gate, up, down ===
+        let gate = self.matmul_f64(hidden, &format!("{}.ffn_gate.weight", prefix));
+        let up = self.matmul_f64(hidden, &format!("{}.ffn_up.weight", prefix));
+
+        // SwiGLU: gate * sigmoid(1.7 * gate) * up
+        let mut swiglu_out = vec![0.0_f64; gate.len().min(up.len())];
+        for i in 0..swiglu_out.len() {
+            let g = gate.get(i).copied().unwrap_or(0.0);
+            let u = up.get(i).copied().unwrap_or(0.0);
+            swiglu_out[i] = g / (1.0 + (-1.7 * g).exp()) * u;
+        }
+
+        let mlp_out = self.matmul_f64(&swiglu_out, &format!("{}.ffn_down.weight", prefix));
+
+        // === Residual ===
+        for i in 0..n_embd.min(mlp_out.len()) {
+            hidden[i] = hidden[i] + mlp_out[i];
+        }
+    }
+
+    /// RMSNorm: hidden = hidden / sqrt(mean(hidden²) + eps) * weight
+    fn rmsnorm_inplace(&self, hidden: &mut Vec<f64>, weight_name: &str) {
+        let n_embd = self.config.n_embd as usize;
+        let eps = 1e-5_f64;
+        let mean_sq: f64 = hidden.iter().map(|v| v * v).sum::<f64>() / n_embd as f64;
+        let rms = (mean_sq + eps).sqrt();
+
+        let offset = self.weight_offsets.get(weight_name).copied().unwrap_or(0);
+        for i in 0..n_embd {
+            let w = if (offset as usize + i) < self.weight_pool.len() {
+                self.weight_pool[offset as usize + i] as f64
+            } else {
+                1.0
+            };
+            hidden[i] = hidden[i] / rms * w;
+        }
+    }
+
+    /// Matmul: y = x · W  donde W = [n_in, n_out].
+    fn matmul_f64(&self, x: &[f64], weight_name: &str) -> Vec<f64> {
+        let (n_in, n_out) = self.tensor_dims.get(weight_name).copied().unwrap_or((1, 1));
+        let offset = self.weight_offsets.get(weight_name).copied().unwrap_or(0);
+
+        let mut y = vec![0.0_f64; n_out];
+        for j in 0..n_out {
+            let mut dot = 0.0_f64;
+            for i in 0..x.len().min(n_in) {
+                let idx = offset as usize + i * n_out + j;
+                if idx < self.weight_pool.len() {
+                    dot += x[i] * self.weight_pool[idx] as f64;
+                }
+            }
+            y[j] = dot;
+        }
+        y
+    }
+
+    /// Computa logits via lm_head: hidden · W_emb^T donde W_emb = [n_embd, vocab_size]
+    fn compute_logits(&self, hidden: &[f64]) -> Vec<f64> {
+        let n_embd = self.config.n_embd as usize;
+        let vocab_size = self.vocab.len();
+        let (emb_dim, vocab_sz) = self.tensor_dims.get("token_embd.weight").copied().unwrap_or((n_embd, vocab_size));
+        let offset = self.weight_offsets.get("token_embd.weight").copied().unwrap_or(0);
+
+        let mut logits = vec![0.0_f64; vocab_size];
+        for k in 0..vocab_size.min(vocab_sz) {
+            let mut dot = 0.0_f64;
+            for j in 0..n_embd.min(emb_dim) {
+                let idx = offset as usize + j * vocab_sz + k;
+                if idx < self.weight_pool.len() {
+                    dot += hidden[j] * self.weight_pool[idx] as f64;
+                }
+            }
+            logits[k] = dot;
+        }
+        logits
+    }
+
+    /// Aplica RoPE a Q o K in-place.
+    ///
+    /// Para cada par de dimensiones (even, odd) en cada head,
+    /// rota según el ángulo cos/sin precomputado para esa dimensión.
+    fn apply_rope_inplace(&self, x: &mut Vec<f64>, pos: usize, head_dim: usize) {
+        let n_half = head_dim / 2;
+        let n_heads = x.len() / head_dim;
+        for h in 0..n_heads {
+            for i in 0..n_half {
+                let even_idx = h * head_dim + i * 2;
+                let odd_idx = h * head_dim + i * 2 + 1;
+                let x_even = x.get(even_idx).copied().unwrap_or(0.0);
+                let x_odd = x.get(odd_idx).copied().unwrap_or(0.0);
+
+                // RoPE rotation: angle = pos / base^(2i / head_dim)
+                let freq = 1.0 / (10000.0_f64.powf(2.0 * i as f64 / head_dim as f64));
+                let angle = pos as f64 * freq;
+                let c = angle.cos();
+                let s = angle.sin();
+
+                let rotated_even = x_even * c - x_odd * s;
+                let rotated_odd = x_even * s + x_odd * c;
+
+                if even_idx < x.len() {
+                    x[even_idx] = rotated_even;
+                }
+                if odd_idx < x.len() {
+                    x[odd_idx] = rotated_odd;
+                }
+            }
+        }
+    }
+}
+
+fn load_tensor_to_pool(
+    parser: &GgufParser,
+    pool: &mut Vec<f32>,
+    offsets: &mut HashMap<String, u32>,
+    name: &str,
+) {
+    if let Some(values) = read_tensor_f32(parser, name) {
+        let offset = pool.len() as u32;
+        pool.extend(values);
+        offsets.insert(name.to_string(), offset);
+    }
+}
+
+fn load_tensor(
+    parser: &GgufParser,
+    pool: &mut Vec<f32>,
+    offsets: &mut HashMap<String, u32>,
+    dims_map: &mut HashMap<String, (usize, usize)>,
+    name: &str,
+) {
+    if let Some(values) = read_tensor_f32(parser, name) {
+        let info = parser.find_tensor(name);
+        let dims = if let Some(info) = info {
+            if info.dims.len() >= 2 {
+                (info.dims[0] as usize, info.dims[1] as usize)
+            } else if info.dims.len() == 1 {
+                (info.dims[0] as usize, 1)
+            } else {
+                (values.len(), 1)
+            }
+        } else {
+            (values.len(), 1)
+        };
+        let offset = pool.len() as u32;
+        pool.extend(values);
+        offsets.insert(name.to_string(), offset);
+        dims_map.insert(name.to_string(), dims);
+    }
+}
+
+fn get_tensor_dims(parser: &GgufParser, name: &str) -> (usize, usize) {
+    if let Some(info) = parser.find_tensor(name) {
+        if info.dims.len() >= 2 {
+            (info.dims[0] as usize, info.dims[1] as usize)
+        } else if info.dims.len() == 1 {
+            (info.dims[0] as usize, 1)
+        } else {
+            (1, 1)
+        }
+    } else {
+        (1, 1)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -662,8 +1094,6 @@ mod tests {
         let hw = HardwareSpec::new(4, 32 * 1024, 256 * 1024, 16 * 1024 * 1024);
 
         let result = compile_gguf(&path, &hw);
-        // El GGUF sintético no tiene metadatos de modelo completos,
-        // así que esperamos un error o un resultado con config vacía.
         match result {
             Ok(r) => {
                 println!(
@@ -674,7 +1104,6 @@ mod tests {
                 assert!(r.num_fragments >= 1);
             }
             Err(e) => {
-                // Es OK si falla porque el GGUF sintético no tiene config de modelo.
                 println!("Expected error with synthetic GGUF: {e}");
             }
         }

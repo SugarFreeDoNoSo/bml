@@ -222,8 +222,6 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "bml-compiler",
- "bml-domain",
- "bml-runtime",
  "serde",
  "serde_json",
  "tokio",
