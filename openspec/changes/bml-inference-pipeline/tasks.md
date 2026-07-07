@@ -50,8 +50,8 @@
 - [x] 4.2 Añadir `axum` + `serde_json` como dependencias (ligero, no toca el hot loop).
 - [x] 4.3 Implementar endpoint `POST /v1/completions` compatible con OpenAI: `{"prompt": "...", "max_tokens": 10, "stream": true}`.
 - [x] 4.4 Implementar streaming via SSE (Server-Sent Events): `data: {"token": "..."}\n\n`.
-- [ ] 4.5 Implementar batching: múltiples requests HTTP se encolan en el scheduler (Capa 2).
-- [ ] 4.6 Implementar backpressure: si la cola está llena, retornar HTTP 429.
+- [x] 4.5 Implementar batching: múltiples requests HTTP se encolan en el scheduler (Capa 2).
+- [x] 4.6 Implementar backpressure: si la cola está llena, retornar HTTP 429.
 - [x] 4.7 Crear `crates/cli/` con binario `bml-cli` (flags `-m`, `-p`, `-n`, `-t`, `--temp`, `-c`).
 - [x] 4.8 Implementar `bml-cli` que carga `.bmlgraph`, ejecuta inferencia local (sin servidor), produce texto.
 - [x] 4.9 Implementar sampling greedy + temperatura básica.

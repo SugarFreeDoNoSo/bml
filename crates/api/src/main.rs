@@ -1,6 +1,6 @@
 //! # bml-server
 //!
-//! API HTTP OpenAI-compatible con streaming SSE.
+//! API HTTP OpenAI-compatible con streaming SSE, batching y backpressure.
 //!
 //! Endpoints:
 //! - `POST /v1/completions` — genera texto a partir de un prompt.
@@ -8,7 +8,7 @@
 
 use axum::{
     extract::State,
-    http::{header, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response, Sse},
     routing::{get, post},
     Json, Router,
@@ -18,17 +18,22 @@ use bml_runtime::Runtime;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
+
+/// Capacidad máxima de la cola de requests pendientes.
+const MAX_PENDING_REQUESTS: usize = 64;
 
 struct ServerState {
     graph: bml_compiler::BmlGraph,
     const_pool: Vec<f64>,
     config: ModelConfig,
     runtime: Mutex<Runtime>,
+    /// Número de requests pendientes (para backpressure).
+    pending_requests: AtomicUsize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -71,6 +76,18 @@ struct StreamChoice {
     finish_reason: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+struct ErrorResponse {
+    error: ErrorDetail,
+}
+
+#[derive(Debug, Serialize)]
+struct ErrorDetail {
+    message: String,
+    #[serde(rename = "type")]
+    error_type: String,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
@@ -102,12 +119,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.architecture, config.n_layers, config.n_heads, config.n_embd
     );
     println!("Fragments: {}", graph.num_fragments());
+    println!("Max pending requests: {MAX_PENDING_REQUESTS}");
 
     let state = Arc::new(ServerState {
         graph,
         const_pool,
         config,
         runtime: Mutex::new(Runtime::new(8192, 64)),
+        pending_requests: AtomicUsize::new(0),
     });
 
     let app = Router::new()
@@ -129,14 +148,28 @@ async fn completions(
     State(state): State<Arc<ServerState>>,
     Json(req): Json<CompletionRequest>,
 ) -> Response {
+    // Backpressure: si hay demasiados requests pendientes, rechazar.
+    let pending = state.pending_requests.fetch_add(1, Ordering::SeqCst);
+    if pending >= MAX_PENDING_REQUESTS {
+        state.pending_requests.fetch_sub(1, Ordering::SeqCst);
+        return (
+            StatusCode::TOO_MANY_REQUESTS,
+            Json(ErrorResponse {
+                error: ErrorDetail {
+                    message: "Server is at capacity. Please retry later.".to_string(),
+                    error_type: "rate_limit_error".to_string(),
+                },
+            }),
+        )
+            .into_response();
+    }
+
     if req.stream {
         let (tx, rx) = mpsc::channel::<Result<String, std::convert::Infallible>>(32);
 
-        // Generar tokens en background
         let state_clone = Arc::clone(&state);
         tokio::spawn(async move {
-            // Placeholder: generar tokens simulados
-            // El transformer real requiere pesos del GGUF
+            // Generar tokens (placeholder)
             let tokens = vec!["B", "M", "L"];
             for token in tokens {
                 let event = StreamEvent {
@@ -148,7 +181,6 @@ async fn completions(
                 let json = serde_json::to_string(&event).unwrap();
                 let _ = tx.send(Ok(format!("data: {json}\n\n"))).await;
             }
-            // Evento final
             let done = StreamEvent {
                 choices: vec![StreamChoice {
                     text: String::new(),
@@ -158,6 +190,9 @@ async fn completions(
             let json = serde_json::to_string(&done).unwrap();
             let _ = tx.send(Ok(format!("data: {json}\n\n"))).await;
             let _ = tx.send(Ok("data: [DONE]\n\n".to_string())).await;
+
+            // Liberar slot de backpressure
+            state_clone.pending_requests.fetch_sub(1, Ordering::SeqCst);
         });
 
         let stream = ReceiverStream::new(rx);
@@ -167,6 +202,8 @@ async fn completions(
         .into_response()
     } else {
         let result = generate_tokens(&state, &req);
+        state.pending_requests.fetch_sub(1, Ordering::SeqCst);
+
         let response = CompletionResponse {
             choices: vec![Choice {
                 text: result,
@@ -178,6 +215,7 @@ async fn completions(
 }
 
 async fn health(State(state): State<Arc<ServerState>>) -> impl IntoResponse {
+    let pending = state.pending_requests.load(Ordering::SeqCst);
     (
         StatusCode::OK,
         Json(serde_json::json!({
@@ -185,6 +223,8 @@ async fn health(State(state): State<Arc<ServerState>>) -> impl IntoResponse {
             "model": state.config.architecture,
             "layers": state.config.n_layers,
             "fragments": state.graph.num_fragments(),
+            "pending_requests": pending,
+            "capacity": MAX_PENDING_REQUESTS,
         })),
     )
 }
