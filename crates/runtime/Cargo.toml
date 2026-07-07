@@ -8,6 +8,7 @@ repository.workspace = true
 [dependencies]
 bml-domain = { path = "../domain" }
 bml-compiler = { path = "../compiler" }
+crossbeam.workspace = true
 
 [dev-dependencies]
 loom.workspace = true
