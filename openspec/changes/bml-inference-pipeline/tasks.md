@@ -71,14 +71,14 @@
 
 ## 6. Compilador: fragmentación por operación (N hot loops)
 
-- [ ] 6.1 Actualizar `build_transformer_dag()` para generar un fragmento por operación (matmul Q, matmul K, matmul V, attention, etc.) en lugar de un solo grafo monolítico.
-- [ ] 6.2 Implementar `compile_matmul_fragment()` que genera un fragmento con `Loop(n_rows, body=[Loop(n_cols, body=[VarIndexed, VarIndexed, Bml, StoreResult])])`.
-- [ ] 6.3 Implementar `compile_rmsnorm_fragment()` que genera un fragmento para RMSNorm.
-- [ ] 6.4 Implementar `compile_attention_fragment()` que genera un fragmento para attention scores + softmax.
-- [ ] 6.5 Implementar `compile_mlp_fragment()` que genera un fragmento para MLP (gate + SwiGLU + down).
-- [ ] 6.6 Asignar slots del buffer circular a cada fragmento: input slot, output slot, pesos base.
-- [ ] 6.7 Serializar los fragmentos con metadatos de slots (input_slot, output_slot, weight_base).
-- [ ] 6.8 Pruebas: compilar tinyllama con fragmentación por operación, verificar que cada fragmento es < 32KB.
+- [x] 6.1 Actualizar `build_transformer_dag()` para generar un fragmento por operación (matmul Q, matmul K, matmul V, attention, etc.) en lugar de un solo grafo monolítico.
+- [x] 6.2 Implementar `compile_matmul_fragment()` que genera un fragmento con `Loop(n_rows, body=[Loop(n_cols, body=[VarIndexed, VarIndexed, Bml, StoreResult])])`.
+- [x] 6.3 Implementar `compile_rmsnorm_fragment()` que genera un fragmento para RMSNorm.
+- [x] 6.4 Implementar `compile_attention_fragment()` que genera un fragmento para attention scores + softmax.
+- [x] 6.5 Implementar `compile_mlp_fragment()` que genera un fragmento para MLP (gate + SwiGLU + down).
+- [x] 6.6 Asignar slots del buffer circular a cada fragmento: input slot, output slot, pesos base.
+- [x] 6.7 Serializar los fragmentos con metadatos de slots (input_slot, output_slot, weight_base).
+- [x] 6.8 Pruebas: compilar tinyllama con fragmentación por operación, verificar que cada fragmento es < 32KB.
 
 ## 7. Runtime: ejecución secuencial con cambio de hot loop
 

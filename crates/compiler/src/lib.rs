@@ -15,6 +15,7 @@ pub mod fragment;
 pub mod gguf_compiler;
 pub mod hardware;
 pub mod hash_cons;
+pub mod op_fragments;
 pub mod rpn;
 
 pub use dag::Dag;
