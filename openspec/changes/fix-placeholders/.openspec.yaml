@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-07-07
+goal: "Pipeline completo sin placeholders: matmul vectorial, RoPE completo,
+  SwiGLU real, generacion de tokens real"
