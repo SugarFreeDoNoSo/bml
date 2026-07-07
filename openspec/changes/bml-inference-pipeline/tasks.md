@@ -37,12 +37,12 @@
 - [x] 3.1 Implementar `crates/runtime/src/net.rs` con protocolo TCP raw: framing `[u32 msg_type][u32 payload_len][payload]`.
 - [x] 3.2 Implementar tipos de mensaje: `ExecuteFragment`, `ReportResult`, `StealWork`, `HealthCheck`, `BatchRequest`, `BatchResult`.
 - [x] 3.3 Implementar `NodeHandle` que envuelve `TcpStream` con métodos `send_fragment()`, `recv_result()`.
-- [ ] 3.4 Implementar `/dev/shm` para same-machine: fragmentos en memoria compartida, cero copia, cero serialización.
+- [x] 3.4 Implementar `/dev/shm` para same-machine: fragmentos en memoria compartida, cero copia, cero serialización.
 - [x] 3.5 Implementar `crates/runtime/src/queue.rs` con cola lock-free (`crossbeam-deque` Chase-Lev).
 - [x] 3.6 Implementar work-stealing: cuando un nodo vacía su cola, roba trabajo de otro vía TCP `StealWork`.
 - [x] 3.7 Aislar el código de red del hot loop (módulo separado, no impactar D5: < 32 KB).
 - [x] 3.8 Pruebas de integración: 2 nodos se comunican via TCP, uno envía un fragmento, el otro lo ejecuta y devuelve el resultado.
-- [ ] 3.9 Pruebas de `/dev/shm`: 4 workers leen un fragmento de memoria compartida, lo ejecutan y escriben resultados append-only.
+- [x] 3.9 Pruebas de `/dev/shm`: 4 workers leen un fragmento de memoria compartida, lo ejecutan y escriben resultados append-only.
 
 ## 4. API externa + CLI (HTTP + SSE, OpenAI-compatible)
 

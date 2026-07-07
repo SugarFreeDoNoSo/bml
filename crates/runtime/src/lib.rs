@@ -18,6 +18,7 @@ pub mod hot_loop;
 pub mod net;
 pub mod queue;
 pub mod runtime;
+pub mod shm;
 
 pub use hot_loop::HotLoop;
 pub use runtime::Runtime;
