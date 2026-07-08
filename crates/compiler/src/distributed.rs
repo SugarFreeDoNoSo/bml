@@ -629,3 +629,353 @@ mod tests {
         std::fs::remove_dir_all(&out_dir).ok();
     }
 }
+
+// ===========================================================================
+// Sub-fragmentación L1i (< 30 KB por sub-fragmento)
+// ===========================================================================
+
+/// Tamaño objetivo de cada sub-fragmento en bytes (30 KB < 32 KB L1i).
+pub const L1I_TARGET_SIZE: usize = 30 * 1024;
+
+/// Referencia a un rango de pesos dentro del fragmento padre.
+///
+/// Los sub-fragmentos no copian pesos — referencian por offset al pool
+/// de pesos del fragmento padre. Esto permite que los pesos estén en L2/L3
+/// mientras el bytecode del sub-fragmento cabe en L1i.
+#[derive(Debug, Clone)]
+pub struct WeightRef {
+    /// Nombre del tensor (ej. "blk.0.attn_q.weight").
+    pub tensor_name: String,
+    /// Offset inicial dentro del pool de pesos del fragmento.
+    pub offset: u64,
+    /// Número de elementos f32 referenciados.
+    pub len: u32,
+}
+
+/// Un sub-fragmento L1i: bytecode < 30 KB + referencias a pesos.
+///
+/// El runtime ejecuta sub-fragmentos secuencialmente. Cada sub-fragmento
+/// cabe en L1i (bytecode), mientras los pesos se sirven desde L2/L3.
+/// El cambio de sub-fragmento es O(1): cambiar el slice de ops.
+#[derive(Debug, Clone)]
+pub struct SubFragment {
+    /// ID del fragmento padre.
+    pub fragment_id: u32,
+    /// ID del sub-fragmento (0-indexed dentro del fragmento padre).
+    pub sub_id: u32,
+    /// Capa inicial (inclusive).
+    pub layer_start: u32,
+    /// Capa final (exclusive).
+    pub layer_end: u32,
+    /// Bytecode RPN (< 30 KB).
+    pub ops: Vec<RpnOp>,
+    /// Referencias a pesos del fragmento padre (no copias).
+    pub weight_refs: Vec<WeightRef>,
+    /// Sub-fragmentos que deben completarse antes que este.
+    pub depends_on: Vec<u32>,
+}
+
+impl SubFragment {
+    /// Tamaño del bytecode en bytes.
+    pub fn bytecode_size(&self) -> usize {
+        self.ops.iter().map(|op| op_size(op)).sum()
+    }
+
+    /// Verifica que el bytecode cabe en L1i.
+    pub fn fits_l1i(&self) -> bool {
+        self.bytecode_size() <= L1I_TARGET_SIZE
+    }
+}
+
+/// Tamaño en bytes de una operación RPN serializada.
+fn op_size(op: &RpnOp) -> usize {
+    match op {
+        RpnOp::One | RpnOp::Zero | RpnOp::Bml | RpnOp::Dup
+        | RpnOp::FAdd | RpnOp::FMul | RpnOp::Drop | RpnOp::Swap => 1,
+        RpnOp::Var(_) | RpnOp::Const(_) | RpnOp::VarIndexed { .. }
+        | RpnOp::StoreResult { .. } | RpnOp::Pick { .. } => 5,
+        RpnOp::Loop { .. } => 9,
+    }
+}
+
+/// Sub-fragmenta un `DistributedFragment` en sub-fragmentos de < 30 KB.
+///
+/// Cada sub-fragmento contiene un subconjunto del bytecode RPN del
+/// fragmento padre. Los pesos se referencian por offset (no se copian).
+///
+/// # Dependencias
+///
+/// Los sub-fragmentos se generan en orden secuencial por defecto
+/// (`depends_on = [sub_id - 1]`). El scheduler puede reorganizar
+/// las dependencias según el DAG del transformer.
+///
+/// # Retorna
+///
+/// `Vec<SubFragment>` ordenado por `sub_id`.
+pub fn sub_fragment(frag: &DistributedFragment) -> Vec<SubFragment> {
+    sub_fragment_with_threshold(frag, L1I_TARGET_SIZE)
+}
+
+/// Sub-fragmenta con un tamaño objetivo personalizado.
+pub fn sub_fragment_with_threshold(frag: &DistributedFragment, target_size: usize) -> Vec<SubFragment> {
+    let mut sub_fragments = Vec::new();
+    let mut current_ops = Vec::new();
+    let mut current_refs = Vec::new();
+    let mut current_size = 0usize;
+    let mut sub_id = 0u32;
+
+    // Crear referencias a todos los tensores del fragmento
+    let all_weight_refs: Vec<WeightRef> = frag.tensors.iter().map(|t| WeightRef {
+        tensor_name: t.name.clone(),
+        offset: t.offset,
+        len: (t.n_rows as u64 * t.n_cols as u64).min(u32::MAX as u64) as u32,
+    }).collect();
+
+    for op in &frag.ops {
+        let sz = op_size(op);
+        if current_size + sz > target_size && !current_ops.is_empty() {
+            // Flush sub-fragment actual
+            let depends_on = if sub_id > 0 { vec![sub_id - 1] } else { vec![] };
+            sub_fragments.push(SubFragment {
+                fragment_id: frag.fragment_id,
+                sub_id,
+                layer_start: frag.layer_start,
+                layer_end: frag.layer_end,
+                ops: std::mem::take(&mut current_ops),
+                weight_refs: std::mem::take(&mut current_refs),
+                depends_on,
+            });
+            sub_id += 1;
+            current_size = 0;
+        }
+        current_ops.push(op.clone());
+        current_size += sz;
+    }
+
+    // Flush último sub-fragmento
+    if !current_ops.is_empty() {
+        let depends_on = if sub_id > 0 { vec![sub_id - 1] } else { vec![] };
+        sub_fragments.push(SubFragment {
+            fragment_id: frag.fragment_id,
+            sub_id,
+            layer_start: frag.layer_start,
+            layer_end: frag.layer_end,
+            ops: current_ops,
+            weight_refs: if sub_fragments.is_empty() { all_weight_refs.clone() } else { vec![] },
+            depends_on,
+        });
+    }
+
+    // Si el fragmento no tiene ops, crear un sub-fragmento con todas las refs
+    if sub_fragments.is_empty() {
+        sub_fragments.push(SubFragment {
+            fragment_id: frag.fragment_id,
+            sub_id: 0,
+            layer_start: frag.layer_start,
+            layer_end: frag.layer_end,
+            ops: vec![],
+            weight_refs: all_weight_refs,
+            depends_on: vec![],
+        });
+    } else {
+        // El primer sub-fragmento obtiene todas las weight_refs
+        // (en la práctica, cada sub-fragmento tendría solo las refs que necesita,
+        // pero por ahora las ponemos todas en el primero para que el runtime
+        // tenga acceso al pool completo)
+        sub_fragments[0].weight_refs = all_weight_refs;
+    }
+
+    sub_fragments
+}
+
+/// Sub-fragmenta todos los fragmentos de un modelo.
+///
+/// Retorna un mapa `fragment_id -> Vec<SubFragment>`.
+pub fn sub_fragment_all(fragments: &[DistributedFragment]) -> HashMap<u32, Vec<SubFragment>> {
+    fragments
+        .iter()
+        .map(|frag| (frag.fragment_id, sub_fragment(frag)))
+        .collect()
+}
+
+/// Serializa sub-fragmentos a un directorio.
+///
+/// Genera archivos `sub_{fragment_id}_{sub_id}.bmlgraph` dentro del
+/// directorio del fragmento padre.
+pub fn serialize_sub_fragments(
+    parent_dir: &Path,
+    frag: &DistributedFragment,
+    sub_frags: &[SubFragment],
+) -> Result<(), String> {
+    let frag_dir = parent_dir.join(format!("fragment_{}", frag.fragment_id));
+    std::fs::create_dir_all(&frag_dir).map_err(|e| format!("crear dir: {e}"))?;
+
+    for sf in sub_frags {
+        let path = frag_dir.join(format!("sub_{}.bmlgraph", sf.sub_id));
+        let mut f = std::fs::File::create(&path).map_err(|e| format!("crear sub {}: {e}", sf.sub_id))?;
+
+        // Header
+        f.write_all(&BMLGRAPH_MAGIC.to_le_bytes()).map_err(|e| format!("write magic: {e}"))?;
+        f.write_all(&BMLGRAPH_VERSION.to_le_bytes()).map_err(|e| format!("write version: {e}"))?;
+
+        // IDs
+        f.write_all(&sf.fragment_id.to_le_bytes()).map_err(|e| format!("write frag id: {e}"))?;
+        f.write_all(&sf.sub_id.to_le_bytes()).map_err(|e| format!("write sub id: {e}"))?;
+        f.write_all(&sf.layer_start.to_le_bytes()).map_err(|e| format!("write layer start: {e}"))?;
+        f.write_all(&sf.layer_end.to_le_bytes()).map_err(|e| format!("write layer end: {e}"))?;
+
+        // Bytecode
+        f.write_all(&(sf.ops.len() as u32).to_le_bytes()).map_err(|e| format!("write n_ops: {e}"))?;
+        for op in &sf.ops {
+            serialize_op(&mut f, op)?;
+        }
+
+        // Weight refs
+        f.write_all(&(sf.weight_refs.len() as u32).to_le_bytes()).map_err(|e| format!("write n_refs: {e}"))?;
+        for wr in &sf.weight_refs {
+            let name_bytes = wr.tensor_name.as_bytes();
+            f.write_all(&(name_bytes.len() as u32).to_le_bytes()).map_err(|e| format!("write name len: {e}"))?;
+            f.write_all(name_bytes).map_err(|e| format!("write name: {e}"))?;
+            f.write_all(&wr.offset.to_le_bytes()).map_err(|e| format!("write offset: {e}"))?;
+            f.write_all(&wr.len.to_le_bytes()).map_err(|e| format!("write len: {e}"))?;
+        }
+
+        // Depends on
+        f.write_all(&(sf.depends_on.len() as u32).to_le_bytes()).map_err(|e| format!("write n_deps: {e}"))?;
+        for &dep in &sf.depends_on {
+            f.write_all(&dep.to_le_bytes()).map_err(|e| format!("write dep: {e}"))?;
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod sub_fragment_tests {
+    use super::*;
+
+    #[test]
+    fn sub_fragment_empty() {
+        let frag = DistributedFragment {
+            fragment_id: 0,
+            layer_start: 0,
+            layer_end: 1,
+            ops: vec![],
+            weights: vec![],
+            tensors: vec![],
+            config: ModelConfig {
+                architecture: "test".into(),
+                n_layers: 1,
+                n_heads: 1,
+                n_embd: 1,
+                context_length: 1,
+                vocab_size: 1,
+            },
+            n_kv_heads: 1,
+            head_dim: 1,
+        };
+
+        let subs = sub_fragment(&frag);
+        assert_eq!(subs.len(), 1);
+        assert!(subs[0].ops.is_empty());
+        assert_eq!(subs[0].sub_id, 0);
+    }
+
+    #[test]
+    fn sub_fragment_small() {
+        let frag = DistributedFragment {
+            fragment_id: 0,
+            layer_start: 0,
+            layer_end: 1,
+            ops: vec![RpnOp::One, RpnOp::One, RpnOp::Bml],
+            weights: vec![],
+            tensors: vec![],
+            config: ModelConfig {
+                architecture: "test".into(),
+                n_layers: 1,
+                n_heads: 1,
+                n_embd: 1,
+                context_length: 1,
+                vocab_size: 1,
+            },
+            n_kv_heads: 1,
+            head_dim: 1,
+        };
+
+        let subs = sub_fragment(&frag);
+        assert_eq!(subs.len(), 1);
+        assert_eq!(subs[0].ops.len(), 3);
+        assert!(subs[0].fits_l1i());
+    }
+
+    #[test]
+    fn sub_fragment_large() {
+        // Crear un fragmento con muchas ops para forzar sub-fragmentación
+        // Bml = 1 byte, necesitamos >30K ops para superar 30KB
+        let ops: Vec<RpnOp> = (0..50_000).map(|_| RpnOp::Bml).collect();
+        let frag = DistributedFragment {
+            fragment_id: 0,
+            layer_start: 0,
+            layer_end: 1,
+            ops,
+            weights: vec![],
+            tensors: vec![],
+            config: ModelConfig {
+                architecture: "test".into(),
+                n_layers: 1,
+                n_heads: 1,
+                n_embd: 1,
+                context_length: 1,
+                vocab_size: 1,
+            },
+            n_kv_heads: 1,
+            head_dim: 1,
+        };
+
+        let subs = sub_fragment(&frag);
+        assert!(subs.len() > 1, "debe generar múltiples sub-fragmentos");
+
+        // Cada sub-fragmento debe caber en L1i
+        for sf in &subs {
+            assert!(sf.fits_l1i(), "sub {} excede L1i: {} bytes", sf.sub_id, sf.bytecode_size());
+        }
+
+        // Las dependencias deben formar una cadena
+        for i in 1..subs.len() {
+            assert_eq!(subs[i].depends_on, vec![(i as u32) - 1]);
+        }
+
+        println!("50K ops → {} sub-fragmentos, tamaños: {:?}", subs.len(),
+            subs.iter().map(|sf| sf.bytecode_size()).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn sub_fragment_preserves_total_ops() {
+        let ops: Vec<RpnOp> = (0..50_000)
+            .map(|i| if i % 2 == 0 { RpnOp::One } else { RpnOp::Bml })
+            .collect();
+        let total = ops.len();
+        let frag = DistributedFragment {
+            fragment_id: 0,
+            layer_start: 0,
+            layer_end: 1,
+            ops,
+            weights: vec![],
+            tensors: vec![],
+            config: ModelConfig {
+                architecture: "test".into(),
+                n_layers: 1,
+                n_heads: 1,
+                n_embd: 1,
+                context_length: 1,
+                vocab_size: 1,
+            },
+            n_kv_heads: 1,
+            head_dim: 1,
+        };
+
+        let subs = sub_fragment(&frag);
+        let total_in_subs: usize = subs.iter().map(|sf| sf.ops.len()).sum();
+        assert_eq!(total_in_subs, total, "ops se perdieron en sub-fragmentación");
+    }
+}

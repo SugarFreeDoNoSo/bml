@@ -136,6 +136,16 @@ impl HotLoop {
         self.stack.len()
     }
 
+    /// Limpia la pila sin deallocs.
+    pub fn stack_clear(&mut self) {
+        self.stack.clear();
+    }
+
+    /// Pop del tope de la pila.
+    pub fn stack_pop(&mut self) -> Option<f64> {
+        self.stack.pop()
+    }
+
     /// Capacidad de la pila.
     pub fn stack_capacity(&self) -> usize {
         self.stack.capacity()

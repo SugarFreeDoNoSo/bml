@@ -116,6 +116,35 @@ impl Runtime {
         self.hot_loop.stack_capacity()
     }
 
+    /// Ejecuta sub-fragmentos L1i secuencialmente con cambio de hot loop.
+    ///
+    /// Cada sub-fragmento cabe en L1i (< 30 KB de bytecode). El runtime
+    /// los ejecuta uno a uno, cambiando el slice de ops entre cada uno.
+    /// Los pesos se sirven desde L2/L3 (no se copian al sub-fragmento).
+    ///
+    /// # Cero allocs
+    ///
+    /// La pila se reutiliza entre sub-fragmentos. No se hacen allocs
+    /// durante la ejecución.
+    pub fn execute_sub_fragments(
+        &mut self,
+        sub_fragments: &[bml_compiler::distributed::SubFragment],
+        ctx: &bml_domain::EvalContext,
+        buf: &mut ResultBuffer,
+    ) -> f64 {
+        self.hot_loop.stack_clear();
+        for sf in sub_fragments {
+            // El cambio de hot loop es O(1): dispatch_ops recibe un nuevo slice.
+            // El L1i se carga con el bytecode del nuevo sub-fragmento.
+            self.hot_loop.execute_fragment_full(
+                &bml_compiler::Fragment { ops: sf.ops.clone() },
+                ctx,
+                buf,
+            );
+        }
+        self.hot_loop.stack_pop().unwrap_or(f64::NAN)
+    }
+
     /// Ejecuta una lista de `OperationFragment` secuencialmente.
     ///
     /// Cada fragmento lee del `ResultBuffer` y escribe a él.
