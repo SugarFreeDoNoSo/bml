@@ -1,6 +1,6 @@
 # Hardware y entorno de benchmark
 
-Fecha: 2026-07-07
+Fecha: 2026-07-08
 
 ## Hardware
 
@@ -13,7 +13,7 @@ Fecha: 2026-07-07
 | Threads por core | 2 |
 | vCPUs totales | 4 |
 | L1d | 128 KiB (4 instancias) |
-| L1i | 128 KiB (4 instancias) |
+| L1i | 128 KiB (4 instancias) = 32 KB/core |
 | L2 | 8 MiB (2 instancias) |
 | L3 | 16 MiB (1 instancia) |
 | RAM | 7.8 GiB |
@@ -29,8 +29,6 @@ Fecha: 2026-07-07
 | rust-analyzer | 1.96.0 (ac68faa 2026-05-25) |
 | perf | 6.12 |
 | strace | disponible |
-| cmake | disponible |
-| gcc/g++ | disponible |
 
 ## llama.cpp
 
@@ -50,3 +48,10 @@ Fecha: 2026-07-07
 | Cuantización | Q4_0 |
 | Tamaño | 635,998,512 bytes (~606 MB) |
 | Parámetros | 1,100,060,672 (~1.1B) |
+
+## Optimizaciones aplicadas desde benchmark anterior
+
+1. **Hot loop refactor**: dispatch_ops único (429 líneas asm, 63% menos)
+2. **Sub-fragmentación L1i**: sub-fragmentos de <30 KB
+3. **Pesos BML nativos**: BmlWeightPool con deduplicación (8x compresión vs f32)
+4. **Scheduler de waves**: DAG con dependencias, ejecución paralela con barreras
