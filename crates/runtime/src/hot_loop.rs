@@ -11,9 +11,10 @@
 //!
 //! # Hot loop < 32 KB
 //!
-//! El cuerpo del loop en `execute` es deliberadamente minimalista:
-//! un `match` sobre `RpnOp` con tres variantes. El tamaño del código
-//! compilado debe ser < 32 KB para caber en L1i.
+//! El cuerpo del loop en `dispatch_ops` es un único `match` sobre
+//! `RpnOp`. Al factorizar el dispatch en una sola función, eliminamos
+//! la triplicación del match que había antes (top-level + Loop +
+//! Loop anidado), reduciendo el footprint de L1i.
 
 use bml_compiler::{Fragment, RpnOp, RpnProgram};
 
@@ -33,24 +34,12 @@ impl HotLoop {
     /// La pila se pre-asigna y nunca crece durante `execute`.
     pub fn with_capacity(stack_capacity: usize) -> Self {
         let mut stack = Vec::with_capacity(stack_capacity);
-        // Pre-asignar y dejar vacío; los push/pop en execute no allocan.
-        // Reservamos el espacio exacto para que Vec no reasigne.
         stack.resize(stack_capacity, 0.0);
         stack.clear();
         Self { stack }
     }
 
     /// Ejecuta un programa RPN completo.
-    ///
-    /// # Cero allocs
-    ///
-    /// Esta función no hace ninguna asignación de memoria. La pila
-    /// ya está pre-asignada. Se limpia al inicio y se reutiliza.
-    ///
-    /// # Hot loop
-    ///
-    /// El loop principal itera sobre `program.ops` con un `match`
-    /// sobre `RpnOp`. El código compilado debe ser < 32 KB.
     #[inline]
     pub fn execute(&mut self, program: &RpnProgram, x: f64) -> f64 {
         let ctx = bml_domain::EvalContext::new(&[], &[]);
@@ -74,212 +63,7 @@ impl HotLoop {
         buf: &mut crate::buffer::ResultBuffer,
     ) -> f64 {
         self.stack.clear();
-
-        let mut i = 0;
-        while i < program.ops.len() {
-            match program.ops[i] {
-                RpnOp::One => self.stack.push(1.0),
-                RpnOp::Zero => self.stack.push(0.0),
-                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
-                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
-                RpnOp::VarIndexed { base } => {
-                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                    self.stack.push(buf.read_indexed(base, offset));
-                }
-                RpnOp::StoreResult { slot } => {
-                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                    let value = self.stack.pop().unwrap_or(f64::NAN);
-                    buf.write(slot, offset, value);
-                }
-                RpnOp::Bml => {
-                    let len = self.stack.len();
-                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                    if len >= 2 { self.stack.truncate(len - 2); }
-                    self.stack.push(bml_domain::bml(a, b));
-                }
-                RpnOp::Dup => {
-                    let len = self.stack.len();
-                    let v = self.stack[len - 1];
-                    self.stack.push(v);
-                }
-                RpnOp::FAdd => {
-                    let len = self.stack.len();
-                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                    if len >= 2 { self.stack.truncate(len - 2); }
-                    self.stack.push(a + b);
-                }
-                RpnOp::FMul => {
-                    let len = self.stack.len();
-                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                    if len >= 2 { self.stack.truncate(len - 2); }
-                    self.stack.push(a * b);
-                }
-                RpnOp::Pick { depth } => {
-                    let d = depth as usize;
-                    let len = self.stack.len();
-                    let idx = len.saturating_sub(1 + d);
-                    let v = if idx < len { self.stack[idx] } else { 0.0 };
-                    self.stack.push(v);
-                }
-                RpnOp::Drop => {
-                    self.stack.pop();
-                }
-                RpnOp::Swap => {
-                    let len = self.stack.len();
-                    if len >= 2 {
-                        self.stack.swap(len - 1, len - 2);
-                    }
-                }
-                RpnOp::Loop { count, body_len } => {
-                    let body_start = i + 1;
-                    let body_end = body_start + body_len as usize;
-                    for iter in 0..count {
-                        self.stack.push(iter as f64);
-                        let mut j = body_start;
-                        while j < body_end {
-                            match program.ops[j] {
-                                RpnOp::One => self.stack.push(1.0),
-                                RpnOp::Zero => self.stack.push(0.0),
-                                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
-                                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
-                                RpnOp::VarIndexed { base } => {
-                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                                    self.stack.push(buf.read_indexed(base, offset));
-                                }
-                                RpnOp::StoreResult { slot } => {
-                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                                    let value = self.stack.pop().unwrap_or(f64::NAN);
-                                    buf.write(slot, offset, value);
-                                }
-                                RpnOp::Bml => {
-                                    let len = self.stack.len();
-                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                    self.stack.push(bml_domain::bml(a, b));
-                                }
-                                RpnOp::Dup => {
-                                    let len = self.stack.len();
-                                    let v = self.stack[len - 1];
-                                    self.stack.push(v);
-                                }
-                                RpnOp::FAdd => {
-                                    let len = self.stack.len();
-                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                    self.stack.push(a + b);
-                                }
-                                RpnOp::FMul => {
-                                    let len = self.stack.len();
-                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                    self.stack.push(a * b);
-                                }
-                                RpnOp::Pick { depth } => {
-                                    let d = depth as usize;
-                                    let len = self.stack.len();
-                                    let idx = len.saturating_sub(1 + d);
-                                    let v = if idx < len { self.stack[idx] } else { 0.0 };
-                                    self.stack.push(v);
-                                }
-                                RpnOp::Drop => {
-                                    self.stack.pop();
-                                }
-                                RpnOp::Swap => {
-                                    let len = self.stack.len();
-                                    if len >= 2 {
-                                        self.stack.swap(len - 1, len - 2);
-                                    }
-                                }
-                                RpnOp::Loop { count: inner_count, body_len: inner_body_len } => {
-                                    let inner_body_start = j + 1;
-                                    let inner_body_end = inner_body_start + inner_body_len as usize;
-                                    for inner_iter in 0..inner_count {
-                                        self.stack.push(inner_iter as f64);
-                                        let mut k = inner_body_start;
-                                        while k < inner_body_end {
-                                            match program.ops[k] {
-                                                RpnOp::One => self.stack.push(1.0),
-                                                RpnOp::Zero => self.stack.push(0.0),
-                                                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
-                                                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
-                                                RpnOp::VarIndexed { base } => {
-                                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                                                    self.stack.push(buf.read_indexed(base, offset));
-                                                }
-                                                RpnOp::StoreResult { slot } => {
-                                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                                                    let value = self.stack.pop().unwrap_or(f64::NAN);
-                                                    buf.write(slot, offset, value);
-                                                }
-                                                RpnOp::Bml => {
-                                                    let len = self.stack.len();
-                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                                    self.stack.push(bml_domain::bml(a, b));
-                                                }
-                                                RpnOp::Dup => {
-                                                    let len = self.stack.len();
-                                                    let v = self.stack[len - 1];
-                                                    self.stack.push(v);
-                                                }
-                                                RpnOp::FAdd => {
-                                                    let len = self.stack.len();
-                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                                    self.stack.push(a + b);
-                                                }
-                                                RpnOp::FMul => {
-                                                    let len = self.stack.len();
-                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                                    self.stack.push(a * b);
-                                                }
-                                                RpnOp::Pick { depth } => {
-                                                    let d = depth as usize;
-                                                    let len = self.stack.len();
-                                                    let idx = len.saturating_sub(1 + d);
-                                                    let v = if idx < len { self.stack[idx] } else { 0.0 };
-                                                    self.stack.push(v);
-                                                }
-                                                RpnOp::Drop => {
-                                                    self.stack.pop();
-                                                }
-                                                RpnOp::Swap => {
-                                                    let len = self.stack.len();
-                                                    if len >= 2 {
-                                                        self.stack.swap(len - 1, len - 2);
-                                                    }
-                                                }
-                                                RpnOp::Loop { .. } => {
-                                                    panic!("max 2 loop nesting levels");
-                                                }
-                                            }
-                                            k += 1;
-                                        }
-                                    }
-                                    j = inner_body_end;
-                                    continue;
-                                }
-                            }
-                            j += 1;
-                        }
-                    }
-                    i = body_end;
-                    continue;
-                }
-            }
-            i += 1;
-        }
-
+        dispatch_ops(&mut self.stack, &program.ops, ctx, buf);
         self.stack.pop().unwrap_or(f64::NAN)
     }
 
@@ -310,210 +94,7 @@ impl HotLoop {
         ctx: &bml_domain::EvalContext,
         buf: &mut crate::buffer::ResultBuffer,
     ) {
-        let mut i = 0;
-        while i < fragment.ops.len() {
-            match fragment.ops[i] {
-                RpnOp::One => self.stack.push(1.0),
-                RpnOp::Zero => self.stack.push(0.0),
-                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
-                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
-                RpnOp::VarIndexed { base } => {
-                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                    self.stack.push(buf.read_indexed(base, offset));
-                }
-                RpnOp::StoreResult { slot } => {
-                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                    let value = self.stack.pop().unwrap_or(f64::NAN);
-                    buf.write(slot, offset, value);
-                }
-                RpnOp::Bml => {
-                    let len = self.stack.len();
-                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                    if len >= 2 { self.stack.truncate(len - 2); }
-                    self.stack.push(bml_domain::bml(a, b));
-                }
-                RpnOp::Dup => {
-                    let len = self.stack.len();
-                    let v = self.stack[len - 1];
-                    self.stack.push(v);
-                }
-                RpnOp::FAdd => {
-                    let len = self.stack.len();
-                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                    if len >= 2 { self.stack.truncate(len - 2); }
-                    self.stack.push(a + b);
-                }
-                RpnOp::FMul => {
-                    let len = self.stack.len();
-                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                    if len >= 2 { self.stack.truncate(len - 2); }
-                    self.stack.push(a * b);
-                }
-                RpnOp::Pick { depth } => {
-                    let d = depth as usize;
-                    let len = self.stack.len();
-                    let idx = len.saturating_sub(1 + d);
-                    let v = if idx < len { self.stack[idx] } else { 0.0 };
-                    self.stack.push(v);
-                }
-                RpnOp::Drop => {
-                    self.stack.pop();
-                }
-                RpnOp::Swap => {
-                    let len = self.stack.len();
-                    if len >= 2 {
-                        self.stack.swap(len - 1, len - 2);
-                    }
-                }
-                RpnOp::Loop { count, body_len } => {
-                    let body_start = i + 1;
-                    let body_end = body_start + body_len as usize;
-                    for iter in 0..count {
-                        self.stack.push(iter as f64);
-                        let mut j = body_start;
-                        while j < body_end {
-                            match fragment.ops[j] {
-                                RpnOp::One => self.stack.push(1.0),
-                                RpnOp::Zero => self.stack.push(0.0),
-                                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
-                                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
-                                RpnOp::VarIndexed { base } => {
-                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                                    self.stack.push(buf.read_indexed(base, offset));
-                                }
-                                RpnOp::StoreResult { slot } => {
-                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                                    let value = self.stack.pop().unwrap_or(f64::NAN);
-                                    buf.write(slot, offset, value);
-                                }
-                                RpnOp::Bml => {
-                                    let len = self.stack.len();
-                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                    self.stack.push(bml_domain::bml(a, b));
-                                }
-                                RpnOp::Dup => {
-                                    let len = self.stack.len();
-                                    let v = self.stack[len - 1];
-                                    self.stack.push(v);
-                                }
-                                RpnOp::FAdd => {
-                                    let len = self.stack.len();
-                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                    self.stack.push(a + b);
-                                }
-                                RpnOp::FMul => {
-                                    let len = self.stack.len();
-                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                    self.stack.push(a * b);
-                                }
-                                RpnOp::Pick { depth } => {
-                                    let d = depth as usize;
-                                    let len = self.stack.len();
-                                    let idx = len.saturating_sub(1 + d);
-                                    let v = if idx < len { self.stack[idx] } else { 0.0 };
-                                    self.stack.push(v);
-                                }
-                                RpnOp::Drop => {
-                                    self.stack.pop();
-                                }
-                                RpnOp::Swap => {
-                                    let len = self.stack.len();
-                                    if len >= 2 {
-                                        self.stack.swap(len - 1, len - 2);
-                                    }
-                                }
-                                RpnOp::Loop { count: inner_count, body_len: inner_body_len } => {
-                                    let inner_body_start = j + 1;
-                                    let inner_body_end = inner_body_start + inner_body_len as usize;
-                                    for inner_iter in 0..inner_count {
-                                        self.stack.push(inner_iter as f64);
-                                        let mut k = inner_body_start;
-                                        while k < inner_body_end {
-                                            match fragment.ops[k] {
-                                                RpnOp::One => self.stack.push(1.0),
-                                                RpnOp::Zero => self.stack.push(0.0),
-                                                RpnOp::Var(id) => self.stack.push(ctx.get_var(id)),
-                                                RpnOp::Const(id) => self.stack.push(ctx.get_const(id)),
-                                                RpnOp::VarIndexed { base } => {
-                                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                                                    self.stack.push(buf.read_indexed(base, offset));
-                                                }
-                                                RpnOp::StoreResult { slot } => {
-                                                    let offset = self.stack.pop().unwrap_or(0.0) as u32;
-                                                    let value = self.stack.pop().unwrap_or(f64::NAN);
-                                                    buf.write(slot, offset, value);
-                                                }
-                                                RpnOp::Bml => {
-                                                    let len = self.stack.len();
-                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                                    self.stack.push(bml_domain::bml(a, b));
-                                                }
-                                                RpnOp::Dup => {
-                                                    let len = self.stack.len();
-                                                    let v = self.stack[len - 1];
-                                                    self.stack.push(v);
-                                                }
-                                                RpnOp::FAdd => {
-                                                    let len = self.stack.len();
-                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                                    self.stack.push(a + b);
-                                                }
-                                                RpnOp::FMul => {
-                                                    let len = self.stack.len();
-                                                    let b = if len > 0 { self.stack[len - 1] } else { 0.0 };
-                                                    let a = if len > 1 { self.stack[len - 2] } else { 0.0 };
-                                                    if len >= 2 { self.stack.truncate(len - 2); }
-                                                    self.stack.push(a * b);
-                                                }
-                                                RpnOp::Pick { depth } => {
-                                                    let d = depth as usize;
-                                                    let len = self.stack.len();
-                                                    let idx = len.saturating_sub(1 + d);
-                                                    let v = if idx < len { self.stack[idx] } else { 0.0 };
-                                                    self.stack.push(v);
-                                                }
-                                                RpnOp::Drop => {
-                                                    self.stack.pop();
-                                                }
-                                                RpnOp::Swap => {
-                                                    let len = self.stack.len();
-                                                    if len >= 2 {
-                                                        self.stack.swap(len - 1, len - 2);
-                                                    }
-                                                }
-                                                RpnOp::Loop { .. } => {
-                                                    panic!("max 2 loop nesting levels");
-                                                }
-                                            }
-                                            k += 1;
-                                        }
-                                    }
-                                    j = inner_body_end;
-                                    continue;
-                                }
-                            }
-                            j += 1;
-                        }
-                    }
-                    i = body_end;
-                    continue;
-                }
-            }
-            i += 1;
-        }
+        dispatch_ops(&mut self.stack, &fragment.ops, ctx, buf);
     }
 
     /// Ejecuta una lista de fragmentos en orden.
@@ -545,7 +126,7 @@ impl HotLoop {
     ) -> f64 {
         self.stack.clear();
         for fragment in fragments {
-            self.execute_fragment_full(fragment, ctx, buf);
+            dispatch_ops(&mut self.stack, &fragment.ops, ctx, buf);
         }
         self.stack.pop().unwrap_or(f64::NAN)
     }
@@ -558,6 +139,108 @@ impl HotLoop {
     /// Capacidad de la pila.
     pub fn stack_capacity(&self) -> usize {
         self.stack.capacity()
+    }
+}
+
+/// Dispatcher único para todas las operaciones RPN.
+///
+/// Procesa `ops` desde el inicio hasta el final. Cuando encuentra un
+/// `Loop { count, body_len }`, ejecuta el cuerpo `count` veces usando
+/// el mismo dispatcher (recursión limitada a 2 niveles).
+///
+/// # L1i footprint
+///
+/// Al factorizar el dispatch en una sola función, eliminamos la triplicación
+/// del `match` que había antes (top-level + Loop body + nested Loop body).
+/// El compilador emite una sola copia del match, reutilizada por todas
+/// las rutas de ejecución.
+#[inline]
+fn dispatch_ops(
+    stack: &mut Vec<f64>,
+    ops: &[RpnOp],
+    ctx: &bml_domain::EvalContext,
+    buf: &mut crate::buffer::ResultBuffer,
+) {
+    let mut i = 0;
+    while i < ops.len() {
+        match ops[i] {
+            RpnOp::One => stack.push(1.0),
+            RpnOp::Zero => stack.push(0.0),
+            RpnOp::Var(id) => stack.push(ctx.get_var(id)),
+            RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+            RpnOp::VarIndexed { base } => {
+                let offset = stack.pop().unwrap_or(0.0) as u32;
+                stack.push(buf.read_indexed(base, offset));
+            }
+            RpnOp::StoreResult { slot } => {
+                let offset = stack.pop().unwrap_or(0.0) as u32;
+                let value = stack.pop().unwrap_or(f64::NAN);
+                buf.write(slot, offset, value);
+            }
+            RpnOp::Bml => {
+                let len = stack.len();
+                let b = if len > 0 { stack[len - 1] } else { 0.0 };
+                let a = if len > 1 { stack[len - 2] } else { 0.0 };
+                if len >= 2 {
+                    stack.truncate(len - 2);
+                }
+                stack.push(bml_domain::bml(a, b));
+            }
+            RpnOp::Dup => {
+                let len = stack.len();
+                let v = stack[len - 1];
+                stack.push(v);
+            }
+            RpnOp::FAdd => {
+                let len = stack.len();
+                let b = if len > 0 { stack[len - 1] } else { 0.0 };
+                let a = if len > 1 { stack[len - 2] } else { 0.0 };
+                if len >= 2 {
+                    stack.truncate(len - 2);
+                }
+                stack.push(a + b);
+            }
+            RpnOp::FMul => {
+                let len = stack.len();
+                let b = if len > 0 { stack[len - 1] } else { 0.0 };
+                let a = if len > 1 { stack[len - 2] } else { 0.0 };
+                if len >= 2 {
+                    stack.truncate(len - 2);
+                }
+                stack.push(a * b);
+            }
+            RpnOp::Pick { depth: d } => {
+                let d = d as usize;
+                let len = stack.len();
+                let idx = len.saturating_sub(1 + d);
+                let v = if idx < len { stack[idx] } else { 0.0 };
+                stack.push(v);
+            }
+            RpnOp::Drop => {
+                stack.pop();
+            }
+            RpnOp::Swap => {
+                let len = stack.len();
+                if len >= 2 {
+                    stack.swap(len - 1, len - 2);
+                }
+            }
+            RpnOp::Loop { count, body_len } => {
+                let body_start = i + 1;
+                let body_end = body_start + body_len as usize;
+                if body_end > ops.len() {
+                    break;
+                }
+                let body = &ops[body_start..body_end];
+                for iter in 0..count {
+                    stack.push(iter as f64);
+                    dispatch_ops(stack, body, ctx, buf);
+                }
+                i = body_end;
+                continue;
+            }
+        }
+        i += 1;
     }
 }
 
@@ -575,7 +258,6 @@ mod tests {
     }
 
     fn build_exp2_program() -> RpnProgram {
-        // 2^3 = 8, donde 3 = bml(2, 2)
         let mut t = BMLTransformer::new();
         let two = t.two();
         let two2 = t.two();
