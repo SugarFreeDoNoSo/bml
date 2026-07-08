@@ -20,6 +20,7 @@
 #![warn(missing_docs)]
 
 pub mod ast;
+pub mod encoder;
 pub mod operator;
 pub mod soa;
 pub mod transformer;
