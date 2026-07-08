@@ -226,32 +226,34 @@ Coordinador:
 
 ---
 
-## Resumen de dependencias
+## Estado de implementación
+
+### ✅ Completado
+
+| Item | Descripción | Commit |
+|------|-------------|--------|
+| 1 | Embedir pesos en .bmlgraph | `806488f` |
+| 2 | Fragmentación por capa | `806488f` |
+| 3 | Formato fragmento v2 self-contained | `806488f` |
+| 4 | Coordinador (bml-cli distribute) | `e850eb3` |
+| 5 | Worker daemon (bml-worker) | `806488f` |
+
+### Funciona end-to-end
 
 ```
-Item 1 (pesos en .bmlgraph) → Item 2 (fragmentación por capa)
-  → Item 3 (formato v2) → Item 4 (coordinador) → Item 5 (worker)
-    → Item 6 (tokenización distribuida) → Item 7 (lazy loading)
+bml-cli compile --distributed -m modelo.gguf -o modelo.bmlgraph
+  → 23 fragmentos self-contained (168 MB c/u, 3.9 GB total)
+
+bml-worker --port 9999 --fragment fragment_0.bmlgraph
+  → Daemon TCP que ejecuta fragmentos
+
+bml-cli distribute -m modelo.bmlgraph/ --nodes host1:9999,host2:9999 -p "Hello" -n 16
+  → Coordinador que reparte fragmentos y orquesta inferencia
 ```
 
-## Estimación de esfuerzo
+### ⏳ Pendiente
 
-| Item | Complejidad | Líneas nuevas aprox. |
-|------|-------------|---------------------|
-| 1. Pesos en .bmlgraph | Media | ~200 |
-| 2. Fragmentación por capa | Alta | ~400 |
-| 3. Formato v2 | Media | ~150 |
-| 4. Coordinador | Alta | ~300 |
-| 5. Worker daemon | Media | ~200 |
-| 6. Tokenización distribuida | Alta | ~250 |
-| 7. Lazy loading mmap | Media | ~100 |
-| **Total** | | **~1600 líneas** |
-
-## Orden de implementación sugerido
-
-1. **Item 1 + 3**: Embedir pesos en fragmentos + formato v2 (sin cambiar runtime)
-2. **Item 2**: Fragmentación por capa (compile_gguf_distributed)
-3. **Item 5**: Worker daemon (bml-worker, TCP server)
-4. **Item 4**: Coordinador (bml-cli distribute)
-5. **Item 6**: Pipeline autoregresivo distribuido
-6. **Item 7**: Lazy loading (optimización)
+| Item | Descripción |
+|------|-------------|
+| 6 | Pipeline autoregresivo completo (embedding real, attention real, RoPE real en workers) |
+| 7 | Lazy loading mmap de pesos |
