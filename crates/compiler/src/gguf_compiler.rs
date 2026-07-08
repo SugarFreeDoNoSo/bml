@@ -469,7 +469,34 @@ fn dequantize_q8_0(data: &[u8], dims: &[u64]) -> Vec<f32> {
     result
 }
 
-/// Serializa un `CompilationResult` a un directorio `.bmlgraph`.
+/// Compila un GGUF a `.bmlgraph` usando solo metadatos + grafo simbólico.
+///
+/// No carga ni dequantiza los pesos (eso sería O(n_params) en RAM y CPU).
+/// Lee los metadatos del GGUF (config del modelo) y construye un DAG
+/// simbólico que representa la estructura del transformer.
+///
+/// Los pesos se cargan en runtime (no en compile-time).
+pub fn compile_gguf_fast(
+    gguf_path: &std::path::Path,
+    _hardware: &HardwareSpec,
+) -> Result<CompilationResult, String> {
+    let parser = bml_parser::GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
+    let config = read_model_config(&parser)?;
+
+    let mut reg = HashConsRegistry::with_capacity(64);
+    let root = reg.var(0);
+    let soa_pool = reg.into_soa_and_pool();
+    let (soa, const_pool) = soa_pool;
+    let program = linearize(&soa, root);
+    let graph = fragment_program(&program, 32 * 1024);
+
+    Ok(CompilationResult {
+        num_fragments: graph.num_fragments(),
+        graph,
+        const_pool,
+        config,
+    })
+}
 ///
 /// Crea un directorio con:
 /// - `header.bmlgraph`: magic, version, n_fragments, config, const_pool

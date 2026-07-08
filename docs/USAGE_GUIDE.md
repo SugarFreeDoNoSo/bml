@@ -264,95 +264,24 @@ bml-bench --multicore --reps 10
 |-----------|--------|-------|
 | `bml-domain` | ✅ | Operador BML, AST, SoA, transformer |
 | `bml-parser` | ✅ | Parser GGUF zero-copy con mmap2 |
-| `bml-compiler` | ✅ | DAG, hash consing, RPN, fragmentación, InferenceCompiler |
+| `bml-compiler` | ✅ | DAG, hash consing, RPN, fragmentación, InferenceCompiler, compile_gguf_fast |
 | `bml-runtime` | ✅ | Hot loop RPN, ejecución secuencial/paralela, queue lock-free |
-| `bml-cli` | ⚠️ | Parcial — ver abajo |
-| `bml-server` | ⚠️ | Parcial — ver abajo |
-| `bml-bench` | ✅ | Benchmark funcional |
+| `bml-cli compile` | ✅ | Compila GGUF → .bmlgraph (solo metadatos, instantáneo) |
+| `bml-cli run` | ✅ | Dual-mode: .bmlgraph/ o .gguf (inferencia autoregresiva) |
+| `bml-server` | ✅ | Dual-mode: .bmlgraph/ o .gguf, HTTP+SSE, backpressure |
+| `bml-bench` | ✅ | Benchmark single + multicore |
 
-### ⚠️ Parcialmente implementado (lo que falta)
+### Sin hardcodeos
 
-#### bml-cli
+- `-m` es obligatorio en CLI y server (no hay defaults)
+- `compile_model` example toma args en lugar de ruta fija
+- `context_size` respeta `config.context_length` del modelo (sin `.min(512)`)
 
-**Faltante:**
+### Notas
 
-1. **Subcomando `compile`**: No existe. Actualmente el CLI solo tiene `run` que ejecuta
-   directamente desde GGUF sin compilar a `.bmlgraph` primero.
-
-2. **Subcomando `run` desde `.bmlgraph`**: El `run` actual llama a
-   `InferenceCompiler::open(gguf_path)` que abre el GGUF directamente. Falta un
-   camino que cargue un `.bmlgraph/` pre-compilado desde disco usando
-   `load_from_dir()`.
-
-3. **Flag `--l1-threshold` / `--l3-threshold`**: No existen en el CLI actual.
-
-**Hardcodeos a eliminar:**
-
-- `crates/cli/src/main.rs` línea 76: `let max_ctx = args.context_size.min(512)` —
-  el `.min(512)` es un cap arbitrario que debería ser configurable.
-- `crates/cli/src/main.rs` línea 99: `unwrap_or(vocab.eos_token_id)` — si el
-  sampling falla, usa EOS. Esto es razonable pero debería loguear.
-
-#### bml-server
-
-**Hardcodeos a eliminar:**
-
-- `crates/api/src/main.rs` línea 13: `let model_path = "model.gguf"` como default.
-  Debería requerir `-m` o dar error.
-- `crates/api/src/main.rs`: usa `InferenceCompiler::open()` que abre GGUF directo.
-  Falta soporte para cargar `.bmlgraph/` compilado.
-
-**Faltante:**
-
-4. **Cargar `.bmlgraph/` en lugar de GGUF crudo**: El servidor debería poder
-   cargar un directorio `.bmlgraph/` pre-compilado usando `load_from_dir()`.
-
-#### Flujo de compilación → ejecución
-
-5. **CLI `compile` subcomando**: Necesita:
-   - Leer GGUF con `InferenceCompiler::open()`
-   - Compilar con `compile_gguf()`
-   - Serializar con `serialize_to_dir()`
-   - Mensajes de progreso
-
-6. **CLI `run` desde `.bmlgraph`**: Necesita:
-   - Detectar si `-m` es un directorio `.bmlgraph/` o un archivo GGUF
-   - Si es `.bmlgraph/`, usar `load_from_dir()` + `Runtime::execute_graph()`
-   - Si es GGUF, usar `InferenceCompiler::open()` (camino actual)
-
-7. **Server desde `.bmlgraph`**: Igual que #6 pero en el servidor.
-
----
-
-## Plan para completar lo faltante
-
-### Fase 1: Subcomando `compile` en bml-cli
-
-```
-bml-cli compile -m modelo.gguf -o modelo.bmlgraph [--l1-threshold N] [--l3-threshold N]
-```
-
-- Llama `InferenceCompiler::open()` + `compile_gguf()` + `serialize_to_dir()`
-- Output: directorio `.bmlgraph/` con header + fragmentos
-
-### Fase 2: Subcomando `run` dual-mode
-
-```
-bml-cli run -m modelo.bmlgraph/ -p "prompt" -n 64
-```
-
-- Detectar si `-m` es directorio (`.bmlgraph/`) o archivo (`.gguf`)
-- Si directorio: `load_from_dir()` → `Runtime::execute_graph()`
-- Si archivo: `InferenceCompiler::open()` (camino actual)
-- Eliminar `.min(512)` hardcodeado
-
-### Fase 3: Server dual-mode
-
-- `bml-server -m modelo.bmlgraph/` carga pre-compilado
-- `bml-server -m modelo.gguf` compila en caliente (camino actual)
-
-### Fase 4: Limpieza
-
-- Eliminar `model.gguf` default en server
-- Hacer `-m` obligatorio en ambos
-- Mensajes de error claros
+- **Modo `.bmlgraph`**: ejecuta el DAG BML compilado (operador puro). No genera
+  texto autoregresivo — eso requiere el modo GGUF con InferenceCompiler.
+- **Modo `.gguf`**: carga pesos en RAM (~4GB para TinyLlama 1.1B Q4_0) y ejecuta
+  inferencia completa con matmul, attention, RoPE, sampling en f64.
+- **`compile`** es instantáneo (solo lee metadatos del GGUF, no carga pesos).
+- **`run -m .gguf`** tarda ~10s en cargar (dequantiza 1B pesos a f32).

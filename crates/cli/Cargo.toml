@@ -9,4 +9,5 @@ repository.workspace = true
 bml-domain = { path = "../domain" }
 bml-compiler = { path = "../compiler" }
 bml-runtime = { path = "../runtime" }
+bml-parser = { path = "../parser" }
 clap.workspace = true

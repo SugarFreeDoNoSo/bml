@@ -184,6 +184,7 @@ version = "0.1.0"
 dependencies = [
  "bml-compiler",
  "bml-domain",
+ "bml-parser",
  "bml-runtime",
  "clap",
 ]
@@ -230,6 +231,8 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "bml-compiler",
+ "bml-parser",
+ "bml-runtime",
  "serde",
  "serde_json",
  "tokio",
