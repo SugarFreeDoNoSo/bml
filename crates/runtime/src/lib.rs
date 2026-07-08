@@ -19,7 +19,9 @@ pub mod hot_loop;
 pub mod net;
 pub mod queue;
 pub mod runtime;
+pub mod scheduler;
 pub mod shm;
 
 pub use hot_loop::HotLoop;
 pub use runtime::Runtime;
+pub use scheduler::WaveScheduler;
