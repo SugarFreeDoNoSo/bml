@@ -78,15 +78,15 @@ Fuente: `llamacpp_pp.json`, `llamacpp_tg.json`, `llamacpp_combined.json`.
 
 Fuente: `bml_results.json`, `bml_results.md` (release build).
 
-### 3.1 Hot loop (raw)
+### 3.1 Hot loop (raw, single-thread)
 
 | Métrica | Valor |
 |---|---|
-| Ops/seg | 511,731,499 ± 36,231,278 |
-| Tiempo/op | 1.954 ns |
+| Ops/seg | 626,279,877 ± 25,350,111 |
+| Tiempo/op | 1.597 ns |
 | Programa | 100K ops × 1000 iters/muestra |
 | Repeticiones | 5 |
-| **Tamaño del rlib (hot loop)** | **5,390 bytes (5.26 KB)** — bien bajo 32 KB L1i |
+| **Tamaño del .text (dispatch_ops)** | **429 líneas asm** — 63% menos que antes (1172) |
 
 ### 3.2 Tokens/seg extrapolados (TinyLlama-1.1B)
 
@@ -105,12 +105,24 @@ Fuente: `bml_results.json`, `bml_results.md` (release build).
 
 | Métrica | llama.cpp | BML | Ratio BML/llama.cpp |
 |---|---|---|---|
-| pp tokens/seg | 119.69 | 0.480 | **0.0040x** (249x más lento) |
-| tg tokens/seg | 17.12 | 0.461 | **0.0269x** (37x más lento) |
-| Ops/seg (crudo) | — | 5.12e8 | — |
-| Tiempo/op | — | 1.95 ns | — |
+| pp tokens/seg | 119.69 | 0.546 | **0.0046x** (219x más lento) |
+| tg tokens/seg | 17.12 | 0.584 | **0.0341x** (29x más lento) |
+| Ops/seg (crudo) | — | 626M | — |
+| Tiempo/op | — | 1.60 ns | — |
 
-**BML es entre 37x y 249x más lento que llama.cpp** en este escenario.
+**BML es entre 29x y 219x más lento que llama.cpp** en single-thread.
+
+### Multicore scaling
+
+| Threads | Ops/seg | Tokens/seg (extrapolado) | Speedup | Eficiencia |
+|---|---|---|---|---|
+| 1 | 609M | 0.554 | 1.00x | 100% |
+| 2 | 1,158M | 1.053 | 1.90x | 95% |
+| 4 | 2,164M | 1.967 | 3.55x | 89% |
+
+- **Escalado casi lineal** con 2 threads (1.90x) — sin contención.
+- 4 threads logra 3.55x — la caída a 89% se debe a hyperthreading (2 cores físicos, 4 lógicos).
+- Con 4 threads, BML extrapolado a **1.97 tok/seg** para TinyLlama-1.1B.
 
 ---
 
@@ -206,18 +218,21 @@ implementación real.
 
 ## 8. Conclusiones
 
-1. **BML en su estado actual es 37-249x más lento que llama.cpp** para
+1. **BML en su estado actual es 29-219x más lento que llama.cpp** para
    TinyLlama-1.1B en CPU de 4 cores. Esto era esperado: BML no tiene SIMD,
    BLAS, multithreading, ni flash attention.
 
 2. **El operador BML cuesta 5.2x un FMA** (11.35 ns vs 2.16 ns). Esto limita
    el rendimiento de cualquier programa BML vs uno basado en FMA.
 
-3. **El hot loop es genuinamente pequeño (5.26 KB)** — bien bajo el umbral
-   L1i de 32 KB. La hipótesis de "hot loop L1" se cumple estructuralmente.
+3. **El hot loop es compacto** — 429 líneas de asm (dispatch único), bien
+   bajo el umbral L1i de 32 KB. La hipótesis de "hot loop L1" se cumple.
 
-4. **El escalado es lineal O(n)** con ~1.75 ns/op en release. No hay
-   sorpresas: el runtime es predecible y estable.
+4. **El escalado multicore es casi lineal** — 1.90x con 2 threads, 3.55x
+   con 4 threads (89% eficiencia). Sin contención porque cada thread tiene
+   su propio runtime con buffers pre-asignados.
+
+5. **El escalado por op es lineal O(n)** con ~1.60 ns/op en release.
 
 5. **El Hash Consing da O(1) en repetición estructural** — la única ventaja
    teórica clara de BML. Para modelos con mucha repetición (ej. MoE, pesos

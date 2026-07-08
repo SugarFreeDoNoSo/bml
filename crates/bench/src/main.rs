@@ -260,6 +260,61 @@ fn num_cpus() -> u32 {
         .unwrap_or(1)
 }
 
+/// Mide ops/seg con N threads ejecutando programas BML independientes.
+///
+/// Cada thread tiene su propio `Runtime` (pila + buffer pre-asignados).
+/// No hay contención: cada thread ejecuta su programa en su propio core.
+/// Esto mide el escalado puro del hot loop multicore.
+fn measure_multicore(n_threads: u32, reps: u32) -> (f64, f64) {
+    let sample_ops: usize = 100_000;
+    let inner_iters = 1000;
+    let program = build_program(sample_ops);
+
+    let mut samples: Vec<f64> = Vec::new();
+
+    for _ in 0..reps {
+        let program = std::sync::Arc::new(program.clone());
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(n_threads as usize));
+        let results: std::sync::Arc<std::sync::Mutex<Vec<f64>>> =
+            std::sync::Arc::new(std::sync::Mutex::new(vec![0.0; n_threads as usize]));
+
+        let handles: Vec<_> = (0..n_threads)
+            .map(|tid| {
+                let program = std::sync::Arc::clone(&program);
+                let barrier = std::sync::Arc::clone(&barrier);
+                let results = std::sync::Arc::clone(&results);
+                std::thread::spawn(move || {
+                    let mut runtime = Runtime::new(8192, 16);
+                    for _ in 0..10 {
+                        runtime.execute(&program, 0.0);
+                    }
+                    barrier.wait();
+                    let start = Instant::now();
+                    for _ in 0..inner_iters {
+                        runtime.execute(&program, 0.0);
+                    }
+                    let elapsed_s = start.elapsed().as_secs_f64();
+                    let ops_per_sec = sample_ops as f64 * inner_iters as f64 / elapsed_s;
+                    results.lock().unwrap()[tid as usize] = ops_per_sec;
+                })
+            })
+            .collect();
+
+        for h in handles {
+            h.join().unwrap();
+        }
+
+        let vals = results.lock().unwrap();
+        let total_ops_per_sec: f64 = vals.iter().sum();
+        samples.push(total_ops_per_sec);
+    }
+
+    let avg = samples.iter().sum::<f64>() / reps as f64;
+    let var = samples.iter().map(|x| (x - avg).powi(2)).sum::<f64>() / reps as f64;
+    let stddev = var.sqrt();
+    (avg, stddev)
+}
+
 /// Argumentos CLI simples.
 struct Args {
     json: bool,
@@ -268,6 +323,7 @@ struct Args {
     tg: u32,
     reps: u32,
     model: usize,
+    multicore: bool,
 }
 
 impl Args {
@@ -279,13 +335,15 @@ impl Args {
             pp: 512,
             tg: 128,
             reps: 5,
-            model: 0, // TinyLlama-1.1B por defecto
+            model: 0,
+            multicore: false,
         };
         let mut i = 1;
         while i < argv.len() {
             match argv[i].as_str() {
                 "--json" => args.json = true,
                 "--md" => args.md = true,
+                "--multicore" => args.multicore = true,
                 "--pp" => {
                     i += 1;
                     if i < argv.len() {
@@ -311,13 +369,14 @@ impl Args {
                     }
                 }
                 "-h" | "--help" => {
-                    println!("bml-bench [--json] [--md] [--pp N] [--tg N] [--reps N] [--model IDX]");
-                    println!("  --json    salida JSON compatible con llama-bench");
-                    println!("  --md      salida markdown");
-                    println!("  --pp N    tokens de prompt processing (default 512)");
-                    println!("  --tg N    tokens de generation (default 128)");
-                    println!("  --reps N  repeticiones (default 5)");
+                    println!("bml-bench [--json] [--md] [--pp N] [--tg N] [--reps N] [--model IDX] [--multicore]");
+                    println!("  --json       salida JSON compatible con llama-bench");
+                    println!("  --md         salida markdown");
+                    println!("  --pp N       tokens de prompt processing (default 512)");
+                    println!("  --tg N       tokens de generation (default 128)");
+                    println!("  --reps N     repeticiones (default 5)");
                     println!("  --model IDX  indice de modelo (0=TinyLlama,1=7B,2=13B,3=70B)");
+                    println!("  --multicore  benchmark multicore (1/2/4 threads, escalado)");
                     std::process::exit(0);
                 }
                 _ => {}
@@ -349,7 +408,7 @@ fn main() {
 
     if args.md {
         println!("# bml-bench — BML Benchmark Report\n");
-        println!("## Hot loop (raw)\n");
+        println!("## Hot loop (raw, single-thread)\n");
         println!("| Métrica | Valor |");
         println!("|---|---|");
         println!("| Ops/seg | {:.0} ± {:.0} |", ops_avg, ops_std);
@@ -378,5 +437,49 @@ fn main() {
         println!("| tokens/seg | {:.6} ± {:.6} |", tg_result.avg_ts, tg_result.stddev_ts);
         println!("| ns (muestra) | {:.0} ± {:.0} |", tg_result.avg_ns, tg_result.stddev_ns);
         println!("| samples_ts | {:?} |\n", tg_result.samples_ts);
+    }
+
+    if args.multicore {
+        let max_threads = num_cpus();
+        let thread_counts: Vec<u32> = [1, 2, 4]
+            .iter()
+            .copied()
+            .filter(|&t| t <= max_threads)
+            .collect();
+
+        let mut multicore_results: Vec<(u32, f64, f64, f64)> = Vec::new();
+
+        for &n_threads in &thread_counts {
+            let (ops_avg, ops_std) = measure_multicore(n_threads, args.reps);
+            let tokens_per_sec = ops_avg / model.bml_ops_per_token();
+            multicore_results.push((n_threads, ops_avg, ops_std, tokens_per_sec));
+        }
+
+        if args.json {
+            let json_results: Vec<serde_json::Value> = multicore_results
+                .iter()
+                .map(|(n, ops, std, tps)| {
+                    serde_json::json!({
+                        "n_threads": n,
+                        "ops_per_sec_avg": ops,
+                        "ops_per_sec_stddev": std,
+                        "tokens_per_sec": tps,
+                    })
+                })
+                .collect();
+            println!("{}", serde_json::to_string_pretty(&json_results).unwrap());
+        }
+
+        if args.md {
+            println!("## Multicore scaling\n");
+            println!("| Threads | Ops/seg | Tokens/seg (extrapolado) | Speedup |");
+            println!("|---|---|---|---|");
+            let base = multicore_results[0].1;
+            for (n, ops, std, tps) in &multicore_results {
+                let speedup = *ops / base;
+                println!("| {} | {:.0} ± {:.0} | {:.6} | {:.2}x |", n, ops, std, tps, speedup);
+            }
+            println!();
+        }
     }
 }

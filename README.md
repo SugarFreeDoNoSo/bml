@@ -87,10 +87,11 @@ Resultados clave (TinyLlama-1.1B Q4_0, 4 vCPU Intel Xeon):
 
 | Métrica | llama.cpp | BML | Ratio |
 |---|---|---|---|
-| pp tokens/seg | 119.69 | 0.480 | 0.0040x |
-| tg tokens/seg | 17.12 | 0.461 | 0.0269x |
-| Ops/seg (crudo) | — | 511M | — |
-| Hot loop size | — | 5.26 KB | < 32 KB L1i ✅ |
+| pp tokens/seg | 119.69 | 0.546 | 0.0046x |
+| tg tokens/seg | 17.12 | 0.584 | 0.0341x |
+| Ops/seg (1 thread) | — | 626M | — |
+| Ops/seg (4 threads) | — | 2,164M | 3.55x scaling |
+| Hot loop .text | — | 429 asm lines | < 32 KB L1i ✅ |
 
 Para reproducir:
 
