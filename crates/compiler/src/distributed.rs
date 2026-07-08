@@ -36,6 +36,7 @@
 use crate::fragment::{BMLGRAPH_MAGIC, BMLGRAPH_VERSION};
 use crate::gguf_compiler::{read_tensor_f32, ModelConfig};
 use crate::rpn::RpnOp;
+use bml_domain::encoder::RealEncoder;
 use bml_parser::GgufParser;
 use std::collections::HashMap;
 use std::io::Write;
@@ -627,6 +628,292 @@ mod tests {
         println!("Roundtrip OK: {} tensors, {} weights", frag0.tensors.len(), frag0.weights.len());
 
         std::fs::remove_dir_all(&out_dir).ok();
+    }
+}
+
+// ===========================================================================
+// BmlWeightPool: pesos como árboles BML nativos
+// ===========================================================================
+
+/// Pool de pesos codificados como árboles BML.
+///
+/// Cada peso f32 se codifica como un nodo `Const(id)` en el const pool.
+/// Valores idénticos se deduplican automáticamente. Para un modelo Q4_0
+/// con 16 valores de peso distintos, solo se crean 14 entradas únicas
+/// en el const pool (0 y 1 son `Zero`/`One`).
+///
+/// # Compresión
+///
+/// - f32 sin comprimir: 4 bytes por peso
+/// - BML con const pool: `ceil(log2(n_unique))` bits por peso + const pool
+/// - Para Q4_0 (14 únicos): 4 bits/peso + 112 bytes const pool
+/// - 1B pesos × 4 bits = 500 MB vs 3.9 GB (f32) = **8x compresión**
+pub struct BmlWeightPool {
+    /// Encoder subyacente (gestiona const pool + deduplicación).
+    encoder: RealEncoder,
+    /// Número total de pesos codificados (incluyendo duplicados).
+    n_total: usize,
+}
+
+impl BmlWeightPool {
+    pub fn new() -> Self {
+        Self {
+            encoder: RealEncoder::new(),
+            n_total: 0,
+        }
+    }
+
+    pub fn with_capacity(cap: usize) -> Self {
+        Self {
+            encoder: RealEncoder::with_capacity(cap),
+            n_total: 0,
+        }
+    }
+
+    /// Codifica un peso f32 como nodo BML.
+    ///
+    /// Valores idénticos producen el mismo `ConstId` (deduplicación).
+    pub fn encode(&mut self, weight: f32) -> u32 {
+        self.n_total += 1;
+        let node_id = self.encoder.encode_f64(weight as f64);
+        // El NodeId es el índice del nodo en el encoder.
+        // Para Const, el ConstId está dentro del NodeKind.
+        node_id
+    }
+
+    /// Codifica un slice de pesos f32 y retorna los NodeIds.
+    pub fn encode_slice(&mut self, weights: &[f32]) -> Vec<u32> {
+        weights.iter().map(|&w| self.encode(w)).collect()
+    }
+
+    /// Número de valores únicos en el const pool.
+    pub fn n_unique(&self) -> usize {
+        self.encoder.const_count()
+    }
+
+    /// Número total de pesos codificados (con duplicados).
+    pub fn n_total(&self) -> usize {
+        self.n_total
+    }
+
+    /// Ratio de compresión (n_total / n_unique).
+    pub fn compression_ratio(&self) -> f64 {
+        if self.n_unique() == 0 {
+            return 0.0;
+        }
+        self.n_total as f64 / self.n_unique() as f64
+    }
+
+    /// Tamaño estimado en bytes si se almacenan como índices de bits.
+    pub fn estimated_size_bytes(&self) -> usize {
+        if self.n_unique() == 0 {
+            return 0;
+        }
+        let bits_per_weight = (self.n_unique() as f64).log2().ceil() as usize;
+        let bits_per_weight = bits_per_weight.max(1);
+        let weight_table_size = (self.n_total * bits_per_weight + 7) / 8;
+        let const_pool_size = self.n_unique() * 8; // f64
+        weight_table_size + const_pool_size
+    }
+
+    /// Tamaño en bytes si se almacenaran como f32 (sin comprimir).
+    pub fn f32_size_bytes(&self) -> usize {
+        self.n_total * 4
+    }
+
+    /// Compresión lograda vs f32.
+    pub fn compression_vs_f32(&self) -> f64 {
+        if self.f32_size_bytes() == 0 {
+            return 0.0;
+        }
+        self.f32_size_bytes() as f64 / self.estimated_size_bytes() as f64
+    }
+
+    /// Referencia al const pool (valores únicos f64).
+    pub fn const_pool(&self) -> &[f64] {
+        self.encoder.const_values()
+    }
+
+    /// Referencia al encoder subyacente.
+    pub fn encoder(&self) -> &RealEncoder {
+        &self.encoder
+    }
+}
+
+impl Default for BmlWeightPool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Compila un GGUF con pesos codificados como árboles BML.
+///
+/// A diferencia de `compile_distributed`, este codifica los pesos con
+/// `BmlWeightPool` para reportar estadísticas de compresión.
+pub fn compile_distributed_bml(
+    gguf_path: &Path,
+    layers_per_fragment: u32,
+) -> Result<(Vec<DistributedFragment>, BmlWeightPool), String> {
+    let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
+    let config = read_model_config_pub(&parser)?;
+
+    let head_dim = config.n_embd / config.n_heads;
+    let n_kv_heads = parser
+        .get_metadata(&format!("{}.attention.key_value_head_count", config.architecture))
+        .and_then(|v| match v {
+            bml_parser::GgufMetadataValue::U32(n) => Some(*n),
+            bml_parser::GgufMetadataValue::I32(n) => Some(*n as u32),
+            _ => None,
+        })
+        .unwrap_or(config.n_heads);
+
+    let mut pool = BmlWeightPool::with_capacity(1024);
+    let mut fragments = Vec::new();
+
+    let mut layer = 0u32;
+    while layer < config.n_layers {
+        let layer_end = (layer + layers_per_fragment).min(config.n_layers);
+        let frag = compile_layer_range_bml(&parser, &config, layer, layer_end, head_dim, n_kv_heads, false, &mut pool)?;
+        fragments.push(frag);
+        layer = layer_end;
+    }
+
+    // Fragmento final
+    let frag = compile_layer_range_bml(&parser, &config, config.n_layers, config.n_layers + 1, head_dim, n_kv_heads, true, &mut pool)?;
+    fragments.push(frag);
+
+    Ok((fragments, pool))
+}
+
+fn compile_layer_range_bml(
+    parser: &GgufParser,
+    config: &ModelConfig,
+    layer_start: u32,
+    layer_end: u32,
+    head_dim: u32,
+    n_kv_heads: u32,
+    is_final: bool,
+    pool: &mut BmlWeightPool,
+) -> Result<DistributedFragment, String> {
+    let mut weights: Vec<f32> = Vec::new();
+    let mut tensors: Vec<TensorMeta> = Vec::new();
+
+    for layer in layer_start..layer_end {
+        if is_final {
+            if let Some(vals) = read_tensor_f32(parser, "output_norm.weight") {
+                let offset = weights.len() as u64;
+                weights.extend(vals);
+                tensors.push(TensorMeta { name: "output_norm.weight".into(), offset, n_rows: config.n_embd, n_cols: 1 });
+            }
+            if let Some(vals) = read_tensor_f32(parser, "token_embd.weight") {
+                let offset = weights.len() as u64;
+                let info = parser.find_tensor("token_embd.weight");
+                let (r, c) = if let Some(i) = info { if i.dims.len() >= 2 { (i.dims[0] as u32, i.dims[1] as u32) } else { (vals.len() as u32, 1) } } else { (vals.len() as u32, 1) };
+                weights.extend(vals);
+                tensors.push(TensorMeta { name: "token_embd.weight".into(), offset, n_rows: r, n_cols: c });
+            }
+        } else {
+            let prefix = format!("blk.{layer}");
+            for suffix in ["attn_norm.weight", "attn_q.weight", "attn_k.weight", "attn_v.weight", "attn_output.weight", "ffn_norm.weight", "ffn_gate.weight", "ffn_up.weight", "ffn_down.weight"] {
+                let name = format!("{prefix}.{suffix}");
+                if let Some(vals) = read_tensor_f32(parser, &name) {
+                    let info = parser.find_tensor(&name);
+                    let (r, c) = if let Some(i) = info { if i.dims.len() >= 2 { (i.dims[0] as u32, i.dims[1] as u32) } else { (vals.len() as u32, 1) } } else { (vals.len() as u32, 1) };
+                    let offset = weights.len() as u64;
+                    weights.extend(vals);
+                    tensors.push(TensorMeta { name, offset, n_rows: r, n_cols: c });
+                }
+            }
+        }
+    }
+
+    // Codificar todos los pesos en el BmlWeightPool
+    for &w in &weights {
+        pool.encode(w);
+    }
+
+    let ops = vec![RpnOp::Var(0)];
+    let fragment_id = if is_final { layer_end } else { layer_start };
+
+    Ok(DistributedFragment {
+        fragment_id,
+        layer_start,
+        layer_end,
+        ops,
+        weights,
+        tensors,
+        config: config.clone(),
+        n_kv_heads,
+        head_dim,
+    })
+}
+
+#[cfg(test)]
+mod bml_weight_tests {
+    use super::*;
+
+    #[test]
+    fn bml_weight_pool_q4_0_values() {
+        let mut pool = BmlWeightPool::new();
+        let q4_values: [f32; 16] = [
+            -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0,
+            0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0,
+        ];
+
+        // Simular 1M pesos con valores Q4_0
+        for _ in 0..62_500 {
+            for &v in &q4_values {
+                pool.encode(v);
+            }
+        }
+
+        println!("Q4_0 pool: {} unique, {} total", pool.n_unique(), pool.n_total());
+        println!("  Compression ratio: {:.1}x", pool.compression_ratio());
+        println!("  Estimated size: {} bytes ({:.1} MB)", pool.estimated_size_bytes(), pool.estimated_size_bytes() as f64 / 1_000_000.0);
+        println!("  f32 size: {} bytes ({:.1} MB)", pool.f32_size_bytes(), pool.f32_size_bytes() as f64 / 1_000_000.0);
+        println!("  Compression vs f32: {:.1}x", pool.compression_vs_f32());
+
+        assert_eq!(pool.n_unique(), 14); // 16 - 2 (0 y 1 son Zero/One)
+        assert_eq!(pool.n_total(), 1_000_000);
+        assert!(pool.compression_ratio() > 70_000.0); // 1M / 14 ≈ 71429
+    }
+
+    #[test]
+    fn bml_weight_pool_dedup() {
+        let mut pool = BmlWeightPool::new();
+        pool.encode(0.5);
+        pool.encode(0.5);
+        pool.encode(0.5);
+        pool.encode(0.25);
+        pool.encode(0.25);
+
+        assert_eq!(pool.n_unique(), 2);
+        assert_eq!(pool.n_total(), 5);
+        assert_eq!(pool.const_pool().len(), 2);
+    }
+
+    #[test]
+    fn compile_distributed_bml_tinyllama() {
+        let path = "/root/tinyllama.gguf";
+        if !Path::new(path).exists() {
+            eprintln!("SKIP: {path} no disponible");
+            return;
+        }
+
+        let (fragments, pool) = compile_distributed_bml(Path::new(path), 1).expect("compile bml");
+
+        println!("\n=== BML Weight Pool Statistics ===");
+        println!("  Unique values: {}", pool.n_unique());
+        println!("  Total weights: {}", pool.n_total());
+        println!("  Compression ratio: {:.1}x", pool.compression_ratio());
+        println!("  Estimated BML size: {:.1} MB", pool.estimated_size_bytes() as f64 / 1_000_000.0);
+        println!("  f32 size: {:.1} MB", pool.f32_size_bytes() as f64 / 1_000_000.0);
+        println!("  Compression vs f32: {:.1}x", pool.compression_vs_f32());
+        println!("  Fragments: {}", fragments.len());
+
+        assert!(pool.n_unique() > 0);
+        assert!(pool.n_total() > 1_000_000);
+        assert!(pool.compression_vs_f32() > 1.0);
     }
 }
 
