@@ -158,6 +158,11 @@ impl NodeHandle {
         let response = recv_msg(&mut self.stream)?;
         Ok(!response.payload.is_empty())
     }
+
+    /// Acceso mutable al stream subyacente.
+    pub fn stream_mut(&mut self) -> &mut TcpStream {
+        &mut self.stream
+    }
 }
 
 #[cfg(test)]
