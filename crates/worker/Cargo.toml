@@ -1,0 +1,17 @@
+[package]
+name = "bml-worker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+bml-compiler = { path = "../compiler" }
+bml-runtime = { path = "../runtime" }
+bml-domain = { path = "../domain" }
+serde.workspace = true
+serde_json.workspace = true
+
+[[bin]]
+name = "bml-worker"
+path = "src/main.rs"
