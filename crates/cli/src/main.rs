@@ -16,6 +16,7 @@
 use bml_compiler::gguf_compiler::{
     compile_gguf_fast, load_from_dir, serialize_to_dir, InferenceCompiler,
 };
+use bml_compiler::distributed::{compile_distributed, serialize_distributed};
 use bml_compiler::hardware::HardwareSpec;
 use bml_compiler::sampler;
 use clap::{Parser, Subcommand};
@@ -51,6 +52,14 @@ enum Command {
         /// Tamaño máximo de fragmento L3 en bytes (default: 8388608 = 8 MB)
         #[arg(long = "l3-threshold", default_value_t = 8388608)]
         l3_threshold: usize,
+
+        /// Compila en modo distribuido: un fragmento self-contained por capa
+        #[arg(long = "distributed")]
+        distributed: bool,
+
+        /// Capas por fragmento (solo --distributed, default: 1 = una capa por fragmento)
+        #[arg(long = "layers-per-fragment", default_value_t = 1)]
+        layers_per_fragment: u32,
     },
 
     /// Ejecuta inferencia desde .bmlgraph o GGUF
@@ -94,7 +103,9 @@ fn main() {
             model,
             output,
             l1_threshold,
-            l3_threshold,
+            l3_threshold: _,
+            distributed,
+            layers_per_fragment,
         } => {
             if !model.exists() {
                 eprintln!("Error: el archivo GGUF no existe: {}", model.display());
@@ -102,43 +113,72 @@ fn main() {
             }
 
             println!("Compilando {} → {}", model.display(), output.display());
-            let hw = HardwareSpec::new(4, l1_threshold, l1_threshold * 8, l1_threshold);
-            println!("Hardware target: {:?}", hw);
 
-            // compile_gguf_fast solo lee metadatos del GGUF, no carga pesos.
-            let result = match compile_gguf_fast(&model, &hw) {
-                Ok(r) => r,
-                Err(e) => {
-                    eprintln!("Error compilando: {e}");
+            if distributed {
+                println!("Modo distribuido: {} capas por fragmento", layers_per_fragment);
+                println!("Leyendo pesos del GGUF (dequantizando)...");
+
+                let fragments = match compile_distributed(&model, layers_per_fragment, true) {
+                    Ok(f) => f,
+                    Err(e) => {
+                        eprintln!("Error compilando distribuido: {e}");
+                        std::process::exit(1);
+                    }
+                };
+
+                let config = &fragments[0].config;
+                println!(
+                    "Modelo: {} ({} capas, {} heads, {} embd, {} vocab)",
+                    config.architecture, config.n_layers, config.n_heads, config.n_embd, config.vocab_size,
+                );
+                println!("Fragmentos: {}", fragments.len());
+
+                let total_weights: usize = fragments.iter().map(|f| f.weights.len()).sum();
+                println!(
+                    "Total pesos: {} ({:.1} MB)",
+                    total_weights,
+                    total_weights as f64 * 4.0 / (1024.0 * 1024.0),
+                );
+
+                for frag in &fragments {
+                    let weight_mb = frag.weights.len() as f64 * 4.0 / (1024.0 * 1024.0);
+                    println!(
+                        "  fragmento {} (capas {}-{}): {} tensores, {:.1} MB",
+                        frag.fragment_id, frag.layer_start, frag.layer_end,
+                        frag.tensors.len(), weight_mb,
+                    );
+                }
+
+                if let Err(e) = serialize_distributed(&fragments, &output) {
+                    eprintln!("Error serializando: {e}");
                     std::process::exit(1);
                 }
-            };
+            } else {
+                let hw = HardwareSpec::new(4, l1_threshold, l1_threshold * 8, l1_threshold);
+                println!("Hardware target: {:?}", hw);
 
-            let config = &result.config;
-            println!(
-                "Modelo: {} ({} capas, {} heads, {} embd, {} vocab)",
-                config.architecture, config.n_layers, config.n_heads, config.n_embd, config.vocab_size,
-            );
-            println!("Fragmentos: {}", result.num_fragments);
-            println!("Const pool: {} valores", result.const_pool.len());
-
-            if let Err(e) = serialize_to_dir(&result, &output) {
-                eprintln!("Error serializando: {e}");
-                std::process::exit(1);
-            }
-
-            println!("Serializado a: {}", output.display());
-
-            if let Ok(entries) = std::fs::read_dir(&output) {
-                for entry in entries.flatten() {
-                    if let Ok(m) = entry.metadata() {
-                        println!("  {} ({} bytes)", entry.file_name().to_string_lossy(), m.len());
+                let result = match compile_gguf_fast(&model, &hw) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        eprintln!("Error compilando: {e}");
+                        std::process::exit(1);
                     }
+                };
+
+                let config = &result.config;
+                println!(
+                    "Modelo: {} ({} capas, {} heads, {} embd, {} vocab)",
+                    config.architecture, config.n_layers, config.n_heads, config.n_embd, config.vocab_size,
+                );
+                println!("Fragmentos: {}", result.num_fragments);
+
+                if let Err(e) = serialize_to_dir(&result, &output) {
+                    eprintln!("Error serializando: {e}");
+                    std::process::exit(1);
                 }
             }
 
             println!("Serializado a: {}", output.display());
-
             if let Ok(entries) = std::fs::read_dir(&output) {
                 for entry in entries.flatten() {
                     if let Ok(m) = entry.metadata() {

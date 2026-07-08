@@ -10,6 +10,7 @@
 #![warn(missing_docs)]
 
 pub mod dag;
+pub mod distributed;
 pub mod eml;
 pub mod fragment;
 pub mod gguf_compiler;
