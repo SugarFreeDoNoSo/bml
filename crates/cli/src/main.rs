@@ -353,24 +353,27 @@ fn run_from_gguf(
     let prompt_ids = vocab.encode(prompt);
     println!("Tokenizado: {} tokens", prompt_ids.len());
 
+    // KV cache con hash consing + i8
+    let mut kv = bml_compiler::HashConsedKV::new(
+        config.n_layers,
+        compiler.n_kv_heads(),
+        config.n_embd / config.n_heads,
+        2048,
+    );
+
     let mut sequence = prompt_ids.clone();
     let max_ctx = context_size.min(config.context_length) as usize;
 
+    // Primer paso: procesar todo el prompt (construye el KV cache)
+    let logits = compiler.forward_cached(&sequence, &mut kv);
+    let mut last_logits = logits;
+
     for step in 0..num_tokens {
-        let ctx_start = if sequence.len() > max_ctx {
-            sequence.len() - max_ctx
-        } else {
-            0
-        };
-        let context = &sequence[ctx_start..];
-
-        let logits = compiler.forward(context);
-
-        let next_id = sampler::sample(&logits, temp, step as u64)
+        // Sampling del token anterior
+        let next_id = sampler::sample(&last_logits, temp, step as u64)
             .unwrap_or(vocab.eos_token_id);
 
-        let token_text = vocab
-            .decode_single(next_id)
+        let token_text = vocab.decode_single(next_id)
             .strip_prefix('▁')
             .unwrap_or("<unk>");
 
@@ -387,10 +390,20 @@ fn run_from_gguf(
         std::io::stdout().flush().ok();
 
         sequence.push(next_id);
-
         if next_id == vocab.eos_token_id {
             println!("\n[EOS]");
             break;
+        }
+
+        // Siguiente token: solo procesar el último (el resto está en cache)
+        if sequence.len() <= max_ctx {
+            let last_token = vec![*sequence.last().unwrap()];
+            last_logits = compiler.forward_cached(&last_token, &mut kv);
+        } else {
+            // Contexto excedido: re-procesar desde el truncado
+            let ctx_start = sequence.len() - max_ctx;
+            let context = &sequence[ctx_start..];
+            last_logits = compiler.forward_cached(context, &mut kv);
         }
     }
 

@@ -6,7 +6,8 @@
 //! micro-fragmentación AOT para que el binario exportado (`.bmlgraph`)
 //! caiga bajo el umbral de caché objetivo.
 
-#![deny(unsafe_code)]
+// AVX2 SIMD requiere unsafe
+#![allow(unsafe_code)]
 #![warn(missing_docs)]
 
 pub mod bml_ops;
@@ -17,6 +18,7 @@ pub mod fragment;
 pub mod gguf_compiler;
 pub mod hardware;
 pub mod hash_cons;
+pub mod kv_cache;
 pub mod op_fragments;
 pub mod rpn;
 pub mod sampler;
@@ -28,4 +30,5 @@ pub use fragment::{
     L3_THRESHOLD,
 };
 pub use hash_cons::HashConsRegistry;
+pub use kv_cache::{HashConsedKV, I8Vector, dot_i8_simd, softmax_f32};
 pub use rpn::{linearize, RpnOp, RpnProgram};

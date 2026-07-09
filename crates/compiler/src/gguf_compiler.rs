@@ -860,6 +860,159 @@ impl InferenceCompiler {
         self.get_embedding_f64(token_id)
     }
 
+    /// Forward pass completo con KV cache y softmax real.
+    ///
+    /// Reemplaza `forward()` para usar:
+    /// - KV cache (f16-equivalente, pero en i8 con hash consing)
+    /// - Softmax real en attention
+    /// - Cómputo en f32 (con conversión f64 solo en boundaries)
+    pub fn forward_cached(
+        &self,
+        input_ids: &[u32],
+        kv_cache: &mut crate::kv_cache::HashConsedKV,
+    ) -> Vec<f64> {
+        let n_embd = self.config.n_embd as usize;
+        let vocab_size = self.vocab.len();
+
+        if input_ids.is_empty() {
+            return vec![0.0; vocab_size];
+        }
+
+        // Posición inicial basada en el cache existente
+        let start_pos = kv_cache.current_pos();
+        let mut hidden: Vec<f64> = vec![0.0; n_embd];
+
+        // Procesar cada token secuencialmente a través de todas las capas
+        for (offset, &token_id) in input_ids.iter().enumerate() {
+            let pos = start_pos + offset as u32;
+            let emb = self.get_embedding_f64(token_id);
+            for i in 0..n_embd.min(emb.len()) {
+                hidden[i] = emb[i];
+            }
+            for layer in 0..self.config.n_layers {
+                self.forward_layer_cached(&mut hidden, layer, pos, kv_cache);
+            }
+        }
+
+        // lm_head: hidden · token_embd^T → logits
+        self.compute_logits(&hidden)
+    }
+
+    /// Forward de una capa con KV cache y softmax real.
+    fn forward_layer_cached(
+        &self,
+        hidden: &mut Vec<f64>,
+        layer: u32,
+        pos: u32,
+        kv_cache: &mut crate::kv_cache::HashConsedKV,
+    ) {
+        let n_embd = self.config.n_embd as usize;
+        let prefix = format!("blk.{layer}");
+
+        // === RMSNorm de atención ===
+        self.rmsnorm_inplace(hidden, &format!("{}.attn_norm.weight", prefix));
+
+        // === Q, K, V projections ===
+        let q = self.matmul_f64(hidden, &format!("{}.attn_q.weight", prefix));
+        let k = self.matmul_f64(hidden, &format!("{}.attn_k.weight", prefix));
+        let v = self.matmul_f64(hidden, &format!("{}.attn_v.weight", prefix));
+
+        // === RoPE a Q y K ===
+        let head_dim = self.head_dim as usize;
+        let mut q_rotated = q;
+        let mut k_rotated = k;
+        self.apply_rope_inplace(&mut q_rotated, pos as usize, head_dim);
+        self.apply_rope_inplace(&mut k_rotated, pos as usize, head_dim);
+
+        // === Cachear K y V en i8 (con hash consing) ===
+        let n_kv_heads = self.n_kv_heads as usize;
+        let actual_kv_heads = k_rotated.len() / head_dim;
+        let kv_heads_to_use = n_kv_heads.min(actual_kv_heads);
+        for kv_h in 0..kv_heads_to_use {
+            let k_start = kv_h * head_dim;
+            let k_end = (k_start + head_dim).min(k_rotated.len());
+            let v_start = kv_h * head_dim;
+            let v_end = (v_start + head_dim).min(v.len());
+            let k_slice: Vec<f32> = k_rotated[k_start..k_end]
+                .iter()
+                .map(|&v| v as f32)
+                .collect();
+            let v_slice: Vec<f32> = v[v_start..v_end]
+                .iter()
+                .map(|&v| v as f32)
+                .collect();
+            kv_cache.store_k(layer, pos, kv_h as u32, &k_slice);
+            kv_cache.store_v(layer, pos, kv_h as u32, &v_slice);
+        }
+
+        // === Attention con softmax real + KV cache ===
+        let n_heads = self.config.n_heads as usize;
+        let scale = 1.0 / (head_dim as f64).sqrt();
+        let q_heads_per_kv = n_heads / kv_heads_to_use;
+
+        let mut output = vec![0.0_f64; n_heads * head_dim];
+
+        for h in 0..n_heads {
+            let kv_h = h / q_heads_per_kv;
+            let q_start = h * head_dim;
+
+            // Scores: Q[h] · K[p] para todos los p <= pos
+            let mut scores = Vec::with_capacity(pos as usize + 1);
+            for p in 0..=pos {
+                let q_slice: Vec<f32> = q_rotated[q_start..q_start + head_dim]
+                    .iter()
+                    .map(|&v| v as f32)
+                    .collect();
+                let dot = kv_cache.dot_qk(&q_slice, layer, p, kv_h as u32);
+                scores.push(dot as f64 * scale);
+            }
+
+            // Softmax real
+            let attn = crate::kv_cache::softmax_f32(&scores.iter().map(|&s| s as f32).collect::<Vec<_>>());
+
+            // Output: Σ attn[p] * V[p]
+            let o_start = h * head_dim;
+            for d in 0..head_dim {
+                let mut sum = 0.0_f64;
+                for p in 0..=pos {
+                    let v_cached = kv_cache.load_v(layer, p, kv_h as u32);
+                    sum += attn[p as usize] as f64 * v_cached[d] as f64;
+                }
+                output[o_start + d] = sum;
+            }
+        }
+
+        // === Output projection ===
+        let o_out = self.matmul_f64(&output, &format!("{}.attn_output.weight", prefix));
+
+        // === Residual ===
+        for i in 0..n_embd {
+            hidden[i] += o_out.get(i).copied().unwrap_or(0.0);
+        }
+
+        // === MLP RMSNorm ===
+        self.rmsnorm_inplace(hidden, &format!("{}.ffn_norm.weight", prefix));
+
+        // === MLP: gate, up, down ===
+        let gate = self.matmul_f64(hidden, &format!("{}.ffn_gate.weight", prefix));
+        let up = self.matmul_f64(hidden, &format!("{}.ffn_up.weight", prefix));
+
+        // SwiGLU: gate * sigmoid(1.7 * gate) * up
+        let mut swiglu_out = vec![0.0_f64; gate.len().min(up.len())];
+        for i in 0..swiglu_out.len() {
+            let g = gate.get(i).copied().unwrap_or(0.0);
+            let u = up.get(i).copied().unwrap_or(0.0);
+            swiglu_out[i] = g / (1.0 + (-1.7 * g).exp()) * u;
+        }
+
+        let mlp_out = self.matmul_f64(&swiglu_out, &format!("{}.ffn_down.weight", prefix));
+
+        // === Residual ===
+        for i in 0..n_embd.min(mlp_out.len()) {
+            hidden[i] += mlp_out[i];
+        }
+    }
+
     /// Obtiene el embedding de un token.
     /// token_embd.weight tiene shape [n_embd, vocab_size].
     /// Embedding(token) = columna completa para ese token.
