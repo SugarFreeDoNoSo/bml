@@ -1137,6 +1137,227 @@ pub fn serialize_sub_fragments(
     Ok(())
 }
 
+// ===========================================================================
+// VectorFragment: distribución de columnas de matmul
+// ===========================================================================
+
+/// Un fragmento de vector para distribución de matmul por columnas.
+///
+/// El matmul `y = x · W` se parte por columnas de W. Cada `VectorFragment`
+/// contiene:
+/// - El vector de entrada `x` (compartido entre todos los fragments)
+/// - Una columna (o slice de columnas) de pesos `W[:, j_start..j_end]`
+/// - El slot de salida para `y[j_start..j_end]`
+///
+/// Multiple fragments → multiple nodos en paralelo (columnas independientes).
+#[derive(Debug, Clone)]
+pub struct VectorFragment {
+    pub fragment_id: u32,
+    pub x: Vec<f64>,
+    pub w_columns: Vec<f64>,
+    pub n_in: u32,
+    pub n_out_total: u32,
+    pub j_start: u32,
+    pub n_cols: u32,
+    pub output_slot: u32,
+}
+
+impl VectorFragment {
+    pub fn new(
+        fragment_id: u32,
+        x: &[f64],
+        weights: &[f32],
+        weight_offset: u64,
+        n_in: u32,
+        n_out_total: u32,
+        j_start: u32,
+        n_cols: u32,
+        output_slot: u32,
+    ) -> Self {
+        let n_in_us = n_in as usize;
+        let n_cols_us = n_cols as usize;
+        let n_out_us = n_out_total as usize;
+
+        let mut w_columns = Vec::with_capacity(n_in_us * n_cols_us);
+        for i in 0..n_in_us {
+            for jj in 0..n_cols_us {
+                let j = j_start as usize + jj;
+                let idx = weight_offset as usize + i * n_out_us + j;
+                w_columns.push(if idx < weights.len() { weights[idx] as f64 } else { 0.0 });
+            }
+        }
+
+        Self {
+            fragment_id,
+            x: x.to_vec(),
+            w_columns,
+            n_in,
+            n_out_total,
+            j_start,
+            n_cols,
+            output_slot,
+        }
+    }
+
+    /// Ejecuta el matmul de este fragmento: y = x · W_columns.
+    ///
+    /// Retorna `y[j_start..j_start+n_cols]` como Vec<f64>.
+    pub fn execute(&self) -> Vec<f64> {
+        let n_in = self.n_in as usize;
+        let n_cols = self.n_cols as usize;
+        let mut y = vec![0.0_f64; n_cols];
+
+        for j in 0..n_cols {
+            let mut dot = 0.0_f64;
+            for i in 0..n_in.min(self.x.len()) {
+                let w_idx = i * n_cols + j;
+                if w_idx < self.w_columns.len() {
+                    dot += self.x[i] * self.w_columns[w_idx];
+                }
+            }
+            y[j] = dot;
+        }
+
+        y
+    }
+
+    /// Tamaño de los pesos en bytes.
+    pub fn weights_size_bytes(&self) -> usize {
+        self.w_columns.len() * 8
+    }
+
+    /// Tamaño del vector x en bytes.
+    pub fn x_size_bytes(&self) -> usize {
+        self.x.len() * 8
+    }
+
+    /// Tamaño total del fragmento en bytes.
+    pub fn total_size_bytes(&self) -> usize {
+        self.weights_size_bytes() + self.x_size_bytes()
+    }
+}
+
+/// Parte un matmul en `n_fragments` VectorFragments por columnas.
+///
+/// Cada fragmento contiene un slice de columnas de W.
+/// Los fragments son independientes → ejecución paralela.
+pub fn split_matmul_columns(
+    x: &[f64],
+    weights: &[f32],
+    weight_offset: u64,
+    n_in: u32,
+    n_out: u32,
+    n_fragments: u32,
+    output_slot: u32,
+) -> Vec<VectorFragment> {
+    let cols_per_frag = (n_out + n_fragments - 1) / n_fragments;
+    let mut fragments = Vec::with_capacity(n_fragments as usize);
+
+    for frag_id in 0..n_fragments {
+        let j_start = frag_id * cols_per_frag;
+        if j_start >= n_out {
+            break;
+        }
+        let n_cols = cols_per_frag.min(n_out - j_start);
+
+        // El offset de este fragmento es weight_offset + j_start
+        // (cada columna empieza en j_start dentro del pool de pesos)
+        fragments.push(VectorFragment::new(
+            frag_id,
+            x,
+            weights,
+            weight_offset,
+            n_in,
+            n_out,
+            j_start,
+            n_cols,
+            output_slot,
+        ));
+    }
+
+    fragments
+}
+
+/// Serializa un VectorFragment a bytes (para envío via TCP).
+pub fn serialize_vector_fragment(vf: &VectorFragment) -> Vec<u8> {
+    let mut bytes = Vec::new();
+
+    // fragment_id
+    bytes.extend_from_slice(&vf.fragment_id.to_le_bytes());
+    // n_in, n_out_total, j_start, n_cols, output_slot
+    bytes.extend_from_slice(&vf.n_in.to_le_bytes());
+    bytes.extend_from_slice(&vf.n_out_total.to_le_bytes());
+    bytes.extend_from_slice(&vf.j_start.to_le_bytes());
+    bytes.extend_from_slice(&vf.n_cols.to_le_bytes());
+    bytes.extend_from_slice(&vf.output_slot.to_le_bytes());
+
+    // x vector
+    bytes.extend_from_slice(&(vf.x.len() as u64).to_le_bytes());
+    for &v in &vf.x {
+        bytes.extend_from_slice(&v.to_le_bytes());
+    }
+
+    // w_columns
+    bytes.extend_from_slice(&(vf.w_columns.len() as u64).to_le_bytes());
+    for &v in &vf.w_columns {
+        bytes.extend_from_slice(&v.to_le_bytes());
+    }
+
+    bytes
+}
+
+/// Deserializa un VectorFragment desde bytes (recibido via TCP).
+pub fn deserialize_vector_fragment(bytes: &[u8]) -> Result<VectorFragment, String> {
+    if bytes.len() < 28 {
+        return Err("payload demasiado pequeño".into());
+    }
+    let mut offset = 0;
+
+    let fragment_id = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+    let n_in = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+    let n_out_total = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+    let j_start = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+    let n_cols = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+    let output_slot = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+    offset += 4;
+
+    // x
+    let x_len = u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap()) as usize;
+    offset += 8;
+    let mut x = Vec::with_capacity(x_len);
+    for _ in 0..x_len {
+        let v = f64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap());
+        offset += 8;
+        x.push(v);
+    }
+
+    // w_columns
+    let w_len = u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap()) as usize;
+    offset += 8;
+    let mut w_columns = Vec::with_capacity(w_len);
+    for _ in 0..w_len {
+        let v = f64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap());
+        offset += 8;
+        w_columns.push(v);
+    }
+
+    Ok(VectorFragment {
+        fragment_id,
+        x,
+        w_columns,
+        n_in,
+        n_out_total,
+        j_start,
+        n_cols,
+        output_slot,
+    })
+}
+
 #[cfg(test)]
 mod sub_fragment_tests {
     use super::*;
@@ -1264,5 +1485,89 @@ mod sub_fragment_tests {
         let subs = sub_fragment(&frag);
         let total_in_subs: usize = subs.iter().map(|sf| sf.ops.len()).sum();
         assert_eq!(total_in_subs, total, "ops se perdieron en sub-fragmentación");
+    }
+}
+
+#[cfg(test)]
+mod vector_fragment_tests {
+    use super::*;
+
+    #[test]
+    fn vector_fragment_matmul() {
+        // x = [1, 2, 3], W = [[1, 0], [0, 1], [1, 1]]
+        // y = x · W = [1*1+2*0+3*1, 1*0+2*1+3*1] = [4, 5]
+        let x = vec![1.0, 2.0, 3.0];
+        let weights: Vec<f32> = vec![1.0, 0.0, 0.0, 1.0, 1.0, 1.0]; // [3, 2] row-major
+        let vf = VectorFragment::new(0, &x, &weights, 0, 3, 2, 0, 2, 0);
+        let y = vf.execute();
+        assert_eq!(y.len(), 2);
+        assert!((y[0] - 4.0).abs() < 1e-9, "y[0] = {}", y[0]);
+        assert!((y[1] - 5.0).abs() < 1e-9, "y[1] = {}", y[1]);
+    }
+
+    #[test]
+    fn split_matmul_columns_parallel() {
+        // x = [1, 2], W = [[1, 2, 3, 4]] (1×2 × 2×4)
+        // y = x · W = [1*1+2*1, 1*2+2*2, 1*3+2*3, 1*4+2*4] = [3, 6, 9, 12]
+        // W row-major [n_in=2, n_out=4]: [1, 2, 3, 4, 1, 2, 3, 4]
+        let x = vec![1.0, 2.0];
+        let weights: Vec<f32> = vec![1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0];
+        // n_in=2, n_out=4, split en 2 fragments de 2 columnas cada uno
+        let fragments = split_matmul_columns(&x, &weights, 0, 2, 4, 2, 0);
+
+        assert_eq!(fragments.len(), 2);
+        // Fragment 0: columnas 0-1 → y[0]=3, y[1]=6
+        // Fragment 1: columnas 2-3 → y[2]=9, y[3]=12
+        let y0 = fragments[0].execute();
+        let y1 = fragments[1].execute();
+        assert_eq!(y0.len(), 2);
+        assert_eq!(y1.len(), 2);
+        assert!((y0[0] - 3.0).abs() < 1e-9, "y0[0] = {}", y0[0]);
+        assert!((y0[1] - 6.0).abs() < 1e-9, "y0[1] = {}", y0[1]);
+        assert!((y1[0] - 9.0).abs() < 1e-9, "y1[0] = {}", y1[0]);
+        assert!((y1[1] - 12.0).abs() < 1e-9, "y1[1] = {}", y1[1]);
+    }
+
+    #[test]
+    fn vector_fragment_serialize_roundtrip() {
+        let x = vec![1.0, 2.0, 3.0];
+        let weights: Vec<f32> = vec![1.0, 0.0, 0.0, 1.0, 1.0, 1.0];
+        let vf = VectorFragment::new(42, &x, &weights, 0, 3, 2, 0, 2, 5);
+
+        let bytes = serialize_vector_fragment(&vf);
+        let vf2 = deserialize_vector_fragment(&bytes).unwrap();
+
+        assert_eq!(vf2.fragment_id, 42);
+        assert_eq!(vf2.n_in, 3);
+        assert_eq!(vf2.j_start, 0);
+        assert_eq!(vf2.n_cols, 2);
+        assert_eq!(vf2.output_slot, 5);
+        assert_eq!(vf2.x.len(), 3);
+        assert_eq!(vf2.w_columns.len(), 6);
+
+        let y = vf2.execute();
+        assert!((y[0] - 4.0).abs() < 1e-9);
+        assert!((y[1] - 5.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn split_matmul_large() {
+        // Matmul 4×8 split en 4 fragments
+        let x = vec![1.0, 2.0, 3.0, 4.0];
+        let weights: Vec<f32> = (0..32).map(|i| i as f32).collect();
+        let fragments = split_matmul_columns(&x, &weights, 0, 4, 8, 4, 0);
+
+        assert_eq!(fragments.len(), 4);
+        for frag in &fragments {
+            assert_eq!(frag.n_cols, 2);
+            assert_eq!(frag.n_in, 4);
+        }
+
+        // Verificar que la unión de resultados = matmul completo
+        let mut y_full = Vec::new();
+        for frag in &fragments {
+            y_full.extend(frag.execute());
+        }
+        assert_eq!(y_full.len(), 8);
     }
 }

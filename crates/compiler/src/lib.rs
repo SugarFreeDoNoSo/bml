@@ -9,6 +9,7 @@
 #![deny(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod bml_ops;
 pub mod dag;
 pub mod distributed;
 pub mod eml;
