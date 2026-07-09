@@ -144,6 +144,9 @@ pub struct HashConsedKV {
     head_dim: u32,
     max_seq_len: u32,
 
+    /// Posición actual (tokens procesados).
+    current_pos: u32,
+
     /// Stats
     n_total_k: usize,
     n_unique_k: usize,
@@ -153,7 +156,7 @@ pub struct HashConsedKV {
 
 impl HashConsedKV {
     pub fn new(n_layers: u32, n_kv_heads: u32, head_dim: u32, max_seq_len: u32) -> Self {
-        let k_refs = vec![vec![vec![0u32; n_kv_heads as usize]; max_seq_len as usize]; n_layers as usize];
+        let k_refs = vec![vec![vec![u32::MAX; n_kv_heads as usize]; max_seq_len as usize]; n_layers as usize];
         let v_refs = k_refs.clone();
         Self {
             k_storage: Vec::new(),
@@ -166,6 +169,7 @@ impl HashConsedKV {
             n_kv_heads,
             head_dim,
             max_seq_len,
+            current_pos: 0,
             n_total_k: 0,
             n_unique_k: 0,
             n_total_v: 0,
@@ -267,16 +271,19 @@ impl HashConsedKV {
             + self.v_storage.iter().map(|v| v.byte_size()).sum::<usize>()
     }
 
-    /// Posición actual (para saber cuántos tokens hay cacheados).
+    /// Posición actual (tokens procesados).
     pub fn current_pos(&self) -> u32 {
-        // Asumiendo que se llena secuencialmente
-        // Buscar la primera posición vacía
-        for pos in 0..self.max_seq_len {
-            if self.k_refs[0][pos as usize][0] == 0 && pos > 0 {
-                return pos;
-            }
-        }
-        self.max_seq_len
+        self.current_pos
+    }
+
+    /// Avanza la posición actual (después de procesar un token).
+    pub fn advance(&mut self) {
+        self.current_pos += 1;
+    }
+
+    /// Marca que se procesaron N tokens.
+    pub fn advance_by(&mut self, n: u32) {
+        self.current_pos += n;
     }
 }
 

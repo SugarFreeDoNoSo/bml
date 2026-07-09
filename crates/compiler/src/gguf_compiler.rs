@@ -894,6 +894,9 @@ impl InferenceCompiler {
             }
         }
 
+        // Avanzar la posición del cache
+        kv_cache.advance_by(input_ids.len() as u32);
+
         // lm_head: hidden · token_embd^T → logits
         self.compute_logits(&hidden)
     }
@@ -957,13 +960,18 @@ impl InferenceCompiler {
             let q_start = h * head_dim;
 
             // Scores: Q[h] · K[p] para todos los p <= pos
+            // Usar dot product f32 (dequantizar K del cache) para precisión
+            let q_slice: Vec<f32> = q_rotated[q_start..q_start + head_dim]
+                .iter()
+                .map(|&v| v as f32)
+                .collect();
             let mut scores = Vec::with_capacity(pos as usize + 1);
             for p in 0..=pos {
-                let q_slice: Vec<f32> = q_rotated[q_start..q_start + head_dim]
-                    .iter()
-                    .map(|&v| v as f32)
-                    .collect();
-                let dot = kv_cache.dot_qk(&q_slice, layer, p, kv_h as u32);
+                let k_cached = kv_cache.load_k(layer, p, kv_h as u32);
+                let dot: f32 = q_slice.iter()
+                    .zip(k_cached.iter())
+                    .map(|(&q, &k)| q * k)
+                    .sum();
                 scores.push(dot as f64 * scale);
             }
 
