@@ -11,3 +11,7 @@ bml-compiler = { path = "../compiler" }
 bml-runtime = { path = "../runtime" }
 bml-parser = { path = "../parser" }
 clap.workspace = true
+
+[lib]
+name = "bml_cli"
+path = "src/lib.rs"

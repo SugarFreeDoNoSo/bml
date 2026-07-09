@@ -835,6 +835,31 @@ impl InferenceCompiler {
         &self.weight_pool
     }
 
+    /// Retorna el mapa de offsets de pesos.
+    pub fn weight_offsets(&self) -> &HashMap<String, u32> {
+        &self.weight_offsets
+    }
+
+    /// Retorna el mapa de dimensiones de tensores.
+    pub fn tensor_dims(&self) -> &HashMap<String, (usize, usize)> {
+        &self.tensor_dims
+    }
+
+    /// Retorna la dimensión de head.
+    pub fn head_dim(&self) -> u32 {
+        self.head_dim
+    }
+
+    /// Retorna el número de KV heads.
+    pub fn n_kv_heads(&self) -> u32 {
+        self.n_kv_heads
+    }
+
+    /// Obtiene el embedding de un token como Vec<f64>.
+    pub fn get_embedding(&self, token_id: u32) -> Vec<f64> {
+        self.get_embedding_f64(token_id)
+    }
+
     /// Obtiene el embedding de un token.
     /// token_embd.weight tiene shape [n_embd, vocab_size].
     /// Embedding(token) = columna completa para ese token.

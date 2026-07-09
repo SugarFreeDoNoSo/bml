@@ -90,6 +90,10 @@ enum Command {
         /// Tamaño máximo de contexto
         #[arg(short = 'c', long = "context-size", default_value_t = 2048)]
         context_size: u32,
+
+        /// Usar building blocks BML (matmul, rmsnorm, rope, swiglu) en lugar de f64 nativo
+        #[arg(long = "bml")]
+        bml: bool,
     },
 
     /// Distribuye fragmentos a nodos workers via TCP
@@ -221,6 +225,7 @@ fn main() {
             threads: _,
             temp,
             context_size,
+            bml,
         } => {
             if !model.exists() {
                 eprintln!("Error: el modelo no existe: {}", model.display());
@@ -229,6 +234,8 @@ fn main() {
 
             if is_bmlgraph_dir(&model) {
                 run_from_bmlgraph(&model, &prompt, num_tokens, temp, context_size);
+            } else if bml {
+                run_from_gguf_bml(&model, &prompt, num_tokens, temp, context_size);
             } else {
                 run_from_gguf(&model, &prompt, num_tokens, temp, context_size);
             }
@@ -667,5 +674,87 @@ fn distribute(
     println!("\n\nDistribuido: {} tokens generados desde {} nodos",
         sequence.len() - prompt_ids.len(),
         node_handles.len(),
+    );
+}
+
+/// Ejecuta inferencia desde GGUF usando building blocks BML.
+///
+/// Usa `bml_inference::forward_bml` que reemplaza matmul_f64, rmsnorm,
+/// rope, y swiglu con versiones BML.
+fn run_from_gguf_bml(
+    gguf_path: &std::path::Path,
+    prompt: &str,
+    num_tokens: u32,
+    temp: f64,
+    context_size: u32,
+) {
+    use bml_cli::bml_inference;
+
+    println!("Cargando modelo desde {} (modo BML)...", gguf_path.display());
+    println!("Esto puede tardar (dequantizando pesos)...");
+
+    let compiler = match InferenceCompiler::open(gguf_path) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Error cargando modelo: {e}");
+            std::process::exit(1);
+        }
+    };
+
+    let config = compiler.config();
+    let vocab = compiler.vocab();
+    println!(
+        "Modelo: {} ({} capas, {} heads, {} embd, {} vocab)",
+        config.architecture, config.n_layers, config.n_heads, config.n_embd, vocab.len(),
+    );
+    println!("Prompt: {}", prompt);
+    println!("Generando {} tokens (temp={}) con BML building blocks...\n", num_tokens, temp);
+
+    let prompt_ids = vocab.encode(prompt);
+    println!("Tokenizado: {} tokens", prompt_ids.len());
+
+    let mut hot = bml_runtime::HotLoop::with_capacity(8192);
+    let mut sequence = prompt_ids.clone();
+    let max_ctx = context_size.min(config.context_length) as usize;
+
+    for step in 0..num_tokens {
+        let ctx_start = if sequence.len() > max_ctx {
+            sequence.len() - max_ctx
+        } else {
+            0
+        };
+        let context = &sequence[ctx_start..];
+
+        let logits = bml_inference::forward_bml(&mut hot, &compiler, context);
+
+        let next_id = sampler::sample(&logits, temp, step as u64)
+            .unwrap_or(vocab.eos_token_id);
+
+        let token_text = vocab.decode_single(next_id)
+            .strip_prefix('▁')
+            .unwrap_or("<unk>");
+
+        if token_text == "<|eot_id|>" || token_text == "</s>" {
+            println!();
+            break;
+        }
+        if token_text == "<0x0A>" {
+            println!();
+        } else {
+            print!("{}", token_text);
+        }
+        use std::io::Write;
+        std::io::stdout().flush().ok();
+
+        sequence.push(next_id);
+        if next_id == vocab.eos_token_id {
+            println!("\n[EOS]");
+            break;
+        }
+    }
+
+    println!("\n\nGenerados {} tokens (modo BML) desde prompt '{}'",
+        sequence.len() - prompt_ids.len(),
+        prompt,
     );
 }
