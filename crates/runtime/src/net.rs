@@ -33,6 +33,10 @@ pub enum MsgType {
     BatchRequest = 4,
     /// Reporta los tokens generados de un batch.
     BatchResult = 5,
+    /// Ejecuta un VectorFragment (matmul de columnas).
+    VectorMatmul = 6,
+    /// Reporta el resultado de un VectorFragment.
+    VectorResult = 7,
 }
 
 impl MsgType {
@@ -44,6 +48,8 @@ impl MsgType {
             3 => Some(Self::HealthCheck),
             4 => Some(Self::BatchRequest),
             5 => Some(Self::BatchResult),
+            6 => Some(Self::VectorMatmul),
+            7 => Some(Self::VectorResult),
             _ => None,
         }
     }

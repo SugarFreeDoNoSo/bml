@@ -23,7 +23,9 @@
 //! | StealWork | Si tiene trabajo pendiente, envía un fragmento al requester |
 //! | BatchRequest | Recibe hidden state + token IDs, ejecuta sus capas, responde BatchResult |
 
-use bml_compiler::distributed::{load_distributed_fragment, DistributedFragment};
+use bml_compiler::distributed::{
+    deserialize_vector_fragment, load_distributed_fragment, DistributedFragment,
+};
 use bml_runtime::net::{recv_msg, send_msg, MsgType, Message};
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
@@ -228,6 +230,38 @@ fn handle_connection(mut stream: TcpStream, state: Arc<Mutex<WorkerState>>) {
                     vec![],
                 ));
             }
+        }
+
+        MsgType::VectorMatmul => {
+            // Deserializar VectorFragment desde el payload
+            let vf = match deserialize_vector_fragment(&msg.payload) {
+                Ok(vf) => vf,
+                Err(e) => {
+                    eprintln!("[{peer}] Error deserializando VectorFragment: {e}");
+                    let _ = send_msg(&mut stream, &Message::new(
+                        MsgType::VectorResult,
+                        vec![],
+                    ));
+                    return;
+                }
+            };
+
+            let weight_mb = vf.weights_size_bytes() as f64 / (1024.0 * 1024.0);
+            println!(
+                "[{peer}] VectorMatmul: frag={} n_in={} n_cols={} {:.1} MB",
+                vf.fragment_id, vf.n_in, vf.n_cols, weight_mb,
+            );
+
+            // Ejecutar el matmul del fragmento
+            let y = vf.execute();
+
+            // Serializar y responder
+            let mut payload = Vec::with_capacity(4 + y.len() * 8);
+            payload.extend_from_slice(&(y.len() as u32).to_le_bytes());
+            for &v in &y {
+                payload.extend_from_slice(&v.to_le_bytes());
+            }
+            let _ = send_msg(&mut stream, &Message::new(MsgType::VectorResult, payload));
         }
 
         _ => {
