@@ -15,7 +15,7 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-license = "MIT"
+license = "AGPL"
 repository = "https://github.com/SugarFreeDoNoSo/bml"
 
 [profile.release]
