@@ -30,5 +30,5 @@ pub use fragment::{
     L3_THRESHOLD,
 };
 pub use hash_cons::HashConsRegistry;
-pub use kv_cache::{HashConsedKV, I8Vector, dot_i8_simd, softmax_f32};
+pub use kv_cache::{softmax_f32, HashConsedKV};
 pub use rpn::{linearize, RpnOp, RpnProgram};
