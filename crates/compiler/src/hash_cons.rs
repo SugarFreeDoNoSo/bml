@@ -20,7 +20,7 @@
 //! `NodeId` ya son canónicos (gracias al Hash Consing recursivo), dos
 //! sub-árboles idénticos producen la misma clave.
 
-use bml_domain::{bml, NodeId, NodeKind, NodeSoA};
+use bml_domain::{bml_base_op, NodeId, NodeKind, NodeSoA};
 use std::collections::HashMap;
 
 /// Clave canónica de un sub-árbol BML.
@@ -136,7 +136,7 @@ impl HashConsRegistry {
         // Intentar constant folding: si ambos hijos son constantes,
         // precalcular el resultado.
         if let (Some(a), Some(b)) = (self.eval_const_node(left), self.eval_const_node(right)) {
-            let result = bml(a, b);
+            let result = bml_base_op(a, b);
             // Solo plegar si el resultado es finito (evitar inf/nan)
             if result.is_finite() {
                 return self.const_value(result);

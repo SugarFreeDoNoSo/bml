@@ -39,7 +39,7 @@ fn program_below_32kb() {
     let size = program_bytes(&program);
     assert!(size < 32 * 1024, "program size {size} >= 32KB");
     // Debe evaluar sin pánico
-    let _ = program.evaluate(0.0);
+    let _ = program.evaluate();
 }
 
 #[test]
@@ -49,7 +49,7 @@ fn program_above_32kb() {
     let size = program_bytes(&program);
     assert!(size > 32 * 1024, "program size {size} <= 32KB");
     // Debe evaluar sin pánico (aunque puede ser expulsado de L1i)
-    let _ = program.evaluate(0.0);
+    let _ = program.evaluate();
 }
 
 #[test]
@@ -66,7 +66,7 @@ fn multicore_evaluation_is_thread_safe() {
             thread::spawn(move || {
                 let mut last = 0.0_f64;
                 for _ in 0..iterations_per_thread {
-                    last = program.evaluate(0.0);
+                    last = program.evaluate();
                 }
                 last
             })
@@ -101,7 +101,7 @@ fn multicore_latency_scaling() {
                 thread::spawn(move || {
                     let mut last = 0.0_f64;
                     for _ in 0..1000 {
-                        last = program.evaluate(0.0);
+                        last = program.evaluate();
                     }
                     last
                 })
@@ -123,7 +123,7 @@ fn programs_of_increasing_size_all_evaluate() {
     for &target_ops in &[100, 1000, 5000, 8000] {
         let program = build_program_of_size(target_ops);
         let size = program_bytes(&program);
-        let val = program.evaluate(0.0);
+        let val = program.evaluate();
         // El valor puede ser inf, nan o finito a profundidades grandes,
         // pero no debe pánico.
         assert!(

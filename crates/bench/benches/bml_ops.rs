@@ -10,7 +10,7 @@
 //! `crates/compiler/benches/matrix_mul.rs` y `fma_vs_bml.rs` respectivamente.
 
 use bml_compiler::{linearize, HashConsRegistry};
-use bml_domain::bml as bml_op;
+use bml_domain::bml_base_op as bml_op;
 use bml_runtime::Runtime;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
@@ -35,13 +35,9 @@ fn bench_op_cost(c: &mut Criterion) {
         })
     });
 
-    group.bench_function("exp2", |b| {
-        b.iter(|| black_box(black_box(1.5_f64).exp2()))
-    });
+    group.bench_function("exp2", |b| b.iter(|| black_box(black_box(1.5_f64).exp2())));
 
-    group.bench_function("log2", |b| {
-        b.iter(|| black_box(black_box(2.0_f64).log2()))
-    });
+    group.bench_function("log2", |b| b.iter(|| black_box(black_box(2.0_f64).log2())));
 
     group.bench_function("bml_inline_exp2_log2", |b| {
         // Equivalente expandido de bml: muestra el costo sin overhead de función.
@@ -80,11 +76,11 @@ fn bench_hot_loop_sizes(c: &mut Criterion) {
 
         // Warmup
         for _ in 0..5 {
-            runtime.execute(&program, 0.0);
+            runtime.execute(&program);
         }
 
         group.bench_with_input(BenchmarkId::new("ops", n_ops), &n_ops, |b, _| {
-            b.iter(|| black_box(runtime.execute(black_box(&program), black_box(0.0))))
+            b.iter(|| black_box(runtime.execute(black_box(&program))))
         });
     }
 
@@ -102,13 +98,13 @@ fn bench_ops_per_sec_by_size(c: &mut Criterion) {
         let mut runtime = Runtime::new(8192, 16);
 
         for _ in 0..5 {
-            runtime.execute(&program, 0.0);
+            runtime.execute(&program);
         }
 
         group.bench_with_input(BenchmarkId::new("size", n_ops), &n_ops, |b, _| {
             b.iter(|| {
                 // Ejecuta el programa entero — el tiempo total incluye N ops.
-                black_box(runtime.execute(black_box(&program), black_box(0.0)))
+                black_box(runtime.execute(black_box(&program)))
             })
         });
     }

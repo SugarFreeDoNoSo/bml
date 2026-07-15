@@ -101,7 +101,7 @@ impl Fragment {
                 RpnOp::Bml => {
                     let b = stack.pop().unwrap();
                     let a = stack.pop().unwrap();
-                    stack.push(bml_domain::bml(a, b));
+                    stack.push(bml_domain::bml_base_op(a, b));
                 }
                 RpnOp::Dup => {
                     let v = *stack.last().unwrap();
@@ -154,7 +154,7 @@ impl Fragment {
                                 RpnOp::Bml => {
                                     let b = stack.pop().unwrap();
                                     let a = stack.pop().unwrap();
-                                    stack.push(bml_domain::bml(a, b));
+                                    stack.push(bml_domain::bml_base_op(a, b));
                                 }
                                 RpnOp::Dup => {
                                     let v = *stack.last().unwrap();
@@ -185,7 +185,10 @@ impl Fragment {
                                         stack.swap(len - 1, len - 2);
                                     }
                                 }
-                                RpnOp::Loop { count: inner_count, body_len: inner_body_len } => {
+                                RpnOp::Loop {
+                                    count: inner_count,
+                                    body_len: inner_body_len,
+                                } => {
                                     let inner_body_start = j + 1;
                                     let inner_body_end = inner_body_start + inner_body_len as usize;
                                     for _ in 0..inner_count {
@@ -207,7 +210,7 @@ impl Fragment {
                                                 RpnOp::Bml => {
                                                     let b = stack.pop().unwrap();
                                                     let a = stack.pop().unwrap();
-                                                    stack.push(bml_domain::bml(a, b));
+                                                    stack.push(bml_domain::bml_base_op(a, b));
                                                 }
                                                 RpnOp::Dup => {
                                                     let v = *stack.last().unwrap();
@@ -559,7 +562,7 @@ mod tests {
         // La evaluación del grafo fragmentado debe coincidir con la del programa original.
         let program = build_program(1000);
         let graph = fragment_program(&program, DEFAULT_L1_THRESHOLD);
-        let original_val = program.evaluate(0.0);
+        let original_val = program.evaluate();
         let fragmented_val = graph.evaluate(0.0);
         assert_eq!(
             original_val.to_bits(),
@@ -649,7 +652,7 @@ mod tests {
         ) {
             let program = build_program(n_ops as usize);
             let graph = fragment_program(&program, DEFAULT_L1_THRESHOLD);
-            let original = program.evaluate(0.0);
+            let original = program.evaluate();
             let fragmented = graph.evaluate(0.0);
             if original.is_finite() && fragmented.is_finite() {
                 prop_assert!((original - fragmented).abs() < 1e-6);

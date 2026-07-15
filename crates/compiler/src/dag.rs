@@ -65,7 +65,7 @@ fn evaluate_soa(soa: &NodeSoA, id: NodeId, ctx: &EvalContext) -> f64 {
         NodeKind::Bml => {
             let l = evaluate_soa(soa, soa.lefts[idx], ctx);
             let r = evaluate_soa(soa, soa.rights[idx], ctx);
-            bml_domain::bml(l, r)
+            bml_domain::bml_base_op(l, r)
         }
     }
 }

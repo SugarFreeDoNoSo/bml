@@ -36,9 +36,9 @@ fn rpn_evaluation_is_pure() {
     // La evaluación de un programa RPN es pura: no muta el programa,
     // no tiene estado global, y produce el mismo resultado cada vez.
     let program = build_test_program();
-    let val1 = program.evaluate(0.0);
-    let val2 = program.evaluate(0.0);
-    let val3 = program.evaluate(0.0);
+    let val1 = program.evaluate();
+    let val2 = program.evaluate();
+    let val3 = program.evaluate();
     assert_eq!(val1.to_bits(), val2.to_bits());
     assert_eq!(val2.to_bits(), val3.to_bits());
 }
@@ -61,7 +61,7 @@ fn concurrent_evaluation_no_data_race() {
             thread::spawn(move || {
                 let mut last = 0.0_f64;
                 for _ in 0..iterations {
-                    last = program.evaluate(0.0);
+                    last = program.evaluate();
                 }
                 last
             })

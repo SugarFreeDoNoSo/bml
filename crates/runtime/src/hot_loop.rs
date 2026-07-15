@@ -41,7 +41,7 @@ impl HotLoop {
 
     /// Ejecuta un programa RPN completo.
     #[inline]
-    pub fn execute(&mut self, program: &RpnProgram, x: f64) -> f64 {
+    pub fn execute(&mut self, program: &RpnProgram) -> f64 {
         let ctx = bml_domain::EvalContext::new(&[], &[]);
         let mut buf = crate::buffer::ResultBuffer::new(0, 0);
         self.execute_full(program, &ctx, &mut buf)
@@ -99,7 +99,7 @@ impl HotLoop {
 
     /// Ejecuta una lista de fragmentos en orden.
     #[inline]
-    pub fn execute_fragments(&mut self, fragments: &[Fragment], x: f64) -> f64 {
+    pub fn execute_fragments(&mut self, fragments: &[Fragment]) -> f64 {
         let ctx = bml_domain::EvalContext::new(&[], &[]);
         let mut buf = crate::buffer::ResultBuffer::new(0, 0);
         self.execute_fragments_full(fragments, &ctx, &mut buf)
@@ -194,7 +194,7 @@ fn dispatch_ops(
                 if len >= 2 {
                     stack.truncate(len - 2);
                 }
-                stack.push(bml_domain::bml(a, b));
+                stack.push(bml_domain::bml_base_op(a, b));
             }
             RpnOp::Dup => {
                 let len = stack.len();
@@ -281,7 +281,7 @@ mod tests {
     fn execute_two() {
         let program = build_two_program();
         let mut hot = HotLoop::with_capacity(256);
-        let result = hot.execute(&program, 0.0);
+        let result = hot.execute(&program);
         assert!((result - 2.0).abs() < 1e-12);
     }
 
@@ -289,7 +289,7 @@ mod tests {
     fn execute_exp2() {
         let program = build_exp2_program();
         let mut hot = HotLoop::with_capacity(256);
-        let result = hot.execute(&program, 0.0);
+        let result = hot.execute(&program);
         assert!((result - 8.0).abs() < 1e-9);
     }
 
@@ -297,8 +297,8 @@ mod tests {
     fn matches_rpn_program_evaluate() {
         let program = build_exp2_program();
         let mut hot = HotLoop::with_capacity(256);
-        let hot_result = hot.execute(&program, 0.0);
-        let rpn_result = program.evaluate(0.0);
+        let hot_result = hot.execute(&program);
+        let rpn_result = program.evaluate();
         assert_eq!(hot_result.to_bits(), rpn_result.to_bits());
     }
 
@@ -308,7 +308,7 @@ mod tests {
         let mut hot = HotLoop::with_capacity(256);
         let cap_before = hot.stack_capacity();
         for _ in 0..1000 {
-            hot.execute(&program, 0.0);
+            hot.execute(&program);
         }
         let cap_after = hot.stack_capacity();
         assert_eq!(cap_before, cap_after, "la pila crecio durante execute");
@@ -318,9 +318,9 @@ mod tests {
     fn stack_cleared_between_executions() {
         let program = build_two_program();
         let mut hot = HotLoop::with_capacity(256);
-        hot.execute(&program, 0.0);
+        hot.execute(&program);
         assert_eq!(hot.stack_depth(), 0);
-        hot.execute(&program, 0.0);
+        hot.execute(&program);
         assert_eq!(hot.stack_depth(), 0);
     }
 
@@ -330,7 +330,7 @@ mod tests {
         let program = build_exp2_program();
         let graph = fragment_program(&program, DEFAULT_L1_THRESHOLD);
         let mut hot = HotLoop::with_capacity(256);
-        let result = hot.execute_fragments(&graph.fragments, 0.0);
+        let result = hot.execute_fragments(&graph.fragments);
         assert!((result - 8.0).abs() < 1e-9);
     }
 
@@ -346,6 +346,6 @@ mod tests {
         let soa = reg.into_soa();
         let program = linearize(&soa, node);
         let mut hot = HotLoop::with_capacity(4096);
-        let _ = hot.execute(&program, 0.0);
+        let _ = hot.execute(&program);
     }
 }

@@ -41,7 +41,7 @@ fn concurrent_execution_per_thread_runtime() {
                 let mut runtime = Runtime::new(256, 16);
                 let mut last = 0.0_f64;
                 for _ in 0..iterations {
-                    last = runtime.execute(&program, 0.0);
+                    last = runtime.execute(&program);
                 }
                 last
             })
@@ -65,10 +65,10 @@ fn append_only_buffer_rotates_correctly() {
     // El buffer append-only rota sin panic y mantiene valores válidos.
     let program = build_program();
     let mut runtime = Runtime::new(256, 4);
-    let expected = program.evaluate(0.0);
+    let expected = program.evaluate();
 
     for _ in 0..100 {
-        let r = runtime.execute(&program, 0.0);
+        let r = runtime.execute(&program);
         assert_eq!(r.to_bits(), expected.to_bits());
     }
 
@@ -94,7 +94,7 @@ fn hot_loop_size_under_32kb() {
     // loop funciona correctamente.
     let program = build_program();
     let mut runtime = Runtime::new(256, 16);
-    let result = runtime.execute(&program, 0.0);
+    let result = runtime.execute(&program);
     // El resultado puede ser finito, inf o nan (constantes sin pool).
     // Lo importante es que no pániquea.
     assert!(

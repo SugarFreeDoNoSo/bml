@@ -25,7 +25,7 @@ fn build_graph(n_ops: usize) -> BmlGraph {
 fn execute_bmlgraph_small() {
     let graph = build_graph(100);
     let mut runtime = Runtime::new(256, 16);
-    let result = runtime.execute_graph(&graph, 0.0);
+    let result = runtime.execute_graph(&graph);
     let expected = graph.evaluate(0.0);
     assert_eq!(result.to_bits(), expected.to_bits());
 }
@@ -34,7 +34,7 @@ fn execute_bmlgraph_small() {
 fn execute_bmlgraph_large() {
     let graph = build_graph(10_000);
     let mut runtime = Runtime::new(4096, 16);
-    let result = runtime.execute_graph(&graph, 0.0);
+    let result = runtime.execute_graph(&graph);
     let expected = graph.evaluate(0.0);
     assert_eq!(result.to_bits(), expected.to_bits());
 }
@@ -45,7 +45,7 @@ fn execute_serialized_deserialized_bmlgraph() {
     let bytes = graph.serialize();
     let restored = BmlGraph::deserialize(&bytes, DEFAULT_L1_THRESHOLD).unwrap();
     let mut runtime = Runtime::new(256, 16);
-    let result = runtime.execute_graph(&restored, 0.0);
+    let result = runtime.execute_graph(&restored);
     let expected = graph.evaluate(0.0);
     assert_eq!(result.to_bits(), expected.to_bits());
 }
@@ -56,11 +56,11 @@ fn execute_multiple_graphs_same_runtime() {
     let graph2 = build_graph(200);
     let mut runtime = Runtime::new(256, 16);
 
-    let r1 = runtime.execute_graph(&graph1, 0.0);
+    let r1 = runtime.execute_graph(&graph1);
     let e1 = graph1.evaluate(0.0);
     assert_eq!(r1.to_bits(), e1.to_bits());
 
-    let r2 = runtime.execute_graph(&graph2, 0.0);
+    let r2 = runtime.execute_graph(&graph2);
     let e2 = graph2.evaluate(0.0);
     assert_eq!(r2.to_bits(), e2.to_bits());
 }
@@ -69,6 +69,6 @@ fn execute_multiple_graphs_same_runtime() {
 fn runtime_handles_empty_graph() {
     let graph = BmlGraph::new(DEFAULT_L1_THRESHOLD);
     let mut runtime = Runtime::new(256, 16);
-    let result = runtime.execute_graph(&graph, 0.0);
+    let result = runtime.execute_graph(&graph);
     assert!(result.is_nan(), "grafo vacío debe retornar NaN");
 }

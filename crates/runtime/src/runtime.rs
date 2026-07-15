@@ -54,15 +54,15 @@ impl Runtime {
     /// # Cero allocs
     ///
     /// No hace allocs. El resultado se escribe al buffer pre-asignado.
-    pub fn execute(&mut self, program: &RpnProgram, x: f64) -> f64 {
-        let result = self.hot_loop.execute(program, x);
+    pub fn execute(&mut self, program: &RpnProgram) -> f64 {
+        let result = self.hot_loop.execute(program);
         self.write_result(result);
         result
     }
 
     /// Ejecuta un `BmlGraph` (fragmentos) y almacena el resultado.
-    pub fn execute_graph(&mut self, graph: &BmlGraph, x: f64) -> f64 {
-        let result = self.hot_loop.execute_fragments(&graph.fragments, x);
+    pub fn execute_graph(&mut self, graph: &BmlGraph) -> f64 {
+        let result = self.hot_loop.execute_fragments(&graph.fragments);
         self.write_result(result);
         result
     }
@@ -137,7 +137,9 @@ impl Runtime {
             // El cambio de hot loop es O(1): dispatch_ops recibe un nuevo slice.
             // El L1i se carga con el bytecode del nuevo sub-fragmento.
             self.hot_loop.execute_fragment_full(
-                &bml_compiler::Fragment { ops: sf.ops.clone() },
+                &bml_compiler::Fragment {
+                    ops: sf.ops.clone(),
+                },
                 ctx,
                 buf,
             );
@@ -275,7 +277,7 @@ mod tests {
     fn execute_returns_correct_result() {
         let program = build_program();
         let mut runtime = Runtime::new(256, 16);
-        let result = runtime.execute(&program, 0.0);
+        let result = runtime.execute(&program);
         assert!((result - 8.0).abs() < 1e-9);
     }
 
@@ -284,7 +286,7 @@ mod tests {
         let program = build_program();
         let mut runtime = Runtime::new(256, 4);
         for _ in 0..6 {
-            runtime.execute(&program, 0.0);
+            runtime.execute(&program);
         }
         // El buffer rota pero todos los valores deben ser 8.0
         for &r in runtime.results() {
@@ -302,7 +304,7 @@ mod tests {
         let stack_cap = runtime.stack_capacity();
         let result_cap = runtime.result_count();
         for _ in 0..1000 {
-            runtime.execute(&program, 0.0);
+            runtime.execute(&program);
         }
         assert_eq!(runtime.stack_capacity(), stack_cap);
         assert_eq!(runtime.result_count(), result_cap);
@@ -313,7 +315,7 @@ mod tests {
         let program = build_program();
         let graph = fragment_program(&program, DEFAULT_L1_THRESHOLD);
         let mut runtime = Runtime::new(256, 16);
-        let result = runtime.execute_graph(&graph, 0.0);
+        let result = runtime.execute_graph(&graph);
         assert!((result - 8.0).abs() < 1e-9);
     }
 
@@ -329,7 +331,7 @@ mod tests {
         let soa = reg.into_soa();
         let program = linearize(&soa, node);
         let mut runtime = Runtime::new(4096, 16);
-        let _ = runtime.execute(&program, 0.0);
+        let _ = runtime.execute(&program);
     }
 
     // =====================================================================

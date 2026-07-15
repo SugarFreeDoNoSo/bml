@@ -101,11 +101,11 @@ fn bench_fma_vs_bml(c: &mut Criterion) {
         });
 
         group.bench_with_input(BenchmarkId::new("bml_cons", n), &n, |b, _| {
-            b.iter(|| black_box(program_cons.evaluate(black_box(0.0))))
+            b.iter(|| black_box(program_cons.evaluate()))
         });
 
         group.bench_with_input(BenchmarkId::new("bml_no_cons", n), &n, |b, _| {
-            b.iter(|| black_box(program_no_cons.evaluate(black_box(0.0))))
+            b.iter(|| black_box(program_no_cons.evaluate()))
         });
     }
 
@@ -124,11 +124,11 @@ fn bench_scaling(c: &mut Criterion) {
         let program_repetition = build_repetition_with_cons(n);
 
         group.bench_with_input(BenchmarkId::new("chain_cons", n), &n, |b, _| {
-            b.iter(|| black_box(program_chain.evaluate(black_box(0.0))))
+            b.iter(|| black_box(program_chain.evaluate()))
         });
 
         group.bench_with_input(BenchmarkId::new("repetition_cons", n), &n, |b, _| {
-            b.iter(|| black_box(program_repetition.evaluate(black_box(0.0))))
+            b.iter(|| black_box(program_repetition.evaluate()))
         });
     }
 

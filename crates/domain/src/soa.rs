@@ -151,7 +151,7 @@ impl Default for NodeSoA {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::operator::bml;
+    use crate::operator::bml_base_op;
 
     #[test]
     fn alignment_is_64_bytes() {
@@ -191,7 +191,8 @@ mod tests {
         // luego values[root] = bml(1, 1) = 2.
         soa.values[one as usize] = 1.0;
         soa.values[one2 as usize] = 1.0;
-        soa.values[root as usize] = bml(soa.values[one as usize], soa.values[one2 as usize]);
+        soa.values[root as usize] =
+            bml_base_op(soa.values[one as usize], soa.values[one2 as usize]);
         assert!((soa.values[root as usize] - 2.0).abs() < 1e-12);
     }
 

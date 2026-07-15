@@ -92,7 +92,7 @@ fn matmul_bml_rpn(a: &Array2<f64>, b: &Array2<f64>, c: &mut Array2<f64>, program
             // para simular el costo de k multiplicaciones + acumulaciones.
             let mut acc = 0.0;
             for _ in 0..k {
-                acc = program.evaluate(0.0);
+                acc = program.evaluate();
             }
             c[(i, j)] = acc;
         }

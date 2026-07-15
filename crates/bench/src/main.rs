@@ -127,7 +127,7 @@ fn measure_tokens_per_second(
 
     // Warmup
     for _ in 0..10 {
-        runtime.execute(&program, 0.0);
+        runtime.execute(&program);
     }
 
     let ops_per_token = model.bml_ops_per_token();
@@ -151,7 +151,7 @@ fn measure_tokens_per_second(
     for _ in 0..reps {
         let start = Instant::now();
         for _ in 0..inner_iters {
-            let _ = runtime.execute(&program, 0.0);
+            let _ = runtime.execute(&program);
         }
         let elapsed_ns = start.elapsed().as_nanos() as f64;
 
@@ -171,16 +171,8 @@ fn measure_tokens_per_second(
 
     let avg_ns = samples_ns.iter().sum::<f64>() / reps as f64;
     let avg_ts = samples_ts.iter().sum::<f64>() / reps as f64;
-    let var_ns = samples_ns
-        .iter()
-        .map(|x| (x - avg_ns).powi(2))
-        .sum::<f64>()
-        / reps as f64;
-    let var_ts = samples_ts
-        .iter()
-        .map(|x| (x - avg_ts).powi(2))
-        .sum::<f64>()
-        / reps as f64;
+    let var_ns = samples_ns.iter().map(|x| (x - avg_ns).powi(2)).sum::<f64>() / reps as f64;
+    let var_ts = samples_ts.iter().map(|x| (x - avg_ts).powi(2)).sum::<f64>() / reps as f64;
     let stddev_ns = var_ns.sqrt();
     let stddev_ts = var_ts.sqrt();
 
@@ -209,7 +201,7 @@ fn measure_hot_loop(reps: u32) -> (f64, f64, f64) {
     let mut runtime = Runtime::new(8192, 16);
 
     for _ in 0..10 {
-        runtime.execute(&program, 0.0);
+        runtime.execute(&program);
     }
 
     let inner_iters = 1000;
@@ -218,7 +210,7 @@ fn measure_hot_loop(reps: u32) -> (f64, f64, f64) {
     for _ in 0..reps {
         let start = Instant::now();
         for _ in 0..inner_iters {
-            let _ = runtime.execute(&program, 0.0);
+            let _ = runtime.execute(&program);
         }
         let elapsed_s = start.elapsed().as_secs_f64();
         let total_ops = sample_ops as f64 * inner_iters as f64;
@@ -286,12 +278,12 @@ fn measure_multicore(n_threads: u32, reps: u32) -> (f64, f64) {
                 std::thread::spawn(move || {
                     let mut runtime = Runtime::new(8192, 16);
                     for _ in 0..10 {
-                        runtime.execute(&program, 0.0);
+                        runtime.execute(&program);
                     }
                     barrier.wait();
                     let start = Instant::now();
                     for _ in 0..inner_iters {
-                        runtime.execute(&program, 0.0);
+                        runtime.execute(&program);
                     }
                     let elapsed_s = start.elapsed().as_secs_f64();
                     let ops_per_sec = sample_ops as f64 * inner_iters as f64 / elapsed_s;
@@ -427,15 +419,27 @@ fn main() {
         println!("## Prompt processing (pp={} tokens)\n", args.pp);
         println!("| Métrica | Valor |");
         println!("|---|---|");
-        println!("| tokens/seg | {:.6} ± {:.6} |", pp_result.avg_ts, pp_result.stddev_ts);
-        println!("| ns (muestra) | {:.0} ± {:.0} |", pp_result.avg_ns, pp_result.stddev_ns);
+        println!(
+            "| tokens/seg | {:.6} ± {:.6} |",
+            pp_result.avg_ts, pp_result.stddev_ts
+        );
+        println!(
+            "| ns (muestra) | {:.0} ± {:.0} |",
+            pp_result.avg_ns, pp_result.stddev_ns
+        );
         println!("| samples_ts | {:?} |\n", pp_result.samples_ts);
 
         println!("## Generation (tg={} tokens)\n", args.tg);
         println!("| Métrica | Valor |");
         println!("|---|---|");
-        println!("| tokens/seg | {:.6} ± {:.6} |", tg_result.avg_ts, tg_result.stddev_ts);
-        println!("| ns (muestra) | {:.0} ± {:.0} |", tg_result.avg_ns, tg_result.stddev_ns);
+        println!(
+            "| tokens/seg | {:.6} ± {:.6} |",
+            tg_result.avg_ts, tg_result.stddev_ts
+        );
+        println!(
+            "| ns (muestra) | {:.0} ± {:.0} |",
+            tg_result.avg_ns, tg_result.stddev_ns
+        );
         println!("| samples_ts | {:?} |\n", tg_result.samples_ts);
     }
 
@@ -477,7 +481,10 @@ fn main() {
             let base = multicore_results[0].1;
             for (n, ops, std, tps) in &multicore_results {
                 let speedup = *ops / base;
-                println!("| {} | {:.0} ± {:.0} | {:.6} | {:.2}x |", n, ops, std, tps, speedup);
+                println!(
+                    "| {} | {:.0} ± {:.0} | {:.6} | {:.2}x |",
+                    n, ops, std, tps, speedup
+                );
             }
             println!();
         }

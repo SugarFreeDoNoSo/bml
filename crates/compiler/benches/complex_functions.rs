@@ -249,7 +249,7 @@ fn bench_chained_matmul(c: &mut Criterion) {
         });
 
         group.bench_with_input(BenchmarkId::new("bml_cons", n), &n, |bencher, _| {
-            bencher.iter(|| black_box(program_bml.evaluate(black_box(0.0))))
+            bencher.iter(|| black_box(program_bml.evaluate()))
         });
     }
 
@@ -268,7 +268,7 @@ fn bench_horner(c: &mut Criterion) {
         });
 
         group.bench_with_input(BenchmarkId::new("bml_cons", n), &n, |bencher, _| {
-            bencher.iter(|| black_box(program_bml.evaluate(black_box(0.0))))
+            bencher.iter(|| black_box(program_bml.evaluate()))
         });
     }
 
@@ -288,7 +288,7 @@ fn bench_tensor_product(c: &mut Criterion) {
         });
 
         group.bench_with_input(BenchmarkId::new("bml_cons", n), &n, |bencher, _| {
-            bencher.iter(|| black_box(program_bml.evaluate(black_box(0.0))))
+            bencher.iter(|| black_box(program_bml.evaluate()))
         });
     }
 
@@ -306,7 +306,7 @@ fn bench_taylor_series(c: &mut Criterion) {
         });
 
         group.bench_with_input(BenchmarkId::new("bml_cons", n), &n, |bencher, _| {
-            bencher.iter(|| black_box(program_bml.evaluate(black_box(0.0))))
+            bencher.iter(|| black_box(program_bml.evaluate()))
         });
     }
 
@@ -336,7 +336,7 @@ fn bench_dense_layer(c: &mut Criterion) {
         });
 
         group.bench_with_input(BenchmarkId::new("bml_loop", n), &n, |bencher, _| {
-            bencher.iter(|| black_box(program_bml.evaluate(black_box(0.0))))
+            bencher.iter(|| black_box(program_bml.evaluate()))
         });
     }
 
@@ -430,7 +430,7 @@ fn bench_compile_vs_execute(c: &mut Criterion) {
             linearize(&soa, node)
         };
         group.bench_with_input(BenchmarkId::new("execute", n), &n, |bencher, _| {
-            bencher.iter(|| black_box(program.evaluate(black_box(0.0))))
+            bencher.iter(|| black_box(program.evaluate()))
         });
 
         // Total: compilar + ejecutar (caso realista de una sola pasada)
@@ -445,7 +445,7 @@ fn bench_compile_vs_execute(c: &mut Criterion) {
                 }
                 let soa = reg.into_soa();
                 let program = linearize(&soa, node);
-                black_box(program.evaluate(0.0))
+                black_box(program.evaluate())
             })
         });
     }

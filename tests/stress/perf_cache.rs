@@ -102,7 +102,7 @@ fn perf_stat_cache_events_on_program() {
     let start = std::time::Instant::now();
     let mut last = 0.0_f64;
     for _ in 0..10_000 {
-        last = program.evaluate(0.0);
+        last = program.evaluate();
     }
     let elapsed = start.elapsed();
 

@@ -144,7 +144,7 @@ fn serialize_deserialize_roundtrip() {
     let bytes = serialize_program(&program);
     let restored = deserialize_program(&bytes);
     assert_eq!(program.ops, restored.ops);
-    assert_eq!(program.evaluate(0.0), restored.evaluate(0.0));
+    assert_eq!(program.evaluate(), restored.evaluate());
 }
 
 #[test]
@@ -157,7 +157,7 @@ fn dev_shm_distributed_execution() {
 
     let program = build_test_program();
     let program_bytes = serialize_program(&program);
-    let expected = program.evaluate(0.0);
+    let expected = program.evaluate();
 
     // Escribir el programa en /dev/shm
     let prog_path = format!("{shm_dir}/bml_test_prog_{}.bin", std::process::id());
@@ -176,7 +176,7 @@ fn dev_shm_distributed_execution() {
             // Cada worker lee el programa desde /dev/shm
             let bytes = fs::read(&*prog_path).expect("no se pudo leer /dev/shm");
             let prog = deserialize_program(&bytes);
-            let val = prog.evaluate(0.0);
+            let val = prog.evaluate();
             // Append-only: escribir a un archivo propio (lock-free)
             let out_path = format!("{}_out_{i}", &*prog_path);
             let mut f = fs::File::create(&out_path).expect("no se pudo crear salida");
@@ -222,7 +222,7 @@ fn dev_shm_lock_free_append_only() {
 
     let program = build_test_program();
     let program_bytes = serialize_program(&program);
-    let expected = program.evaluate(0.0);
+    let expected = program.evaluate();
 
     let prog_path = format!("{shm_dir}/bml_append_prog_{}.bin", std::process::id());
     fs::write(&prog_path, &program_bytes).expect("no se pudo escribir en /dev/shm");
@@ -240,7 +240,7 @@ fn dev_shm_lock_free_append_only() {
             let prog = deserialize_program(&bytes);
             let mut last = 0.0_f64;
             for _ in 0..iterations {
-                last = prog.evaluate(0.0);
+                last = prog.evaluate();
             }
             // Append-only: escribir resultado final
             let out_path = format!("{}_out_{i}", &*prog_path);

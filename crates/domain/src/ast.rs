@@ -10,7 +10,7 @@
 //! Las operaciones estándar (`+`, `-`, `*`, `/`, `pow`, ...) se reducen
 //! a esta gramática vía [`crate::BMLTransformer`].
 
-use crate::operator::bml;
+use crate::operator::bml_base_op;
 
 /// Identificador de un nodo dentro del grafo.
 pub type NodeId = u32;
@@ -180,7 +180,7 @@ pub fn evaluate(nodes: &[Node], root: NodeId, ctx: &EvalContext) -> f64 {
         NodeKind::Bml => {
             let l = evaluate(nodes, node.left.unwrap(), ctx);
             let r = evaluate(nodes, node.right.unwrap(), ctx);
-            bml(l, r)
+            bml_base_op(l, r)
         }
     }
 }
@@ -227,7 +227,7 @@ mod tests {
         let nodes = vec![Node::bml(0, 1, 2), Node::var(1, 0), Node::const_(2, 0)];
         let ctx = EvalContext::new(&[2.71], &[2.71]);
         let val = evaluate(&nodes, 0, &ctx);
-        let expected = bml(2.71, 2.71);
+        let expected = bml_base_op(2.71, 2.71);
         assert!((val - expected).abs() < 1e-9);
     }
 

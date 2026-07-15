@@ -216,14 +216,14 @@ fn measure_tokens_per_second(model: &ModelSpec, ops_per_token: f64) -> f64 {
 
     // Warmup
     for _ in 0..10 {
-        runtime.execute(&program, 0.0);
+        runtime.execute(&program);
     }
 
     // Medir
     let iterations = 1000;
     let start = Instant::now();
     for _ in 0..iterations {
-        runtime.execute(&program, 0.0);
+        runtime.execute(&program);
     }
     let elapsed = start.elapsed();
 
@@ -261,7 +261,7 @@ fn bench_final(c: &mut Criterion) {
         let mut runtime = Runtime::new(8192, 16);
 
         group.bench_function(format!("hot_loop_{n_ops}_ops"), |b| {
-            b.iter(|| black_box(runtime.execute(black_box(&program), black_box(0.0))))
+            b.iter(|| black_box(runtime.execute(black_box(&program))))
         });
     }
 
@@ -284,13 +284,13 @@ fn generate_report() {
 
     // Warmup
     for _ in 0..10 {
-        runtime.execute(&program, 0.0);
+        runtime.execute(&program);
     }
 
     let iterations = 1000;
     let start = Instant::now();
     for _ in 0..iterations {
-        runtime.execute(&program, 0.0);
+        runtime.execute(&program);
     }
     let elapsed = start.elapsed();
     let ops_per_second = (sample_ops * iterations) as f64 / elapsed.as_secs_f64();
