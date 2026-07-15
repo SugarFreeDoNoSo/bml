@@ -795,19 +795,79 @@ impl InferenceCompiler {
         // Cargar pesos por capa
         for layer in 0..config.n_layers {
             let prefix = format!("blk.{layer}");
-            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.attn_norm.weight", prefix));
-            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.attn_q.weight", prefix));
-            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.attn_k.weight", prefix));
-            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.attn_v.weight", prefix));
-            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.attn_output.weight", prefix));
-            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.ffn_norm.weight", prefix));
-            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.ffn_gate.weight", prefix));
-            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.ffn_up.weight", prefix));
-            load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, &format!("{}.ffn_down.weight", prefix));
+            load_tensor(
+                &parser,
+                &mut weight_pool,
+                &mut weight_offsets,
+                &mut tensor_dims,
+                &format!("{}.attn_norm.weight", prefix),
+            );
+            load_tensor(
+                &parser,
+                &mut weight_pool,
+                &mut weight_offsets,
+                &mut tensor_dims,
+                &format!("{}.attn_q.weight", prefix),
+            );
+            load_tensor(
+                &parser,
+                &mut weight_pool,
+                &mut weight_offsets,
+                &mut tensor_dims,
+                &format!("{}.attn_k.weight", prefix),
+            );
+            load_tensor(
+                &parser,
+                &mut weight_pool,
+                &mut weight_offsets,
+                &mut tensor_dims,
+                &format!("{}.attn_v.weight", prefix),
+            );
+            load_tensor(
+                &parser,
+                &mut weight_pool,
+                &mut weight_offsets,
+                &mut tensor_dims,
+                &format!("{}.attn_output.weight", prefix),
+            );
+            load_tensor(
+                &parser,
+                &mut weight_pool,
+                &mut weight_offsets,
+                &mut tensor_dims,
+                &format!("{}.ffn_norm.weight", prefix),
+            );
+            load_tensor(
+                &parser,
+                &mut weight_pool,
+                &mut weight_offsets,
+                &mut tensor_dims,
+                &format!("{}.ffn_gate.weight", prefix),
+            );
+            load_tensor(
+                &parser,
+                &mut weight_pool,
+                &mut weight_offsets,
+                &mut tensor_dims,
+                &format!("{}.ffn_up.weight", prefix),
+            );
+            load_tensor(
+                &parser,
+                &mut weight_pool,
+                &mut weight_offsets,
+                &mut tensor_dims,
+                &format!("{}.ffn_down.weight", prefix),
+            );
         }
 
         // Final RMSNorm
-        load_tensor(&parser, &mut weight_pool, &mut weight_offsets, &mut tensor_dims, "output_norm.weight");
+        load_tensor(
+            &parser,
+            &mut weight_pool,
+            &mut weight_offsets,
+            &mut tensor_dims,
+            "output_norm.weight",
+        );
 
         Ok(Self {
             config,
@@ -940,10 +1000,7 @@ impl InferenceCompiler {
                 .iter()
                 .map(|&v| v as f32)
                 .collect();
-            let v_slice: Vec<f32> = v[v_start..v_end]
-                .iter()
-                .map(|&v| v as f32)
-                .collect();
+            let v_slice: Vec<f32> = v[v_start..v_end].iter().map(|&v| v as f32).collect();
             kv_cache.store_k(layer, pos, kv_h as u32, &k_slice);
             kv_cache.store_v(layer, pos, kv_h as u32, &v_slice);
         }
@@ -968,7 +1025,8 @@ impl InferenceCompiler {
             let mut scores = Vec::with_capacity(pos as usize + 1);
             for p in 0..=pos {
                 let k_cached = kv_cache.load_k(layer, p, kv_h as u32);
-                let dot: f32 = q_slice.iter()
+                let dot: f32 = q_slice
+                    .iter()
                     .zip(k_cached.iter())
                     .map(|(&q, &k)| q * k)
                     .sum();
@@ -976,7 +1034,8 @@ impl InferenceCompiler {
             }
 
             // Softmax real
-            let attn = crate::kv_cache::softmax_f32(&scores.iter().map(|&s| s as f32).collect::<Vec<_>>());
+            let attn =
+                crate::kv_cache::softmax_f32(&scores.iter().map(|&s| s as f32).collect::<Vec<_>>());
 
             // Output: Σ attn[p] * V[p]
             let o_start = h * head_dim;
@@ -1025,8 +1084,16 @@ impl InferenceCompiler {
     /// token_embd.weight tiene shape [n_embd, vocab_size].
     /// Embedding(token) = columna completa para ese token.
     fn get_embedding_f64(&self, token_id: u32) -> Vec<f64> {
-        let offset = self.weight_offsets.get("token_embd.weight").copied().unwrap_or(0);
-        let (emb_dim, vocab_sz) = self.tensor_dims.get("token_embd.weight").copied().unwrap_or((32000, 32000));
+        let offset = self
+            .weight_offsets
+            .get("token_embd.weight")
+            .copied()
+            .unwrap_or(0);
+        let (emb_dim, vocab_sz) = self
+            .tensor_dims
+            .get("token_embd.weight")
+            .copied()
+            .unwrap_or((32000, 32000));
         let tid = token_id.min(vocab_sz as u32 - 1) as usize;
         let mut emb = vec![0.0_f64; emb_dim.min(self.config.n_embd as usize)];
         for i in 0..emb.len() {
@@ -1191,8 +1258,16 @@ impl InferenceCompiler {
     fn compute_logits(&self, hidden: &[f64]) -> Vec<f64> {
         let n_embd = self.config.n_embd as usize;
         let vocab_size = self.vocab.len();
-        let (emb_dim, vocab_sz) = self.tensor_dims.get("token_embd.weight").copied().unwrap_or((n_embd, vocab_size));
-        let offset = self.weight_offsets.get("token_embd.weight").copied().unwrap_or(0);
+        let (emb_dim, vocab_sz) = self
+            .tensor_dims
+            .get("token_embd.weight")
+            .copied()
+            .unwrap_or((n_embd, vocab_size));
+        let offset = self
+            .weight_offsets
+            .get("token_embd.weight")
+            .copied()
+            .unwrap_or(0);
 
         let mut logits = vec![0.0_f64; vocab_size];
         for k in 0..vocab_size.min(vocab_sz) {
