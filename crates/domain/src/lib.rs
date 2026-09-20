@@ -1,15 +1,13 @@
 //! # bml-domain (BML = Binary-Minus-Log)
 //!
-//! Núcleo matemático del proyecto BML. Define el operador fundamental
-//! `bml(x, y) = 2^x - log2(y)` — el análogo de EML (Exp-Minus-Log,
-//! `eml(x, y) = exp(x) - ln(y)`) reescrito en **base 2** para alinearse
-//! con el formato IEEE 754 de `f64` y usar `exp2`/`log2` nativos de la FPU.
-//! BML actúa como operador con completitud funcional (análogo continuo del
-//! NAND lógico) junto con la constante 1.
+//! Núcleo matemático del proyecto. [`symbolic`] distingue términos cerrados
+//! de términos abiertos y permite interpretarlos con EML o BML explícitamente.
+//! Su evaluador real es parcial y comprueba dominio, overflow y underflow;
+//! no implementa la semántica compleja completa del artículo.
 //!
-//! Contiene: la gramática estricta del AST (`S -> 1 | BML(S, S)`), el
-//! layout de memoria SoA alineado a línea de caché, y el `BMLTransformer`
-//! que reduce operaciones estándar a la gramática BML.
+//! Los módulos anteriores (`ast`, `encoder`, `soa`, `transformer`) siguen
+//! disponibles durante la migración. Su AST incluye constantes arbitrarias
+//! y no es la gramática pura de [`symbolic::ClosedTerm`].
 //!
 //! Cero dependencias externas. Solo stdlib de Rust.
 //!
@@ -23,6 +21,7 @@ pub mod ast;
 pub mod encoder;
 pub mod operator;
 pub mod soa;
+pub mod symbolic;
 pub mod transformer;
 
 pub use ast::{ConstId, EvalContext, Node, NodeId, NodeKind, VarId};
