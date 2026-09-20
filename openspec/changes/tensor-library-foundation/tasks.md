@@ -37,5 +37,5 @@
 
 - [x] 5.1 `openspec validate tensor-library-foundation` pasa sin errores (OpenSpec 1.13.1, telemetría desactivada).
 - [ ] 5.2 `cargo test --workspace --locked` pasa, con pruebas instrumentadas separadas explícitamente.
-- [ ] 5.3 Commit y push de la primera etapa en rama y PR de revisión; registrar validación y limitaciones.
+- [x] 5.3 Primera etapa publicada en la rama `docs/tensor-library-contracts` y [PR #1](https://github.com/SugarFreeDoNoSo/bml/pull/1), con validación y limitaciones registradas.
 - [ ] 5.4 Archivar el cambio solo al completar o separar formalmente la migración restante.
