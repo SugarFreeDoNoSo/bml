@@ -1,132 +1,112 @@
-# BML — Binary-Minus-Log
+# BML — tensores, GGUF y álgebra EML/BML en Rust
 
-Un compilador y motor de ejecución en Rust basado en un único operador matemático con completitud funcional, optimizado de forma extrema para la jerarquía de caché del procesador (específicamente L1).
+Biblioteca experimental orientada a operar tensores y archivos GGUF, con un
+núcleo simbólico para estudiar EML y su variante BML. La reorganización distingue
+corrección matemática, representación de datos y rendimiento medido.
 
-## ¿Qué es BML?
+## Estado y entrada al proyecto
 
-**BML** = **Binary-Minus-Log**: `bml(x, y) = 2^x - log2(y)`.
+La primera etapa de la reorganización incorpora términos cerrados/abiertos,
+sustitución parcial y evaluación real comprobada en `bml_domain::symbolic`.
+El compilador, el parser y el runtime anteriores siguen disponibles y tienen
+fallos conocidos; la migración tensorial está especificada, aún pendiente.
 
-Es el análogo de **EML** (Exp-Minus-Log, `eml(x, y) = exp(x) - ln(y)`) reescrito en **base 2** para alinearse con el formato IEEE 754 de `f64` y usar `exp2`/`log2` nativos de la FPU.
+- [Arquitectura, contratos y migración](docs/architecture/TENSOR_LIBRARY.md).
+- [Revisión reproducible: seis discrepancias funcionales](docs/architecture/REVIEW_2026-09-20.md).
+- [Estrategia de tests y benchmarks](docs/TESTING.md).
+- [Cambio OpenSpec y tareas pendientes](openspec/changes/tensor-library-foundation/proposal.md).
 
-BML es un operador con **completitud funcional**: junto con la constante `1`, genera todo el repertorio de una calculadora científica (aritmética, exponencial, logaritmo, trigonométricas, etc.). Actúa como el **análogo continuo del NAND lógico** — un único operador binario del cual derivan todos los demás.
+## Operadores y alcance matemático
 
-### Origen teórico
-
-El paper ["All elementary functions from a single operator"](https://arxiv.org/abs/2603.21852v2) (ArXiv 2603.21852v2) demuestra que EML (`exp(x) - ln(y)`) con la constante `1` forma una base completa para las funciones elementales. BML adapta este resultado a base 2.
-
-### Identidades fundamentales (base 2)
-
-| Identidad | Fórmula | Análogo EML |
-|---|---|---|
-| Constante fundamental | `2 = bml(1, 1)` | `e = eml(1, 1)` |
-| Exponencial | `2^x = bml(x, 1)` | `exp(x) = eml(x, 1)` |
-| Logaritmo | `log2(x) = bml(1, bml(bml(1, x), 1))` | `ln(x) = eml(1, eml(eml(1, x), 1))` |
-
-### Propiedades algebraicas
-
-- **Magma no asociativo**: el orden de los operandos es estrictamente inmutable (`bml(a, b) ≠ bml(b, a)` en general).
-- **Gramática del AST**: `S → 1 | BML(S, S)` — un nodo es la constante `1` o una aplicación de `BML` a dos sub-árboles. No existen otras operaciones primitivas.
-
-## Arquitectura
-
-Workspace Cargo con 4 crates de responsabilidad aislada:
-
-```
-bml/
-├── crates/
-│   ├── domain/     # Operador BML, gramática AST, layout SoA, BMLTransformer
-│   ├── parser/     # Ingesta GGUF zero-copy (mmap)
-│   ├── compiler/   # DAG, Hash Consing, linealización RPN, micro-fragmentación .bmlgraph
-│   ├── runtime/    # Hot loop RPN, buffers pre-asignados, RPC distribuido
-│   └── bench/      # Binario bml-bench (futuro)
-├── tests/
-│   ├── integration/  # Tests cross-crate (domain + compiler + runtime)
-│   ├── stress/       # Multicore, perf, /dev/shm
-│   └── concurrency/  # loom, data races
-├── docs/
-│   └── benchmarks/   # Reportes consolidados
-├── references/       # Paper, draft
-└── openspec/         # Specs vivas y plan de ejecución
+```text
+EML(x, y) = exp(x)  - ln(y)
+BML(x, y) = exp2(x) - log2(y)
 ```
 
-| Crate | Responsabilidad | Dependencias |
+El artículo [All elementary functions from a single binary operator](https://arxiv.org/abs/2603.21852v2)
+estudia EML con la constante `1` como base expresiva para funciones de calculadora.
+Su evaluación completa contempla complejos y casos con reales extendidos.
+La implementación real finita no cubre automáticamente esa semántica completa.
+BML es una variante del proyecto: sus identidades y ventajas necesitan validación
+propia. Expresividad no implica estabilidad numérica ni aceleración de tensores.
+
+El árbol puro es `ClosedTerm = One | Op(ClosedTerm, ClosedTerm)`. La extensión
+`OpenTerm` incorpora variables y términos cerrados. La interpretación se selecciona
+con `Basis::Eml` o `Basis::Bml`; por ejemplo, `Op(One,One)` denota `e` o `2`.
+
+```rust
+use bml_domain::symbolic::{Basis, ClosedTerm, OpenTerm};
+use std::collections::HashMap;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let formula = OpenTerm::op(
+        OpenTerm::Var("x".into()),
+        ClosedTerm::One.into(),
+    );
+    let env = HashMap::from([("x".to_owned(), ClosedTerm::One)]);
+    let closed = formula.bind(&env).collapse()?;
+    assert_eq!(closed.evaluate_real(Basis::Bml)?, 2.0);
+    Ok(())
+}
+```
+
+`collapse` comprueba ausencia de variables; `evaluate_real` comprueba dominio y
+rango de los cálculos. Un término cerrado puede fallar al evaluarse. La búsqueda
+de un árbol que represente un `f64` sería síntesis simbólica, no una conversión
+inversa garantizada.
+
+## Organización actual y destino
+
+| Crate actual | Papel actual | Dirección de la reorganización |
 |---|---|---|
-| `bml-domain` | Operador base, gramática, SoA, transformer | cero |
-| `bml-parser` | Ingesta GGUF via mmap | `memmap2` |
-| `bml-compiler` | DAG, Hash Consing, RPN, fragmentación AOT | `bml-domain` |
-| `bml-runtime` | Ejecución RPN, RPC distribuido | `bml-compiler` |
+| `domain` | AST anterior, SoA, transformer y nuevo módulo symbolic | Núcleo matemático y tipos tensoriales |
+| `parser` | Lectura GGUF con mmap | Reader y codecs con rangos/errores precisos |
+| `compiler` | DAG/RPN, dequantización, inferencia y distribución | Compilación; extraer lectura, modelo y servicios |
+| `runtime` | Intérprete, buffers, scheduling y red | Ejecución experimental opcional |
+| `cli`, `api`, `worker` | Aplicaciones | Consumidores de la biblioteca |
+| `bench` | Microbenchmarks y extrapolaciones históricas | Comparaciones de trabajo equivalente |
+| `tests` | Integración registrada mediante Cargo | Contratos entre crates y fixtures |
 
-> **Nota:** Las carpetas no llevan prefijo `bml-` (es redundante dentro del workspace). Los nombres de paquete sí lo conservan para el namespace en crates.io.
+La arquitectura destino comienza con `bml-core`, `bml-gguf` y una fachada `bml`.
+Los pesos permanecen como buffers o bloques cuantizados. Los árboles simbólicos
+representan fórmulas; no se requiere un árbol por elemento del tensor. Los kernels
+mantienen operaciones como matmul y reducciones a alto nivel.
 
-## Reglas de ingeniería (Mechanical Sympathy)
-
-- **Data-Oriented Design**: OOP prohibido en la capa de ejecución.
-- **SoA + `#[repr(align(64))]`**: Struct of Arrays alineado a línea de caché; AoS prohibido.
-- **Hot loop < 32 KB**: el intérprete RPN del runtime debe caber en L1i.
-- **Append-only**: durante la evaluación del DAG, nunca se sobrescribe estado previo.
-- **Cero allocs en hot path**: los buffers se inicializan una sola vez al arrancar.
-
-## Estado del proyecto
-
-Plan de ejecución gestionado con [OpenSpec](https://openspec.dev/). Ver `openspec/changes/bml-implementation-plan/` para el plan completo.
-
-| Hito | Estado | Descripción |
-|---|---|---|
-| 1 — Cimientos | ✅ | Operador BML, AST, SoA, transformer (`exp2`/`log2` verificados) |
-| 2 — Compilación | ✅ | Hash Consing, RPN, benchmarks FMA vs BML, fórmulas `+`/`-`/`*`/`/`/`pow` |
-| 3 — Parser | ✅ | Ingesta GGUF zero-copy |
-| 4 — Fragmentación | ✅ | Micro-fragmentación AOT, formato `.bmlgraph` |
-| 5 — Runtime | ✅ | Hot loop RPN, RPC distribuido |
-| 6 — Benchmark | ✅ | [BML vs llama.cpp](docs/benchmarks/REPORT.md) — reporte comparativo |
-
-## Benchmark
-
-El reporte comparativo BML vs llama.cpp está en [`docs/benchmarks/REPORT.md`](docs/benchmarks/REPORT.md).
-
-Resultados clave (TinyLlama-1.1B Q4_0, 4 vCPU Intel Xeon):
-
-| Métrica | llama.cpp | BML | Ratio |
-|---|---|---|---|
-| pp tokens/seg | 117.50 | 0.581 | 0.005x |
-| tg tokens/seg (1 thread) | 14.42 | 0.564 | 0.039x |
-| tg tokens/seg (4 threads) | 14.42 | 2.24 | 0.155x |
-| Ops/seg (1 thread) | — | 594M | — |
-| Ops/seg (4 threads) | — | 1,957M | 3.35x scaling |
-| Hot loop .text | — | 429 asm lines | < 32 KB L1i ✅ |
-| Peso comprimido (BML) | — | 500 MB | 8x vs f32 ✅ |
-
-Para reproducir:
+## Desarrollo y validación
 
 ```sh
-# llama.cpp baseline
-cd /root/llama.cpp && ./build/bin/llama-bench -m /root/tinyllama.gguf -p 512 -n 0 -r 5 -t 4 -o json
-cd /root/llama.cpp && ./build/bin/llama-bench -m /root/tinyllama.gguf -p 0 -n 128 -r 5 -t 4 -o json
+# Contratos del nuevo núcleo simbólico
+cargo test -p bml-domain --test symbolic_contracts --locked
+cargo test -p bml-domain --doc --locked
 
-# BML benchmark
-cargo run --release -p bml-bench -- --json --pp 512 --tg 128 --reps 5
+# Diagnóstico: salida no cero mientras persistan los fallos previos
+cargo run -p bml-tests --example contract_audit --locked
 
-# Micro-benchmarks
-cargo bench -p bml-bench --bench bml_ops
-cargo bench -p bml-compiler --bench matrix_mul
-cargo bench -p bml-compiler --bench fma_vs_bml
+# Suite completa; consultar limitaciones conocidas en la revisión
+cargo test --workspace --locked
+
+cargo build --release --locked
+cargo clippy --workspace --all-targets --locked
 ```
 
-## Desarrollo
+Las pruebas instrumentadas requieren capacidades del entorno. La revisión
+registra un fallo de ptrace/strace y un doctest previo; esta rama no declara que
+la suite global esté completamente aprobada.
 
-```sh
-# Tests
-cargo test --workspace
+## Rendimiento
 
-# Build release (perfil extremo: lto=fat, panic=abort, codegen-units=1)
-cargo build --release
+Los [reportes históricos](docs/benchmarks/REPORT.md) incluyen tokens/s extrapolados
+de un programa sintético. No acreditan inferencia equivalente a llama.cpp.
+El nuevo protocolo exige valores correctos, entradas y trabajo equivalentes,
+contexto completo, error numérico, tiempo, memoria y asignaciones observadas.
 
-# Clippy
-cargo clippy --workspace --all-targets
-```
+La huella de instrucciones del intérprete, el bytecode y los datos tensoriales
+se miden por separado. La uniformidad de un operador o el uso de `exp2`/`log2`
+no garantiza una instrucción hardware única ni mayor velocidad.
 
 ## Referencias
 
-- ["All elementary functions from a single operator"](https://arxiv.org/abs/2603.21852v2) — paper original que define EML.
-- `draft.md` — mapa de requerimientos y arquitectura del proyecto.
-- `references/eml_paper.md` — texto del paper fuente.
-- `openspec/` — specs vivas y plan de ejecución.
+- [Artículo EML, versión 2](https://arxiv.org/abs/2603.21852v2).
+- [Especificación GGUF](https://github.com/ggml-org/ggml/blob/master/docs/gguf.md).
+- `references/eml_paper.md`: copia de referencia del artículo.
+- `draft.md` y propuestas OpenSpec anteriores: historia del diseño experimental.
