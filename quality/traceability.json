@@ -1,0 +1,8 @@
+{
+  "C01": ["shared_value_is_not_replaced_by_the_stack_top", "shared_dags_match_independent_numeric_oracle"],
+  "C02": ["folded_constants_survive_compilation_and_serialization", "graph_v1_is_readable_and_truncated_v2_is_rejected", "explicit_constant_pool_and_initial_capacity"],
+  "C03": ["positive_product_below_one", "arithmetic_matches_native_in_tested_domain", "signed_addition_matches_native"],
+  "C04": ["gguf_uses_declared_alignment", "gguf_rejects_invalid_alignment_and_shapes", "alignment_handles_header_boundaries", "gguf_refuses_short_scalar_data_and_forged_tensor_ranges", "tensor_relative_offsets_are_aligned"],
+  "C05": ["q4_nibbles_are_two_halves", "q8_signed_values_and_exact_slice", "quantization_scale_is_applied_and_f16_is_supported"],
+  "C06": ["incomplete_quantized_blocks_are_rejected"]
+}

@@ -80,7 +80,7 @@ convertir en un check verde permitiendo resultados no finitos. Al corregir cada
 caso, añadir un test de regresión en el crate propietario y mantener el diagnóstico
 hasta completar la migración.
 
-Propuesta de gates de CI, por introducir gradualmente:
+Matriz destino de CI (los controles ya implementados se describen en [QUALITY.md](QUALITY.md)):
 
 | Gate | Frecuencia | Condición |
 |---|---|---|
@@ -91,10 +91,9 @@ Propuesta de gates de CI, por introducir gradualmente:
 | Modelo real y comparación diferencial | Ejecución optativa con fixture fijada | Calidad y resultados antes de rendimiento |
 | Benchmarks/PMU/strace | Runner controlado | Capacidades verificadas; entorno registrado |
 
-El test actual con strace traza `cat`, no el acceso del parser. Su fallo por ptrace
-en un contenedor no demuestra un error de GGUF. El reemplazo debe trazar un proceso
-del parser y separar ausencia de capacidad de fallo funcional. No hacer depender
-todos los tests ordinarios de esa herramienta.
+El test de strace traza ahora un proceso hijo que usa el parser. Es optativo
+y falla si se solicita sin la capacidad necesaria. Los tests ordinarios
+comprueban el slice y sus valores sin requerir ptrace.
 
 ## Metodología de rendimiento
 
@@ -116,3 +115,5 @@ todos los tests ordinarios de esa herramienta.
 No hay un test universal “BML debe ser más rápido”. Una optimización se acepta
 para una carga y un hardware declarados, con resultados correctos y una mejora
 repetible. Mantener disponible la ruta CPU nativa como referencia.
+
+La suite `crates/compiler/tests/contracts.rs` cubre las seis correcciones, propiedades numéricas y entradas GGUF inválidas. La auditoría histórica se conserva como regresión y debe devolver cero discrepancias.
