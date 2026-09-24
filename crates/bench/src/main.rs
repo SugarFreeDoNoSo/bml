@@ -25,7 +25,7 @@
 //! bml-bench --json --pp 512 --tg 128 --reps 5
 //! ```
 
-use bml_compiler::{linearize, HashConsRegistry, RpnProgram};
+use bml_compiler::RpnProgram;
 use bml_runtime::Runtime;
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
@@ -99,16 +99,15 @@ pub struct BenchResult {
 
 /// Construye un programa BML de N operaciones (ya compilado).
 fn build_program(n_ops: usize) -> RpnProgram {
-    let mut reg = HashConsRegistry::new();
-    let one = reg.one();
-    let two = reg.bml(one, one);
-    let mut node = two;
-    let iterations = n_ops / 3;
-    for _ in 0..iterations {
-        node = reg.bml(node, two);
+    let mut program = bml_compiler::RpnProgram::new();
+    program.push(bml_compiler::RpnOp::One);
+    for _ in 0..(n_ops / 3) {
+        program.push(bml_compiler::RpnOp::One);
+        program.push(bml_compiler::RpnOp::Swap);
+        program.push(bml_compiler::RpnOp::Bml);
     }
-    let soa = reg.into_soa();
-    linearize(&soa, node)
+    assert!(matches!(program.evaluate(), 1.0 | 2.0));
+    program
 }
 
 /// Mide tokens por segundo para un modelo dado.
@@ -487,6 +486,19 @@ fn main() {
                 );
             }
             println!();
+        }
+    }
+}
+
+#[cfg(test)]
+mod contract_tests {
+    #[test]
+    fn synthetic_workload_has_requested_size_and_finite_output() {
+        for n in [0usize, 5, 48, 1000] {
+            let p = super::build_program(n);
+            assert!(p.len() <= n + 1);
+            assert!(p.len() >= n.saturating_sub(1));
+            assert!(matches!(p.evaluate(), 1.0 | 2.0));
         }
     }
 }

@@ -62,7 +62,10 @@ impl Runtime {
 
     /// Ejecuta un `BmlGraph` (fragmentos) y almacena el resultado.
     pub fn execute_graph(&mut self, graph: &BmlGraph) -> f64 {
-        let result = self.hot_loop.execute_fragments(&graph.fragments);
+        let ctx = bml_domain::EvalContext::new(&[], &graph.const_pool);
+        let result = self
+            .hot_loop
+            .execute_fragments_with_ctx(&graph.fragments, &ctx);
         self.write_result(result);
         result
     }

@@ -362,8 +362,8 @@ pub fn read_tensor_f32(parser: &GgufParser, name: &str) -> Option<Vec<f32>> {
                 .map(|c| f16_to_f32(u16::from_le_bytes(c.try_into().unwrap())))
                 .collect(),
         ),
-        GgufDataType::Q4_0 => Some(dequantize_q4_0(data, &info.dims)),
-        GgufDataType::Q8_0 => Some(dequantize_q8_0(data, &info.dims)),
+        GgufDataType::Q4_0 => Some(dequantize_q4_0(data)),
+        GgufDataType::Q8_0 => Some(dequantize_q8_0(data)),
         _ => None,
     }
 }
@@ -405,66 +405,28 @@ fn f16_to_f32(h: u16) -> f32 {
 /// Q4_0: bloques de 32 elementos.
 /// Cada bloque: [f16 scale][16 x uint4] = 18 bytes.
 /// valor = (q - 8) * scale
-fn dequantize_q4_0(data: &[u8], dims: &[u64]) -> Vec<f32> {
-    let total_elems: usize = dims.iter().map(|d| *d as usize).product();
-    let block_size = 32;
-    let block_bytes = 18; // 2 (f16 scale) + 16 (16 x 4-bit packed)
-    let n_blocks = total_elems / block_size;
-    let mut result = Vec::with_capacity(total_elems);
-
-    for block in 0..n_blocks {
-        let offset = block * block_bytes;
-        if offset + block_bytes > data.len() {
-            break;
+fn dequantize_q4_0(data: &[u8]) -> Vec<f32> {
+    // Exact complete blocks are validated by the parser.
+    let mut result = Vec::with_capacity(data.len() / 18 * 32);
+    for block in data.as_chunks::<18>().0 {
+        let scale = f16_to_f32(u16::from_le_bytes([block[0], block[1]]));
+        for shift in [0, 4] {
+            result.extend(
+                block[2..]
+                    .iter()
+                    .map(|byte| (((byte >> shift) & 15) as i32 - 8) as f32 * scale),
+            );
         }
-        let scale = f16_to_f32(u16::from_le_bytes(
-            data[offset..offset + 2].try_into().unwrap(),
-        ));
-        // 16 bytes = 32 nibbles (4-bit each)
-        for i in 0..16 {
-            let byte = data[offset + 2 + i];
-            let q0 = (byte & 0x0F) as i32 - 8;
-            let q1 = ((byte >> 4) & 0x0F) as i32 - 8;
-            result.push(q0 as f32 * scale);
-            result.push(q1 as f32 * scale);
-        }
-    }
-
-    // Rellenar si faltan elementos
-    while result.len() < total_elems {
-        result.push(0.0);
     }
     result
 }
 
-/// Dequantiza Q8_0 a f32.
-///
-/// Q8_0: bloques de 32 elementos.
-/// Cada bloque: [f16 scale][32 x int8] = 34 bytes.
-/// valor = q * scale
-fn dequantize_q8_0(data: &[u8], dims: &[u64]) -> Vec<f32> {
-    let total_elems: usize = dims.iter().map(|d| *d as usize).product();
-    let block_size = 32;
-    let block_bytes = 34; // 2 (f16 scale) + 32 (int8)
-    let n_blocks = total_elems / block_size;
-    let mut result = Vec::with_capacity(total_elems);
-
-    for block in 0..n_blocks {
-        let offset = block * block_bytes;
-        if offset + block_bytes > data.len() {
-            break;
-        }
-        let scale = f16_to_f32(u16::from_le_bytes(
-            data[offset..offset + 2].try_into().unwrap(),
-        ));
-        for i in 0..32 {
-            let q = data[offset + 2 + i] as i8 as f32;
-            result.push(q * scale);
-        }
-    }
-
-    while result.len() < total_elems {
-        result.push(0.0);
+/// Decodes Q8_0 blocks validated by the parser.
+fn dequantize_q8_0(data: &[u8]) -> Vec<f32> {
+    let mut result = Vec::with_capacity(data.len() / 34 * 32);
+    for block in data.as_chunks::<34>().0 {
+        let scale = f16_to_f32(u16::from_le_bytes([block[0], block[1]]));
+        result.extend(block[2..].iter().map(|&q| q as i8 as f32 * scale));
     }
     result
 }
@@ -733,6 +695,7 @@ pub fn load_from_dir(input_dir: &Path) -> Result<(BmlGraph, Vec<f64>, ModelConfi
     }
 
     let graph = BmlGraph {
+        const_pool: Vec::new(),
         fragments,
         threshold: 0,
     };
@@ -1382,29 +1345,18 @@ mod tests {
         let hw = HardwareSpec::new(4, 32 * 1024, 256 * 1024, 16 * 1024 * 1024);
 
         let result = compile_gguf(&path, &hw);
-        match result {
-            Ok(r) => {
-                println!(
-                    "Compiled: {} fragments, {} consts",
-                    r.num_fragments,
-                    r.const_pool.len()
-                );
-                assert!(r.num_fragments >= 1);
-            }
-            Err(e) => {
-                println!("Expected error with synthetic GGUF: {e}");
-            }
-        }
+        let error = result
+            .err()
+            .expect("incomplete model must fail compilation");
+        assert_eq!(error, "tensor no encontrado: output_norm.weight");
         let _ = std::fs::remove_file(&path);
     }
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn compile_real_tinyllama() {
-        let path = "/root/tinyllama.gguf";
-        if !Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
         let hw = HardwareSpec::detect_local();
         println!("Hardware: {hw:?}");
 
@@ -1442,12 +1394,10 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn read_real_tinyllama_weights() {
-        let path = "/root/tinyllama.gguf";
-        if !Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
         let parser = GgufParser::open(path).unwrap();
 
         // Leer attn_norm (F32, 2048 elementos)
@@ -1477,12 +1427,10 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn serialize_load_roundtrip() {
-        let path = "/root/tinyllama.gguf";
-        if !Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
         let hw = HardwareSpec::detect_local();
         let result = compile_gguf(path, &hw).expect("compilar");
 
@@ -1519,12 +1467,10 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn compile_serialize_load_tinyllama() {
-        let path = "/root/tinyllama.gguf";
-        if !Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
         let hw = HardwareSpec::detect_local();
         let result = compile_gguf(path, &hw).expect("compilar");
 

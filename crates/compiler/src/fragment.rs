@@ -15,6 +15,8 @@
 //! [fragment_1_size: u32]
 //! [fragment_1_ops: ...]
 //! ...
+//! [constant_count: u64]    // v2 only
+//! [constants: f64 LE ...] // v2 only
 //! ```
 //!
 //! Cada fragmento es un subconjunto contiguo de operaciones RPN. El
@@ -27,7 +29,7 @@ use crate::rpn::{RpnOp, RpnProgram};
 pub const BMLGRAPH_MAGIC: u32 = 0x4C4D4247;
 
 /// Versión del formato `.bmlgraph`.
-pub const BMLGRAPH_VERSION: u32 = 1;
+pub const BMLGRAPH_VERSION: u32 = 2;
 
 /// Umbral por defecto: 32 KB (L1 cache).
 pub const DEFAULT_L1_THRESHOLD: usize = 32 * 1024;
@@ -276,6 +278,8 @@ impl Default for Fragment {
 /// objetivo. El runtime ejecuta los fragmentos en orden.
 #[derive(Debug, Clone)]
 pub struct BmlGraph {
+    /// Constants owned by the graph, serialized in format v2.
+    pub const_pool: Vec<f64>,
     /// Fragmentos del grafo.
     pub fragments: Vec<Fragment>,
     /// Umbral de caché usado (en bytes).
@@ -287,6 +291,7 @@ impl BmlGraph {
     pub fn new(threshold: usize) -> Self {
         Self {
             fragments: Vec::new(),
+            const_pool: Vec::new(),
             threshold,
         }
     }
@@ -314,7 +319,10 @@ impl BmlGraph {
     pub fn evaluate(&self, x: f64) -> f64 {
         let mut stack: Vec<f64> = Vec::new();
         for fragment in &self.fragments {
-            fragment.evaluate_on_stack(&mut stack);
+            fragment.evaluate_on_stack_with_ctx(
+                &mut stack,
+                &bml_domain::EvalContext::new(&[x], &self.const_pool),
+            );
         }
         let _ = x;
         stack.pop().unwrap_or(f64::NAN)
@@ -366,6 +374,10 @@ impl BmlGraph {
                 }
             }
         }
+        bytes.extend_from_slice(&(self.const_pool.len() as u64).to_le_bytes());
+        for value in &self.const_pool {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
         bytes
     }
 
@@ -379,12 +391,12 @@ impl BmlGraph {
             return Err(format!("magic inválido: 0x{magic:08X}"));
         }
         let version = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
-        if version != BMLGRAPH_VERSION {
+        if !(1..=BMLGRAPH_VERSION).contains(&version) {
             return Err(format!("versión no soportada: {version}"));
         }
         let num_fragments = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
         let mut offset = 12;
-        let mut fragments = Vec::with_capacity(num_fragments);
+        let mut fragments = Vec::new();
         for _ in 0..num_fragments {
             if offset + 4 > bytes.len() {
                 return Err("offset fuera de rango leyendo tamaño de fragmento".to_string());
@@ -392,7 +404,7 @@ impl BmlGraph {
             let num_ops =
                 u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()) as usize;
             offset += 4;
-            let mut ops = Vec::with_capacity(num_ops);
+            let mut ops = Vec::new();
             for _ in 0..num_ops {
                 if offset >= bytes.len() {
                     return Err("offset fuera de rango leyendo op".to_string());
@@ -469,9 +481,34 @@ impl BmlGraph {
             }
             fragments.push(Fragment { ops });
         }
+        let mut const_pool = Vec::new();
+        if version >= 2 {
+            let end = offset.checked_add(8).ok_or("pool length overflow")?;
+            let count_bytes = bytes
+                .get(offset..end)
+                .ok_or("missing constant pool length")?;
+            let count = usize::try_from(u64::from_le_bytes(count_bytes.try_into().unwrap()))
+                .map_err(|_| "pool length overflow")?;
+            offset = end;
+            let pool_size = count.checked_mul(8).ok_or("pool size overflow")?;
+            let end = offset.checked_add(pool_size).ok_or("pool range overflow")?;
+            let pool_bytes = bytes.get(offset..end).ok_or("truncated constant pool")?;
+            const_pool.extend(
+                pool_bytes
+                    .as_chunks::<8>()
+                    .0
+                    .iter()
+                    .map(|b| f64::from_le_bytes(*b)),
+            );
+            offset = end;
+        }
+        if offset != bytes.len() {
+            return Err("trailing graph bytes".into());
+        }
         Ok(Self {
             fragments,
             threshold,
+            const_pool,
         })
     }
 }
@@ -492,6 +529,7 @@ impl BmlGraph {
 /// Un [`BmlGraph`] con los fragmentos.
 pub fn fragment_program(program: &RpnProgram, threshold: usize) -> BmlGraph {
     let mut graph = BmlGraph::new(threshold);
+    graph.const_pool.clone_from(&program.const_pool);
     let mut current = Fragment::new();
     let op_size = std::mem::size_of::<RpnOp>();
 

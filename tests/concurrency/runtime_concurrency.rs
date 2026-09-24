@@ -79,26 +79,8 @@ fn append_only_buffer_rotates_correctly() {
 }
 
 #[test]
-fn hot_loop_size_under_32kb() {
-    // Verificamos que el binario del runtime (que contiene el hot loop)
-    // es razonablemente pequeño. No podemos medir el tamaño exacto del
-    // hot loop sin `cargo asm`, pero verificamos que el binario total
-    // no es excesivamente grande.
-    //
-    // El hot loop es un match sobre 3 variantes de RpnOp — debería
-    // compilar a menos de 1 KB de código. El binario completo del
-    // runtime incluye dependencias, así que este test es una verificación
-    // de sanidad, no una medición precisa.
-
-    // Construir un programa y ejecutarlo para verificar que el hot
-    // loop funciona correctamente.
+fn hot_loop_returns_known_finite_value() {
     let program = build_program();
-    let mut runtime = Runtime::new(256, 16);
-    let result = runtime.execute(&program);
-    // El resultado puede ser finito, inf o nan (constantes sin pool).
-    // Lo importante es que no pániquea.
-    assert!(
-        result.is_finite() || result.is_infinite() || result.is_nan(),
-        "resultado invalido: {result}"
-    );
+    let mut runtime = Runtime::new(1024, 8);
+    assert_eq!(runtime.execute(&program), 8.0);
 }

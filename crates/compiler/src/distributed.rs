@@ -100,7 +100,10 @@ pub fn compile_distributed(
 
     let head_dim = config.n_embd / config.n_heads;
     let n_kv_heads = parser
-        .get_metadata(&format!("{}.attention.key_value_head_count", config.architecture))
+        .get_metadata(&format!(
+            "{}.attention.key_value_head_count",
+            config.architecture
+        ))
         .and_then(|v| match v {
             bml_parser::GgufMetadataValue::U32(n) => Some(*n),
             bml_parser::GgufMetadataValue::I32(n) => Some(*n as u32),
@@ -115,7 +118,9 @@ pub fn compile_distributed(
     while layer < config.n_layers {
         let layer_end = (layer + layers_per_fragment).min(config.n_layers);
 
-        let frag = compile_layer_range(&parser, &config, layer, layer_end, head_dim, n_kv_heads, false)?;
+        let frag = compile_layer_range(
+            &parser, &config, layer, layer_end, head_dim, n_kv_heads, false,
+        )?;
         fragments.push(frag);
 
         layer = layer_end;
@@ -123,7 +128,15 @@ pub fn compile_distributed(
 
     // Fragmento final: embeddings + output_norm + lm_head
     if include_embeddings {
-        let frag = compile_layer_range(&parser, &config, config.n_layers, config.n_layers + 1, head_dim, n_kv_heads, true)?;
+        let frag = compile_layer_range(
+            &parser,
+            &config,
+            config.n_layers,
+            config.n_layers + 1,
+            head_dim,
+            n_kv_heads,
+            true,
+        )?;
         fragments.push(frag);
     }
 
@@ -181,15 +194,60 @@ fn compile_layer_range(
             add_tensor(parser, &mut weights, &mut tensors, "token_embd.weight")?;
         } else {
             let prefix = format!("blk.{layer}");
-            add_tensor(parser, &mut weights, &mut tensors, &format!("{prefix}.attn_norm.weight"))?;
-            add_tensor(parser, &mut weights, &mut tensors, &format!("{prefix}.attn_q.weight"))?;
-            add_tensor(parser, &mut weights, &mut tensors, &format!("{prefix}.attn_k.weight"))?;
-            add_tensor(parser, &mut weights, &mut tensors, &format!("{prefix}.attn_v.weight"))?;
-            add_tensor(parser, &mut weights, &mut tensors, &format!("{prefix}.attn_output.weight"))?;
-            add_tensor(parser, &mut weights, &mut tensors, &format!("{prefix}.ffn_norm.weight"))?;
-            add_tensor(parser, &mut weights, &mut tensors, &format!("{prefix}.ffn_gate.weight"))?;
-            add_tensor(parser, &mut weights, &mut tensors, &format!("{prefix}.ffn_up.weight"))?;
-            add_tensor(parser, &mut weights, &mut tensors, &format!("{prefix}.ffn_down.weight"))?;
+            add_tensor(
+                parser,
+                &mut weights,
+                &mut tensors,
+                &format!("{prefix}.attn_norm.weight"),
+            )?;
+            add_tensor(
+                parser,
+                &mut weights,
+                &mut tensors,
+                &format!("{prefix}.attn_q.weight"),
+            )?;
+            add_tensor(
+                parser,
+                &mut weights,
+                &mut tensors,
+                &format!("{prefix}.attn_k.weight"),
+            )?;
+            add_tensor(
+                parser,
+                &mut weights,
+                &mut tensors,
+                &format!("{prefix}.attn_v.weight"),
+            )?;
+            add_tensor(
+                parser,
+                &mut weights,
+                &mut tensors,
+                &format!("{prefix}.attn_output.weight"),
+            )?;
+            add_tensor(
+                parser,
+                &mut weights,
+                &mut tensors,
+                &format!("{prefix}.ffn_norm.weight"),
+            )?;
+            add_tensor(
+                parser,
+                &mut weights,
+                &mut tensors,
+                &format!("{prefix}.ffn_gate.weight"),
+            )?;
+            add_tensor(
+                parser,
+                &mut weights,
+                &mut tensors,
+                &format!("{prefix}.ffn_up.weight"),
+            )?;
+            add_tensor(
+                parser,
+                &mut weights,
+                &mut tensors,
+                &format!("{prefix}.ffn_down.weight"),
+            )?;
         }
     }
 
@@ -228,62 +286,89 @@ pub fn serialize_distributed(
     let header_path = output_dir.join("header.bmlgraph");
     let mut f = std::fs::File::create(&header_path).map_err(|e| format!("crear header: {e}"))?;
 
-    f.write_all(&BMLGRAPH_MAGIC.to_le_bytes()).map_err(|e| format!("write magic: {e}"))?;
-    f.write_all(&BMLGRAPH_VERSION.to_le_bytes()).map_err(|e| format!("write version: {e}"))?;
-    f.write_all(&(fragments.len() as u32).to_le_bytes()).map_err(|e| format!("write n_frag: {e}"))?;
+    f.write_all(&BMLGRAPH_MAGIC.to_le_bytes())
+        .map_err(|e| format!("write magic: {e}"))?;
+    f.write_all(&BMLGRAPH_VERSION.to_le_bytes())
+        .map_err(|e| format!("write version: {e}"))?;
+    f.write_all(&(fragments.len() as u32).to_le_bytes())
+        .map_err(|e| format!("write n_frag: {e}"))?;
 
     let config = &fragments[0].config;
     let arch_bytes = config.architecture.as_bytes();
-    f.write_all(&(arch_bytes.len() as u64).to_le_bytes()).map_err(|e| format!("write arch len: {e}"))?;
-    f.write_all(arch_bytes).map_err(|e| format!("write arch: {e}"))?;
-    f.write_all(&config.n_layers.to_le_bytes()).map_err(|e| format!("write n_layers: {e}"))?;
-    f.write_all(&config.n_heads.to_le_bytes()).map_err(|e| format!("write n_heads: {e}"))?;
-    f.write_all(&config.n_embd.to_le_bytes()).map_err(|e| format!("write n_embd: {e}"))?;
-    f.write_all(&config.context_length.to_le_bytes()).map_err(|e| format!("write ctx: {e}"))?;
-    f.write_all(&config.vocab_size.to_le_bytes()).map_err(|e| format!("write vocab: {e}"))?;
+    f.write_all(&(arch_bytes.len() as u64).to_le_bytes())
+        .map_err(|e| format!("write arch len: {e}"))?;
+    f.write_all(arch_bytes)
+        .map_err(|e| format!("write arch: {e}"))?;
+    f.write_all(&config.n_layers.to_le_bytes())
+        .map_err(|e| format!("write n_layers: {e}"))?;
+    f.write_all(&config.n_heads.to_le_bytes())
+        .map_err(|e| format!("write n_heads: {e}"))?;
+    f.write_all(&config.n_embd.to_le_bytes())
+        .map_err(|e| format!("write n_embd: {e}"))?;
+    f.write_all(&config.context_length.to_le_bytes())
+        .map_err(|e| format!("write ctx: {e}"))?;
+    f.write_all(&config.vocab_size.to_le_bytes())
+        .map_err(|e| format!("write vocab: {e}"))?;
 
     // Fragmentos: cada uno self-contained
     for frag in fragments {
         let frag_path = output_dir.join(format!("fragment_{}.bmlgraph", frag.fragment_id));
-        let mut ff = std::fs::File::create(&frag_path).map_err(|e| format!("crear frag {}: {e}", frag.fragment_id))?;
+        let mut ff = std::fs::File::create(&frag_path)
+            .map_err(|e| format!("crear frag {}: {e}", frag.fragment_id))?;
 
         // Magic + version
-        ff.write_all(&BMLGRAPH_MAGIC.to_le_bytes()).map_err(|e| format!("write magic: {e}"))?;
-        ff.write_all(&BMLGRAPH_VERSION.to_le_bytes()).map_err(|e| format!("write version: {e}"))?;
+        ff.write_all(&BMLGRAPH_MAGIC.to_le_bytes())
+            .map_err(|e| format!("write magic: {e}"))?;
+        ff.write_all(&BMLGRAPH_VERSION.to_le_bytes())
+            .map_err(|e| format!("write version: {e}"))?;
 
         // Fragment ID
-        ff.write_all(&frag.fragment_id.to_le_bytes()).map_err(|e| format!("write frag id: {e}"))?;
+        ff.write_all(&frag.fragment_id.to_le_bytes())
+            .map_err(|e| format!("write frag id: {e}"))?;
 
         // Layer range
-        ff.write_all(&frag.layer_start.to_le_bytes()).map_err(|e| format!("write layer start: {e}"))?;
-        ff.write_all(&frag.layer_end.to_le_bytes()).map_err(|e| format!("write layer end: {e}"))?;
+        ff.write_all(&frag.layer_start.to_le_bytes())
+            .map_err(|e| format!("write layer start: {e}"))?;
+        ff.write_all(&frag.layer_end.to_le_bytes())
+            .map_err(|e| format!("write layer end: {e}"))?;
 
         // Bytecode RPN
-        ff.write_all(&(frag.ops.len() as u32).to_le_bytes()).map_err(|e| format!("write n_ops: {e}"))?;
+        ff.write_all(&(frag.ops.len() as u32).to_le_bytes())
+            .map_err(|e| format!("write n_ops: {e}"))?;
         for op in &frag.ops {
             serialize_op(&mut ff, op)?;
         }
 
         // Pesos f32
-        ff.write_all(&(frag.weights.len() as u64).to_le_bytes()).map_err(|e| format!("write n_weights: {e}"))?;
+        ff.write_all(&(frag.weights.len() as u64).to_le_bytes())
+            .map_err(|e| format!("write n_weights: {e}"))?;
         for &w in &frag.weights {
-            ff.write_all(&w.to_le_bytes()).map_err(|e| format!("write weight: {e}"))?;
+            ff.write_all(&w.to_le_bytes())
+                .map_err(|e| format!("write weight: {e}"))?;
         }
 
         // Tensor metadata
-        ff.write_all(&(frag.tensors.len() as u32).to_le_bytes()).map_err(|e| format!("write n_tensors: {e}"))?;
+        ff.write_all(&(frag.tensors.len() as u32).to_le_bytes())
+            .map_err(|e| format!("write n_tensors: {e}"))?;
         for tensor in &frag.tensors {
             let name_bytes = tensor.name.as_bytes();
-            ff.write_all(&(name_bytes.len() as u32).to_le_bytes()).map_err(|e| format!("write name len: {e}"))?;
-            ff.write_all(name_bytes).map_err(|e| format!("write name: {e}"))?;
-            ff.write_all(&tensor.offset.to_le_bytes()).map_err(|e| format!("write offset: {e}"))?;
-            ff.write_all(&tensor.n_rows.to_le_bytes()).map_err(|e| format!("write n_rows: {e}"))?;
-            ff.write_all(&tensor.n_cols.to_le_bytes()).map_err(|e| format!("write n_cols: {e}"))?;
+            ff.write_all(&(name_bytes.len() as u32).to_le_bytes())
+                .map_err(|e| format!("write name len: {e}"))?;
+            ff.write_all(name_bytes)
+                .map_err(|e| format!("write name: {e}"))?;
+            ff.write_all(&tensor.offset.to_le_bytes())
+                .map_err(|e| format!("write offset: {e}"))?;
+            ff.write_all(&tensor.n_rows.to_le_bytes())
+                .map_err(|e| format!("write n_rows: {e}"))?;
+            ff.write_all(&tensor.n_cols.to_le_bytes())
+                .map_err(|e| format!("write n_cols: {e}"))?;
         }
 
         // Config del modelo (repetida por fragmento para self-contained)
-        ff.write_all(&(frag.n_kv_heads as u32).to_le_bytes()).map_err(|e| format!("write n_kv_heads: {e}"))?;
-        ff.write_all(&frag.head_dim.to_le_bytes()).map_err(|e| format!("write head_dim: {e}"))?;
+        ff.write_all(&(frag.n_kv_heads as u32).to_le_bytes())
+            .map_err(|e| format!("write n_kv_heads: {e}"))?;
+        ff.write_all(&frag.head_dim.to_le_bytes())
+            .map_err(|e| format!("write head_dim: {e}"))?;
     }
 
     Ok(())
@@ -292,9 +377,7 @@ pub fn serialize_distributed(
 /// Carga un fragmento distribuido desde un archivo.
 ///
 /// El fragmento es self-contained: no necesita el GGUF ni el header.
-pub fn load_distributed_fragment(
-    frag_path: &Path,
-) -> Result<DistributedFragment, String> {
+pub fn load_distributed_fragment(frag_path: &Path) -> Result<DistributedFragment, String> {
     let bytes = std::fs::read(frag_path).map_err(|e| format!("leer fragmento: {e}"))?;
     if bytes.len() < 20 {
         return Err("fragmento demasiado pequeño".into());
@@ -392,9 +475,7 @@ pub fn load_distributed_fragment(
 }
 
 /// Carga el header distribuido para obtener la config del modelo.
-pub fn load_distributed_header(
-    dir: &Path,
-) -> Result<(ModelConfig, usize), String> {
+pub fn load_distributed_header(dir: &Path) -> Result<(ModelConfig, usize), String> {
     let header_path = dir.join("header.bmlgraph");
     let bytes = std::fs::read(&header_path).map_err(|e| format!("leer header: {e}"))?;
     if bytes.len() < 12 {
@@ -443,30 +524,37 @@ fn serialize_op(f: &mut std::fs::File, op: &RpnOp) -> Result<(), String> {
         RpnOp::Dup => f.write_all(&[2]).map_err(|e| format!("write op: {e}")),
         RpnOp::Loop { count, body_len } => {
             f.write_all(&[3]).map_err(|e| format!("write op: {e}"))?;
-            f.write_all(&count.to_le_bytes()).map_err(|e| format!("write op: {e}"))?;
-            f.write_all(&body_len.to_le_bytes()).map_err(|e| format!("write op: {e}"))
+            f.write_all(&count.to_le_bytes())
+                .map_err(|e| format!("write op: {e}"))?;
+            f.write_all(&body_len.to_le_bytes())
+                .map_err(|e| format!("write op: {e}"))
         }
         RpnOp::Var(id) => {
             f.write_all(&[4]).map_err(|e| format!("write op: {e}"))?;
-            f.write_all(&id.to_le_bytes()).map_err(|e| format!("write op: {e}"))
+            f.write_all(&id.to_le_bytes())
+                .map_err(|e| format!("write op: {e}"))
         }
         RpnOp::Const(id) => {
             f.write_all(&[5]).map_err(|e| format!("write op: {e}"))?;
-            f.write_all(&id.to_le_bytes()).map_err(|e| format!("write op: {e}"))
+            f.write_all(&id.to_le_bytes())
+                .map_err(|e| format!("write op: {e}"))
         }
         RpnOp::VarIndexed { base } => {
             f.write_all(&[7]).map_err(|e| format!("write op: {e}"))?;
-            f.write_all(&base.to_le_bytes()).map_err(|e| format!("write op: {e}"))
+            f.write_all(&base.to_le_bytes())
+                .map_err(|e| format!("write op: {e}"))
         }
         RpnOp::StoreResult { slot } => {
             f.write_all(&[8]).map_err(|e| format!("write op: {e}"))?;
-            f.write_all(&slot.to_le_bytes()).map_err(|e| format!("write op: {e}"))
+            f.write_all(&slot.to_le_bytes())
+                .map_err(|e| format!("write op: {e}"))
         }
         RpnOp::FAdd => f.write_all(&[9]).map_err(|e| format!("write op: {e}")),
         RpnOp::FMul => f.write_all(&[10]).map_err(|e| format!("write op: {e}")),
         RpnOp::Pick { depth } => {
             f.write_all(&[11]).map_err(|e| format!("write op: {e}"))?;
-            f.write_all(&depth.to_le_bytes()).map_err(|e| format!("write op: {e}"))
+            f.write_all(&depth.to_le_bytes())
+                .map_err(|e| format!("write op: {e}"))
         }
         RpnOp::Drop => f.write_all(&[12]).map_err(|e| format!("write op: {e}")),
         RpnOp::Swap => f.write_all(&[13]).map_err(|e| format!("write op: {e}")),
@@ -552,12 +640,10 @@ mod tests {
     use crate::hardware::HardwareSpec;
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn compile_distributed_tinyllama() {
-        let path = "/root/tinyllama.gguf";
-        if !Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
 
         let fragments = compile_distributed(Path::new(path), 1, true).expect("compile");
         assert!(fragments.len() > 0);
@@ -573,35 +659,48 @@ mod tests {
             let weight_mb = frag.weights.len() as f64 * 4.0 / (1024.0 * 1024.0);
             println!(
                 "  fragment {} (layers {}-{}): {} tensors, {:.1} MB weights",
-                frag.fragment_id, frag.layer_start, frag.layer_end,
-                frag.tensors.len(), weight_mb,
+                frag.fragment_id,
+                frag.layer_start,
+                frag.layer_end,
+                frag.tensors.len(),
+                weight_mb,
             );
         }
 
         // Verificar que la suma de pesos ≈ peso total del modelo
         let total_weights: usize = fragments.iter().map(|f| f.weights.len()).sum();
-        println!("Total weights: {} ({:.1} MB)", total_weights, total_weights as f64 * 4.0 / (1024.0 * 1024.0));
+        println!(
+            "Total weights: {} ({:.1} MB)",
+            total_weights,
+            total_weights as f64 * 4.0 / (1024.0 * 1024.0)
+        );
     }
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn serialize_load_distributed_roundtrip() {
-        let path = "/root/tinyllama.gguf";
-        if !Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
 
         let fragments = compile_distributed(Path::new(path), 4, true).expect("compile");
         let out_dir = std::env::temp_dir().join(format!("bml_dist_test_{}", std::process::id()));
 
         serialize_distributed(&fragments, &out_dir).expect("serialize");
-        println!("Serialized {} fragments to {}", fragments.len(), out_dir.display());
+        println!(
+            "Serialized {} fragments to {}",
+            fragments.len(),
+            out_dir.display()
+        );
 
         // Listar archivos
         for entry in std::fs::read_dir(&out_dir).unwrap() {
             let entry = entry.unwrap();
             let meta = entry.metadata().unwrap();
-            println!("  {} ({} bytes)", entry.file_name().to_string_lossy(), meta.len());
+            println!(
+                "  {} ({} bytes)",
+                entry.file_name().to_string_lossy(),
+                meta.len()
+            );
         }
 
         // Cargar header
@@ -621,11 +720,20 @@ mod tests {
         assert_eq!(frag0.tensors.len(), fragments[0].tensors.len());
 
         // Verificar que los pesos coinciden
-        for (i, (a, b)) in frag0.weights.iter().zip(fragments[0].weights.iter()).enumerate() {
+        for (i, (a, b)) in frag0
+            .weights
+            .iter()
+            .zip(fragments[0].weights.iter())
+            .enumerate()
+        {
             assert_eq!(a.to_bits(), b.to_bits(), "peso {i} no coincide");
         }
 
-        println!("Roundtrip OK: {} tensors, {} weights", frag0.tensors.len(), frag0.weights.len());
+        println!(
+            "Roundtrip OK: {} tensors, {} weights",
+            frag0.tensors.len(),
+            frag0.weights.len()
+        );
 
         std::fs::remove_dir_all(&out_dir).ok();
     }
@@ -759,7 +867,10 @@ pub fn compile_distributed_bml(
 
     let head_dim = config.n_embd / config.n_heads;
     let n_kv_heads = parser
-        .get_metadata(&format!("{}.attention.key_value_head_count", config.architecture))
+        .get_metadata(&format!(
+            "{}.attention.key_value_head_count",
+            config.architecture
+        ))
         .and_then(|v| match v {
             bml_parser::GgufMetadataValue::U32(n) => Some(*n),
             bml_parser::GgufMetadataValue::I32(n) => Some(*n as u32),
@@ -773,13 +884,24 @@ pub fn compile_distributed_bml(
     let mut layer = 0u32;
     while layer < config.n_layers {
         let layer_end = (layer + layers_per_fragment).min(config.n_layers);
-        let frag = compile_layer_range_bml(&parser, &config, layer, layer_end, head_dim, n_kv_heads, false, &mut pool)?;
+        let frag = compile_layer_range_bml(
+            &parser, &config, layer, layer_end, head_dim, n_kv_heads, false, &mut pool,
+        )?;
         fragments.push(frag);
         layer = layer_end;
     }
 
     // Fragmento final
-    let frag = compile_layer_range_bml(&parser, &config, config.n_layers, config.n_layers + 1, head_dim, n_kv_heads, true, &mut pool)?;
+    let frag = compile_layer_range_bml(
+        &parser,
+        &config,
+        config.n_layers,
+        config.n_layers + 1,
+        head_dim,
+        n_kv_heads,
+        true,
+        &mut pool,
+    )?;
     fragments.push(frag);
 
     Ok((fragments, pool))
@@ -803,25 +925,66 @@ fn compile_layer_range_bml(
             if let Some(vals) = read_tensor_f32(parser, "output_norm.weight") {
                 let offset = weights.len() as u64;
                 weights.extend(vals);
-                tensors.push(TensorMeta { name: "output_norm.weight".into(), offset, n_rows: config.n_embd, n_cols: 1 });
+                tensors.push(TensorMeta {
+                    name: "output_norm.weight".into(),
+                    offset,
+                    n_rows: config.n_embd,
+                    n_cols: 1,
+                });
             }
             if let Some(vals) = read_tensor_f32(parser, "token_embd.weight") {
                 let offset = weights.len() as u64;
                 let info = parser.find_tensor("token_embd.weight");
-                let (r, c) = if let Some(i) = info { if i.dims.len() >= 2 { (i.dims[0] as u32, i.dims[1] as u32) } else { (vals.len() as u32, 1) } } else { (vals.len() as u32, 1) };
+                let (r, c) = if let Some(i) = info {
+                    if i.dims.len() >= 2 {
+                        (i.dims[0] as u32, i.dims[1] as u32)
+                    } else {
+                        (vals.len() as u32, 1)
+                    }
+                } else {
+                    (vals.len() as u32, 1)
+                };
                 weights.extend(vals);
-                tensors.push(TensorMeta { name: "token_embd.weight".into(), offset, n_rows: r, n_cols: c });
+                tensors.push(TensorMeta {
+                    name: "token_embd.weight".into(),
+                    offset,
+                    n_rows: r,
+                    n_cols: c,
+                });
             }
         } else {
             let prefix = format!("blk.{layer}");
-            for suffix in ["attn_norm.weight", "attn_q.weight", "attn_k.weight", "attn_v.weight", "attn_output.weight", "ffn_norm.weight", "ffn_gate.weight", "ffn_up.weight", "ffn_down.weight"] {
+            for suffix in [
+                "attn_norm.weight",
+                "attn_q.weight",
+                "attn_k.weight",
+                "attn_v.weight",
+                "attn_output.weight",
+                "ffn_norm.weight",
+                "ffn_gate.weight",
+                "ffn_up.weight",
+                "ffn_down.weight",
+            ] {
                 let name = format!("{prefix}.{suffix}");
                 if let Some(vals) = read_tensor_f32(parser, &name) {
                     let info = parser.find_tensor(&name);
-                    let (r, c) = if let Some(i) = info { if i.dims.len() >= 2 { (i.dims[0] as u32, i.dims[1] as u32) } else { (vals.len() as u32, 1) } } else { (vals.len() as u32, 1) };
+                    let (r, c) = if let Some(i) = info {
+                        if i.dims.len() >= 2 {
+                            (i.dims[0] as u32, i.dims[1] as u32)
+                        } else {
+                            (vals.len() as u32, 1)
+                        }
+                    } else {
+                        (vals.len() as u32, 1)
+                    };
                     let offset = weights.len() as u64;
                     weights.extend(vals);
-                    tensors.push(TensorMeta { name, offset, n_rows: r, n_cols: c });
+                    tensors.push(TensorMeta {
+                        name,
+                        offset,
+                        n_rows: r,
+                        n_cols: c,
+                    });
                 }
             }
         }
@@ -856,8 +1019,7 @@ mod bml_weight_tests {
     fn bml_weight_pool_q4_0_values() {
         let mut pool = BmlWeightPool::new();
         let q4_values: [f32; 16] = [
-            -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0,
-            0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0,
+            -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0,
         ];
 
         // Simular 1M pesos con valores Q4_0
@@ -867,10 +1029,22 @@ mod bml_weight_tests {
             }
         }
 
-        println!("Q4_0 pool: {} unique, {} total", pool.n_unique(), pool.n_total());
+        println!(
+            "Q4_0 pool: {} unique, {} total",
+            pool.n_unique(),
+            pool.n_total()
+        );
         println!("  Compression ratio: {:.1}x", pool.compression_ratio());
-        println!("  Estimated size: {} bytes ({:.1} MB)", pool.estimated_size_bytes(), pool.estimated_size_bytes() as f64 / 1_000_000.0);
-        println!("  f32 size: {} bytes ({:.1} MB)", pool.f32_size_bytes(), pool.f32_size_bytes() as f64 / 1_000_000.0);
+        println!(
+            "  Estimated size: {} bytes ({:.1} MB)",
+            pool.estimated_size_bytes(),
+            pool.estimated_size_bytes() as f64 / 1_000_000.0
+        );
+        println!(
+            "  f32 size: {} bytes ({:.1} MB)",
+            pool.f32_size_bytes(),
+            pool.f32_size_bytes() as f64 / 1_000_000.0
+        );
         println!("  Compression vs f32: {:.1}x", pool.compression_vs_f32());
 
         assert_eq!(pool.n_unique(), 14); // 16 - 2 (0 y 1 son Zero/One)
@@ -893,12 +1067,10 @@ mod bml_weight_tests {
     }
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn compile_distributed_bml_tinyllama() {
-        let path = "/root/tinyllama.gguf";
-        if !Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
 
         let (fragments, pool) = compile_distributed_bml(Path::new(path), 1).expect("compile bml");
 
@@ -906,8 +1078,14 @@ mod bml_weight_tests {
         println!("  Unique values: {}", pool.n_unique());
         println!("  Total weights: {}", pool.n_total());
         println!("  Compression ratio: {:.1}x", pool.compression_ratio());
-        println!("  Estimated BML size: {:.1} MB", pool.estimated_size_bytes() as f64 / 1_000_000.0);
-        println!("  f32 size: {:.1} MB", pool.f32_size_bytes() as f64 / 1_000_000.0);
+        println!(
+            "  Estimated BML size: {:.1} MB",
+            pool.estimated_size_bytes() as f64 / 1_000_000.0
+        );
+        println!(
+            "  f32 size: {:.1} MB",
+            pool.f32_size_bytes() as f64 / 1_000_000.0
+        );
         println!("  Compression vs f32: {:.1}x", pool.compression_vs_f32());
         println!("  Fragments: {}", fragments.len());
 
@@ -977,10 +1155,19 @@ impl SubFragment {
 /// Tamaño en bytes de una operación RPN serializada.
 fn op_size(op: &RpnOp) -> usize {
     match op {
-        RpnOp::One | RpnOp::Zero | RpnOp::Bml | RpnOp::Dup
-        | RpnOp::FAdd | RpnOp::FMul | RpnOp::Drop | RpnOp::Swap => 1,
-        RpnOp::Var(_) | RpnOp::Const(_) | RpnOp::VarIndexed { .. }
-        | RpnOp::StoreResult { .. } | RpnOp::Pick { .. } => 5,
+        RpnOp::One
+        | RpnOp::Zero
+        | RpnOp::Bml
+        | RpnOp::Dup
+        | RpnOp::FAdd
+        | RpnOp::FMul
+        | RpnOp::Drop
+        | RpnOp::Swap => 1,
+        RpnOp::Var(_)
+        | RpnOp::Const(_)
+        | RpnOp::VarIndexed { .. }
+        | RpnOp::StoreResult { .. }
+        | RpnOp::Pick { .. } => 5,
         RpnOp::Loop { .. } => 9,
     }
 }
@@ -1004,7 +1191,10 @@ pub fn sub_fragment(frag: &DistributedFragment) -> Vec<SubFragment> {
 }
 
 /// Sub-fragmenta con un tamaño objetivo personalizado.
-pub fn sub_fragment_with_threshold(frag: &DistributedFragment, target_size: usize) -> Vec<SubFragment> {
+pub fn sub_fragment_with_threshold(
+    frag: &DistributedFragment,
+    target_size: usize,
+) -> Vec<SubFragment> {
     let mut sub_fragments = Vec::new();
     let mut current_ops = Vec::new();
     let mut current_refs = Vec::new();
@@ -1012,11 +1202,15 @@ pub fn sub_fragment_with_threshold(frag: &DistributedFragment, target_size: usiz
     let mut sub_id = 0u32;
 
     // Crear referencias a todos los tensores del fragmento
-    let all_weight_refs: Vec<WeightRef> = frag.tensors.iter().map(|t| WeightRef {
-        tensor_name: t.name.clone(),
-        offset: t.offset,
-        len: (t.n_rows as u64 * t.n_cols as u64).min(u32::MAX as u64) as u32,
-    }).collect();
+    let all_weight_refs: Vec<WeightRef> = frag
+        .tensors
+        .iter()
+        .map(|t| WeightRef {
+            tensor_name: t.name.clone(),
+            offset: t.offset,
+            len: (t.n_rows as u64 * t.n_cols as u64).min(u32::MAX as u64) as u32,
+        })
+        .collect();
 
     for op in &frag.ops {
         let sz = op_size(op);
@@ -1048,7 +1242,11 @@ pub fn sub_fragment_with_threshold(frag: &DistributedFragment, target_size: usiz
             layer_start: frag.layer_start,
             layer_end: frag.layer_end,
             ops: current_ops,
-            weight_refs: if sub_fragments.is_empty() { all_weight_refs.clone() } else { vec![] },
+            weight_refs: if sub_fragments.is_empty() {
+                all_weight_refs.clone()
+            } else {
+                vec![]
+            },
             depends_on,
         });
     }
@@ -1099,38 +1297,53 @@ pub fn serialize_sub_fragments(
 
     for sf in sub_frags {
         let path = frag_dir.join(format!("sub_{}.bmlgraph", sf.sub_id));
-        let mut f = std::fs::File::create(&path).map_err(|e| format!("crear sub {}: {e}", sf.sub_id))?;
+        let mut f =
+            std::fs::File::create(&path).map_err(|e| format!("crear sub {}: {e}", sf.sub_id))?;
 
         // Header
-        f.write_all(&BMLGRAPH_MAGIC.to_le_bytes()).map_err(|e| format!("write magic: {e}"))?;
-        f.write_all(&BMLGRAPH_VERSION.to_le_bytes()).map_err(|e| format!("write version: {e}"))?;
+        f.write_all(&BMLGRAPH_MAGIC.to_le_bytes())
+            .map_err(|e| format!("write magic: {e}"))?;
+        f.write_all(&BMLGRAPH_VERSION.to_le_bytes())
+            .map_err(|e| format!("write version: {e}"))?;
 
         // IDs
-        f.write_all(&sf.fragment_id.to_le_bytes()).map_err(|e| format!("write frag id: {e}"))?;
-        f.write_all(&sf.sub_id.to_le_bytes()).map_err(|e| format!("write sub id: {e}"))?;
-        f.write_all(&sf.layer_start.to_le_bytes()).map_err(|e| format!("write layer start: {e}"))?;
-        f.write_all(&sf.layer_end.to_le_bytes()).map_err(|e| format!("write layer end: {e}"))?;
+        f.write_all(&sf.fragment_id.to_le_bytes())
+            .map_err(|e| format!("write frag id: {e}"))?;
+        f.write_all(&sf.sub_id.to_le_bytes())
+            .map_err(|e| format!("write sub id: {e}"))?;
+        f.write_all(&sf.layer_start.to_le_bytes())
+            .map_err(|e| format!("write layer start: {e}"))?;
+        f.write_all(&sf.layer_end.to_le_bytes())
+            .map_err(|e| format!("write layer end: {e}"))?;
 
         // Bytecode
-        f.write_all(&(sf.ops.len() as u32).to_le_bytes()).map_err(|e| format!("write n_ops: {e}"))?;
+        f.write_all(&(sf.ops.len() as u32).to_le_bytes())
+            .map_err(|e| format!("write n_ops: {e}"))?;
         for op in &sf.ops {
             serialize_op(&mut f, op)?;
         }
 
         // Weight refs
-        f.write_all(&(sf.weight_refs.len() as u32).to_le_bytes()).map_err(|e| format!("write n_refs: {e}"))?;
+        f.write_all(&(sf.weight_refs.len() as u32).to_le_bytes())
+            .map_err(|e| format!("write n_refs: {e}"))?;
         for wr in &sf.weight_refs {
             let name_bytes = wr.tensor_name.as_bytes();
-            f.write_all(&(name_bytes.len() as u32).to_le_bytes()).map_err(|e| format!("write name len: {e}"))?;
-            f.write_all(name_bytes).map_err(|e| format!("write name: {e}"))?;
-            f.write_all(&wr.offset.to_le_bytes()).map_err(|e| format!("write offset: {e}"))?;
-            f.write_all(&wr.len.to_le_bytes()).map_err(|e| format!("write len: {e}"))?;
+            f.write_all(&(name_bytes.len() as u32).to_le_bytes())
+                .map_err(|e| format!("write name len: {e}"))?;
+            f.write_all(name_bytes)
+                .map_err(|e| format!("write name: {e}"))?;
+            f.write_all(&wr.offset.to_le_bytes())
+                .map_err(|e| format!("write offset: {e}"))?;
+            f.write_all(&wr.len.to_le_bytes())
+                .map_err(|e| format!("write len: {e}"))?;
         }
 
         // Depends on
-        f.write_all(&(sf.depends_on.len() as u32).to_le_bytes()).map_err(|e| format!("write n_deps: {e}"))?;
+        f.write_all(&(sf.depends_on.len() as u32).to_le_bytes())
+            .map_err(|e| format!("write n_deps: {e}"))?;
         for &dep in &sf.depends_on {
-            f.write_all(&dep.to_le_bytes()).map_err(|e| format!("write dep: {e}"))?;
+            f.write_all(&dep.to_le_bytes())
+                .map_err(|e| format!("write dep: {e}"))?;
         }
     }
 
@@ -1183,7 +1396,11 @@ impl VectorFragment {
             for jj in 0..n_cols_us {
                 let j = j_start as usize + jj;
                 let idx = weight_offset as usize + i * n_out_us + j;
-                w_columns.push(if idx < weights.len() { weights[idx] as f64 } else { 0.0 });
+                w_columns.push(if idx < weights.len() {
+                    weights[idx] as f64
+                } else {
+                    0.0
+                });
             }
         }
 
@@ -1445,7 +1662,12 @@ mod sub_fragment_tests {
 
         // Cada sub-fragmento debe caber en L1i
         for sf in &subs {
-            assert!(sf.fits_l1i(), "sub {} excede L1i: {} bytes", sf.sub_id, sf.bytecode_size());
+            assert!(
+                sf.fits_l1i(),
+                "sub {} excede L1i: {} bytes",
+                sf.sub_id,
+                sf.bytecode_size()
+            );
         }
 
         // Las dependencias deben formar una cadena
@@ -1453,8 +1675,11 @@ mod sub_fragment_tests {
             assert_eq!(subs[i].depends_on, vec![(i as u32) - 1]);
         }
 
-        println!("50K ops → {} sub-fragmentos, tamaños: {:?}", subs.len(),
-            subs.iter().map(|sf| sf.bytecode_size()).collect::<Vec<_>>());
+        println!(
+            "50K ops → {} sub-fragmentos, tamaños: {:?}",
+            subs.len(),
+            subs.iter().map(|sf| sf.bytecode_size()).collect::<Vec<_>>()
+        );
     }
 
     #[test]
@@ -1484,7 +1709,10 @@ mod sub_fragment_tests {
 
         let subs = sub_fragment(&frag);
         let total_in_subs: usize = subs.iter().map(|sf| sf.ops.len()).sum();
-        assert_eq!(total_in_subs, total, "ops se perdieron en sub-fragmentación");
+        assert_eq!(
+            total_in_subs, total,
+            "ops se perdieron en sub-fragmentación"
+        );
     }
 }
 
