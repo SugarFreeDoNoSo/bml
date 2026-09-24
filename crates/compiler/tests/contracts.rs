@@ -281,7 +281,10 @@ fn metadata_arrays_and_malformed_lengths() {
     std::fs::write(&f.0, &b).unwrap();
     let p = GgufParser::open(&f.0).unwrap();
     match p.get_metadata("values").unwrap() {
-        bml_parser::GgufMetadataValue::Array(_, v) => assert_eq!(v.len(), 3),
+        bml_parser::GgufMetadataValue::Array(_, v) => {
+            use bml_parser::GgufMetadataValue::U8;
+            assert!(matches!(v.as_slice(), [U8(4), U8(5), U8(6)]), "{v:?}");
+        }
         _ => panic!("array expected"),
     };
     drop(p);

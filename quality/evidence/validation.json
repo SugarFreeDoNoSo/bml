@@ -1,0 +1,56 @@
+{
+  "date": "2026-09-24",
+  "base": "57c3bd79120e03839c078cf3c10a73fad3c4d3d2",
+  "rust_sources_sha256": "fda084f30b1eaddcde4d2adfc0db424ffc8df17fc4a7056a5c6423c2809ca7d2",
+  "rust": "1.98.1",
+  "suite": {
+    "passed": 244,
+    "failed": 0,
+    "ignored": 15
+  },
+  "gate_tests": 3,
+  "contract_discrepancies": 0,
+  "traceability": {
+    "mapped": 6,
+    "scenarios": 6
+  },
+  "clippy": {
+    "inherited_diagnostics": 192,
+    "new_diagnostics": 0
+  },
+  "coverage": {
+    "lines": {
+      "count": 8598,
+      "covered": 4539,
+      "percent": 52.79134682484299
+    },
+    "functions": {
+      "count": 828,
+      "covered": 510,
+      "percent": 61.59420289855072
+    }
+  },
+  "mutation_initial": {
+    "total_mutants": 147,
+    "caught": 135,
+    "missed": 1,
+    "unviable": 11,
+    "timeout": 0,
+    "end_time": "2026-09-24T14:45:34.085702009Z"
+  },
+  "mutation_after_strengthening_array_values_assertion": {
+    "scope": "previous survivor only; full final campaign runs in GitHub Actions",
+    "total_mutants": 1,
+    "caught": 1,
+    "missed": 0,
+    "unviable": 0,
+    "timeout": 0,
+    "end_time": "2026-09-24T14:46:34.991573715Z"
+  },
+  "dependencies": {
+    "vulnerabilities": 0,
+    "warnings": {}
+  },
+  "openspec": "tensor-library-foundation valid",
+  "ci": "See final head checks and artifacts on https://github.com/SugarFreeDoNoSo/bml/pull/2"
+}

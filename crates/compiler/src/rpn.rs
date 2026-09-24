@@ -12,8 +12,9 @@
 //!
 //! La linealización se hace con un recorrido post-order del DAG. Como el
 //! DAG ya está deduplicado por Hash Consing, cada valor conserva una posición
-//! de pila y se reutiliza con Pick. Tiempo, bytecode y pila son O(nodos
-//! alcanzables), con una sola posición de resultado al finalizar.
+//! de pila y se reutiliza con Pick. Bytecode y pila son O(nodos alcanzables).
+//! Inicializar posiciones y copiar constantes cuesta O(nodos totales + pool).
+//! Una sola posición de resultado permanece al finalizar.
 
 use bml_domain::{NodeId, NodeKind, NodeSoA};
 

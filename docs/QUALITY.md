@@ -47,7 +47,7 @@ Strace traza el proceso del parser; perf mide un proceso que ejecuta el evaluado
 
 ## Contratos y límites
 
-- RPN conserva cada nodo alcanzable una vez, con bytecode, tiempo y pila lineales. El mayor uso de pila obliga a medir de nuevo el rendimiento.
+- RPN conserva cada nodo alcanzable una vez, con bytecode y pila lineales en los nodos alcanzables. Inicializar el mapa de posiciones y copiar el pool cuesta además O(nodos totales + constantes). El mayor uso de pila obliga a medir de nuevo el rendimiento.
 - `.bmlgraph` v2 guarda el pool de constantes; el lector sigue admitiendo v1. Consumidores antiguos necesitan actualización para leer v2. Una API `*_with_ctx` usa el pool del contexto explícito.
 - `add` admite signos en el dominio numérico probado; `sub` exige minuendo positivo; `mul`, `div`, `recip` operandos positivos; `pow` x > 1 e y > 0. Las expansiones no garantizan estabilidad f64 general. `neg` conserva infinitos intermedios del evaluador heredado, incompatible con el evaluador real estricto.
 - GGUF valida rangos exactos para escalares, Q4_0 y Q8_0. Otros cuantizadores solo permiten inspección de metadatos; `tensor_data` devuelve None. Se rechazan arrays anidados. El archivo mapeado debe permanecer sin modificaciones ni truncamiento mientras se usa.
