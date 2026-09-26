@@ -1,0 +1,22 @@
+name: Dependency audit
+on:
+  pull_request:
+    paths: ['Cargo.lock', '**/Cargo.toml', '.github/workflows/dependencies.yml']
+  schedule:
+    - cron: '30 7 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - run: rustup show active-toolchain
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked --version 0.22.2
+      - name: Audit RustSec advisories
+        run: cargo audit --deny warnings

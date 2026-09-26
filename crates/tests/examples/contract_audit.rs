@@ -100,9 +100,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut registry = HashConsRegistry::new();
     let one = registry.one();
     let root = registry.bml(one, one);
-    let (soa, pool) = registry.into_soa_and_pool();
+    let soa = registry.into_soa();
+    let pool = &soa.const_pool;
     let program = linearize(&soa, root);
-    let with_pool = program.evaluate_with_ctx(&EvalContext::new(&[], &pool));
+    let with_pool = program.evaluate_with_ctx(&EvalContext::new(&[], pool));
     check(
         "constant_pool_control_expected_2",
         with_pool == 2.0,

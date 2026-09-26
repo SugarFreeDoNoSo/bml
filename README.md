@@ -8,8 +8,9 @@ corrección matemática, representación de datos y rendimiento medido.
 
 La primera etapa de la reorganización incorpora términos cerrados/abiertos,
 sustitución parcial y evaluación real comprobada en `bml_domain::symbolic`.
-El compilador, el parser y el runtime anteriores siguen disponibles y tienen
-fallos conocidos; la migración tensorial está especificada, aún pendiente.
+Esta etapa corrige los seis contratos auditados del compilador, parser y runtime.
+La migración tensorial está especificada y sigue pendiente; véanse los límites
+y controles de calidad en [QUALITY.md](docs/QUALITY.md).
 
 - [Arquitectura, contratos y migración](docs/architecture/TENSOR_LIBRARY.md).
 - [Revisión reproducible: seis discrepancias funcionales](docs/architecture/REVIEW_2026-09-20.md).
@@ -79,19 +80,19 @@ mantienen operaciones como matmul y reducciones a alto nivel.
 cargo test -p bml-domain --test symbolic_contracts --locked
 cargo test -p bml-domain --doc --locked
 
-# Diagnóstico: salida no cero mientras persistan los fallos previos
+# Regresión de los seis contratos: debe terminar sin discrepancias
 cargo run -p bml-tests --example contract_audit --locked
 
-# Suite completa; consultar limitaciones conocidas en la revisión
+# Suite ordinaria, con instrumentación y modelos externos optativos
 cargo test --workspace --locked
 
 cargo build --release --locked
-cargo clippy --workspace --all-targets --locked
+./scripts/check.sh origin/master
 ```
 
-Las pruebas instrumentadas requieren capacidades del entorno. La revisión
-registra un fallo de ptrace/strace y un doctest previo; esta rama no declara que
-la suite global esté completamente aprobada.
+Las pruebas instrumentadas requieren capacidades del entorno y se marcan como
+ignored. La revisión del 20 de septiembre documenta el estado histórico; el
+estado de esta etapa se registra en `quality/evidence` y los checks de Actions.
 
 ## Rendimiento
 
@@ -110,3 +111,7 @@ no garantiza una instrucción hardware única ni mayor velocidad.
 - [Especificación GGUF](https://github.com/ggml-org/ggml/blob/master/docs/gguf.md).
 - `references/eml_paper.md`: copia de referencia del artículo.
 - `draft.md` y propuestas OpenSpec anteriores: historia del diseño experimental.
+
+## Roadmap y calidad
+
+[Roadmap](docs/ROADMAP.md) · [Controles y comandos](docs/QUALITY.md). Los resultados verificados de esta etapa se registran en `quality/evidence` y en los artifacts de Actions.

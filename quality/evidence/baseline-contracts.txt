@@ -1,0 +1,12 @@
+Base: 57c3bd79120e03839c078cf3c10a73fad3c4d3d2
+Command: cargo run -p bml-tests --example contract_audit --locked
+Expected exit: 1
+
+FAIL shared_node_expected_1: inf
+PASS constant_pool_control_expected_2: 2.0
+FAIL benchmark_path_preserves_constants_expected_2: NaN
+FAIL positive_product_half_times_two_expected_1: NaN
+FAIL alignment_64_expected_1_2: [0.0, 0.0]
+FAIL q4_0_low_half_then_high_half: [-8.0, 7.0, -7.0, 6.0, -6.0, 5.0, -5.0, 4.0, -4.0, 3.0, -3.0, 2.0, -2.0, 1.0, -1.0, 0.0, 0.0, -1.0, 1.0, -2.0, 2.0, -3.0, 3.0, -4.0, 4.0, -5.0, 5.0, -6.0, 6.0, -7.0, 7.0, -8.0]
+FAIL truncated_q4_0_must_be_rejected: false
+6 contract discrepancy/discrepancies

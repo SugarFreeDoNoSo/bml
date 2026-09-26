@@ -8,7 +8,7 @@
 //! sin dependencias entre sí en "waves" que se ejecutan en paralelo,
 //! con barreras entre waves.
 //!
-//! ```
+//! ```text
 //! Wave 1 (paralela): Q, K, V, gate, up    → 4 threads
 //! ─── barrera ───
 //! Wave 2 (serial):   attention            → 1 thread
@@ -16,11 +16,11 @@
 //! Wave 3 (serial):   output + residual    → 1 thread
 //! ```
 
-use bml_compiler::distributed::SubFragment;
-use bml_domain::EvalContext;
 use crate::buffer::ResultBuffer;
 use crate::hot_loop::HotLoop;
-use std::sync::{Arc, Mutex, Barrier};
+use bml_compiler::distributed::SubFragment;
+use bml_domain::EvalContext;
+use std::sync::{Arc, Barrier, Mutex};
 use std::thread;
 
 /// Scheduler de waves para sub-fragmentos con dependencias.
@@ -73,7 +73,10 @@ impl WaveScheduler {
 
             if wave.is_empty() {
                 // Deadlock: dependencias circulares
-                panic!("Deadlock: dependencias circulares en sub-fragmentos: {:?}", remaining);
+                panic!(
+                    "Deadlock: dependencias circulares en sub-fragmentos: {:?}",
+                    remaining
+                );
             }
 
             for sid in &wave {
@@ -91,12 +94,7 @@ impl WaveScheduler {
     ///
     /// Cada wave se ejecuta en paralelo con `n_cores` threads.
     /// Barrera entre waves.
-    pub fn execute(
-        &self,
-        n_cores: usize,
-        ctx: &EvalContext,
-        buf: &mut ResultBuffer,
-    ) {
+    pub fn execute(&self, n_cores: usize, ctx: &EvalContext, buf: &mut ResultBuffer) {
         let waves = self.compute_waves();
 
         for wave in &waves {
@@ -104,7 +102,9 @@ impl WaveScheduler {
                 // Ejecución serial
                 for &sid in wave {
                     let sf = &self.sub_fragments[self.id_to_idx[&sid]];
-                    let frag = bml_compiler::Fragment { ops: sf.ops.clone() };
+                    let frag = bml_compiler::Fragment {
+                        ops: sf.ops.clone(),
+                    };
                     let mut hot = HotLoop::with_capacity(8192);
                     hot.execute_fragment_full(&frag, ctx, buf);
                 }
@@ -124,10 +124,7 @@ impl WaveScheduler {
     ) {
         let n_threads = wave.len().min(n_cores);
         let barrier = Arc::new(Barrier::new(n_threads));
-        let buf_arc = Arc::new(Mutex::new(std::mem::replace(
-            buf,
-            ResultBuffer::new(0, 0),
-        )));
+        let buf_arc = Arc::new(Mutex::new(std::mem::replace(buf, ResultBuffer::new(0, 0))));
 
         let ctx_inputs = ctx.inputs.to_vec();
         let ctx_weights = ctx.weights.to_vec();
@@ -143,7 +140,9 @@ impl WaveScheduler {
 
                 thread::spawn(move || {
                     let ctx = EvalContext::new(&inputs, &weights);
-                    let frag = bml_compiler::Fragment { ops: sf.ops.clone() };
+                    let frag = bml_compiler::Fragment {
+                        ops: sf.ops.clone(),
+                    };
                     let mut hot = HotLoop::with_capacity(8192);
 
                     // Warmup

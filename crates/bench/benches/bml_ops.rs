@@ -9,7 +9,6 @@
 //! Hash Consing con repetición estructural) ya están cubiertas en
 //! `crates/compiler/benches/matrix_mul.rs` y `fma_vs_bml.rs` respectivamente.
 
-use bml_compiler::{linearize, HashConsRegistry};
 use bml_domain::bml_base_op as bml_op;
 use bml_runtime::Runtime;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
@@ -53,16 +52,15 @@ fn bench_op_cost(c: &mut Criterion) {
 
 /// Construye un programa BML de N operaciones.
 fn build_program(n_ops: usize) -> bml_compiler::RpnProgram {
-    let mut reg = HashConsRegistry::new();
-    let one = reg.one();
-    let two = reg.bml(one, one);
-    let mut node = two;
-    let iterations = n_ops / 3;
-    for _ in 0..iterations {
-        node = reg.bml(node, two);
+    let mut program = bml_compiler::RpnProgram::new();
+    program.push(bml_compiler::RpnOp::One);
+    for _ in 0..(n_ops / 3) {
+        program.push(bml_compiler::RpnOp::One);
+        program.push(bml_compiler::RpnOp::Swap);
+        program.push(bml_compiler::RpnOp::Bml);
     }
-    let soa = reg.into_soa();
-    linearize(&soa, node)
+    assert!(matches!(program.evaluate(), 1.0 | 2.0));
+    program
 }
 
 /// 4.3 — Costo del hot loop con programas de distintos tamaños.

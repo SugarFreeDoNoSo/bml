@@ -146,27 +146,27 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn vocab_from_tinyllama_gguf() {
-        let path = "/root/tinyllama.gguf";
-        if !std::path::Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
         let parser = GgufParser::open(path).expect("abrir gguf");
         let vocab = Vocabulary::from_gguf(&parser).expect("cargar vocab");
         assert!(vocab.len() > 0);
         assert!(!vocab.model_type.is_empty());
-        println!("Tokenizer: {} (vocab_size={})", vocab.model_type, vocab.len());
+        println!(
+            "Tokenizer: {} (vocab_size={})",
+            vocab.model_type,
+            vocab.len()
+        );
         println!("BOS={}, EOS={}", vocab.bos_token_id, vocab.eos_token_id);
     }
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn encode_decode_roundtrip() {
-        let path = "/root/tinyllama.gguf";
-        if !std::path::Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
         let parser = GgufParser::open(path).expect("abrir gguf");
         let vocab = Vocabulary::from_gguf(&parser).expect("cargar vocab");
 
@@ -179,12 +179,10 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn encode_empty_returns_bos() {
-        let path = "/root/tinyllama.gguf";
-        if !std::path::Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
         let parser = GgufParser::open(path).expect("abrir gguf");
         let vocab = Vocabulary::from_gguf(&parser).expect("cargar vocab");
 

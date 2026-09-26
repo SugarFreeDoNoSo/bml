@@ -1,0 +1,101 @@
+name: Rust quality
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      full_mutation:
+        description: Test all generated mutations (can be slow)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  CARGO_TERM_COLOR: always
+  PROPTEST_RNG_SEED: '20260923'
+  BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+jobs:
+  contracts:
+    name: Contracts and static analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned Rust
+        run: rustup show active-toolchain
+      - name: Tests, contracts, traceability, format and Clippy ratchet
+        run: ./scripts/check.sh "$BASE_SHA"
+      - name: Reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: contracts-and-clippy
+          path: target/quality
+          if-no-files-found: error
+  coverage:
+    name: Coverage baseline
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - run: rustup show active-toolchain
+      - uses: taiki-e/install-action@7623a79cdfecb99d681017af368ca353d9f49bb5 # v2
+        with:
+          tool: cargo-llvm-cov@0.9.1
+      - name: Measure line and function coverage
+        run: |
+          mkdir -p target/quality
+          cargo llvm-cov --workspace --locked --json --output-path target/quality/coverage.json
+          python3 tools/quality.py coverage --report target/quality/coverage.json
+      - name: Coverage evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage
+          path: target/quality
+          if-no-files-found: error
+  mutation:
+    name: Mutation of changed code
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: rustup show active-toolchain
+      - uses: taiki-e/install-action@7623a79cdfecb99d681017af368ca353d9f49bb5 # v2
+        with:
+          tool: cargo-mutants@27.1.0
+      - name: Run mutations after an unaltered baseline
+        env:
+          FULL_MUTATION: ${{ inputs.full_mutation }}
+        run: |
+          mkdir -p target/quality
+          args=()
+          if [[ "$FULL_MUTATION" != true ]]; then
+            python3 tools/mutation_diff.py "$BASE_SHA" target/quality/changes.diff
+            args+=(--in-diff target/quality/changes.diff)
+          fi
+          cargo mutants --workspace --cargo-arg=--locked --test-workspace true --jobs 2 --timeout 30 --build-timeout 180 "${args[@]}"
+      - name: Score mutation evidence
+        if: always()
+        run: python3 tools/quality.py mutations --report mutants.out/outcomes.json
+      - name: Mutation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mutation
+          path: |
+            mutants.out
+            target/quality
+          if-no-files-found: error

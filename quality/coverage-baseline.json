@@ -1,0 +1,5 @@
+{
+  "lines": 52.0,
+  "functions": 60.0,
+  "policy": "Initial floors from the previous measured workspace (52.76% lines, 61.06% functions), with about one percentage point margin. Revalidated after recovery; raising or lowering floors requires review. Stable coverage excludes doctests and branch instrumentation."
+}

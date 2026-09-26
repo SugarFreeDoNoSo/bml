@@ -11,9 +11,10 @@
 //! - [`RpnOp::Bml`]: saca dos valores de la pila, aplica `bml`, empuja el resultado.
 //!
 //! La linealización se hace con un recorrido post-order del DAG. Como el
-//! DAG ya está deduplicado por Hash Consing, los sub-árboles compartidos
-//! se emiten una sola vez, precedidos de un [`RpnOp::Dup`] que duplica el
-//! valor en la pila para reutilizarlo.
+//! DAG ya está deduplicado por Hash Consing, cada valor conserva una posición
+//! de pila y se reutiliza con Pick. Bytecode y pila son O(nodos alcanzables).
+//! Inicializar posiciones y copiar constantes cuesta O(nodos totales + pool).
+//! Una sola posición de resultado permanece al finalizar.
 
 use bml_domain::{NodeId, NodeKind, NodeSoA};
 
@@ -97,6 +98,8 @@ pub enum RpnOp {
 /// Programa RPN: arreglo unidimensional de operaciones.
 #[derive(Debug, Clone)]
 pub struct RpnProgram {
+    /// Owned constants; an explicit EvalContext overrides this pool.
+    pub const_pool: Vec<f64>,
     /// Secuencia de operaciones a ejecutar.
     pub ops: Vec<RpnOp>,
 }
@@ -104,7 +107,10 @@ pub struct RpnProgram {
 impl RpnProgram {
     /// Crea un programa RPN vacío.
     pub fn new() -> Self {
-        Self { ops: Vec::new() }
+        Self {
+            ops: Vec::new(),
+            const_pool: Vec::new(),
+        }
     }
 
     /// Número de operaciones.
@@ -124,14 +130,14 @@ impl RpnProgram {
 
     /// Evalúa el programa RPN sobre una pila.
     ///
-    /// Esta es la evaluación de referencia sin variables ni constantes.
+    /// Evaluación de referencia sin variables, usando las constantes propias.
     /// Para evaluar con inputs y pesos, usar [`Self::evaluate_with_ctx`].
     ///
     /// # Panics
     ///
     /// Panics si el programa es inválido (pila vacía al hacer `Bml` o `Dup`).
     pub fn evaluate(&self) -> f64 {
-        let ctx = bml_domain::EvalContext::new(&[], &[]);
+        let ctx = bml_domain::EvalContext::new(&[], &self.const_pool);
         self.evaluate_with_ctx(&ctx)
     }
 
@@ -331,7 +337,8 @@ impl Default for RpnProgram {
 /// Linealiza un DAG (dado como `NodeSoA` + raíz) a un programa RPN.
 ///
 /// Recorre el DAG en post-order. Los sub-árboles compartidos (múltiples
-/// padres) se emiten una sola vez y se reutilizan con `Dup`.
+/// padres) se emiten una sola vez y se reutilizan por su posición de pila.
+/// Los hijos deben preceder al padre, como en NodeSoA::push_bml.
 ///
 /// # Argumentos
 ///
@@ -343,34 +350,53 @@ impl Default for RpnProgram {
 /// Un [`RpnProgram`] que evalúa al mismo valor que el DAG original.
 pub fn linearize(soa: &NodeSoA, root: NodeId) -> RpnProgram {
     let mut program = RpnProgram::new();
-    let mut visited = vec![false; soa.len()];
-    emit(soa, root, &mut visited, &mut program);
-    program
-}
-
-/// Emite el código RPN para un nodo en post-order.
-///
-/// - Si el nodo ya fue visitado (compartido), emite `Dup` para reutilizarlo.
-/// - Si no, lo visita y emite su código.
-fn emit(soa: &NodeSoA, id: NodeId, visited: &mut [bool], program: &mut RpnProgram) {
-    let idx = id as usize;
-    if visited[idx] {
-        program.push(RpnOp::Dup);
-        return;
-    }
-    visited[idx] = true;
-    match soa.kinds[idx] {
-        NodeKind::One => program.push(RpnOp::One),
-        NodeKind::Zero => program.push(RpnOp::Zero),
-        NodeKind::Var(var_id) => program.push(RpnOp::Var(var_id)),
-        NodeKind::Const(const_id) => program.push(RpnOp::Const(const_id)),
-        NodeKind::Bml => {
-            // Post-order: left, right, then Bml
-            emit(soa, soa.lefts[idx], visited, program);
-            emit(soa, soa.rights[idx], visited, program);
-            program.push(RpnOp::Bml);
+    program.const_pool.clone_from(&soa.const_pool);
+    let mut slots = vec![None; soa.len()];
+    let mut pending = vec![(root, false)];
+    let mut height = 0usize;
+    while let Some((id, expanded)) = pending.pop() {
+        let idx = id as usize;
+        if slots[idx].is_some() {
+            continue;
         }
+        if soa.kinds[idx] == NodeKind::Bml && !expanded {
+            let left = soa.lefts[idx];
+            let right = soa.rights[idx];
+            assert!(
+                left < id && right < id,
+                "children must precede their parent"
+            );
+            pending.push((id, true));
+            pending.push((right, false));
+            pending.push((left, false));
+            continue;
+        }
+        match soa.kinds[idx] {
+            NodeKind::One => program.push(RpnOp::One),
+            NodeKind::Zero => program.push(RpnOp::Zero),
+            NodeKind::Var(var) => program.push(RpnOp::Var(var)),
+            NodeKind::Const(value) => program.push(RpnOp::Const(value)),
+            NodeKind::Bml => {
+                let left = slots[soa.lefts[idx] as usize].unwrap();
+                let right = slots[soa.rights[idx] as usize].unwrap();
+                program.push(RpnOp::Pick {
+                    depth: (height - 1 - left) as u32,
+                });
+                program.push(RpnOp::Pick {
+                    depth: (height - right) as u32,
+                });
+                program.push(RpnOp::Bml);
+            }
+        }
+        slots[idx] = Some(height);
+        height += 1;
     }
+    // Net stack effect +1, including when this program is concatenated.
+    for _ in 1..height {
+        program.push(RpnOp::Swap);
+        program.push(RpnOp::Drop);
+    }
+    program
 }
 
 #[cfg(test)]
@@ -392,7 +418,7 @@ mod tests {
     fn linearize_two() {
         let (soa, root, program) = build_two_program();
         // bml(1, 1) -> One, One, Bml
-        assert_eq!(program.ops, vec![RpnOp::One, RpnOp::One, RpnOp::Bml]);
+        assert!(program.len() <= 5 * soa.len());
         assert_eq!(program.evaluate(), 2.0);
         // Coincide con la evaluación del DAG
         let dag = crate::Dag::new(soa, root);
@@ -421,7 +447,7 @@ mod tests {
     }
 
     #[test]
-    fn shared_subtree_uses_dup() {
+    fn shared_subtree_is_evaluated_once() {
         use bml_domain::NodeSoA;
         let mut soa = NodeSoA::new();
         let one = soa.push_one(); // 0: One
@@ -429,8 +455,8 @@ mod tests {
         let root = soa.push_bml(two, two); // 2: bml(1, 1)
         let program = linearize(&soa, root);
         assert_eq!(
-            program.ops,
-            vec![RpnOp::One, RpnOp::Dup, RpnOp::Bml, RpnOp::Dup, RpnOp::Bml]
+            program.ops.iter().filter(|op| **op == RpnOp::Bml).count(),
+            2
         );
         assert!((program.evaluate() - 3.0).abs() < 1e-9);
     }

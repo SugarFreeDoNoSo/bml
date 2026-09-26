@@ -1,15 +1,4 @@
-//! Pruebas de concurrencia con `loom` para verificar ausencia de data races.
-//!
-//! `loom` es un framework de permutation testing para código concurrente.
-//! Verifica que el patrón append-only del runtime no produzca data races
-//! bajo todas las interleavings posibles de los hilos.
-//!
-//! # Notas
-//!
-//! Estas pruebas son determinísticas (a diferencia de ThreadSanitizer)
-//! pero solo pueden verificar código que use `loom::sync` en lugar de
-//! `std::sync`. Por ahora, verificamos que el programa RPN es inmutable
-//! y que la evaluación no tiene estado mutable compartido.
+//! Concurrent evaluation with std::thread; this is not a Loom model check.
 
 use bml_compiler::{linearize, HashConsRegistry, RpnProgram};
 

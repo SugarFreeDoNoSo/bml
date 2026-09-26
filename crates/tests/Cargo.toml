@@ -30,8 +30,8 @@ name = "perf_cache"
 path = "../../tests/stress/perf_cache.rs"
 
 [[test]]
-name = "concurrency_loom"
-path = "../../tests/concurrency/concurrency_loom.rs"
+name = "thread_concurrency"
+path = "../../tests/concurrency/thread_concurrency.rs"
 
 [[test]]
 name = "runtime_concurrency"

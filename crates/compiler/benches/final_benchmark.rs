@@ -40,7 +40,7 @@
 //! - GCP N2D (AMD EPYC, sole-tenant opcional)
 //! - AWS c7i (Intel Sapphire Rapids)
 
-use bml_compiler::{linearize, HashConsRegistry, RpnProgram};
+use bml_compiler::RpnProgram;
 use bml_runtime::Runtime;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use std::time::Instant;
@@ -187,16 +187,15 @@ const PROVIDERS: &[CloudProvider] = &[
 
 /// Construye un programa BML de N operaciones (ya compilado, sin medir preparación).
 fn build_program(n_ops: usize) -> RpnProgram {
-    let mut reg = HashConsRegistry::new();
-    let one = reg.one();
-    let two = reg.bml(one, one);
-    let mut node = two;
-    let iterations = n_ops / 3;
-    for _ in 0..iterations {
-        node = reg.bml(node, two);
+    let mut program = bml_compiler::RpnProgram::new();
+    program.push(bml_compiler::RpnOp::One);
+    for _ in 0..(n_ops / 3) {
+        program.push(bml_compiler::RpnOp::One);
+        program.push(bml_compiler::RpnOp::Swap);
+        program.push(bml_compiler::RpnOp::Bml);
     }
-    let soa = reg.into_soa();
-    linearize(&soa, node)
+    assert!(matches!(program.evaluate(), 1.0 | 2.0));
+    program
 }
 
 /// Mide tokens por segundo para un modelo dado.

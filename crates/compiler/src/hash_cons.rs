@@ -49,10 +49,6 @@ pub struct HashConsRegistry {
     soa: NodeSoA,
     /// Mapa de claves canónicas a `NodeId` en el SoA.
     table: HashMap<ConsKey, NodeId>,
-    /// Pool de valores constantes precalculados.
-    /// Cuando bml(Const(a), Const(b)) se evalúa en compile-time,
-    /// el resultado se almacena aquí y se referencia como Const(id).
-    const_pool: Vec<f64>,
     /// Mapa de valores constantes a su índice en el pool.
     /// Evita duplicar constantes con el mismo valor.
     const_table: HashMap<u64, bml_domain::ConstId>,
@@ -64,7 +60,6 @@ impl HashConsRegistry {
         Self {
             soa: NodeSoA::new(),
             table: HashMap::new(),
-            const_pool: Vec::new(),
             const_table: HashMap::new(),
         }
     }
@@ -74,7 +69,6 @@ impl HashConsRegistry {
         Self {
             soa: NodeSoA::with_capacity(capacity),
             table: HashMap::with_capacity(capacity),
-            const_pool: Vec::with_capacity(capacity),
             const_table: HashMap::with_capacity(capacity),
         }
     }
@@ -84,7 +78,7 @@ impl HashConsRegistry {
         &self.soa
     }
 
-    /// Consume el registro y retorna el SoA.
+    /// Consume el registro y retorna el SoA con sus constantes incorporadas.
     pub fn into_soa(self) -> NodeSoA {
         self.soa
     }
@@ -182,8 +176,8 @@ impl HashConsRegistry {
             }
         }
         // Crear nueva constante
-        let const_id = self.const_pool.len() as bml_domain::ConstId;
-        self.const_pool.push(value);
+        let const_id = self.soa.const_pool.len() as bml_domain::ConstId;
+        self.soa.const_pool.push(value);
         self.const_table.insert(bits, const_id);
         let id = self.soa.push_const(const_id);
         id
@@ -198,7 +192,7 @@ impl HashConsRegistry {
         match node.kind {
             NodeKind::One => Some(1.0),
             NodeKind::Zero => Some(0.0),
-            NodeKind::Const(const_id) => self.const_pool.get(const_id as usize).copied(),
+            NodeKind::Const(const_id) => self.soa.const_pool.get(const_id as usize).copied(),
             NodeKind::Var(_) | NodeKind::Bml => None,
         }
     }
@@ -207,12 +201,13 @@ impl HashConsRegistry {
     ///
     /// El runtime carga este pool al arrancar para resolver `Const(id)`.
     pub fn const_pool(&self) -> &[f64] {
-        &self.const_pool
+        &self.soa.const_pool
     }
 
     /// Consume el registro y retorna el SoA y el pool de constantes.
-    pub fn into_soa_and_pool(self) -> (NodeSoA, Vec<f64>) {
-        (self.soa, self.const_pool)
+    pub fn into_soa_and_pool(mut self) -> (NodeSoA, Vec<f64>) {
+        let pool = std::mem::take(&mut self.soa.const_pool);
+        (self.soa, pool)
     }
 
     /// Número de deduplicaciones realizadas.

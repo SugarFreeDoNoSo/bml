@@ -38,6 +38,8 @@ const DEFAULT_CAPACITY: usize = 64;
 #[repr(align(64))]
 #[derive(Debug, Clone)]
 pub struct NodeSoA {
+    /// Owned values referenced by Const nodes; external pools may be supplied explicitly.
+    pub const_pool: Vec<f64>,
     /// Clase de cada nodo (`One` o `Bml`).
     pub kinds: Vec<NodeKind>,
     /// Sub-árbol izquierdo (solo para `Bml`; `0` para `One`).
@@ -57,6 +59,7 @@ impl NodeSoA {
     /// Crea un `NodeSoA` vacío con la capacidad dada.
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
+            const_pool: Vec::new(),
             kinds: Vec::with_capacity(capacity),
             lefts: Vec::with_capacity(capacity),
             rights: Vec::with_capacity(capacity),

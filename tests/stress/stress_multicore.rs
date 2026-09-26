@@ -4,27 +4,21 @@
 //! con múltiples hilos. Verifica que la evaluación RPN sea thread-safe
 //! (inmutable, sin estado compartido mutable).
 
-use bml_compiler::{linearize, HashConsRegistry, RpnOp, RpnProgram};
+use bml_compiler::{RpnOp, RpnProgram};
 use std::sync::Arc;
 use std::thread;
 
-/// Construye un programa RPN de aproximadamente `target_bytes` bytes.
-///
-/// Cada operación RpnOp ocupa ~1 byte (enum tag) + padding. Aproximamos
-/// el tamaño del programa como `ops.len() * size_of::<RpnOp>()`.
-/// Con `size_of::<RpnOp>() = 1` (enum C-like), 32 KB ≈ 32_768 ops.
+/// Finite workload, size measured from the actual opcode array.
 fn build_program_of_size(target_ops: usize) -> RpnProgram {
-    let mut reg = HashConsRegistry::new();
-    let one = reg.one();
-    let two = reg.bml(one, one);
-    let mut node = two;
-    // Cada iteración añade ~3 ops (node, Dup, Bml)
-    let iterations = target_ops / 3;
-    for _ in 0..iterations {
-        node = reg.bml(node, two);
+    let mut program = bml_compiler::RpnProgram::new();
+    program.push(bml_compiler::RpnOp::One);
+    for _ in 0..(target_ops / 3) {
+        program.push(bml_compiler::RpnOp::One);
+        program.push(bml_compiler::RpnOp::Swap);
+        program.push(bml_compiler::RpnOp::Bml);
     }
-    let soa = reg.into_soa();
-    linearize(&soa, node)
+    assert!(matches!(program.evaluate(), 1.0 | 2.0));
+    program
 }
 
 /// Tamaño aproximado del programa en bytes.
@@ -39,7 +33,7 @@ fn program_below_32kb() {
     let size = program_bytes(&program);
     assert!(size < 32 * 1024, "program size {size} >= 32KB");
     // Debe evaluar sin pánico
-    let _ = program.evaluate();
+    assert!(matches!(program.evaluate(), 1.0 | 2.0));
 }
 
 #[test]
@@ -49,7 +43,7 @@ fn program_above_32kb() {
     let size = program_bytes(&program);
     assert!(size > 32 * 1024, "program size {size} <= 32KB");
     // Debe evaluar sin pánico (aunque puede ser expulsado de L1i)
-    let _ = program.evaluate();
+    assert!(matches!(program.evaluate(), 1.0 | 2.0));
 }
 
 #[test]

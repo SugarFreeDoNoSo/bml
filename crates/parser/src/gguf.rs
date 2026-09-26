@@ -252,7 +252,7 @@ impl GgufParser {
                 format!("magic inválido: 0x{:08X}", header.magic),
             ));
         }
-        if header.version > GGUF_SUPPORTED_VERSION {
+        if !(2..=GGUF_SUPPORTED_VERSION).contains(&header.version) {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 format!("versión no soportada: {}", header.version),
@@ -270,7 +270,8 @@ impl GgufParser {
         }
 
         // Decodificar tensor infos
-        let mut tensor_infos = Vec::with_capacity(header.tensor_count as usize);
+        // Decode incrementally: never allocate from untrusted counts.
+        let mut tensor_infos = Vec::new();
         for _ in 0..header.tensor_count {
             let (info, new_offset) = decode_tensor_info(bytes, offset)
                 .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
@@ -278,16 +279,43 @@ impl GgufParser {
             offset = new_offset;
         }
 
-        // Alinear a 32 bytes (GGUF alignment)
-        let tensor_data_offset = align(offset, 32);
-
-        Ok(Self {
+        let alignment = match metadata.get("general.alignment") {
+            None => 32,
+            Some(GgufMetadataValue::U32(n)) if *n != 0 && *n % 8 == 0 => *n as usize,
+            _ => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "invalid general.alignment",
+                ))
+            }
+        };
+        let tensor_data_offset = offset
+            .checked_add(alignment - 1)
+            .map(|n| n / alignment * alignment)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "alignment overflow"))?;
+        let parser = Self {
             mmap,
             header,
             metadata,
             tensor_infos,
             tensor_data_offset,
-        })
+        };
+        for info in &parser.tensor_infos {
+            if info.offset % alignment as u64 != 0 {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "unaligned tensor offset",
+                ));
+            }
+            // Unknown quantizers can be inspected as metadata only.
+            if supported_layout(info.data_type) && parser.tensor_data(info).is_none() {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "invalid or truncated tensor range",
+                ));
+            }
+        }
+        Ok(parser)
     }
 
     /// Retorna la cabecera.
@@ -336,30 +364,43 @@ impl GgufParser {
     /// Retorna un slice zero-copy a los datos de un tensor.
     ///
     /// El slice referencia directamente el mmap, sin copias.
+    /// Soporta tipos escalares, Q4_0 y Q8_0; otros cuantizadores retornan None.
+    /// Los bloques cuantizados deben estar completos en cada fila.
     pub fn tensor_data(&self, info: &GgufTensorInfo) -> Option<&[u8]> {
-        let data_start = self.tensor_data_offset + info.offset as usize;
-        let bytes = self.bytes();
-        if data_start > bytes.len() {
-            return None;
-        }
-        let elem_size = info.data_type.element_size();
-        if elem_size > 0 {
-            // Tipo estándar: calcular tamaño exacto
-            let total_elems: usize = info.dims.iter().map(|d| *d as usize).product();
-            let data_end = data_start + total_elems * elem_size;
-            if data_end > bytes.len() {
+        let data_start = self
+            .tensor_data_offset
+            .checked_add(usize::try_from(info.offset).ok()?)?;
+        let data_end = data_start.checked_add(encoded_tensor_len(info)?)?;
+        self.bytes().get(data_start..data_end)
+    }
+}
+
+fn supported_layout(dtype: GgufDataType) -> bool {
+    dtype.element_size() > 0 || matches!(dtype, GgufDataType::Q4_0 | GgufDataType::Q8_0)
+}
+
+fn encoded_tensor_len(info: &GgufTensorInfo) -> Option<usize> {
+    if info.dims.is_empty() || info.dims.len() != info.n_dims as usize || info.dims.contains(&0) {
+        return None;
+    }
+    let elements = info
+        .dims
+        .iter()
+        .try_fold(1usize, |acc, &d| acc.checked_mul(usize::try_from(d).ok()?))?;
+    match info.data_type {
+        GgufDataType::Q4_0 | GgufDataType::Q8_0 => {
+            if !info.dims[0].is_multiple_of(32) {
                 return None;
             }
-            Some(&bytes[data_start..data_end])
-        } else if info.data_type.is_quantized() {
-            // Tipo cuantizado: dar el slice hasta el siguiente tensor o fin del archivo
-            // El tamaño real depende del bloque de cuantización, que varía por tipo.
-            // Por ahora, damos el slice hasta el fin del archivo.
-            // El compilador deberá calcular el tamaño exacto al dequantizar.
-            Some(&bytes[data_start..])
-        } else {
-            None // tipo variable (String, Array)
+            let block_bytes = if info.data_type == GgufDataType::Q4_0 {
+                18
+            } else {
+                34
+            };
+            (elements / 32).checked_mul(block_bytes)
         }
+        dtype if dtype.element_size() > 0 => elements.checked_mul(dtype.element_size()),
+        _ => None,
     }
 }
 
@@ -383,13 +424,17 @@ fn decode_string(bytes: &[u8], offset: usize) -> Result<(String, usize), String>
     if offset + 8 > bytes.len() {
         return Err("offset fuera de rango leyendo string len".into());
     }
-    let len = u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap()) as usize;
+    let len = usize::try_from(u64::from_le_bytes(
+        bytes[offset..offset + 8].try_into().unwrap(),
+    ))
+    .map_err(|_| "string length overflow")?;
     let str_start = offset + 8;
-    if str_start + len > bytes.len() {
-        return Err("offset fuera de rango leyendo string data".into());
-    }
-    let s = String::from_utf8_lossy(&bytes[str_start..str_start + len]).to_string();
-    Ok((s, str_start + len))
+    let end = str_start.checked_add(len).ok_or("string range overflow")?;
+    let data = bytes.get(str_start..end).ok_or("string outside file")?;
+    let s = std::str::from_utf8(data)
+        .map_err(|_| "invalid UTF-8")?
+        .to_owned();
+    Ok((s, end))
 }
 
 /// Decodifica un par clave-valor de metadatos.
@@ -535,7 +580,10 @@ fn decode_metadata_value(
             let count =
                 u64::from_le_bytes(bytes[offset + 4..offset + 12].try_into().unwrap()) as usize;
             let mut offset = offset + 12;
-            let mut values = Vec::with_capacity(count);
+            if elem_type == 9 {
+                return Err("nested arrays unsupported".into());
+            }
+            let mut values = Vec::new();
             for _ in 0..count {
                 let (v, new_offset) = decode_metadata_value(bytes, offset, elem_type)?;
                 values.push(v);
@@ -558,6 +606,9 @@ fn decode_tensor_info(bytes: &[u8], offset: usize) -> Result<(GgufTensorInfo, us
     }
     let n_dims = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
     let offset = offset + 4;
+    if !(1..=4).contains(&n_dims) {
+        return Err("tensor rank must be 1..=4".into());
+    }
     let mut dims = Vec::with_capacity(n_dims as usize);
     let mut offset = offset;
     for _ in 0..n_dims {
@@ -568,6 +619,14 @@ fn decode_tensor_info(bytes: &[u8], offset: usize) -> Result<(GgufTensorInfo, us
             bytes[offset..offset + 8].try_into().unwrap(),
         ));
         offset += 8;
+    }
+    if dims.contains(&0)
+        || dims
+            .iter()
+            .try_fold(1u64, |n, d| n.checked_mul(*d))
+            .is_none()
+    {
+        return Err("invalid tensor dimensions".into());
     }
     if offset + 4 > bytes.len() {
         return Err("offset fuera de rango leyendo data_type".into());
@@ -731,13 +790,11 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
     fn open_real_tinyllama() {
         // Intentar abrir el tinyllama real si está disponible
-        let path = "/root/tinyllama.gguf";
-        if !std::path::Path::new(path).exists() {
-            eprintln!("SKIP: {path} no disponible");
-            return;
-        }
+        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
+        let path = model_path.as_str();
         let parser = GgufParser::open(path).unwrap();
         let arch = parser.architecture();
         println!("Architecture: {arch:?}");

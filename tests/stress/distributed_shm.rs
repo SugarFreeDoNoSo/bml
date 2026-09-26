@@ -135,7 +135,10 @@ fn deserialize_program(bytes: &[u8]) -> RpnProgram {
         };
         ops.push(op);
     }
-    RpnProgram { ops }
+    RpnProgram {
+        ops,
+        const_pool: Vec::new(),
+    }
 }
 
 #[test]

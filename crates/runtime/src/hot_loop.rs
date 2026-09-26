@@ -42,7 +42,7 @@ impl HotLoop {
     /// Ejecuta un programa RPN completo.
     #[inline]
     pub fn execute(&mut self, program: &RpnProgram) -> f64 {
-        let ctx = bml_domain::EvalContext::new(&[], &[]);
+        let ctx = bml_domain::EvalContext::new(&[], &program.const_pool);
         let mut buf = crate::buffer::ResultBuffer::new(0, 0);
         self.execute_full(program, &ctx, &mut buf)
     }

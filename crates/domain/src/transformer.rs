@@ -11,13 +11,13 @@
 //! - `2^x = bml(x, 1)` (exponencial en base 2)
 //! - `log2(x) = bml(1, bml(bml(1, x), 1))` (logaritmo en base 2)
 //!
-//! # Operaciones pendientes
+//! # Contrato numérico
 //!
-//! Las fórmulas exactas para `+`, `-`, `*`, `/`, `pow` en base 2 no
-//! están en el paper fuente (que usa base E con profundidades 27, 83,
-//! 41, 105, 49 respectivamente). Se derivarán del Supplementary
-//! Information del paper o por búsqueda directa en Hito 2. Por ahora,
-//! el transformer expone `exp2` y `log2` que sí tenemos verificadas.
+//! Las identidades f64 pueden perder precisión, desbordarse o producir NaN
+//! fuera de su dominio. sub requiere minuendo positivo; mul, div y recip
+//! operandos positivos; pow requiere x > 1, y > 0. neg usa infinitos
+//! intermedios del evaluador IEEE heredado, no del evaluador real estricto
+//! de symbolic. No se garantiza aceleración frente a operaciones nativas.
 
 use crate::ast::NodeId;
 use crate::soa::NodeSoA;
@@ -62,6 +62,11 @@ impl BMLTransformer {
     /// Agrega la constante `1` al grafo y retorna su `NodeId`.
     pub fn one(&mut self) -> NodeId {
         self.soa.push_one()
+    }
+
+    /// Adds a variable resolved from EvalContext inputs.
+    pub fn var(&mut self, id: crate::ast::VarId) -> NodeId {
+        self.soa.push_var(id)
     }
 
     /// Agrega `BML(left, right)` al grafo y retorna su `NodeId`.
@@ -169,12 +174,16 @@ impl BMLTransformer {
         self.bml(neg_zero, exp2_x) // 2^(-inf) - log2(2^x) = 0 - x = -x
     }
 
-    /// `x + y = x - (-y) = sub(x, neg(y))`.
+    /// Signed addition with positive minuends only.
     ///
-    /// Requiere `x > 0` (para `log2(x)` en `sub`).
+    /// With p = 2^x and q = p - x > 0, x + y = p - (q - y).
+    /// Unlike sub(x, neg(y)), this accepts x <= 0. Intermediates must remain
+    /// representable. It is not a stable replacement for native f64 addition.
     pub fn add(&mut self, x: NodeId, y: NodeId) -> NodeId {
-        let neg_y = self.neg(y); // -y
-        self.sub(x, neg_y) // x - (-y) = x + y
+        let p = self.exp2(x);
+        let q = self.bml(x, p);
+        let remainder = self.sub(q, y);
+        self.sub(p, remainder)
     }
 
     /// `1/x = exp2(-log2(x)) = exp2(neg(log2(x)))`.
@@ -206,7 +215,8 @@ impl BMLTransformer {
 
     /// `x^y = exp2(y * log2(x)) = exp2(mul(y, log2(x)))`.
     ///
-    /// Requiere `x > 0`.
+    /// Esta expansión requiere x > 1 e y > 0: mul recibe y y log2(x),
+    /// ambos positivos. Los intermedios también deben ser representables.
     pub fn pow(&mut self, x: NodeId, y: NodeId) -> NodeId {
         let log2_x = self.log2(x); // log2(x)
         let product = self.mul(y, log2_x); // y * log2(x)
