@@ -1,4 +1,4 @@
-Feature: Reliable scalar compilation and GGUF decoding
+Feature: Reliable tensors, scalar compilation and GGUF decoding
   @C01
   Scenario: Reuse a nonadjacent shared node
     Given BML(BML(x,y),x) with x=1 and y=4
@@ -29,3 +29,18 @@ Feature: Reliable scalar compilation and GGUF decoding
     Given incomplete Q4_0 or Q8_0 data
     When opened or decoded
     Then an error is returned without zero padding
+  @C07
+  Scenario: Validate shapes and borrowed storage
+    Given scalars, empty shapes, huge dimensions and exact or mismatched buffers
+    When tensors and views are constructed, indexed or reshaped
+    Then dimensions and values agree, views borrow storage and invalid inputs fail
+  @C08
+  Scenario: Compute native CPU reference kernels
+    Given f32 and f64 tensors including asymmetric rectangular matrices
+    When add, mul, dot or matmul is requested
+    Then results match independent answers and incompatible shapes fail
+  @C09
+  Scenario: Apply an explicit checked operator basis
+    Given tensors of identical shape and an EML or BML basis
+    When the primitive is applied elementwise
+    Then dtype and shape are preserved or the first invalid flat index is reported

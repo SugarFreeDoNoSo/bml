@@ -1,6 +1,7 @@
 # Biblioteca de tensores, GGUF y términos EML/BML
 
-Estado: propuesta de arquitectura y primera implementación del núcleo simbólico.
+Estado: núcleo simbólico y tipos/kernels tensoriales CPU implementados en domain;
+extracción de GGUF y fachada pendientes. Actualización tensorial: 2026-09-27 UTC.
 Fecha: 2026-09-20. Base revisada: `626f12f2d4a55817a31ec66562dff0eb3f81a2fa`.
 
 ## Objetivo y alcance inicial
@@ -113,7 +114,7 @@ La expansión pura EML/BML es una modalidad experimental que se mide explícitam
 | `experiments/llm` | Modelo, tokenizer, KV cache, sampler y evaluación LLM | Fachada y plan experimental |
 | `crates/tests` | Integración entre crates y soporte de fixtures | Solo dependencias de desarrollo |
 
-Este cambio implementa el núcleo en `bml-domain::symbolic` para mantener compatible
+El núcleo está en `bml-domain::symbolic` y `bml-domain::tensor` para mantener compatible
 el workspace actual. Los nombres y movimientos de esta tabla son el destino de la
 migración, no rutas ya existentes. Extraer un backend o un crate de IR adicional
 solo cuando exista un consumidor independiente que lo justifique.
@@ -151,6 +152,40 @@ La arena/SoA es una decisión de ejecución medible, independiente del AST públ
   el uso de memoria y el error se reportan aparte.
 
 ## 6. Ruta de migración con criterios de salida
+
+### API tensorial disponible
+
+`Shape::new` valida el producto de dimensiones. Las formas vacías aceptan cualquier
+posición de la dimensión cero y usan strides canónicos todos cero, sin elementos
+direccionables. `Shape::offset` valida todos los ejes antes de calcular el offset
+con aritmética comprobada; así una forma vacía con ejes enormes no desborda antes
+de encontrar el eje vacío.
+
+`Tensor::from_vec` toma posesión de un buffer de longitud exacta. `view` y
+`TensorView::from_slice` prestan valores; las dimensiones/strides son metadatos
+poseídos. `Tensor::reshape` conserva el buffer y deja el objeto intacto al fallar;
+la variante de una vista devuelve nuevos metadatos sobre el mismo slice.
+`from_strided` solo importa los strides canónicos (también en ejes singleton y
+formas vacías); no implica soporte de vistas arbitrariamente strided.
+
+Los kernels `add`/`mul` exigen formas idénticas, `dot` rank 1 y `matmul` rank 2
+con dimensiones internas iguales. Dot y cada celda de matmul acumulan de izquierda
+a derecha en el dtype original, con multiplicación y suma separadas. La reducción
+vacía vale +0. Los kernels nativos preservan la semántica IEEE, incluidos NaN/inf;
+no se les atribuye el contrato real estricto del evaluador simbólico.
+
+`apply_basis` evalúa la primitiva seleccionada mediante `Basis::apply_real` en f64.
+Con entradas f32 las ensancha exactamente y redondea una vez el resultado final;
+devuelve `OutputRange` si este desborda f32 o un resultado no nulo se redondea a
+cero. Se permiten resultados cero exactos y subnormales no nulos. Los errores
+incluyen el primer índice plano inválido; no se entrega una salida parcial.
+Esta política no promete una cota global de error ni expande kernels a EML/BML.
+
+Los buffers de salida comprueban tamaño y reserva. La implementación no usa unsafe,
+dependencias externas nuevas, paralelismo, SIMD ni un backend dinámico. Es la
+referencia para futuras comparaciones, sin afirmaciones de aceleración.
+
+### Etapas
 
 1. **Contratos y evidencia (este cambio):** álgebra simbólica, diagnóstico
    reproducible, matriz de tests y clasificación correcta de benchmarks.

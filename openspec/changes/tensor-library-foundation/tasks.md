@@ -19,8 +19,8 @@
 
 ## 3. Biblioteca tensor/GGUF
 
-- [ ] 3.1 Crear Shape, Tensor y TensorView con contratos de tamaño y ownership.
-- [ ] 3.2 Implementar kernels CPU de referencia y matmul rectangular verificado.
+- [x] 3.1 Crear Shape, Tensor y TensorView con contratos de tamaño y ownership en bml-domain::tensor.
+- [x] 3.2 Implementar kernels CPU de referencia y matmul rectangular verificado; EML/BML elementwise con política de dtype explícita.
 - [ ] 3.3 Mover reader y codecs a gguf con fixtures F32/F16/Q4_0/Q8_0 y errores tipados.
 - [ ] 3.4 Exponer fachada bml y features; mantener adapters de compatibilidad durante la migración.
 - [ ] 3.5 Extraer inferencia/tokenizer/KV/sampler y apps de las dependencias del núcleo.

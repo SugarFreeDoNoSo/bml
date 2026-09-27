@@ -9,7 +9,8 @@ corrección matemática, representación de datos y rendimiento medido.
 La primera etapa de la reorganización incorpora términos cerrados/abiertos,
 sustitución parcial y evaluación real comprobada en `bml_domain::symbolic`.
 Esta etapa corrige los seis contratos auditados del compilador, parser y runtime.
-La migración tensorial está especificada y sigue pendiente; véanse los límites
+`bml_domain::tensor` incorpora Shape, Tensor, TensorView y kernels CPU de referencia.
+La extracción de GGUF y la fachada pública siguen pendientes; véanse los límites
 y controles de calidad en [QUALITY.md](docs/QUALITY.md).
 
 - [Arquitectura, contratos y migración](docs/architecture/TENSOR_LIBRARY.md).
@@ -56,11 +57,32 @@ rango de los cálculos. Un término cerrado puede fallar al evaluarse. La búsqu
 de un árbol que represente un `f64` sería síntesis simbólica, no una conversión
 inversa garantizada.
 
+## Tensores y kernels CPU
+
+```rust
+use bml_domain::tensor::{matmul, Shape, Tensor, TensorError};
+
+fn main() -> Result<(), TensorError> {
+    let a = Tensor::from_vec(Shape::new([2, 3])?, vec![1., 2., 3., 4., 5., 6.])?;
+    let b = Tensor::from_vec(Shape::new([3, 1])?, vec![2., -1., 0.5])?;
+    let result = matmul(&a.view(), &b.view())?;
+    assert_eq!(result.shape().dims(), &[2, 1]);
+    assert_eq!(result.as_slice(), &[1.5, 6.0]);
+    Ok(())
+}
+```
+
+`add`, `mul`, `dot` y `matmul` conservan el dtype `f32`/`f64` y usan aritmética
+IEEE nativa. `apply_basis` aplica la primitiva EML/BML elegida, valida en `f64`
+y comprueba el rango al devolver `f32`. No convierte matmul en un árbol escalar.
+Formas, límites y longitudes se validan; las vistas prestan los valores y clonan
+solo metadatos. Broadcasting y strides no canónicos producen errores explícitos.
+
 ## Organización actual y destino
 
 | Crate actual | Papel actual | Dirección de la reorganización |
 |---|---|---|
-| `domain` | AST anterior, SoA, transformer y nuevo módulo symbolic | Núcleo matemático y tipos tensoriales |
+| `domain` | AST anterior, SoA, transformer, symbolic y tensor | Núcleo independiente; futura extracción a bml-core |
 | `parser` | Lectura GGUF con mmap | Reader y codecs con rangos/errores precisos |
 | `compiler` | DAG/RPN, dequantización, inferencia y distribución | Compilación; extraer lectura, modelo y servicios |
 | `runtime` | Intérprete, buffers, scheduling y red | Ejecución experimental opcional |
@@ -78,6 +100,7 @@ mantienen operaciones como matmul y reducciones a alto nivel.
 ```sh
 # Contratos del nuevo núcleo simbólico
 cargo test -p bml-domain --test symbolic_contracts --locked
+cargo test -p bml-domain --test tensor_contracts --locked
 cargo test -p bml-domain --doc --locked
 
 # Regresión de los seis contratos: debe terminar sin discrepancias

@@ -1,0 +1,44 @@
+{
+  "date_utc": "2026-09-27",
+  "base_commit": "5b3efb47ad525111f68c86771b333c2746c626cd",
+  "rust": "1.98.1",
+  "tensor_source_and_tests_sha256": "f495baf3b88bbfc3731fe9c706ded0ce0bad0f7cdd72d7852da431afbd410867",
+  "workspace_tests": {
+    "passed": 262,
+    "failed": 0,
+    "ignored_opt_in": 15
+  },
+  "new_tensor_contract_tests": 16,
+  "new_doctests": 2,
+  "python_quality_gate_tests": 5,
+  "contract_discrepancies": 0,
+  "traceability": {
+    "registered": 9,
+    "scenarios": 9
+  },
+  "clippy": {
+    "inherited": 192,
+    "new": 0
+  },
+  "workspace_coverage_percent": {
+    "lines": 54.16007234908433,
+    "functions": 63.605051664753155
+  },
+  "mutation": {
+    "tool": "cargo-mutants 27.1.0",
+    "scope": "crates/domain/src/tensor/*.rs; bml-domain tests",
+    "total": 109,
+    "caught": 65,
+    "unviable": 44,
+    "missed": 0,
+    "timeout": 0,
+    "baseline": "passed",
+    "ci_scope": "changed code with full workspace tests"
+  },
+  "openspec": "tensor-library-foundation valid (1.13.1)",
+  "limitations": [
+    "No speedup claim",
+    "GGUF extraction and public facade remain pending",
+    "Coverage excludes doctests and branch coverage"
+  ]
+}

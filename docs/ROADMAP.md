@@ -8,7 +8,16 @@ Base: `57c3bd7` (PR #1). Trabajo iniciado 2026-09-23 y recuperado 2026-09-24.
 4. Configurar GitHub Actions y hooks Git: tests, doctests, auditoría de contratos, formato, Clippy, cobertura, mutación y dependencias. Conservar los informes también cuando falle un control.
 5. Publicar un PR revisable y comprobar sus jobs; no integrar sin revisión.
 
-La siguiente iteración es la biblioteca de tensores descrita en `architecture/TENSOR_LIBRARY.md`: Shape/Tensor/TensorView y kernels CPU de referencia, extracción del lector GGUF, fachada pública y separación de inferencia/tokenizer/runtime. No se marca esa migración como terminada por reparar contratos escalares.
+La etapa de contratos y calidad se integró en PR #2, con los controles finales aprobados.
+
+La iteración tensorial implementa Shape/Tensor/TensorView y kernels CPU de referencia
+en `bml-domain::tensor`, con escenarios C07–C09 y tests públicos. La validación del
+PR de esta iteración queda en sus checks y artifacts de Actions.
+
+Los siguientes bloques son la extracción del lector/codecs GGUF, su adaptación a
+las formas row-major, la fachada pública y la separación de inferencia/tokenizer/runtime.
+El destino de los crates se describe en `architecture/TENSOR_LIBRARY.md`; esta
+iteración no marca la migración completa como terminada.
 
 Las mejoras de rendimiento requieren comparar la misma operación con entradas dinámicas y resultados finitos. Completitud simbólica, menor número de nodos y velocidad de ejecución son propiedades distintas.
 
