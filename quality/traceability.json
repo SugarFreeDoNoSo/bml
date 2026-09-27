@@ -1,8 +1,89 @@
 {
-  "C01": ["shared_value_is_not_replaced_by_the_stack_top", "shared_dags_match_independent_numeric_oracle"],
-  "C02": ["folded_constants_survive_compilation_and_serialization", "graph_v1_is_readable_and_truncated_v2_is_rejected", "explicit_constant_pool_and_initial_capacity"],
-  "C03": ["positive_product_below_one", "arithmetic_matches_native_in_tested_domain", "signed_addition_matches_native"],
-  "C04": ["gguf_uses_declared_alignment", "gguf_rejects_invalid_alignment_and_shapes", "alignment_handles_header_boundaries", "gguf_refuses_short_scalar_data_and_forged_tensor_ranges", "tensor_relative_offsets_are_aligned"],
-  "C05": ["q4_nibbles_are_two_halves", "q8_signed_values_and_exact_slice", "quantization_scale_is_applied_and_f16_is_supported"],
-  "C06": ["incomplete_quantized_blocks_are_rejected"]
+  "C01": {
+    "package": "bml-compiler",
+    "target": "contracts",
+    "tests": [
+      "shared_value_is_not_replaced_by_the_stack_top",
+      "shared_dags_match_independent_numeric_oracle"
+    ]
+  },
+  "C02": {
+    "package": "bml-compiler",
+    "target": "contracts",
+    "tests": [
+      "folded_constants_survive_compilation_and_serialization",
+      "graph_v1_is_readable_and_truncated_v2_is_rejected",
+      "explicit_constant_pool_and_initial_capacity"
+    ]
+  },
+  "C03": {
+    "package": "bml-compiler",
+    "target": "contracts",
+    "tests": [
+      "positive_product_below_one",
+      "arithmetic_matches_native_in_tested_domain",
+      "signed_addition_matches_native"
+    ]
+  },
+  "C04": {
+    "package": "bml-compiler",
+    "target": "contracts",
+    "tests": [
+      "gguf_uses_declared_alignment",
+      "gguf_rejects_invalid_alignment_and_shapes",
+      "alignment_handles_header_boundaries",
+      "gguf_refuses_short_scalar_data_and_forged_tensor_ranges",
+      "tensor_relative_offsets_are_aligned"
+    ]
+  },
+  "C05": {
+    "package": "bml-compiler",
+    "target": "contracts",
+    "tests": [
+      "q4_nibbles_are_two_halves",
+      "q8_signed_values_and_exact_slice",
+      "quantization_scale_is_applied_and_f16_is_supported"
+    ]
+  },
+  "C06": {
+    "package": "bml-compiler",
+    "target": "contracts",
+    "tests": [
+      "incomplete_quantized_blocks_are_rejected"
+    ]
+  },
+  "C07": {
+    "package": "bml-domain",
+    "target": "tensor_contracts",
+    "tests": [
+      "shape_scalar_empty_and_overflow_contracts",
+      "row_major_coordinates_and_bounds_are_exact",
+      "owned_and_borrowed_buffers_require_exact_lengths",
+      "views_and_reshape_preserve_ownership_and_values",
+      "external_views_are_exact_slices_and_reject_strides"
+    ]
+  },
+  "C08": {
+    "package": "bml-domain",
+    "target": "tensor_contracts",
+    "tests": [
+      "f32_native_kernels_have_known_signed_fractional_results",
+      "scalar_and_empty_elementwise_results_preserve_shapes",
+      "kernels_reject_broadcast_rank_and_inner_dimension_mismatches",
+      "rectangular_matmul_has_independent_known_answers",
+      "small_matrices_match_integer_oracle_across_shapes",
+      "empty_matmul_checks_output_shape_and_capacity",
+      "reductions_use_dtype_and_documented_order"
+    ]
+  },
+  "C09": {
+    "package": "bml-domain",
+    "target": "tensor_contracts",
+    "tests": [
+      "basis_tensor_evaluation_uses_explicit_base_and_preserves_dtype",
+      "basis_failures_identify_first_invalid_element",
+      "basis_f32_range_checks_preserve_zero_and_subnormals",
+      "tensor_errors_are_actionable_and_preserve_scalar_sources"
+    ]
+  }
 }

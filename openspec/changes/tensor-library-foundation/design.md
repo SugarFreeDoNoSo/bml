@@ -32,6 +32,12 @@ pruebas en [`TESTING.md`](../../../docs/TESTING.md).
   experimentales se activan por capacidades, con dominios y errores conocidos.
 - D7: las seis reproducciones son evidencia de deuda real; no se marcan resueltas
   por añadir documentación o tests que permitan `NaN`.
+- D8: Shape/Tensor/TensorView y kernels CPU se implementan primero en domain.
+  Las vistas clonan metadatos y prestan valores; rank cero es escalar, cero en
+  cualquier eje es vacío y sus strides canónicos son todos cero.
+- D9: los kernels nativos usan IEEE en f32/f64 con reducción secuencial. EML/BML
+  elementwise usa el evaluador estricto f64 y valida el rango al estrechar a f32.
+  Los errores incluyen el índice plano; no se entrega un resultado parcial.
 
 ## Risks / Trade-offs
 

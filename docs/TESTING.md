@@ -24,6 +24,15 @@ fila y el contrato de errores de evaluación real. La auditoría ejecutable
 `crates/tests/examples/contract_audit.rs` expone fallos anteriores y sale con
 error mientras persistan; no es una suite aprobada de la biblioteca futura.
 
+`crates/domain/tests/tensor_contracts.rs` cubre Shape/Tensor/TensorView y los kernels
+CPU: 80 combinaciones pequeñas de matmul contra aritmética entera independiente,
+una matriz 2×3 por 3×4 con signos/fracciones y respuestas calculadas aparte,
+casos vacíos y enormes, ownership, reshape y rechazo de broadcasting/strides.
+Comprueba las políticas IEEE nativa y EML/BML estricta por separado, incluidos
+índices de error y estrechamiento f64→f32. Un doctest compile_fail comprueba que
+una vista no puede sobrevivir a su buffer. Los escenarios C07–C09 se registran
+por package y target, para que un test homónimo de otro crate no pueda suplirlos.
+
 ## Comparación numérica
 
 Para resultados esperados finitos, comprobar primero que ambos valores son
@@ -70,6 +79,7 @@ Comandos disponibles en esta rama:
 
 ```sh
 cargo test -p bml-domain --test symbolic_contracts --locked
+cargo test -p bml-domain --test tensor_contracts --locked
 cargo test -p bml-domain --doc --locked
 cargo run -p bml-tests --example contract_audit --locked
 cargo test --workspace --locked

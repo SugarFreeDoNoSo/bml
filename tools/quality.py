@@ -75,13 +75,20 @@ def trace():
     mapping = json.loads((ROOT / 'quality/traceability.json').read_text())
     if len(scenarios) != len(set(scenarios)) or set(scenarios) != set(mapping):
         raise SystemExit('Scenarios must be unique and mapped exactly once')
-    output = command(['cargo', 'test', '-p', 'bml-compiler', '--test', 'contracts', '--locked', '--', '--list'], capture_output=True)
-    discovered = {line.removesuffix(': test') for line in output.stdout.splitlines() if line.endswith(': test')}
-    missing = {s: tests for s, tests in mapping.items() if not tests or not set(tests) <= discovered}
+    discovered = {}
+    missing = {}
+    for scenario, spec in mapping.items():
+        suite = (spec['package'], spec['target'])
+        if suite not in discovered:
+            output = command(['cargo', 'test', '-p', suite[0], '--test', suite[1], '--locked', '--', '--list'], capture_output=True)
+            discovered[suite] = {line.removesuffix(': test') for line in output.stdout.splitlines() if line.endswith(': test')}
+        if not spec['tests'] or not set(spec['tests']) <= discovered[suite]:
+            missing[scenario] = spec
     if missing:
         raise SystemExit('Unregistered scenario tests: '+str(missing))
     REPORTS.mkdir(parents=True, exist_ok=True)
-    (REPORTS / 'traceability.json').write_text(json.dumps({'scenarios': len(scenarios), 'mapped': len(mapping), 'tests': sorted(discovered)}, indent=2)+'\n')
+    suites = {'::'.join(suite): sorted(tests) for suite, tests in discovered.items()}
+    (REPORTS / 'traceability.json').write_text(json.dumps({'scenarios': len(scenarios), 'mapped': len(mapping), 'tests': suites}, indent=2)+'\n')
     print(f'Scenarios registered in Cargo: {len(mapping)}/{len(scenarios)} (execution checked by cargo test)')
 
 

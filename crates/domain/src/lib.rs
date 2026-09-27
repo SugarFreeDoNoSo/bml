@@ -22,6 +22,7 @@ pub mod encoder;
 pub mod operator;
 pub mod soa;
 pub mod symbolic;
+pub mod tensor;
 pub mod transformer;
 
 pub use ast::{ConstId, EvalContext, Node, NodeId, NodeKind, VarId};
