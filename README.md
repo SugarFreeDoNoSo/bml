@@ -10,7 +10,8 @@ La primera etapa de la reorganización incorpora términos cerrados/abiertos,
 sustitución parcial y evaluación real comprobada en `bml_domain::symbolic`.
 Esta etapa corrige los seis contratos auditados del compilador, parser y runtime.
 `bml_domain::tensor` incorpora Shape, Tensor, TensorView y kernels CPU de referencia.
-La extracción de GGUF y la fachada pública siguen pendientes; véanse los límites
+`bml-gguf` extrae el reader y codecs F32/F16/Q4_0/Q8_0 con errores tipados.
+La integración con TensorView y la fachada pública siguen pendientes; véanse los límites
 y controles de calidad en [QUALITY.md](docs/QUALITY.md).
 
 - [Arquitectura, contratos y migración](docs/architecture/TENSOR_LIBRARY.md).
@@ -78,19 +79,36 @@ y comprueba el rango al devolver `f32`. No convierte matmul en un árbol escalar
 Formas, límites y longitudes se validan; las vistas prestan los valores y clonan
 solo metadatos. Broadcasting y strides no canónicos producen errores explícitos.
 
+## GGUF independiente
+
+```rust,ignore
+use bml_gguf::GgufReader;
+let reader = GgufReader::open("modelo.gguf")?;
+let values = reader.read_tensor_f32("token_embd.weight")?;
+```
+
+El reader no depende de compiler/runtime. Los bytes toman prestado el mmap;
+`read_tensor_f32` asigna un buffer y dequantiza explícitamente. Preserva el orden
+GGML, todavía sin convertirlo a `Tensor` row-major. Versiones 2/3 little-endian;
+endian, versión, errores de estructura y codecs no soportados se distinguen.
+F32/F16/Q4_0/Q8_0 exigen longitudes exactas; los formatos cuantizados no soportados
+solo permiten inspeccionar metadatos. `bml-parser` conserva la API anterior.
+
 ## Organización actual y destino
 
 | Crate actual | Papel actual | Dirección de la reorganización |
 |---|---|---|
 | `domain` | AST anterior, SoA, transformer, symbolic y tensor | Núcleo independiente; futura extracción a bml-core |
-| `parser` | Lectura GGUF con mmap | Reader y codecs con rangos/errores precisos |
+| `gguf` | Reader GGUF y codecs independientes, errores tipados | Adaptador tensorial y fachada pendientes |
+| `parser` | Adaptador compatible sobre `bml-gguf` | Imports históricos conservados |
 | `compiler` | DAG/RPN, dequantización, inferencia y distribución | Compilación; extraer lectura, modelo y servicios |
 | `runtime` | Intérprete, buffers, scheduling y red | Ejecución experimental opcional |
 | `cli`, `api`, `worker` | Aplicaciones | Consumidores de la biblioteca |
 | `bench` | Microbenchmarks y extrapolaciones históricas | Comparaciones de trabajo equivalente |
 | `tests` | Integración registrada mediante Cargo | Contratos entre crates y fixtures |
 
-La arquitectura destino comienza con `bml-core`, `bml-gguf` y una fachada `bml`.
+La arquitectura destino incluye `bml-core`, `bml-gguf` y una fachada `bml`.
+`bml-gguf` ya existe; core y fachada siguen pendientes.
 Los pesos permanecen como buffers o bloques cuantizados. Los árboles simbólicos
 representan fórmulas; no se requiere un árbol por elemento del tensor. Los kernels
 mantienen operaciones como matmul y reducciones a alto nivel.

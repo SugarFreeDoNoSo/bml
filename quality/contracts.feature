@@ -44,3 +44,13 @@ Feature: Reliable tensors, scalar compilation and GGUF decoding
     Given tensors of identical shape and an EML or BML basis
     When the primitive is applied elementwise
     Then dtype and shape are preserved or the first invalid flat index is reported
+  @C10
+  Scenario: Decode standalone storage formats exactly
+    Given independent F32/F16/Q4_0/Q8_0 byte fixtures and malformed lengths
+    When decoded without compiler or runtime dependencies
+    Then values and block ordering match independent oracles or a typed error is returned
+  @C11
+  Scenario: Read standalone GGUF with typed failures
+    Given valid and malformed GGUF headers, metadata, shapes and payloads
+    When the independent reader opens and decodes them
+    Then endian, version, structural, missing-tensor and unsupported-dtype errors are distinct

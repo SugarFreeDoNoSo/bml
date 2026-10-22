@@ -207,11 +207,17 @@ name = "bml-domain"
 version = "0.1.0"
 
 [[package]]
+name = "bml-gguf"
+version = "0.1.0"
+dependencies = [
+ "memmap2",
+]
+
+[[package]]
 name = "bml-parser"
 version = "0.1.0"
 dependencies = [
- "bml-domain",
- "memmap2",
+ "bml-gguf",
 ]
 
 [[package]]

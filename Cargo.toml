@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/domain",
     "crates/parser",
+    "crates/gguf",
     "crates/compiler",
     "crates/runtime",
     "crates/bench",

@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-22",
+  "base_commit": "df146c2a180c0e6cdf7dc48e182c79c06b75dbd8",
+  "issues": [
+    18,
+    30
+  ],
+  "rust": "1.98.1",
+  "scope": "Standalone GGUF reader/codecs with legacy parser/compiler adapters; no inference or performance claim",
+  "checks": {
+    "scripts_check": "passed against upstream base",
+    "cargo_test_workspace_locked": {
+      "passed": 280,
+      "failed": 0,
+      "ignored": 15
+    },
+    "contract_audit_discrepancies": 0,
+    "traceability": "11/11",
+    "new_clippy_diagnostics": 0,
+    "openspec": "tensor-library-foundation valid with 1.13.1",
+    "binary16_encodings_checked": 65536,
+    "git_diff_check": "passed"
+  },
+  "pending": [
+    "GitHub Actions against published commit",
+    "coverage and mutation gates",
+    "GGUF TensorView/row-major integration (#19)",
+    "core/facade extraction (#20)"
+  ],
+  "not_run": [
+    "external model tests",
+    "strace/perf instrumentation",
+    "hardware benchmarks"
+  ]
+}

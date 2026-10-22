@@ -34,7 +34,7 @@ use crate::rpn::linearize;
 use crate::sampler;
 use crate::tokenizer::Vocabulary;
 use bml_domain::{ConstId, NodeId, VarId};
-use bml_parser::{GgufDataType, GgufMetadataValue, GgufParser};
+use bml_parser::{GgufMetadataValue, GgufParser};
 use std::collections::HashMap;
 use std::io::Write as IoWrite;
 use std::path::{Path, PathBuf};
@@ -349,86 +349,7 @@ fn build_transformer_dag(
 /// Para tipos estándar (F32, F16), lee directamente.
 /// Para tipos cuantizados (Q4_0, Q8_0), dequantiza a f32.
 pub fn read_tensor_f32(parser: &GgufParser, name: &str) -> Option<Vec<f32>> {
-    let info = parser.find_tensor(name)?;
-    let data = parser.tensor_data(info)?;
-    match info.data_type {
-        GgufDataType::F32 => Some(
-            data.chunks_exact(4)
-                .map(|c| f32::from_le_bytes(c.try_into().unwrap()))
-                .collect(),
-        ),
-        GgufDataType::F16 => Some(
-            data.chunks_exact(2)
-                .map(|c| f16_to_f32(u16::from_le_bytes(c.try_into().unwrap())))
-                .collect(),
-        ),
-        GgufDataType::Q4_0 => Some(dequantize_q4_0(data)),
-        GgufDataType::Q8_0 => Some(dequantize_q8_0(data)),
-        _ => None,
-    }
-}
-
-/// Convierte f16 (half) a f32.
-fn f16_to_f32(h: u16) -> f32 {
-    let sign = (h >> 15) & 1;
-    let exp = (h >> 10) & 0x1F;
-    let mant = h & 0x3FF;
-    if exp == 0 {
-        if mant == 0 {
-            return if sign != 0 { -0.0 } else { 0.0 };
-        }
-        // Subnormal
-        let val = (mant as f32) * (2.0_f32.powi(-24));
-        return if sign != 0 { -val } else { val };
-    }
-    if exp == 0x1F {
-        return if mant == 0 {
-            if sign != 0 {
-                f32::NEG_INFINITY
-            } else {
-                f32::INFINITY
-            }
-        } else {
-            f32::NAN
-        };
-    }
-    let val = (1.0 + mant as f32 / 1024.0) * 2.0_f32.powi(exp as i32 - 15);
-    if sign != 0 {
-        -val
-    } else {
-        val
-    }
-}
-
-/// Dequantiza Q4_0 a f32.
-///
-/// Q4_0: bloques de 32 elementos.
-/// Cada bloque: [f16 scale][16 x uint4] = 18 bytes.
-/// valor = (q - 8) * scale
-fn dequantize_q4_0(data: &[u8]) -> Vec<f32> {
-    // Exact complete blocks are validated by the parser.
-    let mut result = Vec::with_capacity(data.len() / 18 * 32);
-    for block in data.as_chunks::<18>().0 {
-        let scale = f16_to_f32(u16::from_le_bytes([block[0], block[1]]));
-        for shift in [0, 4] {
-            result.extend(
-                block[2..]
-                    .iter()
-                    .map(|byte| (((byte >> shift) & 15) as i32 - 8) as f32 * scale),
-            );
-        }
-    }
-    result
-}
-
-/// Decodes Q8_0 blocks validated by the parser.
-fn dequantize_q8_0(data: &[u8]) -> Vec<f32> {
-    let mut result = Vec::with_capacity(data.len() / 34 * 32);
-    for block in data.as_chunks::<34>().0 {
-        let scale = f16_to_f32(u16::from_le_bytes([block[0], block[1]]));
-        result.extend(block[2..].iter().map(|&q| q as i8 as f32 * scale));
-    }
-    result
+    parser.read_tensor_f32(name).ok()
 }
 
 /// Compila un GGUF a `.bmlgraph` usando solo metadatos + grafo simbólico.
