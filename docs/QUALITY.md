@@ -40,7 +40,7 @@ La mutación compara el árbol base formateado con el código actual para exclui
 ```sh
 cargo test -p bml-parser --test zero_copy_strace -- --ignored --exact strace_shows_mmap_not_read
 cargo test -p bml-tests --test perf_cache -- --ignored --exact perf_stat_cache_events_on_program
-BML_TEST_GGUF=/ruta/modelo.gguf cargo test -p bml-parser open_real_tinyllama -- --ignored
+BML_TEST_GGUF=/ruta/modelo.gguf cargo test -p bml-gguf open_real_tinyllama -- --ignored
 ```
 
 Strace traza el proceso del parser; perf mide un proceso que ejecuta el evaluador. Si se solicitan sin permisos o herramientas, fallan. No ejecutar `--ignored` indiscriminadamente, pues incluye las entradas auxiliares de esos hijos. Los tests `thread_concurrency` usan hilos del sistema, sin demostrar exploración exhaustiva de interleavings mediante Loom.

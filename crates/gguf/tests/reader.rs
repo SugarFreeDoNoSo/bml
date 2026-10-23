@@ -255,3 +255,68 @@ fn boolean_metadata_accepts_only_zero_or_one() {
         }
     }
 }
+
+#[test]
+fn truncated_fields_report_the_first_missing_field_not_the_previous_complete_one() {
+    let mut b = header(3, 0, 1);
+    string(&mut b, "x");
+    b.extend(0u32.to_le_bytes()); // Complete type field, missing U8 payload.
+    let error = Fixture::new(&b).open().unwrap_err();
+    assert!(
+        matches!(error, GgufError::InvalidMetadata { reason, .. } if reason == "offset fuera de rango U8")
+    );
+
+    let mut b = header(3, 1, 0);
+    string(&mut b, "w");
+    b.extend(1u32.to_le_bytes());
+    b.extend(1u64.to_le_bytes());
+    b.extend(0u32.to_le_bytes());
+    b.extend(0u64.to_le_bytes());
+    for (length, expected) in [
+        (37, "offset fuera de rango leyendo dim"),
+        (45, "offset fuera de rango leyendo data_type"),
+        (49, "offset fuera de rango leyendo tensor offset"),
+    ] {
+        let error = Fixture::new(&b[..length]).open().unwrap_err();
+        assert!(matches!(error, GgufError::InvalidTensorInfo { reason, .. } if reason == expected));
+    }
+}
+
+#[test]
+fn every_truncated_tensor_descriptor_or_payload_is_rejected_without_panicking() {
+    let mut b = header(3, 1, 0);
+    string(&mut b, "w");
+    b.extend(1u32.to_le_bytes());
+    b.extend(1u64.to_le_bytes());
+    b.extend(0u32.to_le_bytes());
+    b.extend(0u64.to_le_bytes());
+    let descriptor_end = b.len();
+    b.resize(64, 0);
+    b.extend(1.0f32.to_le_bytes());
+    for length in 24..descriptor_end {
+        assert!(
+            matches!(
+                Fixture::new(&b[..length]).open(),
+                Err(GgufError::InvalidTensorInfo { .. })
+            ),
+            "descriptor truncated at {length}"
+        );
+    }
+    for length in descriptor_end..b.len() {
+        assert!(
+            matches!(
+                Fixture::new(&b[..length]).open(),
+                Err(GgufError::InvalidTensorRange { .. })
+            ),
+            "payload truncated at {length}"
+        );
+    }
+    assert_eq!(
+        Fixture::new(&b)
+            .open()
+            .unwrap()
+            .read_tensor_f32("w")
+            .unwrap(),
+        [1.0]
+    );
+}

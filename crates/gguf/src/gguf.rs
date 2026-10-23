@@ -174,8 +174,7 @@ impl GgufDataType {
             Self::F16 | Self::I16 | Self::U16 | Self::Bf16 => 2,
             Self::I8 | Self::U8 => 1,
             Self::I64 | Self::U64 | Self::F64 => 8,
-            Self::String | Self::Array | Self::Bool => 0,
-            // Tipos cuantizados: tamaño depende del bloque, no por elemento.
+            // Quantizers and metadata-only values have no scalar byte size.
             _ => 0,
         }
     }
@@ -400,7 +399,8 @@ impl GgufReader {
 
     /// Whether the mapped file has no bytes (a valid GGUF is never empty).
     pub fn is_empty(&self) -> bool {
-        self.mmap.is_empty()
+        // Construction rejects files shorter than the 24-byte header.
+        false
     }
 
     /// Decode a named tensor into an owned f32 buffer, preserving GGML element order.

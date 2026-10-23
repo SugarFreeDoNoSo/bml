@@ -90,6 +90,7 @@ mod tests {
         let mmap_file = MmapFile::open(&path).unwrap();
         assert_eq!(mmap_file.as_bytes(), content);
         assert_eq!(mmap_file.len(), content.len());
+        assert!(!mmap_file.is_empty());
         let _ = std::fs::remove_file(&path);
     }
 

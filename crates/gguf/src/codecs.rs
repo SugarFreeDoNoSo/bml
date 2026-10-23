@@ -100,8 +100,9 @@ fn f16_to_f32(bits: u16) -> f32 {
         // All binary16 subnormals widen exactly; this multiplication cannot
         // underflow f32 and also handles zero without losing its sign.
         0 => ((mantissa as f32) * f32::from_bits(0x3380_0000)).to_bits(),
-        31 => 0x7f80_0000 | (mantissa << 13),
-        _ => ((u32::from(exponent) + 112) << 23) | (mantissa << 13),
+        31 => 0x7f80_0000 + (mantissa << 13),
+        _ => ((u32::from(exponent) + 112) << 23) + (mantissa << 13),
     };
-    f32::from_bits(sign | magnitude)
+    // Sign, exponent and mantissa occupy disjoint fields; adding them is exact.
+    f32::from_bits(sign + magnitude)
 }

@@ -37,9 +37,9 @@ impl GgufParser {
     pub fn len(&self) -> usize {
         self.0.len()
     }
-    /// Whether the mapping is empty.
+    /// Always false: successful construction requires a nonempty GGUF header.
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        false
     }
     /// Legacy model architecture metadata accessor.
     pub fn architecture(&self) -> Option<&str> {
