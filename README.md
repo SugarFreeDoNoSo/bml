@@ -11,7 +11,8 @@ sustitución parcial y evaluación real comprobada en `bml_domain::symbolic`.
 Esta etapa corrige los seis contratos auditados del compilador, parser y runtime.
 `bml_domain::tensor` incorpora Shape, Tensor, TensorView y kernels CPU de referencia.
 `bml-gguf` extrae el reader y codecs F32/F16/Q4_0/Q8_0 con errores tipados.
-La integración con TensorView y la fachada pública siguen pendientes; véanse los límites
+Las vistas GGUF y su conversión tensorial optativa están reconstruidas; la fachada
+pública sigue pendiente. Véanse los límites
 y controles de calidad en [QUALITY.md](docs/QUALITY.md).
 
 - [Arquitectura, contratos y migración](docs/architecture/TENSOR_LIBRARY.md).
@@ -99,7 +100,7 @@ solo permiten inspeccionar metadatos. `bml-parser` conserva la API anterior.
 | Crate actual | Papel actual | Dirección de la reorganización |
 |---|---|---|
 | `domain` | AST anterior, SoA, transformer, symbolic y tensor | Núcleo independiente; futura extracción a bml-core |
-| `gguf` | Reader GGUF y codecs independientes, errores tipados | Adaptador tensorial y fachada pendientes |
+| `gguf` | Reader/codecs, vistas ligadas al reader y puente tensorial optativo | Fachada pendiente; reconstrucción validada localmente |
 | `parser` | Adaptador compatible sobre `bml-gguf` | Imports históricos conservados |
 | `compiler` | DAG/RPN, dequantización, inferencia y distribución | Compilación; extraer lectura, modelo y servicios |
 | `runtime` | Intérprete, buffers, scheduling y red | Ejecución experimental opcional |
@@ -156,3 +157,19 @@ no garantiza una instrucción hardware única ni mayor velocidad.
 ## Roadmap y calidad
 
 [Roadmap](docs/ROADMAP.md) · [Controles y comandos](docs/QUALITY.md). Los resultados verificados de esta etapa se registran en `quality/evidence` y en los artifacts de Actions.
+
+## Vistas GGUF y conversión explícita (#19)
+
+El feature optativo `tensor` de `bml-gguf` habilita la conversión a
+`bml_domain::tensor::Tensor<f32>`. Por defecto el reader no depende del dominio.
+`reader.tensor_view(nombre)` presta descriptor y bytes del mismo reader; sus
+campos privados impiden construir vistas con metadatos ajenos.
+
+Las dimensiones GGML tienen el eje cero contiguo. La conversión explícita
+`view.to_tensor_f32()` invierte las dimensiones para obtener una forma row-major,
+pero conserva el orden plano: GGML `[3, 2]` produce una matriz `[2, 3]`.
+Decodifica/asigna un buffer poseído; no transpone ni promete inferencia o rendimiento.
+
+Este incremento fue reconstruido tras la pérdida del entorno local y validado
+con pruebas nuevas. Los resultados y commits perdidos no lo acreditan; ver
+`quality/evidence/gguf-tensor-views-reconstruction.json` para su estado actual.

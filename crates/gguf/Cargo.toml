@@ -5,5 +5,10 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+default = []
+tensor = ["dep:bml-domain"]
+
 [dependencies]
+bml-domain = { path = "../domain", optional = true }
 memmap2 = "0.9"

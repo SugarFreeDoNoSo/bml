@@ -106,5 +106,21 @@
       "official_ggml_ids_do_not_confuse_iq1_m_and_bfloat16",
       "boolean_metadata_accepts_only_zero_or_one"
     ]
+  },
+  "C12": {
+    "package": "bml-gguf",
+    "target": "tensor_views",
+    "tests": [
+      "views_borrow_the_readers_actual_metadata_and_exact_distinct_ranges",
+      "missing_and_unknown_layout_views_return_distinct_typed_errors",
+      "a_known_scalar_layout_can_be_inspected_without_claiming_f32_conversion"
+    ]
+  },
+  "C13": {
+    "package": "bml-tests",
+    "target": "gguf_tensor_bridge",
+    "tests": [
+      "gguf_tensor_bridge_is_available_to_workspace_consumers"
+    ]
   }
 }

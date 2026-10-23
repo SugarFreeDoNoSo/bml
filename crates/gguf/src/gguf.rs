@@ -17,7 +17,7 @@
 //! Los datos de los tensores se referencian directamente desde el mmap.
 //! No se copia el archivo completo a un buffer de usuario; las páginas usan RAM.
 
-use crate::{GgufError, MmapFile};
+use crate::{GgufError, GgufTensorView, MmapFile};
 use std::collections::HashMap;
 
 /// Magic number de GGUF: `0x46554747`.
@@ -403,9 +403,13 @@ impl GgufReader {
         false
     }
 
-    /// Decode a named tensor into an owned f32 buffer, preserving GGML element order.
-    /// Unsupported dtypes and missing tensors produce distinct typed errors.
-    pub fn read_tensor_f32(&self, name: &str) -> Result<Vec<f32>, GgufError> {
+    /// Borrow the named tensor's descriptor and exact encoded byte range.
+    ///
+    /// No data or metadata is copied. The returned view cannot outlive this
+    /// reader. Scalar layouts, Q4_0 and Q8_0 are supported for byte inspection;
+    /// quantizers with unknown byte layouts return `UnsupportedDataType`.
+    /// Decoding into f32 remains a separate explicit operation.
+    pub fn tensor_view(&self, name: &str) -> Result<GgufTensorView<'_>, GgufError> {
         let info = self
             .find_tensor(name)
             .ok_or_else(|| GgufError::TensorNotFound(name.to_owned()))?;
@@ -418,11 +422,13 @@ impl GgufReader {
                 GgufError::UnsupportedDataType(info.data_type)
             }
         })?;
-        let elements = info.dims.iter().try_fold(1usize, |n, &d| {
-            n.checked_mul(usize::try_from(d).map_err(|_| GgufError::SizeOverflow)?)
-                .ok_or(GgufError::SizeOverflow)
-        })?;
-        crate::decode_f32(info.data_type, data, elements)
+        Ok(GgufTensorView::new(info, data))
+    }
+
+    /// Decode a named tensor into an owned f32 buffer, preserving GGML element order.
+    /// Unsupported dtypes and missing tensors produce distinct typed errors.
+    pub fn read_tensor_f32(&self, name: &str) -> Result<Vec<f32>, GgufError> {
+        self.tensor_view(name)?.decode_f32()
     }
 
     /// Detecta la arquitectura del modelo leyendo `general.architecture`.

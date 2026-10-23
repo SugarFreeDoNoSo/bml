@@ -76,6 +76,9 @@ pub enum GgufError {
     },
     /// Allocation of the output buffer failed.
     Allocation,
+    /// Conversion to the optional row-major CPU tensor representation failed.
+    #[cfg(feature = "tensor")]
+    Tensor(bml_domain::tensor::TensorError),
 }
 
 impl fmt::Display for GgufError {
@@ -88,6 +91,8 @@ impl std::error::Error for GgufError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Io(error) => Some(error),
+            #[cfg(feature = "tensor")]
+            Self::Tensor(error) => Some(error),
             _ => None,
         }
     }
@@ -105,5 +110,12 @@ impl From<GgufError> for io::Error {
             GgufError::Io(error) => error,
             other => Self::new(io::ErrorKind::InvalidData, other),
         }
+    }
+}
+
+#[cfg(feature = "tensor")]
+impl From<bml_domain::tensor::TensorError> for GgufError {
+    fn from(error: bml_domain::tensor::TensorError) -> Self {
+        Self::Tensor(error)
     }
 }

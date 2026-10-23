@@ -1,0 +1,117 @@
+{
+  "date_utc": "2026-10-22",
+  "status": "reconstructed source with fresh local validation; remote publication/CI pending",
+  "base_commit": "095ad3128f63d7c56339c0d650666a79e220fcd7",
+  "validated_code_commit": "37403dd80e3d933faa993c8f8545282352e554dd",
+  "scope": "#19 reader-bound GGUF views and optional explicit GGML-to-row-major bridge, integrated with reconstructed #18 follow-up",
+  "source_provenance": {
+    "complete_transcript": [
+      "crates/gguf/src/view.rs",
+      "tests/integration/gguf_tensor_bridge.rs"
+    ],
+    "new_tests_not_byte_identical": [
+      "crates/gguf/tests/tensor_views.rs"
+    ],
+    "production_and_wiring": "reapplied from transcript patches to restored published baseline",
+    "inherited_metadata_tests": "new #18 reconstruction, not the lost metadata.rs"
+  },
+  "source_and_tests_hash": {
+    "algorithm": "sha256 over sorted path + NUL + contents + NUL",
+    "paths": [
+      "Cargo.lock",
+      "crates/gguf/Cargo.toml",
+      "crates/gguf/src/codecs.rs",
+      "crates/gguf/src/error.rs",
+      "crates/gguf/src/gguf.rs",
+      "crates/gguf/src/lib.rs",
+      "crates/gguf/src/mmap.rs",
+      "crates/gguf/src/view.rs",
+      "crates/gguf/tests/metadata.rs",
+      "crates/gguf/tests/reader.rs",
+      "crates/gguf/tests/tensor_views.rs",
+      "crates/parser/src/gguf.rs",
+      "crates/tests/Cargo.toml",
+      "tests/integration/gguf_tensor_bridge.rs"
+    ],
+    "digest": "b757708d795a53a3af98a597cd504e2604a54db912e4425f1ae5612cd6bc0c7f"
+  },
+  "toolchain": {
+    "rust": "1.98.1",
+    "cargo_mutants": "27.1.0",
+    "cargo_llvm_cov": "0.9.1"
+  },
+  "checks": {
+    "scripts_check": "passed against base_commit",
+    "workspace_tests": {
+      "passed": 302,
+      "failed": 0,
+      "ignored": 15
+    },
+    "isolated_no_default_features": "passed including 3 view tests and compile-fail lifetime doctest",
+    "isolated_all_features": "passed including 10 view tests and compile-fail lifetime doctest",
+    "strict_gguf_clippy_all_features_no_deps": "passed",
+    "contract_discrepancies": 0,
+    "traceability": "13/13",
+    "static_diagnostics": 123,
+    "new_static_diagnostics": 0,
+    "openspec": "tensor-library-foundation valid with 1.13.1",
+    "git_diff_check": "passed",
+    "default_normal_dependencies": [
+      "memmap2",
+      "libc"
+    ],
+    "tensor_added_normal_dependencies": [
+      "bml-domain"
+    ]
+  },
+  "workspace_coverage_percent": {
+    "lines": 56.42825311942959,
+    "functions": 65.37180910099889
+  },
+  "coverage": {
+    "command": "cargo llvm-cov --workspace --locked --json --output-path /workspace/shared/bml-logs/reconstructed19-coverage.json",
+    "unchanged_gate": "passed",
+    "limitations": "Excludes doctests and branch coverage"
+  },
+  "mutation": {
+    "scope": "Only #19 semantic diff from base_commit; full workspace tests",
+    "command": "cargo mutants --workspace --cargo-arg=--locked --in-diff /workspace/shared/bml-logs/reconstructed19.diff --in-place --test-workspace true --timeout 30 --build-timeout 180 --output /workspace/shared/bml-reconstructed19-mutation",
+    "total": 33,
+    "caught": 18,
+    "unviable": 15,
+    "missed": 0,
+    "timeout": 0,
+    "baseline": "passed",
+    "unchanged_gate": "passed; 100% viable mutants caught",
+    "source_restoration": "semantic diff identical before and after in-place mutation",
+    "finished_utc": "2026-10-22T22:30:32.953167704Z",
+    "baseline_scope": {
+      "package": "bml-gguf",
+      "passed": 41,
+      "failed": 0,
+      "ignored": 1,
+      "command": "cargo test --verbose --package=bml-gguf@0.1.0 --locked",
+      "note": "cargo-mutants narrows only its unmutated baseline; the separate aggregate already validated all 302 workspace tests"
+    },
+    "actual_mutant_invocations_verified": {
+      "commands": 51,
+      "all_include_workspace": true,
+      "feature_proof": "Deleting GgufError::Tensor source arm is caught by tensor::tensor_bridge_errors_preserve_the_underlying_error_source; all 10 tensor-view tests are active"
+    }
+  },
+  "backup": {
+    "artifact": "bml-recovery-2026-10-22.tar.gz",
+    "contents": "Verified Git bundle and raw local validation reports; private Library identity/version delivered separately."
+  },
+  "pending": [
+    "explicit approval for remote publication and GitHub CI"
+  ],
+  "not_claimed": [
+    "recovery of lost local commits",
+    "byte-identical restoration of the lost full tree",
+    "historical metrics as current validation",
+    "hardware benchmarks, inference or speedup",
+    "full-workspace source mutation"
+  ],
+  "inherited_gguf_evidence": "quality/evidence/gguf-recovery.json now contains the completed fresh #18 validation"
+}

@@ -54,3 +54,13 @@ Feature: Reliable tensors, scalar compilation and GGUF decoding
     Given valid and malformed GGUF headers, metadata, shapes and payloads
     When the independent reader opens and decodes them
     Then endian, version, structural, missing-tensor and unsupported-dtype errors are distinct
+  @C12
+  Scenario: Borrow exact GGUF metadata and encoded storage together
+    Given a reader with distinct named tensors and aligned padding
+    When a tensor view is requested
+    Then its descriptor and exact bytes borrow the same reader and unsupported layouts fail
+  @C13
+  Scenario: Convert GGML storage explicitly into row-major CPU tensors
+    Given an asymmetric 2 by 3 matrix stored with GGML dimensions 3 by 2
+    When a workspace consumer enables the tensor feature and multiplies it
+    Then the owned tensor keeps flat order and the rectangular result matches an independent answer

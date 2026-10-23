@@ -20,7 +20,7 @@ Rust está fijado en `rust-toolchain.toml`; las versiones de las herramientas es
 |---|---|
 | Tests y doctests | La suite ordinaria pasa y los optativos figuran como ignored |
 | Auditoría | Cero discrepancias en los seis contratos históricos |
-| Trazabilidad | Once escenarios con tests registrados por package y target de Cargo; la ejecución se comprueba aparte |
+| Trazabilidad | Trece escenarios con tests registrados por package y target de Cargo; la ejecución se comprueba aparte |
 | Formato | Rustfmt en archivos Rust nuevos o modificados |
 | Clippy | Ningún diagnóstico nuevo por archivo, lint y mensaje |
 | Cobertura | Líneas y funciones sobre los mínimos versionados |
@@ -52,12 +52,12 @@ Strace traza el proceso del parser; perf mide un proceso que ejecuta el evaluado
 - En `BMLTransformer`, `add` admite signos en el dominio numérico probado; `sub` exige minuendo positivo; `mul`, `div`, `recip` operandos positivos; `pow` x > 1 e y > 0. Las expansiones no garantizan estabilidad f64 general. `neg` conserva infinitos intermedios del evaluador heredado, incompatible con el evaluador real estricto. Estas restricciones no corresponden a los kernels nativos de `tensor`.
 - GGUF valida rangos exactos para escalares, Q4_0 y Q8_0. Otros cuantizadores solo permiten inspección de metadatos; `tensor_data` devuelve None. Se rechazan arrays anidados. El archivo mapeado debe permanecer sin modificaciones ni truncamiento mientras se usa.
 - `tensor` ofrece buffers contiguos f32/f64, vistas prestadas y kernels CPU. EML/BML elementwise valida en f64 y comprueba la conversión de salida; broadcasting y strides arbitrarios siguen pendientes.
-- Reader/codecs GGUF extraídos a `bml-gguf`; integración tensorial, fachada, fuzzing, validación completa de bytecode y concurrencia instrumentada siguen en el roadmap. Microbenchmarks no certifican inferencia ni tokens/s reales.
+- Reader/codecs y vistas GGUF reconstruidos en `bml-gguf`, con puente tensorial optativo; fachada, fuzzing, validación completa de bytecode y concurrencia instrumentada siguen en el roadmap. Microbenchmarks no certifican inferencia ni tokens/s reales.
 
 ## Recuperación GGUF (2026-10-22)
 
 El bloque B14/#18 se reconstruye desde `df146c2`; los resultados locales perdidos
-no son evidencia. `bml-gguf` solo depende de `memmap2`; `bml-parser` delega sin
+no son evidencia. Por defecto `bml-gguf` solo depende de `memmap2`; `bml-parser` delega sin
 cambiar su `io::Result` y compiler usa el codec compartido. Los fixtures verifican
 F32/F16/Q4_0/Q8_0 y las 65.536 codificaciones binary16. Se corrige la identificación
 GGML: 29 es IQ1_M, 30 BF16; ninguno tiene decoder f32 en este incremento. Los
@@ -67,3 +67,22 @@ Los errores tipados conservan la categoría y contexto del fallo. El decoder no
 acepta colas/truncamientos ni devuelve salidas parciales. Los arrays anidados
 siguen rechazados explícitamente. Esto no certifica todos los archivos GGUF ni
 inferencia, rendimiento, fuzzing o una campaña completa de mutación.
+
+## Reconstrucción de vistas GGUF (#19)
+
+La pérdida del entorno local exige reconstruir y validar de nuevo este incremento.
+`view.rs` y el consumidor externo se recuperan de texto completo del transcript;
+`tensor_views.rs` se escribe de nuevo a partir de contratos y fragmentos, sin
+atribuirle identidad byte a byte con el archivo perdido.
+
+El feature `tensor` añade `bml-domain` temporalmente hasta extraer `bml-core`.
+Las vistas están ligadas al reader; la conversión invierte ejes GGML sin reordenar
+valores. Los tests cubren matrices rectangulares, rangos 1/3/4, F16/Q4_0/Q8_0,
+ownership, errores tipados y una restricción de lifetime mediante doctest.
+`bml-tests` activa el feature como dependencia de desarrollo y registra un
+consumidor real, de modo que los comandos existentes del workspace lo incluyen.
+
+Esta reconstrucción pasó `scripts/check.sh`, las suites aisladas sin features y
+con `--all-features`, cobertura y mutación del delta #19 con tests del workspace. No se modifican
+baselines ni workflows. El estado comprobado está en
+`quality/evidence/gguf-tensor-views-reconstruction.json`; no usar cifras antiguas.
