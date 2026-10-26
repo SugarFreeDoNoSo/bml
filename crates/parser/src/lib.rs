@@ -1,14 +1,14 @@
 //! # bml-parser
 //!
-//! Ingesta de archivos GGUF (GPT-Generated Unified Format) mediante
-//! mapeo directo a memoria (`memmap2`) sin copias a RAM. Decodifica
-//! cabeceras mágicas, metadatos y referencias a tensores.
+//! Adaptador de compatibilidad para `bml-gguf`. Conserva los imports
+//! anteriores y `GgufParser::open -> std::io::Result`. Para código nuevo,
+//! `bml_gguf::GgufReader` expone errores tipados y codecs independientes.
 //!
 //! # Zero-Copy
 //!
 //! Los tensores se referencian desde el disco directo al espacio de
-//! memoria de Rust vía mmap. No hay syscalls `read` de los tensores a
-//! buffers userspace; solo `mmap`.
+//! memoria de Rust vía mmap, sin copiar el archivo completo a un buffer.
+//! Las páginas sí usan RAM; el archivo debe permanecer sin modificaciones.
 
 #![deny(unsafe_code)]
 #![warn(missing_docs)]

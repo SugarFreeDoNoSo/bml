@@ -1,7 +1,8 @@
 # Biblioteca de tensores, GGUF y términos EML/BML
 
 Estado: núcleo simbólico y tipos/kernels tensoriales CPU implementados en domain;
-extracción de GGUF y fachada pendientes. Actualización tensorial: 2026-09-27 UTC.
+reader/codecs en bml-gguf; integración tensorial GGUF y fachada pendientes.
+Actualización GGUF: 2026-10-22 UTC.
 Fecha: 2026-09-20. Base revisada: `626f12f2d4a55817a31ec66562dff0eb3f81a2fa`.
 
 ## Objetivo y alcance inicial
@@ -115,8 +116,9 @@ La expansión pura EML/BML es una modalidad experimental que se mide explícitam
 | `crates/tests` | Integración entre crates y soporte de fixtures | Solo dependencias de desarrollo |
 
 El núcleo está en `bml-domain::symbolic` y `bml-domain::tensor` para mantener compatible
-el workspace actual. Los nombres y movimientos de esta tabla son el destino de la
-migración, no rutas ya existentes. Extraer un backend o un crate de IR adicional
+el workspace actual. La extracción de reader/codecs a `crates/gguf` ya está implementada; `parser`
+conserva los imports y errores IO como adaptador. El resto sigue siendo el destino
+de la migración, no rutas ya existentes. Extraer un backend o un crate de IR adicional
 solo cuando exista un consumidor independiente que lo justifique.
 
 Al migrar, `core::ir` puede alojar los tipos neutrales del plan para que compiler y

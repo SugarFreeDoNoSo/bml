@@ -10,7 +10,9 @@ La primera etapa de la reorganización incorpora términos cerrados/abiertos,
 sustitución parcial y evaluación real comprobada en `bml_domain::symbolic`.
 Esta etapa corrige los seis contratos auditados del compilador, parser y runtime.
 `bml_domain::tensor` incorpora Shape, Tensor, TensorView y kernels CPU de referencia.
-La extracción de GGUF y la fachada pública siguen pendientes; véanse los límites
+`bml-gguf` extrae el reader y codecs F32/F16/Q4_0/Q8_0 con errores tipados.
+Las vistas GGUF y su conversión tensorial optativa están reconstruidas; la fachada
+pública sigue pendiente. Véanse los límites
 y controles de calidad en [QUALITY.md](docs/QUALITY.md).
 
 - [Arquitectura, contratos y migración](docs/architecture/TENSOR_LIBRARY.md).
@@ -78,19 +80,36 @@ y comprueba el rango al devolver `f32`. No convierte matmul en un árbol escalar
 Formas, límites y longitudes se validan; las vistas prestan los valores y clonan
 solo metadatos. Broadcasting y strides no canónicos producen errores explícitos.
 
+## GGUF independiente
+
+```rust,ignore
+use bml_gguf::GgufReader;
+let reader = GgufReader::open("modelo.gguf")?;
+let values = reader.read_tensor_f32("token_embd.weight")?;
+```
+
+El reader no depende de compiler/runtime. Los bytes toman prestado el mmap;
+`read_tensor_f32` asigna un buffer y dequantiza explícitamente. Preserva el orden
+GGML, todavía sin convertirlo a `Tensor` row-major. Versiones 2/3 little-endian;
+endian, versión, errores de estructura y codecs no soportados se distinguen.
+F32/F16/Q4_0/Q8_0 exigen longitudes exactas; los formatos cuantizados no soportados
+solo permiten inspeccionar metadatos. `bml-parser` conserva la API anterior.
+
 ## Organización actual y destino
 
 | Crate actual | Papel actual | Dirección de la reorganización |
 |---|---|---|
 | `domain` | AST anterior, SoA, transformer, symbolic y tensor | Núcleo independiente; futura extracción a bml-core |
-| `parser` | Lectura GGUF con mmap | Reader y codecs con rangos/errores precisos |
+| `gguf` | Reader/codecs, vistas ligadas al reader y puente tensorial optativo | Fachada pendiente; reconstrucción validada localmente |
+| `parser` | Adaptador compatible sobre `bml-gguf` | Imports históricos conservados |
 | `compiler` | DAG/RPN, dequantización, inferencia y distribución | Compilación; extraer lectura, modelo y servicios |
 | `runtime` | Intérprete, buffers, scheduling y red | Ejecución experimental opcional |
 | `cli`, `api`, `worker` | Aplicaciones | Consumidores de la biblioteca |
 | `bench` | Microbenchmarks y extrapolaciones históricas | Comparaciones de trabajo equivalente |
 | `tests` | Integración registrada mediante Cargo | Contratos entre crates y fixtures |
 
-La arquitectura destino comienza con `bml-core`, `bml-gguf` y una fachada `bml`.
+La arquitectura destino incluye `bml-core`, `bml-gguf` y una fachada `bml`.
+`bml-gguf` ya existe; core y fachada siguen pendientes.
 Los pesos permanecen como buffers o bloques cuantizados. Los árboles simbólicos
 representan fórmulas; no se requiere un árbol por elemento del tensor. Los kernels
 mantienen operaciones como matmul y reducciones a alto nivel.
@@ -138,3 +157,19 @@ no garantiza una instrucción hardware única ni mayor velocidad.
 ## Roadmap y calidad
 
 [Roadmap](docs/ROADMAP.md) · [Controles y comandos](docs/QUALITY.md). Los resultados verificados de esta etapa se registran en `quality/evidence` y en los artifacts de Actions.
+
+## Vistas GGUF y conversión explícita (#19)
+
+El feature optativo `tensor` de `bml-gguf` habilita la conversión a
+`bml_domain::tensor::Tensor<f32>`. Por defecto el reader no depende del dominio.
+`reader.tensor_view(nombre)` presta descriptor y bytes del mismo reader; sus
+campos privados impiden construir vistas con metadatos ajenos.
+
+Las dimensiones GGML tienen el eje cero contiguo. La conversión explícita
+`view.to_tensor_f32()` invierte las dimensiones para obtener una forma row-major,
+pero conserva el orden plano: GGML `[3, 2]` produce una matriz `[2, 3]`.
+Decodifica/asigna un buffer poseído; no transpone ni promete inferencia o rendimiento.
+
+Este incremento fue reconstruido tras la pérdida del entorno local y validado
+con pruebas nuevas. Los resultados y commits perdidos no lo acreditan; ver
+`quality/evidence/gguf-tensor-views-reconstruction.json` para su estado actual.

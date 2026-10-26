@@ -1,0 +1,110 @@
+{
+  "date_utc": "2026-10-22",
+  "status": "Reconstructed source; fresh local quality validation passed. Remote publication and CI await approval.",
+  "validated_code_commit": "095ad3128f63d7c56339c0d650666a79e220fcd7",
+  "exactly_restored_published_commit": "3c5ca502b6c4ead5895644ab9c7aadbd1ea9a2b1",
+  "exactly_restored_published_tree": "3de1270ef27a23aaa79c26eac9ec7f167d3ad1a1",
+  "reconstruction": "Published baseline tree is byte-identical. Production follow-ups and descriptor tests reconstructed from retained transcript; metadata tests rewritten independently. Not asserted identical to lost local commits or old bundle. Historical metrics are not reused as fresh validation.",
+  "source_and_tests_hash": {
+    "algorithm": "sha256 over sorted path + NUL + contents + NUL",
+    "paths": [
+      "Cargo.lock",
+      "Cargo.toml",
+      "crates/compiler/src/gguf_compiler.rs",
+      "crates/gguf/Cargo.toml",
+      "crates/gguf/src/codecs.rs",
+      "crates/gguf/src/error.rs",
+      "crates/gguf/src/gguf.rs",
+      "crates/gguf/src/lib.rs",
+      "crates/gguf/src/mmap.rs",
+      "crates/gguf/tests/codecs.rs",
+      "crates/gguf/tests/metadata.rs",
+      "crates/gguf/tests/reader.rs",
+      "crates/parser/Cargo.toml",
+      "crates/parser/src/gguf.rs",
+      "crates/parser/src/lib.rs",
+      "crates/parser/src/mmap.rs",
+      "crates/parser/tests/compatibility.rs"
+    ],
+    "digest": "af70a20f3f7a9fa9669ae2bd7342e3a9b6baf02f68635286baf8225d3cac5a5d"
+  },
+  "toolchain": {
+    "rust": "1.98.1",
+    "cargo_mutants": "27.1.0",
+    "cargo_llvm_cov": "0.9.1",
+    "openspec": "1.13.1"
+  },
+  "checks": {
+    "aggregate": "./scripts/check.sh upstream-base passed",
+    "workspace_tests": {
+      "passed": 290,
+      "failed": 0,
+      "ignored": 15
+    },
+    "python_tests": 5,
+    "traceability": "11/11",
+    "contract_audit": "passed",
+    "static_diagnostics": 123,
+    "baseline_static_diagnostics": 192,
+    "new_static_diagnostics": 0,
+    "strict_gguf_clippy_all_targets": "passed",
+    "openspec": "tensor-library-foundation valid",
+    "git_diff_check": "passed",
+    "default_normal_dependencies": [
+      "memmap2",
+      "libc"
+    ]
+  },
+  "workspace_coverage_percent": {
+    "lines": 56.222023276633834,
+    "functions": 64.9438202247191
+  },
+  "coverage": {
+    "command": "cargo llvm-cov --workspace --locked --json --output-path target/quality/coverage.json",
+    "unchanged_floors": {
+      "lines": 52.0,
+      "functions": 60.0
+    },
+    "gate": "passed",
+    "limitations": "Excludes doctests and branch coverage"
+  },
+  "mutation": {
+    "scope": "All 414 generated mutants in the semantic diff from restored upstream-base; not all workspace source",
+    "command": "cargo mutants --workspace --cargo-arg=--locked --test-workspace true --jobs 2 --timeout 30 --build-timeout 180 --in-diff target/quality/reconstruction-changes.diff",
+    "total": 414,
+    "caught": 383,
+    "unviable": 31,
+    "missed": 0,
+    "timeout": 0,
+    "gate": "passed; 100% of viable mutants caught",
+    "baseline": {
+      "passed": 152,
+      "ignored": 13,
+      "packages": [
+        "bml-compiler",
+        "bml-gguf",
+        "bml-parser"
+      ],
+      "note": "cargo-mutants narrows its unmutated baseline; actual mutant commands use --workspace, and the separate aggregate passed all 290 workspace tests"
+    },
+    "unviable_review": "All 31 have compiler diagnostics from invalid generated replacements; no infrastructure failures",
+    "finished_utc": "2026-10-22T22:37:49.595161253Z"
+  },
+  "backup": "A verified Git bundle and raw validation reports accompany the private reconstruction archive; Library identity/version delivered separately.",
+  "remote_checked_utc": "2026-10-22T22:37:07Z",
+  "remote_state": {
+    "branch": "codex/recover-gguf-codecs",
+    "sha": "3c5ca502b6c4ead5895644ab9c7aadbd1ea9a2b1",
+    "pull_requests": 0,
+    "workflow_runs": 0
+  },
+  "pending": [
+    "explicit approval for remote publication and GitHub CI"
+  ],
+  "not_run": [
+    "external models",
+    "hardware benchmarks",
+    "strace/perf instrumentation",
+    "new remote CI"
+  ]
+}

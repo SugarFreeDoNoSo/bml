@@ -85,5 +85,42 @@
       "basis_f32_range_checks_preserve_zero_and_subnormals",
       "tensor_errors_are_actionable_and_preserve_scalar_sources"
     ]
+  },
+  "C10": {
+    "package": "bml-gguf",
+    "target": "codecs",
+    "tests": [
+      "all_binary16_encodings_match_an_independent_arithmetic_oracle",
+      "every_truncation_and_extra_byte_is_rejected_for_all_codecs",
+      "q4_fixture_uses_low_then_high_nibbles_and_each_blocks_own_scale",
+      "q8_fixture_sign_extends_bytes_and_keeps_block_order"
+    ]
+  },
+  "C11": {
+    "package": "bml-gguf",
+    "target": "reader",
+    "tests": [
+      "standalone_f32_f16_q4_q8_fixtures_decode_without_compiler",
+      "typed_header_errors_and_legacy_version",
+      "malformed_metadata_shapes_offsets_and_payloads_are_rejected",
+      "official_ggml_ids_do_not_confuse_iq1_m_and_bfloat16",
+      "boolean_metadata_accepts_only_zero_or_one"
+    ]
+  },
+  "C12": {
+    "package": "bml-gguf",
+    "target": "tensor_views",
+    "tests": [
+      "views_borrow_the_readers_actual_metadata_and_exact_distinct_ranges",
+      "missing_and_unknown_layout_views_return_distinct_typed_errors",
+      "a_known_scalar_layout_can_be_inspected_without_claiming_f32_conversion"
+    ]
+  },
+  "C13": {
+    "package": "bml-tests",
+    "target": "gguf_tensor_bridge",
+    "tests": [
+      "gguf_tensor_bridge_is_available_to_workspace_consumers"
+    ]
   }
 }

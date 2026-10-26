@@ -12,6 +12,7 @@ bml-compiler = { path = "../compiler" }
 bml-runtime = { path = "../runtime" }
 
 [dev-dependencies]
+bml-gguf = { path = "../gguf", features = ["tensor"] }
 criterion.workspace = true
 proptest.workspace = true
 loom.workspace = true
@@ -40,3 +41,7 @@ path = "../../tests/concurrency/runtime_concurrency.rs"
 [[test]]
 name = "bmlgraph_integration"
 path = "../../tests/integration/bmlgraph_integration.rs"
+
+[[test]]
+name = "gguf_tensor_bridge"
+path = "../../tests/integration/gguf_tensor_bridge.rs"
