@@ -122,5 +122,25 @@
     "tests": [
       "gguf_tensor_bridge_is_available_to_workspace_consumers"
     ]
+  },
+  "C14": {
+    "package": "bml-compiler",
+    "target": "inference_contracts",
+    "tests": [
+      "unsupported_architecture_is_rejected_before_tokenizer_or_weight_loading",
+      "unsupported_architecture_cannot_be_compiled_as_a_llama_graph",
+      "unsupported_architecture_cannot_bypass_validation_in_fast_compilation",
+      "unsupported_architecture_is_rejected_by_distributed_compiler",
+      "unsupported_architecture_is_rejected_by_bml_encoded_distributed_compiler"
+    ]
+  },
+  "C15": {
+    "package": "bml-compiler",
+    "target": "inference_contracts",
+    "tests": [
+      "rectangular_embeddings_use_contiguous_ne0_values_for_each_token",
+      "tied_embedding_projection_matches_independent_rectangular_dot_products",
+      "q4_embedding_columns_keep_their_own_blocks_and_scales"
+    ]
   }
 }

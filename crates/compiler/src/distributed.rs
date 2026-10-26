@@ -34,7 +34,7 @@
 //! 22 capas × 200 MB = ~4.4 GB + embeddings 32000×2048 = 262 MB ≈ 4.6 GB total
 
 use crate::fragment::{BMLGRAPH_MAGIC, BMLGRAPH_VERSION};
-use crate::gguf_compiler::{read_tensor_f32, ModelConfig};
+use crate::gguf_compiler::{read_model_config, read_tensor_f32, ModelConfig};
 use crate::rpn::RpnOp;
 use bml_domain::encoder::RealEncoder;
 use bml_parser::GgufParser;
@@ -96,7 +96,7 @@ pub fn compile_distributed(
     include_embeddings: bool,
 ) -> Result<Vec<DistributedFragment>, String> {
     let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
-    let config = read_model_config_pub(&parser)?;
+    let config = read_model_config(&parser)?;
 
     let head_dim = config.n_embd / config.n_heads;
     let n_kv_heads = parser
@@ -606,34 +606,6 @@ fn deserialize_op(bytes: &[u8]) -> Result<(RpnOp, usize), String> {
     Ok((op, consumed))
 }
 
-/// Lee la config del modelo (wrapper público de la función privada en gguf_compiler).
-fn read_model_config_pub(parser: &GgufParser) -> Result<ModelConfig, String> {
-    let arch = parser
-        .architecture()
-        .ok_or("no se encontró general.architecture")?
-        .to_string();
-    let arch_clone = arch.clone();
-
-    let get_u32 = |key: &str| -> u32 {
-        match parser.get_metadata(&format!("{arch_clone}.{key}")) {
-            Some(bml_parser::GgufMetadataValue::U32(v)) => *v,
-            Some(bml_parser::GgufMetadataValue::U64(v)) => *v as u32,
-            Some(bml_parser::GgufMetadataValue::I32(v)) => *v as u32,
-            Some(bml_parser::GgufMetadataValue::I64(v)) => *v as u32,
-            _ => 0,
-        }
-    };
-
-    Ok(ModelConfig {
-        architecture: arch,
-        n_layers: get_u32("block_count"),
-        n_heads: get_u32("attention.head_count"),
-        n_embd: get_u32("embedding_length"),
-        context_length: get_u32("context_length"),
-        vocab_size: get_u32("vocab_size"),
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -863,7 +835,7 @@ pub fn compile_distributed_bml(
     layers_per_fragment: u32,
 ) -> Result<(Vec<DistributedFragment>, BmlWeightPool), String> {
     let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
-    let config = read_model_config_pub(&parser)?;
+    let config = read_model_config(&parser)?;
 
     let head_dim = config.n_embd / config.n_heads;
     let n_kv_heads = parser

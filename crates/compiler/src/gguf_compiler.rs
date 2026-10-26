@@ -8,7 +8,7 @@
 //! # Flujo
 //!
 //! 1. Parsear GGUF → metadatos + tensor infos + datos zero-copy.
-//! 2. Detectar arquitectura (llama, qwen, etc.).
+//! 2. Comprobar la arquitectura: solo se admite la ruta experimental `llama`.
 //! 3. Leer dimensiones del modelo (n_layers, n_heads, n_embd, etc.).
 //! 4. Para cada capa del transformer:
 //!    a. Leer pesos de los tensores (zero-copy desde mmap).
@@ -113,12 +113,18 @@ pub fn compile_gguf<P: AsRef<Path>>(
     })
 }
 
-/// Lee la configuración del modelo desde los metadatos del GGUF.
-fn read_model_config(parser: &GgufParser) -> Result<ModelConfig, String> {
+/// Lee la configuración para las rutas experimentales de ejecución.
+/// La inspección de metadatos mediante el reader no tiene esta restricción.
+pub(crate) fn read_model_config(parser: &GgufParser) -> Result<ModelConfig, String> {
     let arch = parser
         .architecture()
         .ok_or("no se encontró general.architecture")?
         .to_string();
+    if arch != "llama" {
+        return Err(format!(
+            "unsupported GGUF architecture '{arch}': only the experimental 'llama' execution path is available"
+        ));
+    }
     let arch_clone = arch.clone();
 
     let get_u32 = |key: &str| -> u32 {
@@ -631,7 +637,7 @@ pub struct InferenceCompiler {
     weight_pool: Vec<f32>,
     /// Offset en weight_pool de cada tensor clave (por capa y tipo).
     weight_offsets: HashMap<String, u32>,
-    /// Dimensión de cada tensor (nombre → (n_rows, n_cols)).
+    /// Dimensiones GGUF de cada tensor (nombre → (ne0, ne1)); ne0 es contiguo.
     tensor_dims: HashMap<String, (usize, usize)>,
     /// Dimensión head.
     head_dim: u32,
@@ -644,6 +650,8 @@ impl InferenceCompiler {
     ///
     /// Para TinyLlama 1.1B (Q4_0, ~608MB en disco) los pesos dequantizados
     /// ocupan ~3.5GB en f32. Es manejable pero grande.
+    /// Rechaza arquitecturas distintas de `llama` antes de leer el vocabulario
+    /// o expandir pesos. La ruta `llama` sigue siendo experimental.
     pub fn open<P: AsRef<Path>>(gguf_path: P) -> Result<Self, String> {
         let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
         let config = read_model_config(&parser)?;
@@ -966,7 +974,7 @@ impl InferenceCompiler {
 
     /// Obtiene el embedding de un token.
     /// token_embd.weight tiene shape [n_embd, vocab_size].
-    /// Embedding(token) = columna completa para ese token.
+    /// GGUF almacena n_embd valores contiguos para cada token (ne0 primero).
     fn get_embedding_f64(&self, token_id: u32) -> Vec<f64> {
         let offset = self
             .weight_offsets
@@ -981,7 +989,7 @@ impl InferenceCompiler {
         let tid = token_id.min(vocab_sz as u32 - 1) as usize;
         let mut emb = vec![0.0_f64; emb_dim.min(self.config.n_embd as usize)];
         for i in 0..emb.len() {
-            let idx = offset as usize + i * vocab_sz + tid;
+            let idx = offset as usize + tid * emb_dim + i;
             if idx < self.weight_pool.len() {
                 emb[i] = self.weight_pool[idx] as f64;
             }
@@ -1119,7 +1127,8 @@ impl InferenceCompiler {
         }
     }
 
-    /// Matmul: y = x · W  donde W = [n_in, n_out].
+    /// Proyección con dimensiones GGUF [n_in, n_out]:
+    /// y[j] = suma_i x[i] * W[j * n_in + i], con ne0 contiguo.
     fn matmul_f64(&self, x: &[f64], weight_name: &str) -> Vec<f64> {
         let (n_in, n_out) = self.tensor_dims.get(weight_name).copied().unwrap_or((1, 1));
         let offset = self.weight_offsets.get(weight_name).copied().unwrap_or(0);
@@ -1128,7 +1137,7 @@ impl InferenceCompiler {
         for j in 0..n_out {
             let mut dot = 0.0_f64;
             for i in 0..x.len().min(n_in) {
-                let idx = offset as usize + i * n_out + j;
+                let idx = offset as usize + j * n_in + i;
                 if idx < self.weight_pool.len() {
                     dot += x[i] * self.weight_pool[idx] as f64;
                 }
@@ -1138,7 +1147,8 @@ impl InferenceCompiler {
         y
     }
 
-    /// Computa logits via lm_head: hidden · W_emb^T donde W_emb = [n_embd, vocab_size]
+    /// Computa logits con los embeddings compartidos: un producto escalar
+    /// por token sobre sus ne0 valores contiguos.
     fn compute_logits(&self, hidden: &[f64]) -> Vec<f64> {
         let n_embd = self.config.n_embd as usize;
         let vocab_size = self.vocab.len();
@@ -1157,7 +1167,7 @@ impl InferenceCompiler {
         for k in 0..vocab_size.min(vocab_sz) {
             let mut dot = 0.0_f64;
             for j in 0..n_embd.min(emb_dim) {
-                let idx = offset as usize + j * vocab_sz + k;
+                let idx = offset as usize + k * emb_dim + j;
                 if idx < self.weight_pool.len() {
                     dot += hidden[j] * self.weight_pool[idx] as f64;
                 }
@@ -1258,6 +1268,55 @@ fn get_tensor_dims(parser: &GgufParser, name: &str) -> (usize, usize) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn inference_projection_respects_gguf_contiguous_input_axis() {
+        // GGUF ne0 is contiguous: each output row contains all input weights.
+        // Rectangles, signed inputs and an unrelated pool prefix distinguish
+        // the file layout from a transpose or a missing tensor offset.
+        for (n_in, n_out, values, input, expected) in [
+            (
+                3,
+                2,
+                vec![1.0, -2.0, 0.5, -3.0, 4.0, 2.0],
+                vec![-2.0, 0.5, 4.0],
+                vec![-1.0, 16.0],
+            ),
+            (
+                2,
+                3,
+                vec![1.0, -2.0, 0.5, -3.0, 4.0, 2.0],
+                vec![2.0, -0.5],
+                vec![3.0, 2.5, 7.0],
+            ),
+        ] {
+            let mut weight_pool = vec![99.0, -99.0];
+            weight_pool.extend(values);
+            let compiler = InferenceCompiler {
+                config: ModelConfig {
+                    architecture: "llama".into(),
+                    n_layers: 0,
+                    n_heads: 1,
+                    n_embd: n_in as u32,
+                    context_length: 1,
+                    vocab_size: 0,
+                },
+                vocab: Vocabulary {
+                    id_to_token: vec![],
+                    token_to_id: HashMap::new(),
+                    model_type: "llama".into(),
+                    bos_token_id: 0,
+                    eos_token_id: 0,
+                },
+                weight_pool,
+                weight_offsets: HashMap::from([("projection.weight".into(), 2)]),
+                tensor_dims: HashMap::from([("projection.weight".into(), (n_in, n_out))]),
+                head_dim: n_in as u32,
+                n_kv_heads: 1,
+            };
+            assert_eq!(compiler.matmul_f64(&input, "projection.weight"), expected);
+        }
+    }
 
     #[test]
     fn compile_synthetic_gguf() {

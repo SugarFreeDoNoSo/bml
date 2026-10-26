@@ -64,3 +64,13 @@ Feature: Reliable tensors, scalar compilation and GGUF decoding
     Given an asymmetric 2 by 3 matrix stored with GGML dimensions 3 by 2
     When a workspace consumer enables the tensor feature and multiplies it
     Then the owned tensor keeps flat order and the rectangular result matches an independent answer
+  @C14
+  Scenario: Reject unsupported architectures at the GGUF execution boundary
+    Given Gemma4 or unknown architecture metadata without a tokenizer or weights
+    When any experimental GGUF compilation or inference entry point is called
+    Then it returns an explicit architecture error while metadata inspection remains available
+  @C15
+  Scenario: Preserve the contiguous GGUF input axis during experimental inference
+    Given rectangular F32 embeddings or Q4_0 token blocks with independent known values
+    When embeddings and tied output projections are evaluated without transformer layers
+    Then token vectors and logits match manual answers without transposing the file layout
