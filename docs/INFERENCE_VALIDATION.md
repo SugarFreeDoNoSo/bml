@@ -90,3 +90,9 @@ el mismo hash de modelo, prompt, contexto, cantidad de tokens, backend, hilos,
 semilla y política de muestreo. Separar arranque frío/caliente, TTFT, prefill,
 decode y máximos de RAM/VRAM. La memoria compartida de GPU forma parte de la
 RAM del sistema y no se suma como VRAM adicional.
+
+## Ejecución portátil
+
+El [runner Docker CPU](../docker/gguf-validation/README.md) permite inspección
+y comparación acotada de Q4_0 sin depender de WSL. Recibe el GGUF existente
+como montaje de solo lectura y conserva JSON/logs; no habilita inferencia Gemma4.

@@ -1,0 +1,11 @@
+**
+!Cargo.toml
+!Cargo.lock
+!rust-toolchain.toml
+!crates/
+!crates/**
+!docker/
+!docker/gguf-validation/
+!docker/gguf-validation/**
+**/*.gguf
+**/__pycache__
