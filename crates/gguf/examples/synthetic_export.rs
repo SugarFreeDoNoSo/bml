@@ -14,9 +14,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     if t.data_type != GgufDataType::F32
         || t.dims.len() != 2
         || t.dims[0] != t.dims[1]
-        || !(1..=128).contains(&t.dims[0])
+        || !(1..=2560).contains(&t.dims[0])
     {
-        return Err("only square F32 matrices of dimension 1..128 are supported".into());
+        return Err("only square F32 matrices of dimension 1..2560 are supported".into());
     }
     let v = r.read_tensor_f32("matrix.weight")?;
     if v.iter().any(|x| !x.is_finite()) {

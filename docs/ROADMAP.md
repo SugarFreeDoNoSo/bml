@@ -50,7 +50,7 @@ El probe Docker es evidencia parcial de esta etapa, no su cierre completo.
 
 ### R0.S — GGUF sintético y autonomía de un kernel
 
-**Estado: gate F32 pequeño ejecutado; escalado grande pendiente.** Usar matrices
+**Estado: gate F32 pequeño y escalado medio ejecutados; escalado grande pendiente.** Usar matrices
 aleatorias reproducibles por semilla, fijas en compilación, y tamaño n=10·2^k: 10,20,40,80… El límite
 es 3.000.000.000 bytes por matriz y también por GGUF completo. En F32, la última
 dimensión de esa secuencia admitida es 20480 (tensor 1.677.721.600 bytes más
@@ -79,9 +79,20 @@ especialización de una matriz fija. Si ambos operandos son constantes, se puede
 precomputar el producto, pero materializar su salida sigue siendo Θ(n²); devolver
 solo una referencia es otro contrato y no demuestra acelerar entrada dinámica.
 
+El [escalado medio](SYNTHETIC_AOT_SCALING.md) ejecutó después matvec hasta 2560
+y matmul hasta 1280, con dos entradas diferentes por operación, independencia
+de referencia y fuente C constante mediante embedding ELF .rodata/.incbin.
+Matmul 2560 se detuvo antes de ejecutar por workspace >128 MiB; el siguiente
+matvec 5120 no se materializó por presupuesto de pesos enlazados/driver. El
+exportador admite ahora hasta 2560; el driver original pequeño mantiene su
+límite 128. La prueba detectó corrupción/layout contra la identidad esperada,
+además de archivos/dimensiones inválidos. R3 aún requiere integridad de recursos
+al arrancar y recursos completos de modelo. No se deduce velocidad BML de tiempos
+de proceso: el kernel y la E/S están instrumentados por separado.
+
 Antes de ampliar, comprobar memoria disponible y cgroup, pico RSS, memoria de
-workspace y presupuesto de tiempo para cada operación. Este gate limita n real
-a 128 (la secuencia actual se detiene en 80), compilación a 512 MiB de espacio
+workspace y presupuesto de tiempo para cada operación. El driver pequeño limita
+n real a 128 (su secuencia se detiene en 80), compilación a 512 MiB de espacio
 virtual/30 s CPU y ejecución aislada a 128 MiB. Separar mediciones reales de
 estimaciones de bytes, FLOPs y tráfico; tiempos de proceso con E/S no son tiempos
 puros del kernel ni TPS. Matmul n=20480 no está autorizado por el mero límite de

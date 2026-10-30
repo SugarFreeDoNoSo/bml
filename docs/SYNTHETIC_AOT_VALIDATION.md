@@ -1,5 +1,8 @@
 # Gate sintético F32: GGUF, matvec/matmul y AOT
 
+Este documento conserva la corrida inicial 10–80. La ampliación real a tamaños
+medianos y sus presupuestos separados están en [escalado](SYNTHETIC_AOT_SCALING.md).
+
 30 de octubre de 2026. Implementación experimental, no inferencia Llama/Gemma.
 La secuencia vigente es n=10·2^k. Límite de matriz **y archivo GGUF completo**:
 3 GB decimales. No se descargan modelos ni se añade este material a la imagen
