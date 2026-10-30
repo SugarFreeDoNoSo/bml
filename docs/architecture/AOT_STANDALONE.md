@@ -1,7 +1,9 @@
 # GGUF → ejecutable autónomo por plataforma
 
 Estado: diseño propuesto el 30 de octubre de 2026, basado en inspección del
-checkout `21b90c15982f6eef4bda91a5159d2f8aaf8db2a9`. No implementado.
+checkout `21b90c15982f6eef4bda91a5159d2f8aaf8db2a9`. Pipeline completo no implementado.
+El gate sintético F32 autónomo R0.S sí se ejecutó posteriormente; su estado y
+límites están en [roadmap](../ROADMAP.md) y [evidencia](../SYNTHETIC_AOT_VALIDATION.md).
 
 ## Contrato del producto
 

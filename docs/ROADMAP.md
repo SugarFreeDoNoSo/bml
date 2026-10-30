@@ -48,6 +48,50 @@ Las pruebas deben cubrir matrices rectangulares, signos, escalas, nibbles,
 truncamiento y cuantizadores no soportados contra referencia independiente.
 El probe Docker es evidencia parcial de esta etapa, no su cierre completo.
 
+### R0.S — GGUF sintético y autonomía de un kernel
+
+**Estado: gate F32 pequeño ejecutado; escalado grande pendiente.** Usar matrices
+aleatorias reproducibles por semilla, fijas en compilación, y tamaño n=10·2^k: 10,20,40,80… El límite
+es 3.000.000.000 bytes por matriz y también por GGUF completo. En F32, la última
+dimensión de esa secuencia admitida es 20480 (tensor 1.677.721.600 bytes más
+cabeceras); 40960 excede. Este plan reemplaza el extremo anterior, no exige
+materializar matrices gigantes ni consumir toda la RAM disponible.
+
+Aceptar el gate pequeño cuando un GGUF v3 estándar (cabeceras, alineación,
+metadatos y dimensiones) pase roundtrip en bml-gguf y un lector Python separado;
+el contrato A·x/A·B se registre fuera de GGUF, que no define un grafo estándar;
+y pesos F32 embebidos en un kernel nativo reproduzcan una referencia independiente
+con entradas dinámicas. Ejecutar con solo el binario montado en un entorno sin
+BML/GGUF y registrar dependencias del sistema, semilla, layout, hashes y errores.
+
+Ejecutado: n=10,20,40,80; matvec/matmul y ocho ejecuciones aisladas con error
+máximo cero en fixtures de valores binarios exactos. Backend experimental de
+emisión C y enlace libc; no implementa aún el IR/codegen de un transformer.
+Esto demuestra autonomía del kernel sintético, no cierra R1–R4 ni el contenedor
+versionado completo de recursos de R3. Fuentes y evidencia en
+[prueba sintética](SYNTHETIC_AOT_VALIDATION.md).
+
+El vector x o segunda matriz B se inyecta en runtime. Separar tiempos de
+generación, importación, codegen y compilación de tiempo por entrada, tamaño del
+binario y picos de memoria. Para los loops clásicos implementados: matvec Θ(n²),
+matmul Θ(n³), almacenamiento denso Θ(n²); no son cotas universales para toda
+especialización de una matriz fija. Si ambos operandos son constantes, se puede
+precomputar el producto, pero materializar su salida sigue siendo Θ(n²); devolver
+solo una referencia es otro contrato y no demuestra acelerar entrada dinámica.
+
+Antes de ampliar, comprobar memoria disponible y cgroup, pico RSS, memoria de
+workspace y presupuesto de tiempo para cada operación. Este gate limita n real
+a 128 (la secuencia actual se detiene en 80), compilación a 512 MiB de espacio
+virtual/30 s CPU y ejecución aislada a 128 MiB. Separar mediciones reales de
+estimaciones de bytes, FLOPs y tráfico; tiempos de proceso con E/S no son tiempos
+puros del kernel ni TPS. Matmul n=20480 no está autorizado por el mero límite de
+archivo: A+B+C F32 ocuparían 5.033.164.800 bytes antes de overhead.
+
+F16/Q4_0/Q8_0 vendrán después con tolerancias y kernels propios. El exportador
+actual rechaza tipos distintos de F32. Para Q4_0/Q8_0, ne0=10 no forma bloques
+completos de 32: rechazar o especificar padding y dimensiones lógicas/físicas
+antes de implementarlo; no inventar soporte por cambiar la etiqueta dtype.
+
 ### R1 — Llama mínimo correcto
 
 **Estado: pendiente; ruta experimental existente.** Elegir un perfil de modelo
@@ -117,7 +161,8 @@ por disponer de un Dockerfile. Gemma4 exige su arquitectura y validación propia
 
 ## Próximo incremento verificable
 
-Implementar primero una prueba sintética del contrato R3 (A0 en el
+El gate R0.S ya demuestra un kernel F32 autónomo pequeño. Continuar con el
+contenedor versionado y rechazo de recursos dañados de R3 (A0 en el
 [diseño AOT](architecture/AOT_STANDALONE.md)): formato mínimo de recursos con
 validación de rangos/hashes, codegen/enlace de una proyección Q4_0 y ejecución
 del binario aislado sin BML/GGUF. No requiere descargar un modelo y no cierra R1.
