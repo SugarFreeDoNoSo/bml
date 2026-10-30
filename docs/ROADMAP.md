@@ -24,3 +24,14 @@ Las mejoras de rendimiento requieren comparar la misma operación con entradas d
 ## Recuperación y evidencia
 
 La limpieza automática del entorno eliminó los archivos locales y logs que aún no estaban publicados. Se reconstruyeron los cambios a partir del registro de la conversación. Los resultados anteriores son históricos; los resultados de cierre deben proceder de una nueva ejecución y quedar en `quality/evidence` y los artifacts de Actions.
+
+## Objetivo AOT autónomo (30 de octubre de 2026)
+
+El producto final debe convertir un GGUF en un ejecutable por plataforma que
+integre pesos, tokenizer, metadatos y rutinas: no requiere BML instalado ni el
+GGUF original al ejecutarse. El [diseño AOT](architecture/AOT_STANDALONE.md)
+inventaría las piezas existentes y propone recursos cuantizados embebidos,
+IR tensorial, kernels CPU y codegen/enlace. La próxima prueba es un ejecutable
+sintético autónomo (A0), seguida de paridad de un bloque y de un Llama pequeño.
+Estas etapas son propuestas pendientes, separadas del probe Docker Q4_0;
+no implican soporte Gemma4/GPU ni redistribución autorizada de pesos.
