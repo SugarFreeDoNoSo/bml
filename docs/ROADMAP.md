@@ -90,6 +90,22 @@ además de archivos/dimensiones inválidos. R3 aún requiere integridad de recur
 al arrancar y recursos completos de modelo. No se deduce velocidad BML de tiempos
 de proceso: el kernel y la E/S están instrumentados por separado.
 
+El [tramo streaming](SYNTHETIC_STREAMING.md) amplió después el presupuesto
+por prueba a <=8 GiB (job completo con límite efectivo 7 GiB y margen del
+controlador). Matvec 5120/10240/20480 pasó; el GGUF completo final ocupó
+1.677.721.888 bytes. Matmul 2560 pasó; 5120 y siguientes se descartaron en
+preflight por estimación calibrada >60 s. El intento inicial 20480 falló por
+disco antes de generar datos; una transformación in-place del mismo archivo
+resolvió ese coste sin relajar reservas. El máximo pico del job fue
+1.775.857.664 bytes. Se registraron dos entradas y pruebas limpias matvec por
+tamaño. Los ficheros grandes se eliminaron al cerrar cada caso.
+
+El prototipo F32 ya integra footer versionado, validación de forma/rangos y
+checksum accidental al arrancar mediante mmap del propio ELF. No cierra R3 para
+un modelo completo: faltan tokenizer, recursos generales y validación Llama.
+Sigue requiriendo Linux/amd64 con loader/glibc y procfs. No hubo transferencias o
+publicación de estos artefactos nuevos ni cambios del cgroup global.
+
 Antes de ampliar, comprobar memoria disponible y cgroup, pico RSS, memoria de
 workspace y presupuesto de tiempo para cada operación. El driver pequeño limita
 n real a 128 (su secuencia se detiene en 80), compilación a 512 MiB de espacio
@@ -131,7 +147,10 @@ cada peso en nodos escalares ni usar tamaño de grafo como prueba de rendimiento
 
 ### R3 — Recursos embebidos y enlace autónomo
 
-**Estado: pendiente.** Integrar pesos cuantizados, tokenizer, configuración y
+**Estado: prototipo de recurso F32 ejecutado; recursos de modelo pendientes.**
+El gate streaming valida un footer mínimo y mmap del propio ELF para un tensor
+F32, incluso a dimensión 20480; no implementa aún el contenedor general.
+Integrar pesos cuantizados, tokenizer, configuración y
 plan en un contenedor normalizado dentro del ejecutable. Para el primer ELF,
 evaluar payload anexado, footer versionado y mmap readonly del propio archivo;
 validar offsets u64, longitudes, alineación, hashes y límites antes de usarlo.
@@ -172,8 +191,8 @@ por disponer de un Dockerfile. Gemma4 exige su arquitectura y validación propia
 
 ## Próximo incremento verificable
 
-El gate R0.S ya demuestra un kernel F32 autónomo pequeño. Continuar con el
-contenedor versionado y rechazo de recursos dañados de R3 (A0 en el
+El gate R0.S ya demuestra kernels F32 autónomos y un footer mínimo probado.
+Continuar con el contenedor general de recursos, tipos y tokenizer de R3 (A0 en el
 [diseño AOT](architecture/AOT_STANDALONE.md)): formato mínimo de recursos con
 validación de rangos/hashes, codegen/enlace de una proyección Q4_0 y ejecución
 del binario aislado sin BML/GGUF. No requiere descargar un modelo y no cierra R1.
@@ -189,6 +208,6 @@ aprobados; evidencia histórica no sustituye ejecución del commit evaluado.
 
 La imagen Docker de validación y sus fuentes exportadas pertenecen al commit
 `21b90c15982f6eef4bda91a5159d2f8aaf8db2a9`: muestras rank-2 Q4_0 sin pesos de
-modelo incluidos. Este roadmap se conserva en un commit documental separado;
+modelo incluidos. Este roadmap y los gates nuevos se conservan en commits locales separados de esa release;
 no modifica esos artefactos ni amplía su alcance a inferencia completa. Los
 futuros binarios con modelo requieren autorización y licencia específicas.
