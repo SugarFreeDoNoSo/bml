@@ -217,3 +217,38 @@ fn q4_embedding_columns_keep_their_own_blocks_and_scales() {
     // Each logit is a sum of 32 equal products, independently known exactly.
     assert_eq!(model.forward(&[1]), [-64.0, 128.0, -128.0]);
 }
+
+#[test]
+fn q4_nonuniform_nibbles_preserve_half_block_order_and_signed_scales() {
+    // Independent Q4_0 oracle: low nibbles precede high nibbles, rather
+    // than being interleaved. Every nibble value occurs in each block.
+    let mut data = Vec::new();
+    for scale in [0x3800_u16, 0xbc00] {
+        // f16: +0.5 and -1
+        data.extend_from_slice(&scale.to_le_bytes());
+        for i in 0_u8..16 {
+            let packed = if scale == 0x3800 {
+                i | ((15 - i) << 4)
+            } else {
+                (15 - i) | (i << 4)
+            };
+            data.push(packed);
+        }
+    }
+    let fixture = embedding_fixture(32, 2, 2, &data);
+    let model = InferenceCompiler::open(&fixture.0).unwrap();
+    let first: Vec<f64> = (0..16)
+        .map(|i| (i as f64 - 8.0) * 0.5)
+        .chain((0..16).map(|i| (7.0 - i as f64) * 0.5))
+        .collect();
+    let second: Vec<f64> = (0..16)
+        .map(|i| i as f64 - 7.0)
+        .chain((0..16).map(|i| 8.0 - i as f64))
+        .collect();
+    assert_eq!(model.get_embedding(0), first);
+    assert_eq!(model.get_embedding(1), second);
+    // Exact integer/half-integer arithmetic: squared norms 172 and 688;
+    // cross product 336. This isolates decode/layout, not full inference.
+    assert_eq!(model.forward(&[0]), [172.0, 336.0]);
+    assert_eq!(model.forward(&[1]), [336.0, 688.0]);
+}

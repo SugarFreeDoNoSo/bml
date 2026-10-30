@@ -37,6 +37,38 @@ bloques de tokens con escalas diferentes. La prueba privada de proyección usa
 un desplazamiento no nulo dentro del pool de pesos. Los fixtures de cero capas
 aíslan embeddings y logits; no representan un transformer completo.
 
+El caso Q4_0 no uniforme recorre los 16 valores de nibble con escalas +0,5 y
+-1, distingue las mitades baja/alta del bloque y verifica embeddings y logits
+contra un oráculo aritmético independiente (normas 172/688, producto 336).
+El 30 de octubre de 2026 pasaron en Linux cloud las nueve regresiones de
+`inference_contracts` y la prueba privada de proyección, con Rust 1.98.1,
+`--locked --offline`. Esta comprobación sintética no valida el archivo real,
+no usa una referencia ejecutable de llama.cpp y no constituye validación WSL.
+
+El cierre del mismo hito sobre la base
+`987e89e6d60e9aa6947538bee01494c51ed2e108` ejecutó:
+
+```sh
+CARGO_NET_OFFLINE=true bash scripts/check.sh 987e89e6d60e9aa6947538bee01494c51ed2e108
+cargo llvm-cov --workspace --locked --offline --json --output-path /tmp/bml-coverage-20261030.json
+python3 tools/quality.py coverage --report /tmp/bml-coverage-20261030.json
+python3 tools/mutation_diff.py 987e89e6d60e9aa6947538bee01494c51ed2e108 /tmp/bml-incremental-20261030.diff
+CARGO_NET_OFFLINE=true cargo mutants --workspace --list --in-diff /tmp/bml-incremental-20261030.diff
+```
+
+Resultado: 312 pruebas Rust aprobadas, cero fallidas, 15 opcionales ignoradas;
+cinco pruebas Python aprobadas; formato correcto; cero discrepancias de
+contratos; trazabilidad 15/15; Clippy con 123 diagnósticos existentes y cero
+nuevos. Cobertura: 59,1222 % de líneas y 67,4444 % de funciones, sobre los
+mínimos 52 %/60 %. La enumeración incremental de mutantes no encontró ninguno:
+este incremento modifica exclusivamente pruebas y documentación; mutación N/A,
+sin atribuirle un porcentaje de detección. No se ejecutó una campaña de mutación
+completa ni auditoría RustSec (sin cambios de dependencias). Las comprobaciones
+no requirieron descargar modelos. El cotejo racional independiente confirmó
+normas 172/688 y producto 336 y que las expectativas de embeddings distinguen
+mitades intercambiadas, nibbles intercalados y bloques intercambiados; no se
+modificó el decodificador productivo para simular esos fallos.
+
 ## Siguiente validación con un archivo real
 
 Modelo seleccionado: `google/gemma-4-E2B-it-qat-q4_0-gguf`, revisión
