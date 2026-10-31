@@ -12,6 +12,7 @@ import resource
 import struct
 import subprocess
 import time
+from docker_runner import run_container
 from gguf_fixture_reader import read_fixture
 
 MAX_N = 128
@@ -122,7 +123,8 @@ def measure(n, seed, out, exporter, image):
         if cmd[0] == 'docker':
             for key in ['DOCKER_HOST','DOCKER_CONTEXT','DOCKER_TLS','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH']:
                 env.pop(key, None)
-        r = subprocess.run(cmd, input=data, text=True, capture_output=True, env=env,
+        invoke = run_container if cmd[0] == 'docker' else subprocess.run
+        r = invoke(cmd, input=data, text=True, capture_output=True, env=env,
                            timeout=60, preexec_fn=None if cmd[0] == 'docker' else child_limits)
         run.last_stderr = r.stderr
         if r.returncode:

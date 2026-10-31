@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import time
+from synthetic_stream import positive_finite
 
 os.environ['OPENBLAS_NUM_THREADS']='1'
 try:
@@ -48,7 +49,7 @@ def main():
     p.add_argument('--job-image',default='bml-stream-job:local')
     p.add_argument('--clean-image',default='bml-aot-clean:local')
     p.add_argument('--sizes',type=int,nargs='+',choices=[2560,5120,10240,20480],default=[2560,5120,10240,20480])
-    p.add_argument('--mm-seconds-at-1280',type=float,default=0.982674173)
+    p.add_argument('--mm-seconds-at-1280',type=positive_finite,default=0.982674173)
     a=p.parse_args();
     if np is None: p.error('NumPy reference required; never installed automatically')
     a.results.mkdir(parents=True,exist_ok=False);a.work.mkdir(parents=True,exist_ok=False)

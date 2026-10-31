@@ -9,6 +9,7 @@ import resource
 import struct
 import subprocess
 import time
+from docker_runner import run_container
 
 # Driver reference only. It is neither linked to nor required by the executable.
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -97,7 +98,8 @@ def run(cmd, data=None, timeout=10, expected=0):
     for k in ['DOCKER_HOST','DOCKER_CONTEXT','DOCKER_TLS','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH']:
         env.pop(k,None)
     before=time.perf_counter()
-    r=subprocess.run(cmd,input=data,text=True,capture_output=True,timeout=timeout,env=env,
+    invoke = run_container if cmd[0] == 'docker' else subprocess.run
+    r=invoke(cmd,input=data,text=True,capture_output=True,timeout=timeout,env=env,
                      preexec_fn=None if cmd[0]=='docker' else child_limits)
     elapsed=time.perf_counter()-before
     if r.returncode!=expected:

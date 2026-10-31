@@ -6,6 +6,7 @@ import struct
 import subprocess
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 from synthetic_stream import kernel, preflight, JOB_MEMORY, embed_in_place, header
 
@@ -41,6 +42,52 @@ class StreamBudgetTests(unittest.TestCase):
                     self.assertEqual(controller.main(),2)
             report=json.loads((root/'results/summary.json').read_text())
             self.assertEqual(report[0]['container_exit'],2)
+
+    def test_peak_disk_counts_all_prepared_inputs_references_and_output(self):
+        from synthetic_stream import disk_budget
+        for n in [5120,10240]:
+            budget=disk_budget(n,0.001)
+            # At matmul's first output: two F32 B + two F64 references + one F64 output.
+            self.assertEqual(budget['peak_auxiliary_disk_bytes'],32*n*n)
+            old_requirement=len(header(n,20261030))+4*n*n+512*1024**2
+            with tempfile.TemporaryDirectory() as d:
+                root=Path(d)
+                with patch('synthetic_stream.snapshot',return_value={'memory.max':str(JOB_MEMORY)}):
+                    with patch('synthetic_stream.shutil.disk_usage',return_value=shutil._ntuple_diskusage(10**12,0,old_requirement+1024)):
+                        with self.assertRaises(RuntimeError):preflight(n,root,0.001)
+                self.assertEqual(list(root.iterdir()),[],'disk refusal must precede fixture/input writes')
+
+    def test_skipped_matmul_has_no_dense_input_disk_reservation(self):
+        from synthetic_stream import disk_budget
+        self.assertEqual(disk_budget(20480,1.0)['peak_auxiliary_disk_bytes'],32*20480)
+
+    def test_calibration_invalid_values_rejected_before_output(self):
+        import run_synthetic_stream as controller
+        import synthetic_stream as worker
+        for module in [controller,worker]:
+            for value in ['0','-1','nan','inf','-inf']:
+                with tempfile.TemporaryDirectory() as d:
+                    root=Path(d)
+                    args=['runner','--work',str(root/'work'),'--results',str(root/'results'),'--mm-seconds-at-1280='+value]
+                    if module is worker:args+=['--n','5120']
+                    with patch.object(module,'np',object()),patch('sys.argv',args),patch('sys.stderr'):
+                        with self.assertRaises(SystemExit) as error:module.main()
+                    self.assertEqual(error.exception.code,2)
+                    self.assertEqual(list(root.iterdir()),[])
+
+    def test_main_rejects_dense_disk_budget_before_fixture_write(self):
+        import synthetic_stream as worker
+        n=5120
+        old_requirement=len(header(n,20261030))+4*n*n+512*1024**2
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);work=root/'work';results=root/'results'
+            args=['worker','--n',str(n),'--work',str(work),'--results',str(results),'--mm-seconds-at-1280','0.001']
+            with patch.object(worker,'np',SimpleNamespace(__version__='test')),patch('sys.argv',args),patch('sys.stdout'):
+                with patch.object(worker,'snapshot',return_value={'memory.max':str(JOB_MEMORY)}):
+                    with patch.object(worker.shutil,'disk_usage',return_value=shutil._ntuple_diskusage(10**12,0,old_requirement+1024)):
+                        self.assertEqual(worker.main(),2)
+            self.assertEqual(list(work.iterdir()),[])
+            self.assertIn('disk',json.loads((results/'result.json').read_text())['error'])
 
 @unittest.skipUnless(shutil.which('cc'),'C compiler required for tiny AOT regression')
 class SelfResourceTests(unittest.TestCase):

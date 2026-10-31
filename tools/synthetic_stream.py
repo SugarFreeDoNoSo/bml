@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import mmap
+import math
 import os
 from pathlib import Path
 import resource
@@ -47,16 +48,62 @@ def header(n,seed):
     return b+bytes((-len(b))%32)
 
 
-def preflight(n,folder):
+def positive_finite(value):
+    try:
+        result=float(value)
+    except (TypeError, ValueError) as error:
+        raise argparse.ArgumentTypeError('calibration must be positive and finite') from error
+    if not math.isfinite(result) or result<=0:
+        raise argparse.ArgumentTypeError('calibration must be positive and finite')
+    return result
+
+
+def operation_plan(n, calibration):
+    calibration=positive_finite(calibration)
+    plan=[]
+    for name,cols in [('matvec',1),('matmul',n)]:
+        predicted=2*calibration*(n/1280)**3 if name=='matmul' else None
+        memory=4*n*n+40*n*cols+512*1024**2
+        reason=None
+        if predicted is not None and predicted>60:
+            reason='2x calibrated cubic estimate exceeds 60 s/case'
+        elif memory>6*1024**3:
+            reason='conservative workspace >6 GiB within 7 GiB job'
+        plan.append({'operation':name,'cols':cols,'planned':reason is None,
+                     'reason':reason,'predicted_kernel_seconds_with_2x_margin':predicted,
+                     'conservative_memory_estimate_bytes':memory})
+    return plan
+
+
+def disk_budget(n, calibration):
+    plan=operation_plan(n,calibration)
+    active=[p for p in plan if p['planned']]
+    # Both variants of every active operation are prepared before embedding.
+    # Each input is F32 (4 bytes), each reference/output F64 (8 bytes).
+    retained=sum(2*(4+8)*n*p['cols'] for p in active)
+    peak=retained
+    for p in active:
+        peak=max(peak,retained+8*n*p['cols'])  # one live actual output
+        retained-=2*(4+8)*n*p['cols']
+    # embed_in_place rejects launchers >1 MiB; include alignment and footer.
+    resource=max(len(header(n,20261030))+4*n*n,4*n*n+1024**2+4096+40)
+    reserve=512*1024**2
+    return {'disk_required_bytes':resource+peak+reserve,
+            'resource_disk_bound_bytes':resource,'peak_auxiliary_disk_bytes':peak,
+            'disk_reserve_bytes':reserve,'operations':plan}
+
+
+def preflight(n,folder,calibration=BASELINE_MM_SECONDS):
     size=len(header(n,20261030))+4*n*n
     if n not in [2560,5120,10240,20480] or size>MAX_FILE:raise ValueError('outside authorized doubling/file limit')
     cg=snapshot()
     if cg.get('memory.max') in [None,'max'] or int(cg['memory.max'])>JOB_MEMORY:
         raise RuntimeError('requires enforced container memory.max <=7 GiB; refusing host execution')
-    required=size+512*1024**2
+    budget=disk_budget(n,calibration)
+    required=budget['disk_required_bytes']
     free=shutil.disk_usage(folder).free
-    if free<required:raise RuntimeError('insufficient disk for single in-place resource plus reserve')
-    return {'GGUF_bytes':size,'disk_free_bytes':free,'disk_required_bytes':required,'cgroup':cg,
+    if free<required:raise RuntimeError('insufficient disk for resource, prepared inputs/references, output and reserve')
+    return {**budget,'GGUF_bytes':size,'disk_free_bytes':free,'disk_required_bytes':required,'cgroup':cg,
             'memory_budget_bytes':JOB_MEMORY,'generation_batch_rows':64}
 
 
@@ -156,7 +203,7 @@ def main():
     p.add_argument('--work',type=Path,required=True)
     p.add_argument('--results',type=Path,required=True)
     p.add_argument('--seed',type=int,default=20261030)
-    p.add_argument('--mm-seconds-at-1280',type=float,default=BASELINE_MM_SECONDS)
+    p.add_argument('--mm-seconds-at-1280',type=positive_finite,default=BASELINE_MM_SECONDS)
     a=p.parse_args();
     if np is None: p.error('NumPy reference required; never installed automatically')
     a.work.mkdir(parents=True,exist_ok=False);a.results.mkdir(parents=True,exist_ok=False)
@@ -166,7 +213,7 @@ def main():
     def save():result.write_text(json.dumps(report,indent=2)+'\n')
     save()
     try:
-        report['preflight']=preflight(n,a.work);save()
+        report['preflight']=preflight(n,a.work,a.mm_seconds_at_1280);save()
         model=a.work/'fixture.gguf';rng=np.random.Generator(np.random.PCG64(a.seed))
         t=time.perf_counter()
         with model.open('wb') as f:
@@ -200,15 +247,12 @@ def main():
         hasher.unlink()
         # Compute independent references before consuming the GGUF in place.
         prepared=[]
-        for name,cols in [('matvec',1),('matmul',n)]:
-            estimated=2*a.mm_seconds_at_1280*(n/1280)**3 if name=='matmul' else None
-            op={'operation':name,'inputs':[],'predicted_kernel_seconds_with_2x_margin':estimated}
-            if estimated is not None and estimated>60:
-                op.update(status='preflight_not_executed',reason='2x calibrated cubic estimate exceeds 60 s/case');report['operations'].append(op);save();continue
-            estimated_bytes=4*n*n+40*n*cols+512*1024**2
-            op['conservative_memory_estimate_bytes']=estimated_bytes
-            if estimated_bytes>6*1024**3:
-                op.update(status='preflight_not_executed',reason='conservative workspace >6 GiB within 7 GiB job');report['operations'].append(op);save();continue
+        for planned in operation_plan(n,a.mm_seconds_at_1280):
+            name=planned['operation'];cols=planned['cols']
+            op={k:v for k,v in planned.items() if k not in ['cols','planned']}
+            op['inputs']=[]
+            if not planned['planned']:
+                op['status']='preflight_not_executed';report['operations'].append(op);save();continue
             for variant in [0,1]:
                 bfile=a.work/f'{name}-{variant}.input';efile=a.work/f'{name}-{variant}.expected'
                 brng=np.random.Generator(np.random.PCG64(a.seed+1+variant))
