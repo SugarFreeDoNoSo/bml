@@ -1,9 +1,24 @@
 # Biblioteca de tensores, GGUF y términos EML/BML
 
-Estado: núcleo simbólico y tipos/kernels tensoriales CPU implementados en domain;
-reader/codecs en bml-gguf; integración tensorial GGUF y fachada pendientes.
+Estado: núcleo simbólico, escalar BML y tipos/kernels tensoriales CPU en domain;
+reader/codecs y puente tensorial opcional en bml-gguf; fachada escalar en `bml`.
 Actualización GGUF: 2026-10-22 UTC.
 Fecha: 2026-09-20. Base revisada: `626f12f2d4a55817a31ec66562dff0eb3f81a2fa`.
+
+## Enfoque actualizado del núcleo
+
+El núcleo principal es el escalar `Bml` en `bml-domain::number`,
+codificado como bits de un árbol `One | Op`: prefijo `0` para `One` y `1`
+para `Op` con dos hijos ordenados. Por ejemplo, `0` representa 1, `100`
+representa 2 y `11000` representa 4. Las operaciones construyen términos por
+reglas de base 2 y la conversión desde floats usa síntesis acotada y comprobada.
+Esto no garantiza evaluación real de todos los términos ni síntesis de todo
+`f64`. La fachada `bml` ofrece escalar por defecto y capacidades
+tensor y GGUF opcionales; trigonometría y complejos requieren trabajo posterior.
+
+Las secciones siguientes describen la arquitectura tensorial existente y su
+contexto histórico, cuyos contratos siguen vigentes. Véanse [el escalar BML](BML_NUMBER.md)
+y [BML number foundation](../../openspec/changes/bml-number-foundation/README.md).
 
 ## Objetivo y alcance inicial
 
@@ -103,7 +118,11 @@ Expandir cada suma/producto a exponenciales y logaritmos elimina oportunidades d
 usar kernels eficientes y puede introducir overflow, cancelación o dominios inválidos.
 La expansión pura EML/BML es una modalidad experimental que se mide explícitamente.
 
-## 4. Organización incremental, sin multiplicar crates prematuramente
+## 4. Organización histórica propuesta
+
+La tabla siguiente registra el destino tensorial planteado en la revisión de
+2026-09-20. La prioridad actual es el escalar en `bml-domain` y su fachada
+`bml`; la extracción a `bml-core` no es un requisito del plan actual.
 
 | Destino propuesto | Contenido | Dependencias permitidas |
 |---|---|---|
@@ -115,9 +134,10 @@ La expansión pura EML/BML es una modalidad experimental que se mide explícitam
 | `experiments/llm` | Modelo, tokenizer, KV cache, sampler y evaluación LLM | Fachada y plan experimental |
 | `crates/tests` | Integración entre crates y soporte de fixtures | Solo dependencias de desarrollo |
 
-El núcleo está en `bml-domain::symbolic` y `bml-domain::tensor` para mantener compatible
-el workspace actual. La extracción de reader/codecs a `crates/gguf` ya está implementada; `parser`
-conserva los imports y errores IO como adaptador. El resto sigue siendo el destino
+El núcleo está en `bml-domain::number`, `bml-domain::symbolic` y `bml-domain::tensor`
+para mantener compatible el workspace actual. La fachada `crates/bml` expone el
+escalar y las capacidades opcionales. La extracción de reader/codecs a `crates/gguf`
+ya está implementada; `parser` conserva los imports y errores IO como adaptador. El resto sigue siendo el destino
 de la migración, no rutas ya existentes. Extraer un backend o un crate de IR adicional
 solo cuando exista un consumidor independiente que lo justifique.
 

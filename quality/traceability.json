@@ -142,5 +142,38 @@
       "tied_embedding_projection_matches_independent_rectangular_dot_products",
       "q4_embedding_columns_keep_their_own_blocks_and_scales"
     ]
+  },
+  "C16": {
+    "package": "bml-domain",
+    "target": "bml_encoding",
+    "tests": [
+      "prefix_codes_preserve_operand_order_and_evaluate",
+      "rejects_invalid_codes",
+      "large_codes_round_trip_across_words_and_normalize",
+      "construction_enforces_the_requested_bit_limit",
+      "valid_structure_can_fail_real_evaluation"
+    ]
+  },
+  "C17": {
+    "package": "bml-domain",
+    "target": "bml_operations",
+    "tests": [
+      "arithmetic_rules_construct_and_evaluate_symbolic_terms",
+      "roots_and_powers_include_one_and_fractional_bases",
+      "signed_sums_and_differences_match_native_arithmetic",
+      "valid_expansions_report_numeric_range_failures",
+      "construction_does_not_hide_evaluation_domain_errors",
+      "rule_budget_applies_to_every_intermediate"
+    ]
+  },
+  "C18": {
+    "package": "bml-domain",
+    "target": "bml_conversion",
+    "tests": [
+      "small_signed_integers_and_rationals_are_checked_pure_terms",
+      "encoding_integers_are_distinct_from_numerical_conversion",
+      "exact_tolerance_and_dyadic_fallback_have_explicit_results",
+      "synthesis_rejects_nonfinite_inputs_invalid_options_and_budget_exhaustion"
+    ]
   }
 }

@@ -1,7 +1,31 @@
-# BML — tensores, GGUF y álgebra EML/BML en Rust
+# BML — números simbólicos y herramientas en Rust
 
-Biblioteca experimental orientada a operar tensores y archivos GGUF, con un
-núcleo simbólico para estudiar EML y su variante BML. La reorganización distingue
+El núcleo del proyecto es `Bml`, un tipo numérico representado como bits que
+codifican la constante `1` y el operador BML. Sus operaciones construyen términos
+mediante reglas en base 2; las conversiones numéricas son comprobadas y acotadas.
+El tipo vive en `bml_domain::number` y se exporta mediante la fachada `bml`.
+Los tensores, GGUF y las aplicaciones son capacidades complementarias.
+
+```rust
+use bml::Bml;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let uno = Bml::one();                // bits: 0
+    let dos = uno.op(&uno)?;             // bits: 100
+    let tres = dos.add(&uno)?;           // construye un término por reglas
+    assert!((tres.to_f64()? - 3.0).abs() < 1e-10);
+    let mitad = Bml::from_f64(0.5)?;     // síntesis acotada y comprobada
+    assert!((mitad.to_f64()? - 0.5).abs() < 1e-12);
+    Ok(())
+}
+```
+
+La evaluación puede fallar por dominio o rango y la síntesis no garantiza éxito
+para todo `f64`. Véanse [representación y reglas](docs/architecture/BML_NUMBER.md)
+y el [plan](openspec/changes/bml-number-foundation/README.md).
+
+La biblioteca experimental incluye un núcleo simbólico para estudiar EML y su
+variante BML, además de herramientas para tensores y archivos GGUF. Distingue
 corrección matemática, representación de datos y rendimiento medido.
 
 ## Estado y entrada al proyecto
@@ -12,7 +36,7 @@ Esta etapa corrige los seis contratos auditados del compilador, parser y runtime
 `bml_domain::tensor` incorpora Shape, Tensor, TensorView y kernels CPU de referencia.
 `bml-gguf` extrae el reader y codecs F32/F16/Q4_0/Q8_0 con errores tipados.
 Las vistas GGUF y su conversión tensorial optativa están reconstruidas; la fachada
-pública sigue pendiente. Véanse los límites
+ofrece el escalar por defecto y capacidades tensor/GGUF optativas. Véanse los límites
 y controles de calidad en [QUALITY.md](docs/QUALITY.md).
 
 - [Arquitectura, contratos y migración](docs/architecture/TENSOR_LIBRARY.md).
@@ -99,8 +123,9 @@ solo permiten inspeccionar metadatos. `bml-parser` conserva la API anterior.
 
 | Crate actual | Papel actual | Dirección de la reorganización |
 |---|---|---|
-| `domain` | AST anterior, SoA, transformer, symbolic y tensor | Núcleo independiente; futura extracción a bml-core |
-| `gguf` | Reader/codecs, vistas ligadas al reader y puente tensorial optativo | Fachada pendiente; reconstrucción validada localmente |
+| `bml` | Fachada escalar, con tensor y GGUF optativos | Entrada pública de la biblioteca |
+| `domain` | Bml, symbolic, tensor y AST/SoA/transformer anteriores | Núcleo sin dependencias externas |
+| `gguf` | Reader/codecs, vistas ligadas al reader y puente tensorial optativo | Reconstrucción validada localmente |
 | `parser` | Adaptador compatible sobre `bml-gguf` | Imports históricos conservados |
 | `compiler` | DAG/RPN, dequantización, inferencia y distribución | Compilación; extraer lectura, modelo y servicios |
 | `runtime` | Intérprete, buffers, scheduling y red | Ejecución experimental opcional |
@@ -108,8 +133,9 @@ solo permiten inspeccionar metadatos. `bml-parser` conserva la API anterior.
 | `bench` | Microbenchmarks y extrapolaciones históricas | Comparaciones de trabajo equivalente |
 | `tests` | Integración registrada mediante Cargo | Contratos entre crates y fixtures |
 
-La arquitectura destino incluye `bml-core`, `bml-gguf` y una fachada `bml`.
-`bml-gguf` ya existe; core y fachada siguen pendientes.
+El núcleo escalar reside en `bml-domain` y se exporta mediante la fachada
+`bml`. `bml-core` era una extracción propuesta, no un crate
+existente ni un requisito para utilizar el escalar.
 Los pesos permanecen como buffers o bloques cuantizados. Los árboles simbólicos
 representan fórmulas; no se requiere un árbol por elemento del tensor. Los kernels
 mantienen operaciones como matmul y reducciones a alto nivel.
@@ -117,6 +143,11 @@ mantienen operaciones como matmul y reducciones a alto nivel.
 ## Desarrollo y validación
 
 ```sh
+# Escalar BML y fachada pública
+cargo test -p bml-domain --test bml_encoding --test bml_operations --test bml_conversion --locked
+cargo test -p bml --all-features --locked
+cargo run -p bml --example numbers --locked
+
 # Contratos del nuevo núcleo simbólico
 cargo test -p bml-domain --test symbolic_contracts --locked
 cargo test -p bml-domain --test tensor_contracts --locked

@@ -1,0 +1,17 @@
+[package]
+name = "bml"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Scalar BML terms with optional tensor and GGUF integration"
+
+[features]
+default = []
+tensor = []
+gguf = ["dep:bml-gguf"]
+gguf-tensor = ["gguf", "tensor", "bml-gguf/tensor"]
+
+[dependencies]
+bml-domain = { path = "../domain" }
+bml-gguf = { path = "../gguf", default-features = false, optional = true }

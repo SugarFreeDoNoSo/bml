@@ -23,7 +23,7 @@
 - [x] 3.2 Implementar kernels CPU de referencia y matmul rectangular verificado; EML/BML elementwise con política de dtype explícita.
 - [x] 3.3 Mover reader y codecs a gguf con fixtures F32/F16/Q4_0/Q8_0 y errores tipados. Reconstruido el 2026-10-22; ver quality/evidence/gguf-recovery.json.
 - [x] 3.3.1 Integrar vistas GGUF con Tensor y conversión explícita GGML/row-major (#19). Reconstrucción con validación nueva tras pérdida del entorno; ver quality/evidence/gguf-tensor-views-reconstruction.json.
-- [ ] 3.4 Exponer fachada bml y features; mantener adapters de compatibilidad durante la migración.
+- [x] 3.4 Exponer fachada bml y features; mantener adapters de compatibilidad durante la migración. Implementado en `bml-number-foundation`, con prioridad en el escalar Bml y tensor/GGUF optativos.
 - [ ] 3.5 Extraer inferencia/tokenizer/KV/sampler y apps de las dependencias del núcleo.
 
 ## 4. Evaluación de optimizaciones

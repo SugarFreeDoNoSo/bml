@@ -74,3 +74,21 @@ Feature: Reliable tensors, scalar compilation and GGUF decoding
     Given rectangular F32 embeddings or Q4_0 token blocks with independent known values
     When embeddings and tied output projections are evaluated without transformer layers
     Then token vectors and logits match manual answers without transposing the file layout
+
+  @C16
+  Scenario: Encode a pure BML number as an arbitrary-size integer
+    Given prefix codes with zero terminals and ordered binary operators
+    When integer words are parsed or combined without a stored bit length
+    Then complete terms round-trip and malformed codes or excessive constructions fail
+
+  @C17
+  Scenario: Expand scalar operations through BML identities
+    Given encoded real operands and a bit budget
+    When arithmetic and base-two transcendental rules construct new terms
+    Then independent numeric answers agree in the documented domains and evaluation failures remain explicit
+
+  @C18
+  Scenario: Synthesize finite floats into checked pure terms
+    Given finite floats and explicit size, search and error limits
+    When numerical conversion constructs an expression without a constant pool
+    Then accepted terms satisfy the tolerance and unsupported inputs return typed errors

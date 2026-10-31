@@ -1,6 +1,8 @@
 //! # bml-domain (BML = Binary-Minus-Log)
 //!
-//! Núcleo matemático del proyecto. [`symbolic`] distingue términos cerrados
+//! Núcleo matemático del proyecto. [`Bml`] almacena términos puros como enteros
+//! binarios y construye operaciones mediante reglas, con conversión explícita
+//! y acotada a valores numéricos. [`symbolic`] distingue términos cerrados
 //! de términos abiertos y permite interpretarlos con EML o BML explícitamente.
 //! Su evaluador real es parcial y comprueba dominio, overflow y underflow;
 //! no implementa la semántica compleja completa del artículo.
@@ -19,6 +21,7 @@
 
 pub mod ast;
 pub mod encoder;
+pub mod number;
 pub mod operator;
 pub mod soa;
 pub mod symbolic;
@@ -26,6 +29,7 @@ pub mod tensor;
 pub mod transformer;
 
 pub use ast::{ConstId, EvalContext, Node, NodeId, NodeKind, VarId};
+pub use number::Bml;
 pub use operator::bml_base_op;
 pub use soa::NodeSoA;
 pub use transformer::BMLTransformer;

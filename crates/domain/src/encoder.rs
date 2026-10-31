@@ -1,24 +1,19 @@
-//! Encoder de valores reales a árboles BML.
+//! Encoder heredado de valores reales para el AST de ejecución.
 //!
-//! # Completitud funcional
-//!
-//! El paper (ArXiv 2603.21852v2) prueba que `{1, BML}` tiene completitud
-//! funcional: cualquier real se puede construir como un árbol
-//! `S → 1 | BML(S, S)`.
-//!
-//! En práctica, usamos `Const(id)` para almacenar el valor en el const pool
-//! del compilador. El árbol sigue siendo BML válido, y el hash consing
-//! deduplica constantes idénticas.
+//! Los valores distintos de cero y uno se guardan como `Const(id)` en un pool
+//! externo. Esta representación extiende la gramática pura `One | Op` y no
+//! sintetiza un árbol BML a partir del número. Para síntesis acotada de términos
+//! puros, véase [`crate::number::Bml::from_f64`].
 //!
 //! # Compresión para modelo cuantizado
 //!
-//! Para Q4_0 (16 valores de peso), solo se crean 14 entradas únicas en el
-//! const pool (0 y 1 son `Zero`/`One`). Los 1B pesos son referencias
-//! (`Const(id)`) a esas 14 entradas → ~14 bits por peso vs 32 bits (f32).
+//! Para los 16 valores enteros de -8 a 7 se crean 14 entradas únicas en el
+//! pool: cero y uno usan los nodos `Zero` y `One`. El tamaño final depende del
+//! formato que almacene los nodos y el pool.
 
-use crate::ast::{NodeId, NodeKind, Node};
+use crate::ast::{Node, NodeId, NodeKind};
 
-/// Encoder de reales a árboles BML.
+/// Encoder de reales al AST de ejecución con pool de constantes.
 pub struct RealEncoder {
     nodes: Vec<NodeData>,
     const_pool: std::collections::HashMap<u64, u32>,
@@ -49,7 +44,7 @@ impl RealEncoder {
         }
     }
 
-    /// Codifica un f64 como un nodo BML.
+    /// Codifica un f64 como un nodo del AST de ejecución.
     ///
     /// - 0.0 → `Zero` (1 nodo)
     /// - 1.0 → `One` (1 nodo)
@@ -97,7 +92,12 @@ impl RealEncoder {
     /// Construye un Node del ast público para evaluación.
     pub fn build_node(&self, id: NodeId) -> Node {
         let nd = self.nodes[id as usize];
-        Node { id, kind: nd.kind, left: nd.left, right: nd.right }
+        Node {
+            id,
+            kind: nd.kind,
+            left: nd.left,
+            right: nd.right,
+        }
     }
 
     /// Construye todos los Node para evaluación.
@@ -168,8 +168,7 @@ mod tests {
     #[test]
     fn q4_0_weights() {
         let weights: [f64; 16] = [
-            -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0,
-            0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0,
+            -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0,
         ];
         let mut enc = RealEncoder::new();
         for &w in &weights {

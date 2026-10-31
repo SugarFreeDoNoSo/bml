@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-31",
+  "base_commit": "589cefb79338e0d0c7a1462a7b48100cc72033b2",
+  "scope": "Local working tree: pure packed Bml scalar, bounded rules/synthesis, facade and optional integrations",
+  "toolchain": "1.98.1",
+  "checks": [
+    {
+      "command": "./scripts/check.sh origin/master",
+      "status": "passed",
+      "workspace_tests_passed": 329,
+      "workspace_tests_ignored": 15,
+      "python_tests_passed": 27,
+      "historical_discrepancies": 0,
+      "traceability_scenarios": 18,
+      "new_clippy_diagnostics": 0
+    },
+    {
+      "command": "cargo test -p bml --no-default-features --locked",
+      "status": "passed"
+    },
+    {
+      "command": "cargo test -p bml --all-features --locked",
+      "status": "passed"
+    },
+    {
+      "command": "cargo run -p bml --example numbers --locked",
+      "status": "passed"
+    },
+    {
+      "command": "cargo test -p bml-gguf --no-default-features --locked",
+      "status": "passed"
+    },
+    {
+      "command": "cargo test -p bml-gguf --all-features --locked",
+      "status": "passed"
+    },
+    {
+      "command": "openspec validate bml-number-foundation",
+      "version": "1.13.1",
+      "status": "passed"
+    },
+    {
+      "command": "cargo tree -p bml --no-default-features --edges normal --locked",
+      "status": "passed",
+      "production_dependencies": [
+        "bml-domain"
+      ]
+    }
+  ],
+  "limits": [
+    "Arithmetic construction is structural; finite-real evaluation can fail or lose precision.",
+    "mul/div require positive operands; recip/sqrt positive input; pow positive base and exponent.",
+    "Float synthesis is partial, budgeted and checked against configurable tolerance; negative zero is normalized.",
+    "Natural-base transcendental functions, trigonometry and complex evaluation are not implemented by this change.",
+    "No claim of arbitrary-float coverage, numerical stability, compression, inference correctness or speedup.",
+    "Opt-in model, ptrace/perf and distributed instrumentation tests were not run."
+  ]
+}

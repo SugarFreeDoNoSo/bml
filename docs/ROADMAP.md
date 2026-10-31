@@ -1,10 +1,23 @@
-# Roadmap BML: GGUF → ejecutable autónomo
+# Roadmap BML
+
+## Prioridad actual: tipo numérico BML
+
+La prioridad del proyecto es consolidar `Bml` como cadena booleana de términos,
+operaciones por reglas de base 2 y conversiones numéricas comprobadas y acotadas.
+El escalar y la fachada con features optativas para tensor y GGUF están
+implementados y validados con el gate del workspace y las combinaciones de features. La síntesis no
+garantiza convertir todo `f64`; trigonometría y complejos quedan para una fase
+posterior. El plan y sus tareas están en
+[BML number foundation](../openspec/changes/bml-number-foundation/README.md).
+
+Las etapas AOT/GGUF que siguen se conservan como trabajo complementario y
+registro de evidencia; no sustituyen la prioridad del núcleo numérico.
 
 Actualizado: 30 de octubre de 2026. Primer target propuesto: **Linux/amd64 CPU**.
 
-## Objetivo y definición de terminado
+## Objetivo histórico AOT y definición de terminado
 
-BML es el compilador AOT usado durante la construcción: recibe un GGUF y genera
+En este objetivo complementario, el compilador AOT recibe un GGUF y genera
 un ejecutable para un target concreto. Ese ejecutable incorpora pesos, tokenizer,
 metadatos y rutinas necesarios y funciona sin BML instalado, sin compilador,
 sin Docker y sin el GGUF original en ejecución. Las dependencias del sistema,
