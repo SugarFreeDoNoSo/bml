@@ -20,7 +20,7 @@ Rust está fijado en `rust-toolchain.toml`; las versiones de las herramientas es
 |---|---|
 | Tests y doctests | La suite ordinaria pasa y los optativos figuran como ignored |
 | Auditoría | Cero discrepancias en los seis contratos históricos |
-| Trazabilidad | Trece escenarios con tests registrados por package y target de Cargo; la ejecución se comprueba aparte |
+| Trazabilidad | Quince escenarios con tests registrados por package y target de Cargo; la ejecución se comprueba aparte |
 | Formato | Rustfmt en archivos Rust nuevos o modificados |
 | Clippy | Ningún diagnóstico nuevo por archivo, lint y mensaje |
 | Cobertura | Líneas y funciones sobre los mínimos versionados |
@@ -47,6 +47,7 @@ Strace traza el proceso del parser; perf mide un proceso que ejecuta el evaluado
 
 ## Contratos y límites
 
+- Las rutas experimentales de ejecución rechazan arquitecturas distintas de `llama` antes de expandir pesos. Las regresiones de embeddings, proyecciones y logits verifican el orden GGUF con `ne0` contiguo. No certifican inferencia Gemma4 ni equivalencia con llama.cpp; véase [validación de inferencia](INFERENCE_VALIDATION.md).
 - RPN conserva cada nodo alcanzable una vez, con bytecode y pila lineales en los nodos alcanzables. Inicializar el mapa de posiciones y copiar el pool cuesta además O(nodos totales + constantes). El mayor uso de pila obliga a medir de nuevo el rendimiento.
 - `.bmlgraph` v2 guarda el pool de constantes; el lector sigue admitiendo v1. Consumidores antiguos necesitan actualización para leer v2. Una API `*_with_ctx` usa el pool del contexto explícito.
 - En `BMLTransformer`, `add` admite signos en el dominio numérico probado; `sub` exige minuendo positivo; `mul`, `div`, `recip` operandos positivos; `pow` x > 1 e y > 0. Las expansiones no garantizan estabilidad f64 general. `neg` conserva infinitos intermedios del evaluador heredado, incompatible con el evaluador real estricto. Estas restricciones no corresponden a los kernels nativos de `tensor`.

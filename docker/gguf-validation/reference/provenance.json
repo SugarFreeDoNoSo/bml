@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/ggml-org/llama.cpp",
+  "commit": "aa588a3463357ee990b314f41dda242869130704",
+  "path": "ggml/src/ggml-quants.c",
+  "source_sha256": "bcda33625707fdfcb1367cdd2bb1a2f017430162ec9623abc84ad17459698f73",
+  "extracted_function_sha256": "ac7dda77988e1dd5d49e80b9eadd8326a8bc04f892a78daec09912a92d9afc48",
+  "scope": "Exact dequantize_row_q4_0 routine; standalone shim supplies struct, assert and IEEE binary16 conversion. Not the full llama.cpp engine."
+}

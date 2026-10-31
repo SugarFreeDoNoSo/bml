@@ -1,26 +1,213 @@
-# Roadmap: contratos y calidad
+# Roadmap BML: GGUF → ejecutable autónomo
 
-Base: `57c3bd7` (PR #1). Trabajo iniciado 2026-09-23 y recuperado 2026-09-24.
+Actualizado: 30 de octubre de 2026. Primer target propuesto: **Linux/amd64 CPU**.
 
-1. Corregir los seis contratos auditados: reutilización RPN, propiedad del pool de constantes, producto positivo menor que uno, alineación GGUF, orden Q4_0 y rechazo de bloques truncados.
-2. Sustituir tests tautológicos y skips que aparentaban éxito. Los tests de modelos externos, strace y perf serán explícitamente optativos; si se solicitan sin su recurso, fallan.
-3. Adaptar el proceso de [harness-sdd/uncle-bob-harness](https://github.com/betta-tech/harness-sdd/tree/bb80951622065a32057634d222cf7ed93a2a09cb): escenarios trazables, evidencia TDD, revisión y mutación del código modificado. Sus scripts Python y hooks de Claude no se copian a Rust.
-4. Configurar GitHub Actions y hooks Git: tests, doctests, auditoría de contratos, formato, Clippy, cobertura, mutación y dependencias. Conservar los informes también cuando falle un control.
-5. Publicar un PR revisable y comprobar sus jobs; no integrar sin revisión.
+## Objetivo y definición de terminado
 
-La etapa de contratos y calidad se integró en PR #2, con los controles finales aprobados.
+BML es el compilador AOT usado durante la construcción: recibe un GGUF y genera
+un ejecutable para un target concreto. Ese ejecutable incorpora pesos, tokenizer,
+metadatos y rutinas necesarios y funciona sin BML instalado, sin compilador,
+sin Docker y sin el GGUF original en ejecución. Las dependencias del sistema,
+ABI y CPU deben declararse y verificarse por target; no se promete un binario
+universal ni compresión de pesos. Los datos del modelo permanecen dentro del
+artefacto, sujetos a su licencia.
 
-La iteración tensorial implementa Shape/Tensor/TensorView y kernels CPU de referencia
-en `bml-domain::tensor`, con escenarios C07–C09 y tests públicos. La validación del
-PR de esta iteración queda en sus checks y artifacts de Actions.
+La salida final debe ejecutar el plan y kernels de BML. Un wrapper que invoque
+llama.cpp no cumple este objetivo. llama.cpp se usa como referencia independiente
+con revisión fijada, no como motor oculto del ejecutable final.
 
-Los siguientes bloques son la extracción del lector/codecs GGUF, su adaptación a
-las formas row-major, la fachada pública y la separación de inferencia/tokenizer/runtime.
-El destino de los crates se describe en `architecture/TENSOR_LIBRARY.md`; esta
-iteración no marca la migración completa como terminada.
+## Estado real inspeccionado
 
-Las mejoras de rendimiento requieren comparar la misma operación con entradas dinámicas y resultados finitos. Completitud simbólica, menor número de nodos y velocidad de ejecución son propiedades distintas.
+Base técnica inspeccionada: `21b90c15982f6eef4bda91a5159d2f8aaf8db2a9`.
 
-## Recuperación y evidencia
+- Implementados: lector mmap y codecs F32/F16/Q4_0/Q8_0 en `bml-gguf`;
+  Shape/Tensor/TensorView y kernels CPU de referencia en `bml-domain::tensor`;
+  DAG/NodeSoA, IR escalar RPN, constantes y serialización BmlGraph; runtime de
+  programas/fragmentos y CLI que genera directorios `.bmlgraph`.
+- Validación parcial: layouts, rangos y muestras cuantizadas; probe Docker con
+  comparación Q4_0 contra función C original de llama.cpp y dot sintético.
+  No certifica todo GGUF, matmul del compilador ni inferencia completa.
+- Pendiente: Llama numéricamente correcto, tokenizer exacto, paridad de KV,
+  IR tensorial de transformer, codegen/enlace AOT y ejecutable con recursos
+  embebidos. El tokenizer actual es simplificado; cargar pesos globalmente
+  como F32 en InferenceCompiler no es el diseño final de recursos cuantizados.
+- La arquitectura `llama` se acepta experimentalmente; eso no demuestra paridad.
+  Gemma4 se rechaza para inferencia. GPU y otros targets no están validados.
 
-La limpieza automática del entorno eliminó los archivos locales y logs que aún no estaban publicados. Se reconstruyeron los cambios a partir del registro de la conversación. Los resultados anteriores son históricos; los resultados de cierre deben proceder de una nueva ejecución y quedar en `quality/evidence` y los artifacts de Actions.
+## Etapas y criterios de aceptación
+
+### R0 — Importación y validación GGUF acotada
+
+**Estado: parcial.** Consolidar lector, codecs y adaptación de ejes GGML al
+layout tensorial sin expandir todos los pesos a F32.
+
+Aceptar cuando un perfil Llama explícito compruebe arquitectura, tokenizer,
+formas, tipos, offsets, tamaños, alineación y límites; rechace variantes o datos
+incompletos sin defaults silenciosos; y registre hashes del modelo y muestras.
+Las pruebas deben cubrir matrices rectangulares, signos, escalas, nibbles,
+truncamiento y cuantizadores no soportados contra referencia independiente.
+El probe Docker es evidencia parcial de esta etapa, no su cierre completo.
+
+### R0.S — GGUF sintético y autonomía de un kernel
+
+**Estado: gate F32 pequeño y escalado medio ejecutados; escalado grande pendiente.** Usar matrices
+aleatorias reproducibles por semilla, fijas en compilación, y tamaño n=10·2^k: 10,20,40,80… El límite
+es 3.000.000.000 bytes por matriz y también por GGUF completo. En F32, la última
+dimensión de esa secuencia admitida es 20480 (tensor 1.677.721.600 bytes más
+cabeceras); 40960 excede. Este plan reemplaza el extremo anterior, no exige
+materializar matrices gigantes ni consumir toda la RAM disponible.
+
+Aceptar el gate pequeño cuando un GGUF v3 estándar (cabeceras, alineación,
+metadatos y dimensiones) pase roundtrip en bml-gguf y un lector Python separado;
+el contrato A·x/A·B se registre fuera de GGUF, que no define un grafo estándar;
+y pesos F32 embebidos en un kernel nativo reproduzcan una referencia independiente
+con entradas dinámicas. Ejecutar con solo el binario montado en un entorno sin
+BML/GGUF y registrar dependencias del sistema, semilla, layout, hashes y errores.
+
+Ejecutado: n=10,20,40,80; matvec/matmul y ocho ejecuciones aisladas con error
+máximo cero en fixtures de valores binarios exactos. Backend experimental de
+emisión C y enlace libc; no implementa aún el IR/codegen de un transformer.
+Esto demuestra autonomía del kernel sintético, no cierra R1–R4 ni el contenedor
+versionado completo de recursos de R3. Fuentes y evidencia en
+[prueba sintética](SYNTHETIC_AOT_VALIDATION.md).
+
+El vector x o segunda matriz B se inyecta en runtime. Separar tiempos de
+generación, importación, codegen y compilación de tiempo por entrada, tamaño del
+binario y picos de memoria. Para los loops clásicos implementados: matvec Θ(n²),
+matmul Θ(n³), almacenamiento denso Θ(n²); no son cotas universales para toda
+especialización de una matriz fija. Si ambos operandos son constantes, se puede
+precomputar el producto, pero materializar su salida sigue siendo Θ(n²); devolver
+solo una referencia es otro contrato y no demuestra acelerar entrada dinámica.
+
+El [escalado medio](SYNTHETIC_AOT_SCALING.md) ejecutó después matvec hasta 2560
+y matmul hasta 1280, con dos entradas diferentes por operación, independencia
+de referencia y fuente C constante mediante embedding ELF .rodata/.incbin.
+Matmul 2560 se detuvo antes de ejecutar por workspace >128 MiB; el siguiente
+matvec 5120 no se materializó por presupuesto de pesos enlazados/driver. El
+exportador admite ahora hasta 2560; el driver original pequeño mantiene su
+límite 128. La prueba detectó corrupción/layout contra la identidad esperada,
+además de archivos/dimensiones inválidos. R3 aún requiere integridad de recursos
+al arrancar y recursos completos de modelo. No se deduce velocidad BML de tiempos
+de proceso: el kernel y la E/S están instrumentados por separado.
+
+El [tramo streaming](SYNTHETIC_STREAMING.md) amplió después el presupuesto
+por prueba a <=8 GiB (job completo con límite efectivo 7 GiB y margen del
+controlador). Matvec 5120/10240/20480 pasó; el GGUF completo final ocupó
+1.677.721.888 bytes. Matmul 2560 pasó; 5120 y siguientes se descartaron en
+preflight por estimación calibrada >60 s. El intento inicial 20480 falló por
+disco antes de generar datos; una transformación in-place del mismo archivo
+resolvió ese coste sin relajar reservas. El máximo pico del job fue
+1.775.857.664 bytes. Se registraron dos entradas y pruebas limpias matvec por
+tamaño. Los ficheros grandes se eliminaron al cerrar cada caso.
+
+El prototipo F32 ya integra footer versionado, validación de forma/rangos y
+checksum accidental al arrancar mediante mmap del propio ELF. No cierra R3 para
+un modelo completo: faltan tokenizer, recursos generales y validación Llama.
+Sigue requiriendo Linux/amd64 con loader/glibc y procfs. No hubo transferencias o
+publicación de estos artefactos nuevos ni cambios del cgroup global.
+
+Antes de ampliar, comprobar memoria disponible y cgroup, pico RSS, memoria de
+workspace y presupuesto de tiempo para cada operación. El driver pequeño limita
+n real a 128 (su secuencia se detiene en 80), compilación a 512 MiB de espacio
+virtual/30 s CPU y ejecución aislada a 128 MiB. Separar mediciones reales de
+estimaciones de bytes, FLOPs y tráfico; tiempos de proceso con E/S no son tiempos
+puros del kernel ni TPS. Matmul n=20480 no está autorizado por el mero límite de
+archivo: A+B+C F32 ocuparían 5.033.164.800 bytes antes de overhead.
+
+F16/Q4_0/Q8_0 vendrán después con tolerancias y kernels propios. El exportador
+actual rechaza tipos distintos de F32. Para Q4_0/Q8_0, ne0=10 no forma bloques
+completos de 32: rechazar o especificar padding y dimensiones lógicas/físicas
+antes de implementarlo; no inventar soporte por cambiar la etiqueta dtype.
+
+### R1 — Llama mínimo correcto
+
+**Estado: pendiente; ruta experimental existente.** Elegir un perfil de modelo
+pequeño concreto y reproducir su semántica antes de optimizarlo.
+
+Aceptar cuando tokenizer/detokenizer, BOS/EOS y tokens coincidan con la
+referencia; RMSNorm, RoPE, GQA/atención causal, residuales y SwiGLU pasen
+comparaciones intermedias; logits de prefill y varios pasos decode cumplan
+presupuestos numéricos fijados previamente; KV con/sin caché sea coherente; y
+una batería fija de prompts produzca la secuencia greedy esperada. Fijar modelo,
+SHA256, revisión/flags de referencia, contexto, hilos y política de muestreo.
+NaN, diferencias de forma o divergencias no resueltas impiden avanzar.
+
+### R2 — IR tensorial, plan estático y kernels/codegen
+
+**Estado: pendiente; DAG/RPN escalar y kernels tensoriales parciales reutilizables.**
+Representar ops tensoriales, recursos cuantizados, activaciones y estado KV por
+separado. Planificar vida útil de buffers, scratch y memoria según contexto.
+Mantener pesos comprimidos y decodificar solo los bloques necesarios.
+
+Aceptar cuando el plan preserve formas, dtype, strides, ejes y precisión; sus
+kernels BML reproduzcan los resultados de R1; y un emisor genere código nativo
+por target, inicialmente Rust con llamadas directas a kernels y enlace del
+runtime necesario. Medir límites de RAM de construcción/ejecución. No convertir
+cada peso en nodos escalares ni usar tamaño de grafo como prueba de rendimiento.
+
+### R3 — Recursos embebidos y enlace autónomo
+
+**Estado: prototipo de recurso F32 ejecutado; recursos de modelo pendientes.**
+El gate streaming valida un footer mínimo y mmap del propio ELF para un tensor
+F32, incluso a dimensión 20480; no implementa aún el contenedor general.
+Integrar pesos cuantizados, tokenizer, configuración y
+plan en un contenedor normalizado dentro del ejecutable. Para el primer ELF,
+evaluar payload anexado, footer versionado y mmap readonly del propio archivo;
+validar offsets u64, longitudes, alineación, hashes y límites antes de usarlo.
+
+Aceptar cuando un ejecutable sintético autónomo funcione después de retirar
+los archivos de entrada, detecte payloads dañados y no abra un GGUF ni cargue
+BML desde el sistema. Después, aplicar el mismo contrato al perfil Llama de R1.
+El manifiesto debe incluir target/ABI/CPU, versiones de herramientas, commits,
+hashes de origen/segmentos/tokenizer, licencia, límites de contexto, scratch y
+KV. El hash final del ejecutable se registra externamente para evitar circularidad.
+Revisar permisos de redistribución antes de publicar recursos con modelo.
+
+### R4 — Prueba offline en entorno limpio
+
+**Estado: pendiente.** Llevar solo el ejecutable a un entorno limpio del target,
+sin red, BML instalado, toolchain, llama.cpp ni GGUF original.
+
+Aceptar cuando inspección de enlaces y trazado de archivos demuestren las
+dependencias declaradas, no haya búsquedas de recursos externos, y se repitan
+los tokens/logits/generación de R1 contra resultados de referencia capturados
+por separado. Registrar comandos, hashes, límites y resultados. El contenedor
+es un banco de pruebas, no un requisito del usuario final. Probar también errores
+de recursos, contexto excesivo y corrupción. Esta etapa cierra la autonomía.
+
+### R5 — Rendimiento y optimizaciones
+
+**Estado: posterior a corrección y autonomía.** Medir TTFT, prefill, decode,
+memoria residente, tamaño del artefacto y coste de compilación, distinguiendo
+arranque frío/caliente. Comparar igual modelo, entradas, tokens, contexto, hilos,
+hardware y política de muestreo. Optimizar SIMD, cuantización y scheduling con
+regresiones de paridad; proyecciones sintéticas no representan TPS de inferencia.
+
+### R6 — GPU y expansión de targets
+
+**Estado: posterior.** Evaluar GPU, ARM y otros OS/ABI solo con backend, packaging,
+licencias y pruebas de paridad/ejecución propios. No declarar soporte multiarch
+por disponer de un Dockerfile. Gemma4 exige su arquitectura y validación propias.
+
+## Próximo incremento verificable
+
+El gate R0.S ya demuestra kernels F32 autónomos y un footer mínimo probado.
+Continuar con el contenedor general de recursos, tipos y tokenizer de R3 (A0 en el
+[diseño AOT](architecture/AOT_STANDALONE.md)): formato mínimo de recursos con
+validación de rangos/hashes, codegen/enlace de una proyección Q4_0 y ejecución
+del binario aislado sin BML/GGUF. No requiere descargar un modelo y no cierra R1.
+Después completar R0/R1 con un Llama pequeño existente autorizado, desarrollar
+R2/R3 para ese perfil y exigir R4 antes de anunciar inferencia autónoma.
+
+## Evidencia y entregables separados
+
+La base histórica de contratos/calidad se integró en PR #2. Mantener tests,
+doctests, auditoría, trazabilidad, formato, Clippy, cobertura y mutación de código
+productivo modificado. Ignorados, no ejecutados y bloqueados no cuentan como
+aprobados; evidencia histórica no sustituye ejecución del commit evaluado.
+
+La imagen Docker de validación y sus fuentes exportadas pertenecen al commit
+`21b90c15982f6eef4bda91a5159d2f8aaf8db2a9`: muestras rank-2 Q4_0 sin pesos de
+modelo incluidos. Este roadmap y los gates nuevos se conservan en commits locales separados de esa release;
+no modifica esos artefactos ni amplía su alcance a inferencia completa. Los
+futuros binarios con modelo requieren autorización y licencia específicas.
