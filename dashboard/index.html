@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Planes, prioridades y tareas de BML, generados desde OpenSpec.">
+  <title>BML · Tablero del proyecto</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+<main>
+  <nav aria-label="Principal"><a class="brand" href="./">BML<span> / PROJECT BOARD</span></a><a href="https://github.com/SugarFreeDoNoSo/bml">Repositorio ↗</a></nav>
+  <header><p class="eyebrow">DESARROLLO EN ABIERTO</p><h1>Del plan a<br><em>la evidencia.</em></h1><p class="intro">Prioridades y avance del proyecto, directamente desde las tareas de OpenSpec.</p></header>
+  <section class="priority" aria-label="Prioridad actual"><span class="dot"></span><div><strong>Prioridad actual · Núcleo numérico BML</strong><p>Consolidar el escalar, las reglas de base 2 y las conversiones comprobadas. Tensor y GGUF acompañan esta base.</p><a href="https://github.com/SugarFreeDoNoSo/bml/blob/{{REF}}/docs/ROADMAP.md">Leer roadmap y criterios de aceptación ↗</a></div></section>
+  <section class="metrics" aria-label="Resumen de tareas"><div><strong>{{PLANS}}</strong><span>planes</span></div><div><strong>{{DONE}}</strong><span>completadas</span></div><div><strong>{{PENDING}}</strong><span>pendientes</span></div><div><strong>{{DEFERRED}}</strong><span>diferidas</span></div></section>
+  <section aria-labelledby="plans-title"><div class="section-heading"><h2 id="plans-title">Planes de trabajo</h2><span>FUENTE · OPENSPEC</span></div>
+  <div class="filters"><label>Buscar plan o tarea<input id="search" type="search" placeholder="Tensor, GGUF, conversión…"></label><label>Estado<select id="state"><option value="all">Todos los estados</option><option value="pending">Pendientes</option><option value="done">Completadas</option><option value="deferred">Diferidas</option></select></label></div>
+  <p id="no-results" role="status" hidden>No hay planes que coincidan con los filtros.</p><div class="grid">{{CARDS}}</div></section>
+  <aside><strong>Una casilla marcada no certifica una implementación.</strong><p>Este tablero refleja los documentos del repositorio. Las tareas diferidas se muestran por separado. La paridad Llama y la inferencia autónoma completa siguen pendientes según el roadmap; los benchmarks sintéticos no representan tokens por segundo de inferencia.</p></aside>
+  <footer><span>Generado {{UPDATED}}</span><a href="https://github.com/SugarFreeDoNoSo/bml/tree/{{REF}}/quality/evidence">Consultar evidencia ↗</a></footer>
+</main>
+</body>
+</html>
