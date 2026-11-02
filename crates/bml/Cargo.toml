@@ -13,5 +13,5 @@ gguf = ["dep:bml-gguf"]
 gguf-tensor = ["gguf", "tensor", "bml-gguf/tensor"]
 
 [dependencies]
-bml-domain = { path = "../domain" }
-bml-gguf = { path = "../gguf", default-features = false, optional = true }
+bml-domain = { path = "../domain", version = "1.0.0" }
+bml-gguf = { path = "../gguf", version = "1.0.0", default-features = false, optional = true }

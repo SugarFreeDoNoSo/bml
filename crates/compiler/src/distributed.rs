@@ -45,9 +45,13 @@ use std::path::Path;
 /// Metadatos de un tensor dentro de un fragmento.
 #[derive(Debug, Clone)]
 pub struct TensorMeta {
+    /// Nombre del tensor en el archivo GGUF.
     pub name: String,
+    /// Índice del primer elemento del tensor en el vector de pesos del fragmento.
     pub offset: u64,
+    /// Primera dimensión GGUF, o número de valores si no hay dimensiones.
     pub n_rows: u32,
+    /// Segunda dimensión GGUF, o uno si el tensor tiene menos de dos dimensiones.
     pub n_cols: u32,
 }
 
@@ -156,10 +160,10 @@ fn compile_layer_range(
     let mut weights: Vec<f32> = Vec::new();
     let mut tensors: Vec<TensorMeta> = Vec::new();
 
-    let mut add_tensor = |parser: &GgufParser,
-                          weights: &mut Vec<f32>,
-                          tensors: &mut Vec<TensorMeta>,
-                          name: &str|
+    let add_tensor = |parser: &GgufParser,
+                      weights: &mut Vec<f32>,
+                      tensors: &mut Vec<TensorMeta>,
+                      name: &str|
      -> Result<(), String> {
         if let Some(vals) = read_tensor_f32(parser, name) {
             let info = parser.find_tensor(name);
@@ -736,6 +740,7 @@ pub struct BmlWeightPool {
 }
 
 impl BmlWeightPool {
+    /// Crea un pool vacío, sin pesos codificados.
     pub fn new() -> Self {
         Self {
             encoder: RealEncoder::new(),
@@ -743,6 +748,7 @@ impl BmlWeightPool {
         }
     }
 
+    /// Crea un pool vacío con capacidad inicial para codificar `cap` pesos.
     pub fn with_capacity(cap: usize) -> Self {
         Self {
             encoder: RealEncoder::with_capacity(cap),
@@ -1337,17 +1343,30 @@ pub fn serialize_sub_fragments(
 /// Multiple fragments → multiple nodos en paralelo (columnas independientes).
 #[derive(Debug, Clone)]
 pub struct VectorFragment {
+    /// Identificador del fragmento.
     pub fragment_id: u32,
+    /// Vector de entrada compartido por las particiones del matmul.
     pub x: Vec<f64>,
+    /// Pesos de las columnas seleccionadas, almacenados por filas.
     pub w_columns: Vec<f64>,
+    /// Número de filas de la matriz de pesos y dimensión de entrada.
     pub n_in: u32,
+    /// Número de columnas de la matriz de pesos completa.
     pub n_out_total: u32,
+    /// Índice de la primera columna de esta partición en la matriz completa.
     pub j_start: u32,
+    /// Número de columnas incluidas en esta partición.
     pub n_cols: u32,
+    /// Slot de destino del vector de salida completo.
     pub output_slot: u32,
 }
 
 impl VectorFragment {
+    /// Copia la entrada y extrae `n_cols` columnas desde `j_start`.
+    ///
+    /// `weight_offset` es un índice de elementos en `weights`. La matriz fuente
+    /// se interpreta por filas con `n_out_total` columnas; los índices que
+    /// exceden `weights` se rellenan con cero.
     pub fn new(
         fragment_id: u32,
         x: &[f64],

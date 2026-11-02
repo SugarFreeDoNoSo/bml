@@ -175,5 +175,92 @@
       "exact_tolerance_and_dyadic_fallback_have_explicit_results",
       "synthesis_rejects_nonfinite_inputs_invalid_options_and_budget_exhaustion"
     ]
+  },
+  "C19": {
+    "package": "bml-inference",
+    "target": "tokenizer_contracts",
+    "tests": [
+      "score_order_and_leftmost_ties_determine_merges",
+      "whitespace_is_preserved_without_normalizing_unicode",
+      "byte_output_preserves_incomplete_utf8_and_checks_all_ids"
+    ]
+  },
+  "C20": {
+    "package": "bml-inference",
+    "target": "model_contracts",
+    "tests": [
+      "two_layer_gqa_matches_independent_full_sequence_oracle",
+      "residuals_final_norm_and_untied_head_match_closed_form",
+      "rotary_frequencies_honor_nondefault_base_and_position",
+      "emitted_native_layer_sequence_matches_regular_session_and_oracle"
+    ]
+  },
+  "C21": {
+    "package": "bml-inference",
+    "target": "model_contracts",
+    "tests": [
+      "session_rejects_overflow_and_invalid_batches_without_committing_tokens",
+      "arithmetic_failure_rolls_back_the_whole_prefill_batch",
+      "native_steps_reject_wrong_order_and_can_be_abandoned_without_commit",
+      "session_budget_rejects_large_allocations_before_reserving_kv"
+    ]
+  },
+  "C22": {
+    "package": "bml-inference",
+    "target": "resource_contracts",
+    "tests": [
+      "rejects_corrupt_truncated_or_oversized_resource_files",
+      "rejects_rehashed_bad_ranges_shapes_types_duplicates_and_limits",
+      "rejects_unrecognized_execution_semantics_and_build_identity",
+      "resource_identity_covers_valid_changes_even_with_the_same_source_label"
+    ]
+  },
+  "C23": {
+    "package": "bml-inference",
+    "target": "resource_contracts",
+    "tests": [
+      "failed_export_leaves_no_destination_or_temporary_and_allows_retry",
+      "concurrent_exports_publish_exactly_one_complete_model",
+      "rejects_invalid_aot_footer_and_never_overwrites_an_existing_output"
+    ]
+  },
+  "C24": {
+    "package": "bml-gguf",
+    "target": "duplicate_names",
+    "tests": [
+      "duplicate_metadata_keys_fail_at_the_second_entry_even_when_values_match",
+      "duplicate_tensor_names_fail_before_selecting_either_payload"
+    ]
+  },
+  "C25": {
+    "package": "bml-inference",
+    "target": "embedded_contracts",
+    "tests": [
+      "embedded_native_output_matches_interpreted_prefill_and_decode",
+      "embedded_requires_the_compiled_resource_hash_and_operation_plan",
+      "embedded_rejects_corrupted_payload_before_native_execution"
+    ]
+  },
+  "C26": {
+    "package": "bml-inference",
+    "target": "model_contracts",
+    "tests": [
+      "quantized_embedding_rows_remain_borrowed_and_use_signed_block_scales",
+      "signed_q8_output_rows_match_an_independent_closed_form"
+    ]
+  },
+  "C27": {
+    "package": "bml-inference",
+    "target": "resource_contracts",
+    "tests": [
+      "normalized_resources_preserve_compressed_rows_and_model_identity"
+    ]
+  },
+  "C28": {
+    "package": "bml-inference",
+    "target": "cli_contracts",
+    "tests": [
+      "diagnostic_logit_budget_is_checked_before_expensive_generation"
+    ]
   }
 }

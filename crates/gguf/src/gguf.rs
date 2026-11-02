@@ -18,7 +18,7 @@
 //! No se copia el archivo completo a un buffer de usuario; las páginas usan RAM.
 
 use crate::{GgufError, GgufTensorView, MmapFile};
-use std::collections::HashMap;
+use std::collections::{hash_map::Entry, HashMap, HashSet};
 
 /// Magic number de GGUF: `0x46554747`.
 pub const GGUF_MAGIC: u32 = 0x46554747;
@@ -297,6 +297,8 @@ impl std::fmt::Debug for GgufReader {
 
 impl GgufReader {
     /// Abre un archivo GGUF y decodifica todo: cabecera, metadatos, tensor infos.
+    /// Las claves de metadatos y los nombres de tensores son únicos dentro de
+    /// sus respectivos espacios. Un duplicado se rechaza en su segunda entrada.
     pub fn open<P: AsRef<std::path::Path>>(path: P) -> Result<Self, GgufError> {
         let mmap = MmapFile::open(path)?;
         let bytes = mmap.as_bytes();
@@ -324,16 +326,33 @@ impl GgufReader {
         for _ in 0..header.metadata_kv_count {
             let (key, value, new_offset) = decode_metadata_kv(bytes, offset)
                 .map_err(|reason| GgufError::InvalidMetadata { offset, reason })?;
-            metadata.insert(key, value);
+            match metadata.entry(key) {
+                Entry::Vacant(entry) => {
+                    entry.insert(value);
+                }
+                Entry::Occupied(entry) => {
+                    return Err(GgufError::InvalidMetadata {
+                        offset,
+                        reason: format!("duplicate metadata key: {}", entry.key()),
+                    });
+                }
+            }
             offset = new_offset;
         }
 
         // Decodificar tensor infos
         // Decode incrementally: never allocate from untrusted counts.
         let mut tensor_infos = Vec::new();
+        let mut tensor_names = HashSet::new();
         for _ in 0..header.tensor_count {
             let (info, new_offset) = decode_tensor_info(bytes, offset)
                 .map_err(|reason| GgufError::InvalidTensorInfo { offset, reason })?;
+            if !tensor_names.insert(info.name.clone()) {
+                return Err(GgufError::InvalidTensorInfo {
+                    offset,
+                    reason: format!("duplicate tensor name: {}", info.name),
+                });
+            }
             tensor_infos.push(info);
             offset = new_offset;
         }

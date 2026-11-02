@@ -27,7 +27,9 @@ pub struct FragmentMeta {
 /// Un fragmento con sus metadatos.
 #[derive(Debug, Clone)]
 pub struct OperationFragment {
+    /// Operaciones RPN que ejecuta el fragmento.
     pub fragment: Fragment,
+    /// Slots, dimensiones y pesos asociados al fragmento.
     pub meta: FragmentMeta,
 }
 
@@ -74,41 +76,41 @@ pub fn compile_matmul_fragment(
 ) -> OperationFragment {
     // Inner body: 11 ops
     let inner_body: Vec<RpnOp> = vec![
-        RpnOp::Dup,                                    // 1: dup j
-        RpnOp::VarIndexed { base: input_slot },         // 2: read x[j]
-        RpnOp::Swap,                                    // 3: bring j to top for offset
-        RpnOp::Pick { depth: 2 },                       // 4: get row_start
-        RpnOp::FAdd,                                    // 5: weight_offset = row_start + j
-        RpnOp::VarIndexed { base: weight_base },         // 6: read w[offset]
-        RpnOp::Pick { depth: 3 },                       // 7: get acc (0.0)
-        RpnOp::Swap,                                    // 8: reorder
-        RpnOp::Swap,                                    // 9: reorder
-        RpnOp::Bml,                                     // 10: bml(x_j, w)
-        RpnOp::Bml,                                     // 11: bml(acc, bml_result) = accumulate
+        RpnOp::Dup,                              // 1: dup j
+        RpnOp::VarIndexed { base: input_slot },  // 2: read x[j]
+        RpnOp::Swap,                             // 3: bring j to top for offset
+        RpnOp::Pick { depth: 2 },                // 4: get row_start
+        RpnOp::FAdd,                             // 5: weight_offset = row_start + j
+        RpnOp::VarIndexed { base: weight_base }, // 6: read w[offset]
+        RpnOp::Pick { depth: 3 },                // 7: get acc (0.0)
+        RpnOp::Swap,                             // 8: reorder
+        RpnOp::Swap,                             // 9: reorder
+        RpnOp::Bml,                              // 10: bml(x_j, w)
+        RpnOp::Bml,                              // 11: bml(acc, bml_result) = accumulate
     ];
     let inner_body_len: u32 = inner_body.len() as u32;
 
     // Outer body: 22 ops total (including inner Loop + inner body)
     let mut outer_body = Vec::with_capacity(22);
     // Steps before inner loop
-    outer_body.push(RpnOp::Zero);                              // push 0.0 accumulator
-    outer_body.push(RpnOp::Dup);                               // dup i
-    outer_body.push(RpnOp::Const(n_cols_const_id));            // push n_cols
-    outer_body.push(RpnOp::FMul);                              // row_start = i * n_cols
-    // Inner loop + body
+    outer_body.push(RpnOp::Zero); // push 0.0 accumulator
+    outer_body.push(RpnOp::Dup); // dup i
+    outer_body.push(RpnOp::Const(n_cols_const_id)); // push n_cols
+    outer_body.push(RpnOp::FMul); // row_start = i * n_cols
+                                  // Inner loop + body
     outer_body.push(RpnOp::Loop {
         count: n_cols,
         body_len: inner_body_len,
     });
     outer_body.extend(inner_body.iter().copied());
     // Steps after inner loop
-    outer_body.push(RpnOp::Pick { depth: 3 });                 // get i (outer loop counter)
-    outer_body.push(RpnOp::Swap);                              // swap with acc
+    outer_body.push(RpnOp::Pick { depth: 3 }); // get i (outer loop counter)
+    outer_body.push(RpnOp::Swap); // swap with acc
     outer_body.push(RpnOp::StoreResult { slot: output_slot }); // store acc at row i
-    // cleanup stack for next outer iteration
-    outer_body.push(RpnOp::Drop);                              // drop row_start
-    outer_body.push(RpnOp::Drop);                              // drop 0.0
-    outer_body.push(RpnOp::Drop);                              // drop i
+                                                               // cleanup stack for next outer iteration
+    outer_body.push(RpnOp::Drop); // drop row_start
+    outer_body.push(RpnOp::Drop); // drop 0.0
+    outer_body.push(RpnOp::Drop); // drop i
 
     let outer_body_len: u32 = outer_body.len() as u32;
 
@@ -229,14 +231,14 @@ pub fn compile_attention_fragment(
 /// gate_out = bml(x, gate_weight)
 /// up_out = bml(x, up_weight)
 /// act = bml(gate_out, up_out)  // SwiGLU simplificado
-/// down_out = bml(act, down_weight)
+/// La proyección down todavía no se emite; su base se reserva en la API.
 pub fn compile_mlp_fragment(
     name: &str,
     input_slot: u32,
     output_slot: u32,
     gate_base: u32,
     up_base: u32,
-    down_base: u32,
+    _down_base: u32,
     n_elems: u32,
 ) -> OperationFragment {
     let body_len = 6;
@@ -386,7 +388,6 @@ pub fn compile_layer_fragments(
 
     // 8. MLP (gate + up + down simplificado)
     let mlp_slot = next_slot;
-    next_slot += 1;
     fragments.push(compile_mlp_fragment(
         &format!("blk.{layer}.mlp"),
         mlp_norm_slot,
@@ -445,7 +446,8 @@ mod tests {
 
     #[test]
     fn layer_fragments_count() {
-        let frags = compile_layer_fragments(0, 0, 2048, 0, 100, 200, 300, 400, 500, 600, 700, 800, 0);
+        let frags =
+            compile_layer_fragments(0, 0, 2048, 0, 100, 200, 300, 400, 500, 600, 700, 800, 0);
         // 8 fragmentos: norm, Q, K, V, attention, output, mlp_norm, mlp
         assert_eq!(frags.len(), 8);
 

@@ -153,8 +153,8 @@ impl RpnProgram {
                 RpnOp::Zero => stack.push(0.0),
                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
-                RpnOp::VarIndexed { base } => {
-                    let offset = stack.pop().unwrap_or(0.0) as u32;
+                RpnOp::VarIndexed { base: _ } => {
+                    let _offset = stack.pop().unwrap_or(0.0) as u32;
                     stack.push(0.0); // placeholder: sin buffer en evaluate_with_ctx
                 }
                 RpnOp::StoreResult { slot: _ } => {

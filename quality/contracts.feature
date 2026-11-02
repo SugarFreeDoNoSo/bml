@@ -92,3 +92,61 @@ Feature: Reliable tensors, scalar compilation and GGUF decoding
     Given finite floats and explicit size, search and error limits
     When numerical conversion constructs an expression without a constant pool
     Then accepted terms satisfy the tolerance and unsupported inputs return typed errors
+
+  @C19
+  Scenario: Preserve SentencePiece scores, spaces and bytes
+    Given a validated vocabulary with scores, token types and byte fallback
+    When text is encoded and token pieces are decoded
+    Then token boundaries, whitespace, Unicode bytes and special-token policy are preserved
+
+  @C20
+  Scenario: Execute complete dense Llama blocks against independent answers
+    Given signed synthetic weights, grouped attention and a declared RoPE configuration
+    When a causal model evaluates multiple token positions
+    Then residuals, normalization, projections and logits agree with independent oracles
+
+  @C21
+  Scenario: Bound session memory and commit only complete tokens
+    Given a session with explicit context and numerical memory limits
+    When a batch is invalid or a generated native layer sequence fails
+    Then the request fails without committing incomplete KV history
+
+  @C22
+  Scenario: Validate normalized resources before autonomous inference
+    Given compressed tensors with a versioned manifest and SHA-256 identities
+    When resources or an ELF appendix are opened
+    Then malformed metadata, ranges, plans and payloads fail before model execution
+
+  @C23
+  Scenario: Publish model resources without partial or overwritten destinations
+    Given an export destination that may already exist or be written concurrently
+    When a model resource is published
+    Then exactly one complete output can be created and failed exports leave no partial destination
+
+  @C24
+  Scenario: Reject ambiguous GGUF names
+    Given repeated metadata keys or tensor names in GGUF versions two or three
+    When the reader imports the file
+    Then the second conflicting entry is rejected with a typed structural error
+
+  @C25
+  Scenario: Execute the native plan only with its bound embedded resources
+    Given an ELF with a model appendix and a compiled resource identity and layer plan
+    When the native entrypoint processes a prompt
+    Then it agrees with the checked session or rejects a mismatched hash or plan before evaluation
+
+@C26
+Scenario: Preserve borrowed compressed weights during model execution
+Given Q4_0 embedding rows and signed Q8_0 output rows
+When a model evaluates selected rows
+Then compressed storage remains borrowed and decoded results match independent answers
+@C27
+Scenario: Preserve compressed resources through normalized export
+Given a quantized GGUF model
+When normalized resources are exported and reopened
+Then encoded tensor lengths, dtypes, dimensions and model identity remain intact
+@C28
+Scenario: Bound retained diagnostic logits before generation
+Given a request for complete logits exceeding the diagnostic payload budget
+When the command-line entrypoint validates the request
+Then it rejects the request before expensive generation

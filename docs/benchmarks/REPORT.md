@@ -1,5 +1,10 @@
 # BML vs llama.cpp — Reporte de Benchmark
 
+> Registro histórico: las cifras de BML de este documento se extrapolaron de
+> operaciones sintéticas. Los ratios y las afirmaciones de compresión no
+> acreditan inferencia equivalente ni el rendimiento de la versión actual.
+> La nueva ruta y su evidencia se describen en [BML 1.0](../BML_1_0.md).
+
 **Fecha:** 2026-07-09
 **Hardware:** Intel Xeon (Cascadelake), 4 vCPU, 7.8 GB RAM, Debian 13
 **Modelo:** TinyLlama-1.1B Q4_0 (606 MB, 1.1B parámetros)

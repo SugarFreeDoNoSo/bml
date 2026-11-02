@@ -5,6 +5,7 @@ members = [
     "crates/domain",
     "crates/parser",
     "crates/gguf",
+    "crates/inference",
     "crates/compiler",
     "crates/runtime",
     "crates/bench",
@@ -15,7 +16,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 license = "AGPL"
 repository = "https://github.com/SugarFreeDoNoSo/bml"

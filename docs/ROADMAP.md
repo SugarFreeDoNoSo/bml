@@ -1,5 +1,19 @@
 # Roadmap BML
 
+## Entrega BML 1.0 en curso
+
+El alcance confirmado incluye la biblioteca numérica, inferencia Llama CPU
+contrastada con llama.cpp y ejecutables AOT autónomos para Linux amd64 GNU.
+La nueva ruta `bml-inference` separa ese trabajo del compilador experimental.
+El perfil inicial acreditable es Stories15M F32; los pesos cuantizados y otros
+modelos requieren evidencia propia. El estado, comandos y controles de cierre
+están en [la guía del candidato](BML_1_0.md) y
+[el plan de entrega](../openspec/changes/bml-1-0-release/tasks.md).
+
+Las etapas históricas siguientes explican la evolución y los requisitos. Sus
+estados anteriores no sustituyen la evidencia de la nueva ruta ni el cierre
+de la campaña de calidad 1.0.
+
 ## Prioridad actual: tipo numérico BML
 
 La prioridad del proyecto es consolidar `Bml` como cadena booleana de términos,

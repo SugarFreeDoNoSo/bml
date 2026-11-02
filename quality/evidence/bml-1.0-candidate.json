@@ -1,0 +1,575 @@
+{
+  "schema_version": 1,
+  "status": "release_candidate",
+  "provisional": true,
+  "release_complete": false,
+  "package_version": "1.0.0",
+  "documentation": "docs/BML_1_0.md",
+  "release_tasks": "openspec/changes/bml-1-0-release/tasks.md",
+  "scope": {
+    "components": [
+      "numeric library",
+      "dense Llama CPU inference",
+      "model-specific native executable with embedded resources"
+    ],
+    "validated_profile": "Stories15M GGUF F32 on Linux x86_64 GNU CPU",
+    "sampling": "greedy, lowest token ID on ties; stop at EOS or requested count"
+  },
+  "last_validated_snapshot": {
+    "status": "passed",
+    "artifact_revision_label": "1.0.0-final",
+    "finished_utc": "2026-11-02T00:16:00.505628+00:00",
+    "report_path": "target/bml-1.0/parity-final/report.json",
+    "report_sha256": "aabe71fb630fd0094e47a27e50989ea2150a9902a05a80069bcf908c762d1998",
+    "model": {
+      "filename": "stories15M.gguf",
+      "sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+      "bytes": 98357920
+    },
+    "bml": {
+      "revision": "deec3aa8d2516ae19e335a5af77e6c38f8a854d8",
+      "working_tree_dirty": true,
+      "binary_sha256": "9365b2b1eb2a560fc5efb02449b399bf318bc6cb83f0b46247da45ce3259f7f8",
+      "inference_sources_sha256": {
+        "crates/inference/src/bin/bml-model.rs": "37b0a10b3833ae88ab76f1d77072ded03620097fdd32de7a1f173ceab9563389",
+        "crates/inference/src/driver.rs": "92c91eb81760f21b1d3d105052504aae2953efc9f230f3da4b2915bf1463e844",
+        "crates/inference/src/lib.rs": "f8888013db8fb5b188a64f5ebcce5ea52b5f02530923a43ad32d8203d7c41cba",
+        "crates/inference/src/model.rs": "fb8734ab248b047be5f20d0e1e2878b6f16141b90c53e2d05a483a1e6c82e2ae",
+        "crates/inference/src/resources.rs": "ae7e6ae7bad9d3b61e8279b405333b83e4abefd06b75bc4774ce70a2bd78c962",
+        "crates/inference/src/tokenizer.rs": "f3db02c4ec9e2be395628c05019ba38cf52ac4bfab0a09e796753a3c24b08471",
+        "crates/inference/tests/cli_contracts.rs": "aa933b7a6835f6772bac236525bc6eb750bf44bf6e482f9ad57e259ed78654ac",
+        "crates/inference/tests/embedded_contracts.rs": "229d9a7b954d1962d770b7907624c934eb18c6d82972ece765eb183d542bb445",
+        "crates/inference/tests/model_contracts.rs": "3386655a89cc11719295b06a19ae78aaa7112b89f0cbb71df39f1bf7e5471800",
+        "crates/inference/tests/resource_contracts.rs": "fb7557e097d49e310a8d84d3ba78288491c39e948e925604aaacfcdf7441df0e",
+        "crates/inference/tests/tokenizer_contracts.rs": "838990e6627605a072caef2f63f0c5e65cf13189ea8d41003a6c774e687e313e"
+      }
+    },
+    "artifact": {
+      "filename": "stories15M-bml-final",
+      "sha256": "74bef3b5a510b58fa0fbadc676133c65f427f5b4791754801bbd6b80d3261579",
+      "bytes": 98932768
+    },
+    "reference": {
+      "revision": "785322d17f2d51e5185cf996a1f4e46d87640841",
+      "binary_sha256": "4a7ce90b6237b89bbd144aafbbdbf789c582398cfcf23c3d3eaf420b638e22bf",
+      "oracle_source_sha256": "99e1ae5aad5317e88232df2e21061b53077bb1a7234f743a9d20e671b9a7dc5f",
+      "build_flags": {
+        "BUILD_SHARED_LIBS": "OFF",
+        "CMAKE_BUILD_TYPE": "Release",
+        "GGML_BLAS": "OFF",
+        "GGML_CPU": "ON",
+        "GGML_CUDA": "OFF",
+        "GGML_METAL": "OFF",
+        "GGML_NATIVE": "OFF",
+        "GGML_OPENMP": "OFF",
+        "GGML_VULKAN": "OFF"
+      },
+      "threads": 1,
+      "kv_dtype": "f32",
+      "flash_attention": false,
+      "weight_repacking": false,
+      "add_special": true,
+      "parse_special": false
+    },
+    "reference_libraries_sha256": {
+      "build/src/libllama.a": "2c4e8607d5f35e073a86f04a384856168bb38bbe68cb2b5748db12007d686fbb",
+      "build/ggml/src/libggml.a": "cb1a9949eee01ab69bcccdf48c2030ce555fe1ca8aed9dc3d2207056fea489f5",
+      "build/ggml/src/libggml-cpu.a": "44505f8e19a8a19f073fcb60ad1ce8cb792291a53fe58295e9e39c0ebc72bf90",
+      "build/ggml/src/libggml-base.a": "dac0d3ef5fc44b9ef6c5075e0550a24980949f7635b0dfd5eddf44722fa0192d"
+    },
+    "validator_source_sha256": "48820d4cdc8ddbcda72b32b2e145b212c3f94c7b15d90a8bcd316f8016ab468a",
+    "context": 128,
+    "tolerance": {
+      "absolute": 0.0001,
+      "relative": 0.0001,
+      "formula": "abs(actual-reference) <= absolute + relative*abs(reference)"
+    },
+    "corpus": [
+      {
+        "kind": "generation",
+        "prompt": "Once upon a time",
+        "predict": 4
+      },
+      {
+        "kind": "generation",
+        "prompt": "Hello",
+        "predict": 4
+      },
+      {
+        "kind": "generation",
+        "prompt": "  café\n世界 😀",
+        "predict": 4
+      },
+      {
+        "kind": "generation",
+        "prompt": "The little girl",
+        "predict": 4
+      },
+      {
+        "kind": "tokenization",
+        "prompt": "",
+        "predict": 0
+      },
+      {
+        "kind": "tokenization",
+        "prompt": " ",
+        "predict": 0
+      },
+      {
+        "kind": "tokenization",
+        "prompt": "a  b\t\r\n",
+        "predict": 0
+      },
+      {
+        "kind": "tokenization",
+        "prompt": "<s>literal</s>",
+        "predict": 0
+      },
+      {
+        "kind": "tokenization",
+        "prompt": "é🚀中 é",
+        "predict": 0
+      }
+    ],
+    "results": {
+      "bml": {
+        "passed_cases": 9,
+        "compared_logits": 800000,
+        "maximum_absolute_error": 1.2890588378944301e-05,
+        "maximum_error_budget_ratio": 0.09618413673985586,
+        "logit_tolerance_violations": 0,
+        "prompt_ids_generated_ids_text_and_bytes_equal": true
+      },
+      "artifact": {
+        "passed_cases": 9,
+        "compared_logits": 800000,
+        "maximum_absolute_error": 1.2890588378944301e-05,
+        "maximum_error_budget_ratio": 0.09618413673985586,
+        "logit_tolerance_violations": 0,
+        "prompt_ids_generated_ids_text_and_bytes_equal": true
+      }
+    },
+    "provenance_errors": []
+  },
+  "native_build": {
+    "build_directory": "/home/dev/Work/bml/target/bml-aot/build-2-1793578166277768353",
+    "build_flags": [
+      "--release",
+      "--locked",
+      "--offline",
+      "-Ctarget-cpu=x86-64"
+    ],
+    "bytes": 98932768,
+    "cpu": "x86-64",
+    "elapsed_ms": 167282.388222,
+    "generated_lock_sha256": "25519d7b44e747f7af0aa6285a17e0b51a355a615c6c7ed5b483fbd9be70b8e2",
+    "generated_source_sha256": "31d8d2160ae6dea86004661a5281db41a0cdcac74f27b9c8277bc310ebe6e349",
+    "output": "target/bml-1.0/stories15M-bml-final",
+    "rustc_version": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+    "sha256": "74bef3b5a510b58fa0fbadc676133c65f427f5b4791754801bbd6b80d3261579",
+    "source_sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+    "target": "x86_64-unknown-linux-gnu"
+  },
+  "native_build_report": {
+    "path": "target/bml-1.0/aot-final-build.json",
+    "sha256": "d1ff309f021620abf5da5e07dd97230ec420806ff1f5737c16f53ab4c2a2013e"
+  },
+  "memory_limits": {
+    "default_session_numeric_payload_bytes": 536870912,
+    "cli_retained_logit_payload_bytes": 67108864,
+    "scope": "Logical numeric payload limits; not process RSS limits. Weights, metadata, allocator overhead and JSON encoding are additional."
+  },
+  "performance": {
+    "status": "passed",
+    "finished_utc": "2026-11-01T23:30:10.303936+00:00",
+    "report_path": "target/bml-1.0/benchmark-v3/report.json",
+    "report_sha256": "eed59126f8e21fa62ed8e7fb9756168970fce890d4495dea88b406445373cce1",
+    "system": {
+      "system": "Linux",
+      "release": "6.12.113+deb13-amd64",
+      "machine": "x86_64",
+      "cpu_model": "Intel Xeon Processor (Cascadelake)",
+      "logical_cpus": 2
+    },
+    "protocol": {
+      "prompts": [
+        "Once upon a time",
+        "Hello"
+      ],
+      "predict": 16,
+      "context": 128,
+      "warmups_per_prompt_per_engine": 1,
+      "measured_repetitions_per_prompt_per_engine": 3,
+      "cpu_threads_per_engine": 1,
+      "sampling": "greedy",
+      "logits": false,
+      "new_process_per_sample": true,
+      "cache_policy": "OS page cache is not evicted or controlled; provenance hashing and warmups precede measurements. These are not cold-cache runs.",
+      "engine_order": "Alternates each paired round; exact order is recorded per sample.",
+      "wall_source": "Python perf_counter around the child process; wait4 exit polling interval at most 1 ms plus scheduling delay",
+      "rss_source": "os.wait4(child_pid).ru_maxrss (Linux KiB)",
+      "statistics": "mean/min/max/population standard deviation; warmups excluded"
+    },
+    "measured_pairs": 6,
+    "warmup_pairs": 2,
+    "output_equality_checks_passed": 8,
+    "artifact_sha256": "2f5fb84a15ac613b3a3b3d2868b0ae86e0d70effdcc2aee2b6ee52f748f0c471",
+    "reference_binary_sha256": "4a7ce90b6237b89bbd144aafbbdbf789c582398cfcf23c3d3eaf420b638e22bf",
+    "summary": [
+      {
+        "prompt": "Once upon a time",
+        "engine": "artifact",
+        "metrics": {
+          "prefill_ms": {
+            "mean": 109.63541766666667,
+            "min": 108.655851,
+            "max": 111.17606500000001,
+            "stddev_population": 1.10271733680315
+          },
+          "decode_ms": {
+            "mean": 351.6672316666666,
+            "min": 348.64016799999996,
+            "max": 354.47213,
+            "stddev_population": 2.3860655577557557
+          },
+          "wall_ms": {
+            "mean": 1975.1982606661234,
+            "min": 1941.3519329973496,
+            "max": 2020.4567639993911,
+            "stddev_population": 33.287353825072316
+          },
+          "max_rss_kib": {
+            "mean": 107900,
+            "min": 107664,
+            "max": 108032,
+            "stddev_population": 167.2682476343513
+          },
+          "decode_tokens_per_second": {
+            "mean": 45.49965389375689,
+            "min": 45.1375401501946,
+            "max": 45.892589175209444,
+            "stddev_population": 0.3090169714243389
+          }
+        }
+      },
+      {
+        "prompt": "Once upon a time",
+        "engine": "reference",
+        "metrics": {
+          "prefill_ms": {
+            "mean": 12.641455666666667,
+            "min": 12.416779,
+            "max": 12.941253,
+            "stddev_population": 0.22060610461383157
+          },
+          "decode_ms": {
+            "mean": 148.971345,
+            "min": 143.102426,
+            "max": 154.74991,
+            "stddev_population": 4.755494630183136
+          },
+          "wall_ms": {
+            "mean": 232.19070033276998,
+            "min": 226.04383900034009,
+            "max": 241.25012999866158,
+            "stddev_population": 6.5406478886127335
+          },
+          "max_rss_kib": {
+            "mean": 116377.33333333333,
+            "min": 116236,
+            "max": 116460,
+            "stddev_population": 100.41690871340123
+          },
+          "decode_tokens_per_second": {
+            "mean": 107.51291980516983,
+            "min": 103.3926287905434,
+            "max": 111.80802762910531,
+            "stddev_population": 3.437795329435232
+          }
+        }
+      },
+      {
+        "prompt": "Hello",
+        "engine": "artifact",
+        "metrics": {
+          "prefill_ms": {
+            "mean": 43.854283333333335,
+            "min": 43.520929,
+            "max": 44.226571,
+            "stddev_population": 0.2893896005668165
+          },
+          "decode_ms": {
+            "mean": 369.573124,
+            "min": 357.513496,
+            "max": 392.445604,
+            "stddev_population": 16.18129308000125
+          },
+          "wall_ms": {
+            "mean": 1935.898819333185,
+            "min": 1924.457753997558,
+            "max": 1945.3890869990573,
+            "stddev_population": 8.655802830708538
+          },
+          "max_rss_kib": {
+            "mean": 107809.33333333333,
+            "min": 107748,
+            "max": 107844,
+            "stddev_population": 43.49201714746691
+          },
+          "decode_tokens_per_second": {
+            "mean": 43.373854298474214,
+            "min": 40.769981462195204,
+            "max": 44.75355526158935,
+            "stddev_population": 1.842310620767489
+          }
+        }
+      },
+      {
+        "prompt": "Hello",
+        "engine": "reference",
+        "metrics": {
+          "prefill_ms": {
+            "mean": 11.813317,
+            "min": 11.521895,
+            "max": 12.175057,
+            "stddev_population": 0.27124849050762795
+          },
+          "decode_ms": {
+            "mean": 153.65295333333333,
+            "min": 149.609176,
+            "max": 157.851527,
+            "stddev_population": 3.366705504437079
+          },
+          "wall_ms": {
+            "mean": 236.57092133362312,
+            "min": 227.03151400128263,
+            "max": 248.6767129994405,
+            "stddev_population": 9.02102752195485
+          },
+          "max_rss_kib": {
+            "mean": 116256,
+            "min": 116036,
+            "max": 116528,
+            "stddev_population": 204.1959842896035
+          },
+          "decode_tokens_per_second": {
+            "mean": 104.18072106684819,
+            "min": 101.36107204081719,
+            "max": 106.94531196402018,
+            "stddev_population": 2.2800888035540217
+          }
+        }
+      }
+    ],
+    "provenance_errors": [],
+    "reference_cpu_compilation": {
+      "observed_flags_source": "target/bml-1.0/llama.cpp/build/ggml/src/CMakeFiles/ggml-cpu.dir/flags.make",
+      "flags_source_sha256": "bb5b738a1ea6e3fbb532778a2d22b548f536824da786bb966c83b6c5209ef0e7",
+      "C_FLAGS": "-O3 -DNDEBUG -std=gnu11 -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -msse4.2 -mf16c -mfma -mbmi2 -mavx -mavx2",
+      "CXX_FLAGS": "-O3 -DNDEBUG -std=gnu++17 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -msse4.2 -mf16c -mfma -mbmi2 -mavx -mavx2"
+    },
+    "interpretation": "The native BML artifact and llama.cpp use different CPU instruction targets (baseline x86-64 versus SSE4.2/AVX/AVX2/F16C/FMA/BMI2). Results describe these binaries on this host; they do not isolate algorithm, precision or SIMD effects.",
+    "artifact_revision_label": "v3 (historical; distinct from 1.0.0-final)"
+  },
+  "pending_final_evidence": [
+    "Complete coverage/mutation and final release quality gates; close release tasks before declaring the prepared 1.0.0 version complete.",
+    "Repeat artifact validation and isolation if execution sources or generated artifact change.",
+    "Commit the reviewable release with reproducible evidence.",
+    "Measure the delivered 1.0.0 artifact after competing validation workloads stop; retain v3 measurements as historical evidence."
+  ],
+  "limitations": [
+    "Full-logit parity covers one F32 model and the fixed corpus; supported codecs do not imply quantized-model parity.",
+    "Performance measurements cover two prompts, sixteen requested tokens, context128, three measured repetitions and this host only; page cache is uncontrolled.",
+    "BML uses baseline x86-64 while llama.cpp enables additional CPU instruction sets; these are not identical ISA configurations.",
+    "Process wall time includes startup, loading and resource integrity checks; internal prefill/decode timings exclude those costs.",
+    "No general speed, RAM or energy superiority over llama.cpp is established.",
+    "Linux x86_64 GNU runtime requires a compatible dynamic loader, glibc, linked system libraries and accessible /proc/self/exe.",
+    "Rust, source distribution, linker and cached dependencies are build-time requirements only.",
+    "Legacy CLI, compiler, HTTP server and historical synthetic benchmarks do not inherit this inference validation.",
+    "Candidate evidence is not a completed or published 1.0 release."
+  ],
+  "standalone_isolation": {
+    "status": "passed",
+    "artifact": {
+      "path": "/home/dev/Work/bml/target/bml-1.0/stories15M-bml-final",
+      "sha256": "74bef3b5a510b58fa0fbadc676133c65f427f5b4791754801bbd6b80d3261579",
+      "bytes": 98932768
+    },
+    "reference_json": {
+      "path": "/home/dev/Work/bml/target/bml-1.0/parity-final/case-01-reference.json",
+      "sha256": "ee1d839e7c672236174b3e37613a2c9df69e009f48a65b75d663452f1d9fe346"
+    },
+    "validator_source_sha256": "a6362b92c7f4ef1029a56010f91d27686ac1fdd2574119908b3576fdee2acc74",
+    "isolation": {
+      "user_namespace": true,
+      "mount_namespace": true,
+      "network_namespace": true,
+      "pid_namespace": true,
+      "procfs_required": true,
+      "procfs_files": [
+        "/proc/self/exe",
+        "/proc/self/maps"
+      ],
+      "rootfs_contains_build_tools": false,
+      "verified": true
+    },
+    "dependencies": {
+      "interpreter": "/lib64/ld-linux-x86-64.so.2",
+      "needed": [
+        "libgcc_s.so.1",
+        "libm.so.6",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "paths": [
+        "/lib/x86_64-linux-gnu/libc.so.6",
+        "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+        "/lib/x86_64-linux-gnu/libm.so.6",
+        "/lib64/ld-linux-x86-64.so.2"
+      ]
+    },
+    "rootfs_files": [
+      {
+        "path": "/model",
+        "sha256": "74bef3b5a510b58fa0fbadc676133c65f427f5b4791754801bbd6b80d3261579",
+        "bytes": 98932768
+      },
+      {
+        "path": "/lib/x86_64-linux-gnu/libc.so.6",
+        "sha256": "9792e3cbb541c8f44c7acf5f14f4022ea62998ecc787d326bed4d8b6547dfd92",
+        "bytes": 1995216
+      },
+      {
+        "path": "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+        "sha256": "30c61ab012a4241bed033725a09b61f5fdd3bb7df95ee852d0b096520524c7af",
+        "bytes": 182856
+      },
+      {
+        "path": "/lib/x86_64-linux-gnu/libm.so.6",
+        "sha256": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+        "bytes": 977112
+      },
+      {
+        "path": "/lib64/ld-linux-x86-64.so.2",
+        "sha256": "c8438e4fde1934e61c88311633f00949ff645d5c04cdb8671fa3d78164d2f307",
+        "bytes": 225672
+      }
+    ],
+    "comparison": {
+      "passed": true,
+      "errors": [],
+      "prompt_tokens": [
+        1,
+        15043
+      ],
+      "reference_tokens": [
+        471,
+        263,
+        2217,
+        7826
+      ],
+      "actual_tokens": [
+        471,
+        263,
+        2217,
+        7826
+      ],
+      "reference_shape": [
+        5,
+        32000
+      ],
+      "actual_shape": [
+        5,
+        32000
+      ],
+      "violations": 0,
+      "maximum_absolute_error": 1.1485412597878053e-05,
+      "maximum_error_budget_ratio": 0.04101556476020865,
+      "first_violation": null
+    },
+    "report_path": "target/bml-1.0/standalone-final/report.json",
+    "report_sha256": "1fade042a8969c51f6f20d8a8a0fb7752617aca8144e64e21b7218bb746c2d77",
+    "trace": {
+      "sha256": "3ee1e279df37f50ca15f4faf5c1b21aec29d3f4ce861de9e0429d1ae2a4f125d",
+      "passed": true,
+      "network_calls": [],
+      "unexpected_successful_file_accesses": [],
+      "subprocess_calls": [],
+      "unresolved_trace_lines": [],
+      "filesystem_mutations": []
+    },
+    "reproduction_command": "python3 tools/validate_standalone.py --artifact target/bml-1.0/stories15M-bml-final --reference-json target/bml-1.0/parity-final/case-01-reference.json --output target/bml-1.0/standalone-repeat --trusted-generated-artifact --prompt Hello --predict 4 --context 128"
+  },
+  "quality_checks": {
+    "recorded_utc": "2026-11-02T10:20:02.466261+00:00",
+    "workspace_gate": {
+      "status": "passed",
+      "command": "./scripts/check.sh origin/master",
+      "toolchain": "1.98.1",
+      "log": {
+        "path": "target/bml-1.0/workspace-patched.log",
+        "sha256": "36c7ba935b63fde40369a1759203562eeb65d506735a1942a770f02f63c44f14"
+      },
+      "python_tests": 75,
+      "historical_contract_discrepancies": 0,
+      "traceability_scenarios": 28,
+      "clippy": {
+        "diagnostics": 86,
+        "baseline": 192,
+        "new": 0
+      },
+      "cargo_lock_sha256": "70aa67aece009dd4c4c69fce57b3cfdb09adac2917f355d68e39c87afde94d25"
+    },
+    "feature_matrix": {
+      "status": "passed",
+      "log": {
+        "path": "target/bml-1.0/features-final.log",
+        "sha256": "cee13473a792127d521bd41f3e5a127c0795c99724308339fdc8293afa0e50ba"
+      },
+      "configurations": [
+        "bml --no-default-features",
+        "bml --no-default-features --features tensor",
+        "bml --no-default-features --features gguf",
+        "bml --no-default-features --features gguf-tensor",
+        "bml --all-features",
+        "bml-gguf --no-default-features",
+        "bml-gguf --all-features"
+      ],
+      "cargo_arguments": [
+        "--locked",
+        "--offline"
+      ]
+    },
+    "mutation": {
+      "status": "running",
+      "report": "target/bml-1.0/mutation-patched-authorized/mutants.out/outcomes.json",
+      "planned_mutants": 698,
+      "previous_campaigns": "Incomplete; sandboxed campaigns are not accepted as detection evidence because runtime socket tests are blocked by sandbox permissions."
+    },
+    "dependency_audit": {
+      "status": "passed",
+      "command": "cargo audit --deny warnings --json",
+      "tool_version": "0.22.2",
+      "report": {
+        "path": "target/bml-1.0/rustsec-patched.json",
+        "sha256": "5be37e2f215f1bafa60348b8481a41c46e6e69b6693c2dc4be8de16611786aa7"
+      },
+      "database": {
+        "advisory-count": 1396,
+        "last-commit": "c9c7302a755c4e497aa9ab09c272a30261028425",
+        "last-updated": "2026-11-02T10:56:02+01:00"
+      },
+      "lockfile": {
+        "dependency-count": 189
+      },
+      "cargo_lock_sha256": "70aa67aece009dd4c4c69fce57b3cfdb09adac2917f355d68e39c87afde94d25",
+      "resolved_advisory": "RUSTSEC-2026-0386",
+      "resolution": "tokio 1.52.3 -> 1.53.3; no ignored advisories"
+    },
+    "coverage": {
+      "status": "running",
+      "report": "target/quality/coverage-patched-authorized.json",
+      "note": "Repeat outside sandbox after local socket tests failed with PermissionDenied."
+    }
+  }
+}

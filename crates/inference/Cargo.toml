@@ -1,0 +1,13 @@
+[package]
+name = "bml-inference"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Validated CPU Llama inference and autonomous model resources"
+
+[dependencies]
+bml-gguf = { path = "../gguf", version = "1.0.0", default-features = false }
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"

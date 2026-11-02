@@ -10,5 +10,5 @@ default = []
 tensor = ["dep:bml-domain"]
 
 [dependencies]
-bml-domain = { path = "../domain", optional = true }
+bml-domain = { path = "../domain", version = "1.0.0", optional = true }
 memmap2 = "0.9"

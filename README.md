@@ -204,3 +204,14 @@ Decodifica/asigna un buffer poseído; no transpone ni promete inferencia o rendi
 Este incremento fue reconstruido tras la pérdida del entorno local y validado
 con pruebas nuevas. Los resultados y commits perdidos no lo acreditan; ver
 `quality/evidence/gguf-tensor-views-reconstruction.json` para su estado actual.
+
+## Candidato BML 1.0: inferencia y ejecutable autónomo
+
+El nuevo `bml-model` permite inspeccionar y ejecutar modelos, exportar recursos y
+compilar un ejecutable con los pesos incluidos. El perfil contrastado es
+Stories15M F32 en CPU Linux amd64 GNU, con generación greedy y referencia llama.cpp
+fijada. El CLI y el artefacto candidato 1.0.0 pasan el corpus de paridad; el cierre
+de calidad y entrega sigue abierto. Las mediciones de rendimiento publicadas
+corresponden a ese modelo, esos binarios y ese equipo.
+Véanse [uso, requisitos y límites](docs/BML_1_0.md) y la
+[evidencia provisional](quality/evidence/bml-1.0-candidate.json).

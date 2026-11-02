@@ -20,7 +20,7 @@ Rust está fijado en `rust-toolchain.toml`; las versiones de las herramientas es
 |---|---|
 | Tests y doctests | La suite ordinaria pasa y los optativos figuran como ignored |
 | Auditoría | Cero discrepancias en los seis contratos históricos |
-| Trazabilidad | Dieciocho escenarios con tests registrados por package y target de Cargo; la ejecución se comprueba aparte |
+| Trazabilidad | Veintiocho escenarios con tests registrados por package y target de Cargo; la ejecución se comprueba aparte |
 | Formato | Rustfmt en archivos Rust nuevos o modificados |
 | Clippy | Ningún diagnóstico nuevo por archivo, lint y mensaje |
 | Cobertura | Líneas y funciones sobre los mínimos versionados |

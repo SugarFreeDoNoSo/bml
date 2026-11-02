@@ -26,18 +26,13 @@ use crate::eml;
 use crate::fragment::{fragment_program, BmlGraph, BMLGRAPH_MAGIC, BMLGRAPH_VERSION};
 use crate::hardware::HardwareSpec;
 use crate::hash_cons::HashConsRegistry;
-use crate::op_fragments::{
-    compile_attention_fragment, compile_layer_fragments, compile_matmul_fragment,
-    compile_mlp_fragment, compile_rmsnorm_fragment, FragmentMeta, OperationFragment,
-};
 use crate::rpn::linearize;
-use crate::sampler;
 use crate::tokenizer::Vocabulary;
-use bml_domain::{ConstId, NodeId, VarId};
+use bml_domain::NodeId;
 use bml_parser::{GgufMetadataValue, GgufParser};
 use std::collections::HashMap;
 use std::io::Write as IoWrite;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Configuración del modelo leída del GGUF.
 #[derive(Debug, Clone)]
@@ -197,18 +192,6 @@ fn build_transformer_dag(
 ) -> Result<NodeId, String> {
     // Input: Var(0) representa el embedding del token actual.
     let input = reg.var(0);
-
-    // Leer epsilon de RMSNorm de los metadatos.
-    let rms_eps = parser
-        .get_metadata(&format!(
-            "{}.attention.layer_norm_rms_epsilon",
-            config.architecture
-        ))
-        .and_then(|v| match v {
-            bml_parser::GgufMetadataValue::F32(f) => Some(*f as f64),
-            _ => None,
-        })
-        .unwrap_or(1e-5);
 
     // Leer frecuencia base de RoPE.
     let rope_freq_base = parser
@@ -1208,19 +1191,6 @@ impl InferenceCompiler {
                 }
             }
         }
-    }
-}
-
-fn load_tensor_to_pool(
-    parser: &GgufParser,
-    pool: &mut Vec<f32>,
-    offsets: &mut HashMap<String, u32>,
-    name: &str,
-) {
-    if let Some(values) = read_tensor_f32(parser, name) {
-        let offset = pool.len() as u32;
-        pool.extend(values);
-        offsets.insert(name.to_string(), offset);
     }
 }
 

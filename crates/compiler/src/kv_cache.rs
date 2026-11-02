@@ -1,4 +1,4 @@
-// KV Cache con buffer plano f32 (estilo llama.cpp).
+//! KV Cache con buffer plano f32 (estilo llama.cpp).
 //
 // Diseño equivalente a llama_kv_cache en llama.cpp:
 // - Buffers planos contiguos por capa (k_l / v_l)
@@ -29,7 +29,6 @@ pub struct HashConsedKV {
     v_buffers: Vec<Vec<f32>>,
 
     n_layers: u32,
-    n_kv_heads: u32,
     head_dim: u32,
     max_seq_len: u32,
     stride: usize,
@@ -61,7 +60,6 @@ impl HashConsedKV {
             k_buffers,
             v_buffers,
             n_layers,
-            n_kv_heads,
             head_dim,
             max_seq_len,
             stride,

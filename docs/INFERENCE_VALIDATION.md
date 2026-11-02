@@ -1,5 +1,10 @@
 # Validación previa a comparar inferencia
 
+La ruta nueva `bml-inference`/`bml-model` tiene su perfil, comandos y evidencia
+en [BML 1.0](BML_1_0.md). Los límites del compilador histórico descritos aquí
+siguen aplicándose a sus APIs experimentales; no son la implementación nueva
+ni heredan sus resultados de validación.
+
 El objetivo es comparar inferencia real de BML y llama.cpp sobre el mismo GGUF.
 Las pruebas de lectura, dequantización y proyección son requisitos previos;
 sus tiempos no representan tokens por segundo.

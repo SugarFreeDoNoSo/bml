@@ -28,6 +28,7 @@ struct NodeData {
 }
 
 impl RealEncoder {
+    /// Crea un encoder sin nodos ni constantes almacenadas.
     pub fn new() -> Self {
         Self {
             nodes: Vec::new(),
@@ -36,6 +37,7 @@ impl RealEncoder {
         }
     }
 
+    /// Crea un encoder vacío con capacidad inicial para `cap` nodos.
     pub fn with_capacity(cap: usize) -> Self {
         Self {
             nodes: Vec::with_capacity(cap),
@@ -77,14 +79,17 @@ impl RealEncoder {
         id
     }
 
+    /// Devuelve el número de nodos creados, incluidos los valores repetidos.
     pub fn node_count(&self) -> usize {
         self.nodes.len()
     }
 
+    /// Devuelve el número de constantes únicas del pool, excluidos cero y uno.
     pub fn const_count(&self) -> usize {
         self.const_values.len()
     }
 
+    /// Devuelve las constantes del pool en el orden de sus identificadores.
     pub fn const_values(&self) -> &[f64] {
         &self.const_values
     }
