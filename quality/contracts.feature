@@ -159,3 +159,19 @@ Then it rejects the request before expensive generation
     And every transformer operation uses BML bytecode and externally bound weights
     And explicit context, hardware fragment size and construction budgets are enforced
     And publication rejects a nonempty destination without overwriting its manifest
+
+  @C73
+  Scenario: Complex symbolic interpretation declares its branch and evaluation budget
+    Given explicit EML or BML basis and a fixed logarithm branch
+    When finite complex operands or a pure tree are evaluated
+    Then signed branch cuts and nonprincipal branches match independent analytical answers
+    And extreme logarithm magnitudes avoid spurious overflow or underflow
+    And invalid operands, logarithm zero and exhausted node or depth budgets are rejected
+
+  @C74
+  Scenario: Bounded symbolic synthesis reports numerical success or budget exhaustion
+    Given a finite target, explicit interpretation, tolerance and search budgets
+    When ordered pure trees are enumerated by increasing size
+    Then small known targets yield the independently expected syntax and value
+    And invalid candidates consume attempts and exhausted searches retain explicit status
+    And zero budgets and unsupported request limits cannot bypass the search bounds

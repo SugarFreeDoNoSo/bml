@@ -15,6 +15,8 @@ requieren contratos distintos y no son conversiones inversas garantizadas.
 - Implementar `ClosedTerm`, `OpenTerm`, `bind`, variables libres y `collapse` en
   un módulo nuevo y compatible del dominio.
 - Interpretar el árbol con base EML/BML explícita y devolver errores numéricos.
+- Añadir interpretación compleja finita con rama y presupuesto explícitos, y
+  síntesis de fórmulas pequeñas con tolerancia y estados de agotamiento visibles.
 - Separar álgebra simbólica, almacenamiento tensorial y plan de ejecución.
 - Documentar responsabilidades y migración hacia core, GGUF y fachada pública.
 - Incorporar diagnóstico reproducible, matriz de tests y gates de aceptación.

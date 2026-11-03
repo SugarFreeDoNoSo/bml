@@ -270,5 +270,24 @@
       "both_gguf_entrypoints_publish_complete_numerical_causal_plans",
       "explicit_context_hardware_and_budgets_are_enforced_before_publication"
     ]
+  },
+  "C73": {
+    "package": "bml-domain",
+    "target": "symbolic_complex_contracts",
+    "tests": [
+      "complex_bases_branches_and_signed_cuts_have_independent_answers",
+      "complex_range_checks_handle_extreme_finite_logarithms_and_bad_operands",
+      "complex_terms_obey_exact_node_depth_budgets_and_preserve_the_tree"
+    ]
+  },
+  "C74": {
+    "package": "bml-domain",
+    "target": "symbolic_synthesis_contracts",
+    "tests": [
+      "synthesis_finds_small_pure_trees_in_both_bases_and_explicit_complex_branch",
+      "synthesis_budget_exhaustion_returns_a_candidate_without_claiming_success",
+      "synthesis_enumerates_ordered_shapes_and_counts_invalid_numerical_candidates",
+      "synthesis_rejects_invalid_requests_before_enumeration"
+    ]
   }
 }

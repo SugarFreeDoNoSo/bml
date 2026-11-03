@@ -23,6 +23,9 @@
 use std::collections::{BTreeSet, HashMap};
 use std::fmt;
 
+pub mod complex;
+pub mod synthesis;
+
 /// Término cerrado: contiene únicamente el generador y aplicaciones binarias.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ClosedTerm {

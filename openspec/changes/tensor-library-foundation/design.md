@@ -37,7 +37,16 @@ pruebas en [`TESTING.md`](../../../docs/TESTING.md).
   cualquier eje es vacío y sus strides canónicos son todos cero.
 - D9: los kernels nativos usan IEEE en f32/f64 con reducción secuencial. EML/BML
   elementwise usa el evaluador estricto f64 y valida el rango al estrechar a f32.
-  Los errores incluyen el índice plano; no se entrega un resultado parcial.
+   Los errores incluyen el índice plano; no se entrega un resultado parcial.
+- D10: la extensión compleja finita exige una rama logarítmica fija explícita,
+  `atan2(im,re) + 2*pi*turns`, con ambos lados del corte negativo distinguidos por
+  el signo de cero. Su evaluación iterativa limita nodos y profundidad; no cambia
+  el evaluador real ni define infinitos complejos o continuación analítica.
+- D11: la síntesis simbólica enumera fórmulas pequeñas (máximo 255 nodos) por
+  tamaño y orden prefijo, bajo presupuestos de nodos/candidatos. El resultado
+  conserva valor, error y estado de parada; satisfacer una tolerancia numérica
+  no se presenta como prueba de igualdad exacta. API y límites:
+  `docs/SYMBOLIC_EXTENSIONS.md`.
 
 ## Risks / Trade-offs
 

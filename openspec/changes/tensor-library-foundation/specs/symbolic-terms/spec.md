@@ -28,3 +28,30 @@ The finite-real evaluator SHALL take an explicit EML or BML basis and return a t
 #### Scenario: Closed term has invalid numerical domain
 - **WHEN** a closed term has a non-positive logarithmic argument
 - **THEN** structural closure succeeds and finite-real evaluation reports a domain error
+
+### Requirement: Complex evaluation has an explicit branch and resource budget
+The library SHALL provide a separate finite-complex EML/BML interpretation with an explicit fixed logarithm branch, a visited-node budget and a root-inclusive depth budget. Its branch SHALL use atan2(im,re) plus a caller-supplied integer number of full turns. It SHALL preserve the existing real evaluator's policy.
+
+#### Scenario: Evaluate across the logarithm cut
+- **WHEN** the operator receives a negative real logarithm operand with positive or negative imaginary zero
+- **THEN** the principal branch uses +pi or -pi respectively and an explicit nonzero branch adds its declared full turns
+- **AND** BML divides both components of the complex logarithm, including the branch increment, by ln(2)
+
+#### Scenario: Exhaust the evaluation budget
+- **WHEN** the tree requires one more node or one more depth level than the supplied bound
+- **THEN** evaluation returns the corresponding budget error and preserves the borrowed tree
+
+#### Scenario: Reject invalid complex arithmetic
+- **WHEN** an operand is nonfinite, the logarithm operand is zero, the exponential overflows or its magnitude rounds to zero
+- **THEN** evaluation returns a typed numerical error without a partial value
+
+### Requirement: Symbolic synthesis is a bounded numerical search
+The library SHALL enumerate small pure One/Op trees under explicit node and candidate budgets, an explicit real or complex interpretation and a finite nonnegative absolute tolerance. It SHALL declare its maximum tree size, reject larger requests and count invalid numerical candidates as attempts. Results SHALL distinguish tolerance satisfaction from budget exhaustion; neither floating-point agreement nor exhaustion SHALL imply a symbolic equality or unrepresentability proof.
+
+#### Scenario: Find a bounded candidate
+- **WHEN** the requested finite target is reached within the selected numerical tolerance and budgets
+- **THEN** the result includes the pure tree, evaluated value, error, node count and tolerance-satisfied status under that exact interpretation
+
+#### Scenario: Exhaust a search
+- **WHEN** no candidate satisfies the tolerance before a supplied limit
+- **THEN** the result identifies the exhausted limit and may return the best candidate without labeling it a successful synthesis
