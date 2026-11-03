@@ -119,6 +119,7 @@ secuencial y no acredita fusión de operaciones tensoriales ni throughput mayor.
 ## Extensión de la ruta: pesos BML persistentes
 
 La conversión GGUF → `.bmlgguf` y la carga de pesos preparados se especifican en
-[`gguf-to-bml-weights`](../gguf-to-bml-weights/proposal.md). Esta etapa transforma
+[la especificación de pesos BML](../../specs/bml-model-weights/spec.md). Esta etapa transforma
 los pesos a términos BML persistentes y permite consumirlos sin el GGUF original.
-Su implementación y validación se siguen en las tareas de ese cambio.
+Su implementación y validación están documentadas en las
+[tareas archivadas](../archive/2026-11-03-gguf-to-bml-weights/tasks.md).

@@ -44,18 +44,17 @@ al operador BML. Véanse [el escalar](architecture/BML_NUMBER.md),
 
 ## Conversión GGUF → pesos BML
 
-La siguiente capacidad de conversión está definida en
-[`gguf-to-bml-weights`](../openspec/changes/gguf-to-bml-weights/proposal.md):
+La conversión implementada está definida en la
+[especificación de pesos BML](../openspec/specs/bml-model-weights/spec.md):
 
 `modelo.gguf → síntesis exacta acotada de pesos → modelo.bmlgguf → carga de matrices BML → inferencia simbólica`.
 
-`.bmlgguf` es el nombre provisional del nuevo contenedor autónomo; `.bmllm` se
-considera una alternativa de nombre. El contenedor guarda pesos como términos BML,
+El contenedor autónomo `.bmlgguf` guarda pesos como términos BML,
 formas y metadatos tipados (incluidos tokenizer/configuración presentes en la fuente).
 La biblioteca y los comandos `bml-cli convert-weights` e `inspect-weights` están
 implementados. La API de inferencia simbólica admite el perfil explícito de
 evaluación comprobada descrito abajo. Las
-[tareas y criterios de cierre](../openspec/changes/gguf-to-bml-weights/tasks.md)
+[tareas y criterios de cierre](../openspec/changes/archive/2026-11-03-gguf-to-bml-weights/tasks.md)
 incluyen validación exacta por peso, presupuestos, carga sin el GGUF original y
 mediciones de conversión e inferencia.
 

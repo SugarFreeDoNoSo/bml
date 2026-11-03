@@ -1,4 +1,12 @@
-## ADDED Requirements
+# bml-model-weights Specification
+
+## Purpose
+
+Convertir pesos GGUF admitidos en términos BML exactos y persistentes dentro de
+un contenedor autónomo, con límites explícitos, integridad verificable,
+publicación transaccional y carga reutilizable para inferencia simbólica.
+
+## Requirements
 
 ### Requirement: Conversión explícita de pesos GGUF a BML
 El convertidor SHALL producir un archivo `.bmlgguf` versionado cuyos pesos sean
@@ -29,7 +37,7 @@ exacta; SHALL rechazarse NaN/inf y normalizarse ambos ceros al cero matemático.
 
 ### Requirement: Formato acotado e integridad
 El contenedor SHALL cumplir el contrato binario v1 de
-`openspec/changes/gguf-to-bml-weights/format-v1.md`: cabecera de 256 bytes,
+`openspec/specs/bml-model-weights/format-v1.md`: cabecera de 256 bytes,
 metadatos tipados, índice tensorial variable e índice de bloques de 80 bytes.
 SHALL identificar BML base 2, usar bloques BMLS
 versionados y validar hashes, conteos, formas, rangos y límites antes de reservar.
@@ -95,7 +103,7 @@ paridad o aceleración a partir únicamente de la representación BML.
 
 ### Requirement: API independiente y errores tipados
 El crate `bml-model-weights` SHALL cumplir la API descrita en
-`openspec/changes/gguf-to-bml-weights/api.md`. La importación GGUF SHALL ser una
+`openspec/specs/bml-model-weights/api.md`. La importación GGUF SHALL ser una
 feature optativa. El núcleo SHALL carecer de dependencias de compilador, runtime
 e inferencia; el reader GGUF sin features SHALL conservar su independencia.
 Los errores SHALL preservar causas tipadas y ubicación de pesos cuando esté disponible.

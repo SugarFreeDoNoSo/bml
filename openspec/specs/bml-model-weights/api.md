@@ -1,4 +1,4 @@
-# API pública prevista de bml-model-weights
+# API pública de bml-model-weights
 
 Contrato normativo de la tarea 1.4. Los tipos, límites, errores, reader, writer y
 `convert::from_gguf` están implementados en `crates/model-weights`. La revisión

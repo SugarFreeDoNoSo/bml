@@ -1,21 +1,26 @@
-# Entrega local: GGUF → BMLGGUF
+# Entrega y cierre: GGUF → BMLGGUF
 
 ## Estado verificable
 
-- Implementación integrada en nueve commits locales; contrato, documentación,
-  evidencia y herramientas seleccionados para el commit documental de entrega.
+- Implementación publicada en nueve commits; contrato, documentación, evidencia
+  y herramientas publicados en `1ef5f5d`. La biblioteca está en `858d8fc`.
+  Su ascendencia en `origin/master` se verificó el 2026-11-03.
 - Gate del snapshot entregado hasta `bb1f9ff`: **630 pruebas Rust y 63 Python**,
   cero discrepancias históricas, trazabilidad 28/28 y cero diagnósticos nuevos.
   Evidencia: `quality/evidence/delivery-server-fallible.json`. El servidor maneja
-  los resultados falibles de tokenizer e inferencia; su reescritura pendiente
-  de batching/remoto permanece en el árbol de trabajo.
+  los resultados falibles de tokenizer e inferencia. Los cambios posteriores
+  de batching/remoto tienen su propio alcance y evidencia.
 - Controles anteriores del árbol completo: gate 703 pruebas; GGUF sin/con
   features 50/57; cobertura workspace 87,02 % líneas / 79,79 % funciones.
   Esos conteos no describen el snapshot seleccionado de 630 pruebas.
 - Mutación completa del crate: 443 candidatos, 391 detectados, 52 no compilables,
   cero supervivientes y timeouts. Evidencia: `quality/evidence/model-weights-mutation-v9.json`.
-- Validación estricta global de OpenSpec: 9 elementos aprobados. Esto valida
+- Validación estricta global de OpenSpec de la entrega: 9 elementos aprobados. Esto valida
   estructura, no satisface los requisitos abiertos de otras specs.
+- Auditoría de cierre: los ocho requisitos están acreditados. La biblioteca
+  coincide con el commit publicado; los hashes de gate, perfiles GGUF,
+  cobertura, mutación y campañas por fase se comprobaron de nuevo sin repetirlas.
+  Evidencia: `quality/evidence/model-weights-archive-2026-11-03.md`.
 
 ## Commits integrados
 
@@ -54,12 +59,13 @@ Ambos parches pasaron `git apply --reverse --check` contra el árbol exportado.
 Eso comprueba correspondencia con el snapshot, **no** compilación autónoma sobre
 HEAD. El índice Git se mantuvo intacto durante esa exportación. Estos parches
 anteceden a los commits anteriores y no deben aplicarse sobre la entrega actual.
-No se ha publicado ni archivado el cambio.
+La publicación posterior está acreditada en
+`quality/evidence/publication-spec-closure-2026-11-03.md`.
 
 Los hashes exportados anteceden a este documento y al informe de preparación;
 los cambios posteriores de entrega/checklist no alteran las fuentes verificadas.
 
-## Condiciones restantes de 5.3
+## Cierre de 5.3
 
 Los prerrequisitos siguientes ya están integrados:
 
@@ -70,7 +76,7 @@ Los prerrequisitos siguientes ya están integrados:
    y validadores de `bml-inference`.
 4. Registro workspace, dependencias y lockfile coherentes con esas bases.
 
-La preparación e integración local del código está acreditada. Antes de archivar:
+La preparación, integración, publicación y revisión de contratos están acreditadas:
 
 1. Contrato, documentación, evidencias y herramientas de medición revisados en
    el índice seleccionado. OpenSpec estricto pasa en su snapshot. La herramienta
@@ -81,27 +87,21 @@ La preparación e integración local del código está acreditada. Antes de arch
 2. Conservar el alcance de cada control: v9 certifica mutación del crate de pesos;
    el gate de 630 pruebas certifica el snapshot integrado. No son una campaña
    global de mutación ni una nueva medición de cobertura del snapshot.
-3. Publicar solo cuando exista autorización expresa. No hay push realizado.
-4. Archivar únicamente tras completar las condiciones de cierre; 5.3 permanece
-   abierta mientras publicación/archivo estén pendientes. Este documento no
-   convierte los requisitos de otras specs en bloqueos de implementación de pesos.
+3. La publicación fue autorizada y realizada: los commits de código y `1ef5f5d`
+   son antecesores de la rama remota verificada. Los parches históricos no son
+   entregas pendientes.
+4. El archivo formal conserva los anexos normativos en
+   `openspec/specs/bml-model-weights/{api.md,format-v1.md}` y el historial de la
+   propuesta en `openspec/changes/archive/2026-11-03-gguf-to-bml-weights/`.
+   La evidencia de cierre registra el resultado de la validación y del archivo.
 
-## Requisitos restantes de las otras specs
+## Alcance respecto de otras specs
 
-| Cambio | Pendientes reales |
-|---|---|
-| `bml-1-0-release` | 6.2: mutación completa aplicable al workspace; 6.3: commit/publicación. El éxito del crate de pesos no certifica el workspace. |
-| `bml-exact-numbers-and-matrices` | 7.3–7.4: ejecución y campaña ARM/NEON real; 9.3: entrega/archivo. Compilación cruzada no sustituye ejecución ARM. |
-| `bml-implementation-plan` | 5.3: comportamiento L1 con evidencia adecuada; 5.10: estrés cloud; 5.11: hito completo. |
-| `bml-inference-pipeline` | 8.6: escalabilidad y rango numérico real; las entradas escalares fueron sustituidas en `330be43`. 9.2 está acreditada con los modelos Loom del SegQueue fijado. Siguen 9.6: contadores L1i y 10.3: commit/push. |
-| `fix-placeholders` | 9.3: commit/push. |
-| `tensor-library-foundation` | 4.5 implementada en `189bb8a`, con evaluación compleja y síntesis acotadas; cambio archivado localmente en `2026-11-03-tensor-library-foundation`. No acredita el gate global de mutaciones ni publicación. |
+El cierre de pesos no acredita mutación global, ejecución ARM/NEON, contadores
+PMU/L1, estrés cloud ni escalabilidad de inferencia real. Los estados vigentes
+de esas tareas pertenecen a sus propios cambios y evidencias.
 
-La campaña histórica `target/spec-mutations-2026-11-03/mutants.out/outcomes.json`
-sigue con `end_time=null`: 1410 candidatos declarados, 379 caught, 47 missed,
-2 timeout y 982 unviable registrados. No es un resultado final acreditado.
-
-Los requisitos ARM/PMU/cloud necesitan acceso al entorno correspondiente. La
-mutación global, la verificación de work-stealing, el trabajo simbólico restante
-y la revisión de commits siguen siendo tareas de ingeniería pendientes; no se
-atribuyen automáticamente a falta de hardware.
+El requisito de inferencia de este cambio exige un fixture autónomo con oráculo
+independiente. Su escenario de campaña real permite registrar fallos acotados
+y fases no ejecutadas. La nueva inferencia simbólica v4 no es un prerrequisito
+de archivo de `gguf-to-bml-weights`.

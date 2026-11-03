@@ -2,8 +2,8 @@
 
 `Bml` dispone de síntesis exacta certificada y serialización `BMLS` versionada.
 El reader GGUF decodifica tensores por bloques/filas y los artefactos simbólicos
-actuales guardan programas con referencias a pesos GGUF externos. Falta un
-formato persistente que contenga los pesos mismos como árboles BML.
+guardaban programas con referencias a pesos GGUF externos. Este cambio incorpora
+un formato persistente que contiene los pesos mismos como árboles BML.
 
 ## Goals / Non-Goals
 
@@ -59,7 +59,7 @@ GGUF original sirve de procedencia; cargar y ejecutar no requiere ese archivo.
 
 ### D5. Integración en la ruta
 
-Interfaz prevista: `bml-cli convert-weights -m modelo.gguf -o modelo.bmlgguf`,
+Interfaz implementada: `bml-cli convert-weights -m modelo.gguf -o modelo.bmlgguf`,
 `bml-cli inspect-weights -m modelo.bmlgguf` y consumo explícito del contenedor por
 la ruta simbólica. Los dos comandos CLI están implementados. La API
 `SymbolicCausalModel::open_bmlgguf` implementa inferencia causal con política
@@ -67,7 +67,14 @@ explícita `CheckedExactF32`: cada peso evaluado debe coincidir como racional co
 el objetivo de su árbol. Las activaciones usan el perfil numérico RPN BML existente.
 El comando CLI `run` exige `--weight-evaluation checked-exact-f32` junto con
 `--max-evaluated-weights`; no selecciona esa frontera numérica automáticamente.
-Las campañas reales siguen pendientes.
+La campaña del fixture convirtió, cargó y ejecutó el contenedor tras eliminar
+el GGUF fuente; logits y tokens se contrastaron con un oráculo independiente.
+Los intentos reales Stories15M F32/Q4_0 terminaron en fallos localizados de
+derivación y replay bajo los presupuestos declarados, sin publicar destino.
+Se registran tiempos, RSS y fases no ejecutadas en
+`quality/evidence/model-weights-fixture-phases.json` y
+`quality/evidence/model-weights-real-campaign.json`; esos intentos no acreditan
+conversión ni inferencia completa de modelos reales.
 El cargador ofrece acceso a bloques `Bml` para matrices y proyecciones simbólicas.
 Una evaluación numérica posterior debe declarar dominio/rango; exactitud del
 almacenamiento no implica que todo término sea evaluable directamente en F64.
