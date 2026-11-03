@@ -685,3 +685,12 @@ Then it rejects the request before expensive generation
     And earlier KV rows, input tensors and unrelated storage remain unchanged
     And dependency-aware workers bind owned constants and preserve the causal result
     And all learned tensors influence the output while invalid layouts reject and stored fragments stay within budget
+
+
+  @C100
+  Scenario: Symbolic layer ranges preserve local causal execution and leave KV uncommitted
+    Given a validated symbolic model, current position and a complete-model F32 KV layout
+    When a nonempty contiguous layer range and the output head execute for successive tokens
+    Then their logits and cache rows match the complete local causal forward bit for bit
+    And invalid range, position, hidden shape or nonfinite hidden input fail before writes
+    And range execution leaves cache position unchanged for the coordinator to commit

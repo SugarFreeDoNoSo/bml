@@ -977,5 +977,13 @@
       "legacy_layer_converts_nonzero_slots_to_absolute_bases_and_keeps_both_residuals",
       "large_layer_keeps_each_atomic_fragment_within_declared_instruction_budget"
     ]
+  },
+  "C100": {
+    "package": "bml-runtime",
+    "target": "symbolic_layer_range_contracts",
+    "tests": [
+      "range_execution_matches_complete_causal_forward_and_never_commits",
+      "invalid_range_position_shape_and_nonfinite_input_fail_before_writes"
+    ]
   }
 }

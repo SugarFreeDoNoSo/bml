@@ -531,6 +531,146 @@ impl SymbolicCausalModel {
             .map(|(&x, &y)| Ok(self.run(Operation::Add, 1, &[x, y], &[])?[0]))
             .collect()
     }
+    // Shared layer execution for local inference and an explicitly bounded shard.
+    fn forward_layer_range_inner(
+        &mut self,
+        mut hidden: Vec<f64>,
+        pos: u32,
+        cache: &mut HashConsedKV,
+        layers: std::ops::Range<u32>,
+    ) -> Result<Vec<f64>, String> {
+        let config = self.compiler.config().clone();
+        let dim = self.compiler.head_dim() as usize;
+        let kv_heads = self.compiler.n_kv_heads() as usize;
+        for layer in layers {
+            let prefix = format!("blk.{layer}");
+            let normalized = self.norm(&hidden, &format!("{prefix}.attn_norm.weight"))?;
+            let q = self.project(&normalized, &format!("{prefix}.attn_q.weight"))?;
+            let k = self.project(&normalized, &format!("{prefix}.attn_k.weight"))?;
+            let v = self.project(&normalized, &format!("{prefix}.attn_v.weight"))?;
+            let q = self.rotate(&q, pos)?;
+            let k = self.rotate(&k, pos)?;
+            for head in 0..kv_heads {
+                let range = head * dim..(head + 1) * dim;
+                let key: Vec<_> = k[range.clone()].iter().map(|&v| v as f32).collect();
+                let value: Vec<_> = v[range].iter().map(|&v| v as f32).collect();
+                if key.iter().chain(&value).any(|v| !v.is_finite()) {
+                    return Err("non-finite symbolic KV value".into());
+                }
+                cache.store_k(layer, pos, head as u32, &key);
+                cache.store_v(layer, pos, head as u32, &value);
+            }
+            let mut attention = Vec::with_capacity(config.n_embd as usize);
+            for head in 0..config.n_heads as usize {
+                let kv_head = head / (config.n_heads as usize / kv_heads);
+                let query = &q[head * dim..(head + 1) * dim];
+                let mut scores = Vec::with_capacity(pos as usize + 1);
+                for previous in 0..=pos {
+                    let key: Vec<_> = cache
+                        .load_k(layer, previous, kv_head as u32)
+                        .into_iter()
+                        .map(f64::from)
+                        .collect();
+                    let dot_op = if self.bounded_profile.is_some() {
+                        Operation::AttentionDot
+                    } else {
+                        Operation::Dot
+                    };
+                    let dot = self.run(dot_op, dim, query, &key)?[0];
+                    scores.push(
+                        self.run(Operation::Scale, 1, &[dot, 1.0 / (dim as f64).sqrt()], &[])?[0],
+                    );
+                }
+                let probabilities = self.run(Operation::Softmax, scores.len(), &scores, &[])?;
+                for d in 0..dim {
+                    let values: Vec<_> = (0..=pos)
+                        .map(|previous| f64::from(cache.load_v(layer, previous, kv_head as u32)[d]))
+                        .collect();
+                    attention.push(
+                        self.run(
+                            if self.bounded_profile.is_some() {
+                                Operation::WeightedSum
+                            } else {
+                                Operation::Dot
+                            },
+                            probabilities.len(),
+                            &probabilities,
+                            &values,
+                        )?[0],
+                    );
+                }
+            }
+            let projected = self.project(&attention, &format!("{prefix}.attn_output.weight"))?;
+            hidden = self.residual(&hidden, &projected)?;
+            let normalized = self.norm(&hidden, &format!("{prefix}.ffn_norm.weight"))?;
+            let gate = self.project(&normalized, &format!("{prefix}.ffn_gate.weight"))?;
+            let up = self.project(&normalized, &format!("{prefix}.ffn_up.weight"))?;
+            let mut activated = Vec::with_capacity(gate.len());
+            for (&g, &u) in gate.iter().zip(&up) {
+                activated.push(self.run(Operation::Swiglu, 1, &[g, u], &[])?[0]);
+            }
+            let down = self.project(&activated, &format!("{prefix}.ffn_down.weight"))?;
+            hidden = self.residual(&hidden, &down)?;
+        }
+        Ok(hidden)
+    }
+
+    /// Execute one token through a nonempty contiguous range of layers.
+    ///
+    /// The caller supplies the hidden state, the current absolute position and
+    /// the complete model-layout F32 KV cache. Earlier rows must have been
+    /// populated for these layers. The cache position is not advanced: only
+    /// the coordinator may commit after every shard and the output head succeed.
+    /// A numerical error may overwrite the uncommitted row; retries replace it.
+    /// This is a local primitive, not a distributed session or rollback protocol.
+    pub fn forward_layer_range(
+        &mut self,
+        hidden: &[f64],
+        position: u32,
+        cache: &mut HashConsedKV,
+        layers: std::ops::Range<u32>,
+    ) -> Result<Vec<f64>, String> {
+        let config = self.compiler.config();
+        if layers.start >= layers.end
+            || layers.end > config.n_layers
+            || hidden.len() != config.n_embd as usize
+            || hidden.iter().any(|x| !x.is_finite())
+            || position != cache.current_pos()
+            || position
+                >= cache
+                    .capacity()
+                    .min(config.context_length)
+                    .min(self.compiled_context.unwrap_or(config.context_length))
+            || !cache.matches_layout(
+                config.n_layers,
+                self.compiler.n_kv_heads(),
+                self.compiler.head_dim(),
+            )
+        {
+            return Err("invalid symbolic layer range context".into());
+        }
+        self.forward_layer_range_inner(hidden.to_vec(), position, cache, layers)
+    }
+
+    /// Apply the final normalization and output projection to a complete hidden state.
+    /// This does not advance a KV session or replace caller-side finite checks.
+    pub fn project_output(&mut self, hidden: &[f64]) -> Result<Vec<f64>, String> {
+        if hidden.len() != self.compiler.config().n_embd as usize
+            || hidden.iter().any(|x| !x.is_finite())
+        {
+            return Err("invalid symbolic output hidden state".into());
+        }
+        let mut hidden = hidden.to_vec();
+        if self
+            .compiler
+            .weight_offsets()
+            .contains_key("output_norm.weight")
+        {
+            hidden = self.norm(&hidden, "output_norm.weight")?;
+        }
+        self.project(&hidden, self.compiler.output_weight_name())
+    }
+
     /// Execute a complete prefix with a fresh bounded F32 KV cache.
     pub fn forward(&mut self, ids: &[u32]) -> Result<Vec<f64>, String> {
         let count = u32::try_from(ids.len()).map_err(|_| "context length overflow")?;
@@ -586,89 +726,9 @@ impl SymbolicCausalModel {
         for (offset, &id) in ids.iter().enumerate() {
             let pos = start + offset as u32;
             hidden = self.compiler.get_embedding(id)?;
-            for layer in 0..config.n_layers {
-                let prefix = format!("blk.{layer}");
-                let normalized = self.norm(&hidden, &format!("{prefix}.attn_norm.weight"))?;
-                let q = self.project(&normalized, &format!("{prefix}.attn_q.weight"))?;
-                let k = self.project(&normalized, &format!("{prefix}.attn_k.weight"))?;
-                let v = self.project(&normalized, &format!("{prefix}.attn_v.weight"))?;
-                let q = self.rotate(&q, pos)?;
-                let k = self.rotate(&k, pos)?;
-                for head in 0..kv_heads {
-                    let range = head * dim..(head + 1) * dim;
-                    let key: Vec<_> = k[range.clone()].iter().map(|&v| v as f32).collect();
-                    let value: Vec<_> = v[range].iter().map(|&v| v as f32).collect();
-                    if key.iter().chain(&value).any(|v| !v.is_finite()) {
-                        return Err("non-finite symbolic KV value".into());
-                    }
-                    cache.store_k(layer, pos, head as u32, &key);
-                    cache.store_v(layer, pos, head as u32, &value);
-                }
-                let mut attention = Vec::with_capacity(config.n_embd as usize);
-                for head in 0..config.n_heads as usize {
-                    let kv_head = head / (config.n_heads as usize / kv_heads);
-                    let query = &q[head * dim..(head + 1) * dim];
-                    let mut scores = Vec::with_capacity(pos as usize + 1);
-                    for previous in 0..=pos {
-                        let key: Vec<_> = cache
-                            .load_k(layer, previous, kv_head as u32)
-                            .into_iter()
-                            .map(f64::from)
-                            .collect();
-                        let dot_op = if self.bounded_profile.is_some() {
-                            Operation::AttentionDot
-                        } else {
-                            Operation::Dot
-                        };
-                        let dot = self.run(dot_op, dim, query, &key)?[0];
-                        scores.push(
-                            self.run(Operation::Scale, 1, &[dot, 1.0 / (dim as f64).sqrt()], &[])?
-                                [0],
-                        );
-                    }
-                    let probabilities = self.run(Operation::Softmax, scores.len(), &scores, &[])?;
-                    for d in 0..dim {
-                        let values: Vec<_> = (0..=pos)
-                            .map(|previous| {
-                                f64::from(cache.load_v(layer, previous, kv_head as u32)[d])
-                            })
-                            .collect();
-                        attention.push(
-                            self.run(
-                                if self.bounded_profile.is_some() {
-                                    Operation::WeightedSum
-                                } else {
-                                    Operation::Dot
-                                },
-                                probabilities.len(),
-                                &probabilities,
-                                &values,
-                            )?[0],
-                        );
-                    }
-                }
-                let projected =
-                    self.project(&attention, &format!("{prefix}.attn_output.weight"))?;
-                hidden = self.residual(&hidden, &projected)?;
-                let normalized = self.norm(&hidden, &format!("{prefix}.ffn_norm.weight"))?;
-                let gate = self.project(&normalized, &format!("{prefix}.ffn_gate.weight"))?;
-                let up = self.project(&normalized, &format!("{prefix}.ffn_up.weight"))?;
-                let mut activated = Vec::with_capacity(gate.len());
-                for (&g, &u) in gate.iter().zip(&up) {
-                    activated.push(self.run(Operation::Swiglu, 1, &[g, u], &[])?[0]);
-                }
-                let down = self.project(&activated, &format!("{prefix}.ffn_down.weight"))?;
-                hidden = self.residual(&hidden, &down)?;
-            }
+            hidden = self.forward_layer_range_inner(hidden, pos, cache, 0..config.n_layers)?;
         }
-        if self
-            .compiler
-            .weight_offsets()
-            .contains_key("output_norm.weight")
-        {
-            hidden = self.norm(&hidden, "output_norm.weight")?;
-        }
-        let logits = self.project(&hidden, self.compiler.output_weight_name())?;
+        let logits = self.project_output(&hidden)?;
         cache.advance_by(count);
         Ok(logits)
     }
