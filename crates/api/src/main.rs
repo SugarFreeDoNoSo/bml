@@ -137,12 +137,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (backend, config) = if is_bmlgraph_dir(&model_path) {
         println!("Cargando .bmlgraph desde {}...", model_path.display());
-        let (_, _, config) = load_from_dir(&model_path).map_err(|e| format!("Error cargando .bmlgraph: {e}"))?;
+        let (_, _, config) =
+            load_from_dir(&model_path).map_err(|e| format!("Error cargando .bmlgraph: {e}"))?;
         (ModelBackend::Bmlgraph, config)
     } else {
         println!("Cargando GGUF desde {}...", model_path.display());
         println!("Esto puede tardar (dequantizando pesos)...");
-        let compiler = InferenceCompiler::open(&model_path).map_err(|e| format!("Error cargando GGUF: {e}"))?;
+        let compiler = InferenceCompiler::open(&model_path)
+            .map_err(|e| format!("Error cargando GGUF: {e}"))?;
         let config = compiler.config().clone();
         (ModelBackend::Gguf(Mutex::new(compiler)), config)
     };
@@ -217,13 +219,30 @@ async fn completions(
 
                 let stream = ReceiverStream::new(rx);
                 Sse::new(
-                    stream.map(|item| item.map(|data| axum::response::sse::Event::default().data(data))),
+                    stream.map(|item| {
+                        item.map(|data| axum::response::sse::Event::default().data(data))
+                    }),
                 )
                 .into_response()
             } else {
                 let text = generate_text_gguf(&state, &req);
                 state.pending_requests.fetch_sub(1, Ordering::SeqCst);
 
+                let text = match text {
+                    Ok(text) => text,
+                    Err(message) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ErrorResponse {
+                                error: ErrorDetail {
+                                    message,
+                                    error_type: "inference_error".into(),
+                                },
+                            }),
+                        )
+                            .into_response();
+                    }
+                };
                 let response = CompletionResponse {
                     choices: vec![Choice {
                         text,
@@ -263,19 +282,19 @@ async fn health(State(state): State<Arc<ServerState>>) -> impl IntoResponse {
     )
 }
 
-fn generate_text_gguf(state: &ServerState, req: &CompletionRequest) -> String {
+fn generate_text_gguf(state: &ServerState, req: &CompletionRequest) -> Result<String, String> {
     let compiler = match &state.backend {
-        ModelBackend::Gguf(c) => c.lock().unwrap(),
-        _ => return String::new(),
+        ModelBackend::Gguf(c) => c.lock().map_err(|e| format!("lock: {e}"))?,
+        _ => return Err("modo .bmlgraph no soporta generación de texto".into()),
     };
     let vocab = compiler.vocab();
-    let input_ids = vocab.encode(&req.prompt);
+    let input_ids = vocab.encode(&req.prompt)?;
     let mut tokens = input_ids.clone();
     let mut output_parts: Vec<String> = Vec::new();
     let max = req.max_tokens as usize;
 
     for _ in 0..max {
-        let logits = compiler.forward(&tokens);
+        let logits = compiler.forward(&tokens)?;
         if logits.is_empty() {
             break;
         }
@@ -290,7 +309,7 @@ fn generate_text_gguf(state: &ServerState, req: &CompletionRequest) -> String {
             tokens.drain(0..(tokens.len() - 2048));
         }
     }
-    output_parts.join("")
+    Ok(output_parts.join(""))
 }
 
 fn generate_streaming_gguf(
@@ -303,7 +322,7 @@ fn generate_streaming_gguf(
         _ => return Err("modo .bmlgraph no soporta streaming".into()),
     };
     let vocab = compiler.vocab();
-    let input_ids = vocab.encode(&req.prompt);
+    let input_ids = vocab.encode(&req.prompt)?;
     let mut tokens = input_ids.clone();
     let max = req.max_tokens as usize;
 
@@ -317,7 +336,7 @@ fn generate_streaming_gguf(
     let _ = tx.blocking_send(Ok(format!("data: {json}\n\n")));
 
     for _ in 0..max {
-        let logits = compiler.forward(&tokens);
+        let logits = compiler.forward(&tokens)?;
         if logits.is_empty() {
             break;
         }
@@ -351,4 +370,58 @@ fn generate_streaming_gguf(
     let json = serde_json::to_string(&done).unwrap();
     let _ = tx.blocking_send(Ok(format!("data: {json}\n\n")));
     Ok(())
+}
+
+#[cfg(test)]
+#[path = "../../compiler/tests/support/causal_fixture.rs"]
+mod causal_fixture;
+
+#[cfg(test)]
+mod fallible_generation_tests {
+    use super::*;
+
+    fn model() -> (causal_fixture::Fixture, Arc<ServerState>) {
+        let fixture = causal_fixture::fixture(false);
+        let compiler = InferenceCompiler::open(&fixture.0).unwrap();
+        let state = Arc::new(ServerState {
+            config: compiler.config().clone(),
+            backend: ModelBackend::Gguf(Mutex::new(compiler)),
+            pending_requests: AtomicUsize::new(0),
+        });
+        (fixture, state)
+    }
+
+    fn oversized_request() -> CompletionRequest {
+        CompletionRequest {
+            prompt: "x".repeat(100),
+            max_tokens: 1,
+            temperature: 0.0,
+            stream: false,
+        }
+    }
+
+    #[tokio::test]
+    async fn inference_failure_returns_error_and_releases_admission() {
+        let (_fixture, state) = model();
+        let response = completions(State(state.clone()), Json(oversized_request())).await;
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(state.pending_requests.load(Ordering::SeqCst), 0);
+        let body = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(body["error"]["type"], "inference_error");
+        assert!(!body["error"]["message"].as_str().unwrap().is_empty());
+        assert!(body.get("choices").is_none());
+    }
+
+    #[test]
+    fn streaming_propagates_inference_failure_without_success_event() {
+        let (_fixture, state) = model();
+        let (tx, mut rx) = mpsc::channel(16);
+        assert!(generate_streaming_gguf(&state, &oversized_request(), tx).is_err());
+        while let Ok(event) = rx.try_recv() {
+            assert!(!event.unwrap().contains("\"finish_reason\":\"stop\""));
+        }
+    }
 }

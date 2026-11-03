@@ -16,15 +16,15 @@
 
 pub mod buffer;
 pub mod causal_artifact;
-pub mod hot_loop;
 pub mod graph;
-pub mod symbolic_causal;
+pub mod hot_loop;
 pub mod net;
 pub mod prepared_projection;
 pub mod queue;
 pub mod runtime;
 pub mod scheduler;
 pub mod shm;
+pub mod symbolic_causal;
 
 pub use hot_loop::HotLoop;
 pub use runtime::Runtime;

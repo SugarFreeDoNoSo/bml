@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "scope": "Minimal server compatibility with fallible tokenizer and causal inference; integrated snapshot gate",
+  "base_commit": "29ca9c4",
+  "tested_staged_tree_before_evidence": "7a298d15b1bf6345a9af74f0e7a14a233f42be27",
+  "snapshot_commit": "cd6afefdd5a09e300ee593b590f28f94ac8e4795",
+  "selection": "Build a compatibility version from HEAD in target/delivery-review, then select its blob into the index. encode and forward errors propagate; nonstreaming errors return HTTP 500/inference_error after releasing admission, streaming errors return to the existing error path. decode_single remains infallible. Also sort runtime module exports as required by changed-file rustfmt.",
+  "preservation": {
+    "worktree_api_sha256_before_and_after": "6ab43e13fdf326499ee2f5d8e34103b3f684d33c73164bb54954f118434bce64",
+    "note": "The pending server batching/remote rewrite is untouched. This staged compatibility version is intentionally different from the worktree file."
+  },
+  "regressions": [
+    "inference_failure_returns_error_and_releases_admission",
+    "streaming_propagates_inference_failure_without_success_event"
+  ],
+  "verification": {
+    "command": "CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_TARGET_DIR=/home/dev/Work/bml/target/delivery-server-gate-build ./scripts/check.sh origin/master",
+    "working_directory": "target/delivery-snapshots/server-fallible-v3",
+    "base_ref": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+    "exit_code": 0,
+    "rust_tests_passed": 630,
+    "python_tests_passed": 63,
+    "historical_discrepancies": 0,
+    "traceability_registered": "28/28",
+    "clippy_diagnostics": 70,
+    "new_clippy_diagnostics": 0,
+    "log": "target/quality/delivery-server-gate-final.log",
+    "sha256": "15bd930e11b6119150075e0be9238d89caf6f126980d2ea995489584fd4b57ff"
+  },
+  "environment": "Fresh dedicated build directory. Debug symbols disabled after the default-debug build exhausted disk during the audit; test assertions and Cargo test profile behavior otherwise unchanged. Snapshot has a local Git context referencing the selected tree and actual base so the gate runs inside it, not in the original worktree.",
+  "limits": "630 tests and 28 mapped scenarios describe this selected delivery snapshot, not the larger uncommitted worktree. The canonical gate does not execute coverage/mutation campaigns or hardware measurements. Global mutation, ARM/PMU/cloud, work-stealing Loom and remaining spec delivery tasks are not closed by this result."
+}
