@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "scope": "Review of incomplete global mutation report and targeted RMSNorm survivor replay",
+  "base_commit": "99c6307",
+  "campaign": {
+    "report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+    "sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+    "total_mutants": 1507,
+    "caught": 379,
+    "missed": 47,
+    "timeout": 2,
+    "unviable": 1079,
+    "end_time": null,
+    "approved": false
+  },
+  "survivors_by_file": {
+    "crates/cli/src/main.rs": 5,
+    "crates/cli/src/bml_inference.rs": 1,
+    "crates/compiler/src/causal_artifact.rs": 8,
+    "crates/compiler/src/distributed.rs": 5,
+    "crates/compiler/src/gguf_compiler.rs": 5,
+    "crates/compiler/src/graph_directory.rs": 1,
+    "crates/compiler/src/kv_cache.rs": 1,
+    "crates/compiler/src/symbolic_artifact.rs": 12,
+    "crates/compiler/src/symbolic_kernels.rs": 5,
+    "crates/compiler/src/symbolic_projection.rs": 1,
+    "crates/domain/src/number/exact.rs": 3
+  },
+  "triage": "Artifact budget inclusivity and independent admission predicates dominate the survivor list. Numerical candidates include RMSNorm, RoPE frequency/angle and scalar kernel widths. Three OR-to-XOR candidates in exact.rs require equivalence analysis rather than automatic classification as missing coverage. None are reclassified here.",
+  "timeouts_review": [
+    {
+      "mutant": "graph_directory.rs:80:18 count == 0 changed to != 0",
+      "observed": "Original log shows directory_decodes_every_opcode_and_preserves_ieee_constant_bits and directory_budgets_are_inclusive_and_accumulate_across_fragments failing before timeout. Reversing EOF detection can keep a zero-byte read loop running.",
+      "status": "Not replayed; remains Timeout"
+    },
+    {
+      "mutant": "rpn.rs:454:29 NodeKind::Bml equality changed to inequality",
+      "observed": "Original log shows persisted_shared_outputs_preserve_external_weights_and_repeated_roots failing, followed by multi_output_preflight_rejects_invalid_roots_children_and_index_overflow running over 60 seconds.",
+      "status": "Not replayed; remains Timeout"
+    }
+  ],
+  "replayed_mutant": "crates/cli/src/bml_inference.rs:64:5: replace bml_rmsnorm -> Vec<f64> with vec![0.0]",
+  "snapshot": "target/delivery-snapshots/rmsnorm-mutant",
+  "method": "Archive HEAD into an isolated directory. Replace only the public RMSNorm helper body with the recorded mutation. Run existing CLI suite, then add the contract test and rerun it. Restore source from HEAD and run the whole CLI suite. Fresh dedicated build directory initially; subsequent rebuilds use the same source path, not shared archived snapshot paths. Production source never mutated.",
+  "contract": "Closed-form signed RMSNorm with non-unit weights and nonzero offset; second case makes default epsilon dominant. Check complete vector shape and numerical values within 1e-12.",
+  "test": "crates/cli/tests/rmsnorm_contract.rs",
+  "verification": [
+    {"command": "cargo test -p bml-cli --locked", "source": "mutant, original tests", "exit_code": 0, "passed": 16, "log": "target/quality/rmsnorm-mutant-before.log", "sha256": "3649c812f65ef32a653b663bfd5af9c2d7a364cffbc966a556d7866180695cdc"},
+    {"command": "cargo test -p bml-cli --test rmsnorm_contract --locked", "source": "mutant, new contract", "exit_code": 101, "failed": 1, "diagnostic": "RMSNorm preserves vector shape", "log": "target/quality/rmsnorm-mutant-after.log", "sha256": "c74000f157bb87279e282b2c467071e4f56cc6b87537db8c465ab16c26120500"},
+    {"command": "cargo test -p bml-cli --locked", "source": "restored implementation, new contract", "exit_code": 0, "passed": 17, "log": "target/quality/rmsnorm-baseline-after.log", "sha256": "d62e4f75f67b095af87e68e30122cc81b4ec0b2ff37eaef1d2bdc896528accb6"}
+  ],
+  "environment": "Pinned Rust toolchain; TMPDIR under target; CARGO_TARGET_DIR=target/rmsnorm-replay-build; CARGO_INCREMENTAL=0; DEV/TEST DEBUG=0.",
+  "remaining": "One historical survivor is now detected by a targeted replay. Remaining 46 survivors and two timeouts need disposition/replay; original global outcomes remain unchanged and incomplete. No global mutation approval claimed."
+}
