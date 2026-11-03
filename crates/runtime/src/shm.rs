@@ -111,6 +111,7 @@ impl ShmChannel {
                 }
                 RpnOp::FAdd => f.write_all(&[9])?,
                 RpnOp::FMul => f.write_all(&[10])?,
+                RpnOp::FMax => f.write_all(&[16])?,
                 RpnOp::Pick { depth } => {
                     f.write_all(&[11])?;
                     f.write_all(&depth.to_le_bytes())?;
@@ -182,6 +183,7 @@ impl ShmChannel {
                 }
                 9 => RpnOp::FAdd,
                 10 => RpnOp::FMul,
+                16 => RpnOp::FMax,
                 11 => {
                     let depth = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
                     offset += 4;

@@ -645,3 +645,43 @@ Then it rejects the request before expensive generation
     And v1, v2, v3 and unrelated v4 operation families reject the new layout
     And literal, output and complete-prefix-plan mismatches fail without confirming cache positions
     And instruction and literal counts grow linearly with context while every required prefix remains present
+
+  @C95
+  Scenario: Finite maximum selection has an explicit binary version without changing older bytes
+    Given historical graph encodings and a new auxiliary finite maximum instruction
+    When single-file, directory and distributed records are persisted and loaded
+    Then selection uses its new version and malformed or incorrectly versioned records reject
+    And historical symbolic arithmetic profiles do not silently admit selection
+
+  @C96
+  Scenario: Maximum selection and general checked execution retain finite and addressing contracts
+    Given signed finite values, invalid operands and indexed operation programs
+    When reference, fragment, runtime, shared-memory and checked evaluators execute them
+    Then maximum agrees across evaluators and nonfinite operands fail according to the selected execution mode
+    And checked operations validate each BML, native arithmetic result and exact buffer address
+    And dependent scheduling preserves selected reads and cross-fragment stack state
+
+  @C97
+  Scenario: Public attention executes every score and value with an explicit causal prefix
+    Given one query head and row-major key and value rows with declared bounds
+    When dot products, scaling, selected-maximum softmax and weighted reduction execute
+    Then signed nonuniform outputs agree with an independent attention oracle
+    And explicit scratch retains linear work and compact code while preserving unrelated storage
+    And the historical signature represents one KV token and invalid shapes or layouts reject
+
+  @C98
+  Scenario: Public MLP uses complete rectangular projections and standard SwiGLU
+    Given explicit embedding and FFN dimensions with three learned row-major matrices
+    When gate and up projections feed gate times sigmoid of gate times up and the down projection
+    Then every learned matrix element affects the independently checked result
+    And declared scratch yields linear matrix work with safe complete-loop fragments and owned constants
+    And invalid dimensions, ranges, addressing or numeric stages reject without native data arithmetic
+
+  @C99
+  Scenario: Public layer composition preserves causal KV and both original residuals
+    Given a single-head layer with explicit slot size, absolute tensor bases, position and rectangular FFN
+    When normalization, QKV, RoPE, attention, output projection and MLP execute across two positions
+    Then every BML is checked and the complete output agrees with independent dense layer equations
+    And earlier KV rows, input tensors and unrelated storage remain unchanged
+    And dependency-aware workers bind owned constants and preserve the causal result
+    And all learned tensors influence the output while invalid layouts reject and stored fragments stay within budget

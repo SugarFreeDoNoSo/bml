@@ -7,7 +7,7 @@
 //! The legacy scalar container reader/writer remains available for stored graphs.
 //! Native `InferenceCompiler` arithmetic has its own IEEE/F32-KV contract.
 
-use crate::fragment::{BmlGraph, BMLGRAPH_MAGIC, BMLGRAPH_VERSION};
+use crate::fragment::{BmlGraph, BMLGRAPH_MAGIC, BMLGRAPH_SELECTION_VERSION, BMLGRAPH_VERSION};
 use crate::hardware::HardwareSpec;
 use crate::symbolic_artifact::{self, CompiledArtifact};
 use crate::symbolic_kernels::KernelLimits;
@@ -156,6 +156,17 @@ pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result
             return Err("indexed context loads require the single-file v3 graph format".into());
         }
     }
+    let version = if result
+        .graph
+        .fragments
+        .iter()
+        .flat_map(|f| &f.ops)
+        .any(|op| matches!(op, crate::rpn::RpnOp::FMax))
+    {
+        BMLGRAPH_SELECTION_VERSION
+    } else {
+        BMLGRAPH_VERSION
+    };
     std::fs::create_dir_all(output_dir).map_err(|e| format!("crear dir: {e}"))?;
 
     // Header: magic, version, n_fragments, config, const_pool
@@ -165,7 +176,7 @@ pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result
     // Magic y version
     f.write_all(&BMLGRAPH_MAGIC.to_le_bytes())
         .map_err(|e| format!("write magic: {e}"))?;
-    f.write_all(&BMLGRAPH_VERSION.to_le_bytes())
+    f.write_all(&version.to_le_bytes())
         .map_err(|e| format!("write version: {e}"))?;
 
     // Número de fragmentos
@@ -251,6 +262,9 @@ pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result
                 }
                 RpnOp::FMul => {
                     ff.write_all(&[10]).map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::FMax => {
+                    ff.write_all(&[16]).map_err(|e| format!("write op: {e}"))?;
                 }
                 RpnOp::Pick { depth } => {
                     ff.write_all(&[11]).map_err(|e| format!("write op: {e}"))?;

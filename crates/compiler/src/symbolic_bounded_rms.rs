@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 
 // Local common subexpressions retain exactly the same operand bits. This does
 // not reassociate any BML operation or retain an input vector between loops.
-pub(super) fn compact_stage(dag: NodeSoA, roots: Vec<u32>) -> (NodeSoA, Vec<u32>) {
+pub(crate) fn compact_stage(dag: NodeSoA, roots: Vec<u32>) -> (NodeSoA, Vec<u32>) {
     let mut compact = NodeSoA::new();
     compact.const_pool = dag.const_pool;
     let mut unique = BTreeMap::new();
@@ -42,7 +42,7 @@ pub(super) fn compact_stage(dag: NodeSoA, roots: Vec<u32>) -> (NodeSoA, Vec<u32>
 // Consume a last-use value directly when it is already at the top of the
 // stack. Other shared values retain stable relative positions until their
 // last consumer. This changes only stack administration, never BML operands.
-pub(super) fn linearize_stage(dag: &NodeSoA, root: u32) -> RpnProgram {
+pub(crate) fn linearize_stage(dag: &NodeSoA, root: u32) -> RpnProgram {
     let mut pending = vec![(root, false)];
     let mut visited = vec![false; dag.len()];
     let mut order = Vec::new();
@@ -141,7 +141,7 @@ fn stage(
     Ok((dag, roots))
 }
 
-pub(super) fn append_stage(
+pub(crate) fn append_stage(
     output: &mut Vec<RpnOp>,
     stage: RpnProgram,
     mut variable: impl FnMut(u32, u32) -> Result<Vec<RpnOp>, String>,

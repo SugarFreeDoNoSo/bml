@@ -1,8 +1,9 @@
 //! Compilador de fragmentos por operación (N hot loops).
 //!
-//! Cada operación del transformer (matmul, RMSNorm, attention, MLP) se
-//! compila como un fragmento separado con su propio hot loop < 32KB.
-//! Los fragmentos se comunican via `ResultBuffer` con slots.
+//! Los planes con scratch explícito conservan los bucles completos dentro del
+//! presupuesto de fragmento de 32 KiB. Algunas APIs exponen además el programa
+//! concatenado: su tamaño y profundidad deben comprobarse antes de persistirlo.
+//! Los fragmentos se comunican vía `ResultBuffer` con slots y constantes propias.
 
 use crate::fragment::Fragment;
 use crate::rpn::RpnOp;
@@ -11,17 +12,26 @@ use crate::rpn::RpnOp;
 mod rms;
 pub use rms::{compile_rmsnorm_fragment, compile_rmsnorm_fragment_checked, CheckedRmsFragment};
 
+#[path = "operation_attention.rs"]
+mod attention;
+pub use attention::*;
+#[path = "operation_mlp.rs"]
+mod mlp;
+pub use mlp::*;
+#[path = "operation_layer.rs"]
+mod layer;
+pub use layer::*;
+
 /// Metadatos de un fragmento: qué slots lee y escribe.
 #[derive(Debug, Clone)]
 pub struct FragmentMeta {
     /// Nombre de la operación (ej. "matmul_q", "rmsnorm").
     pub name: String,
-    /// Input identifier. For matmul this is an absolute buffer element base;
-    /// historical simplified helpers still use their original slot convention.
+    /// Absolute input element base in `ResultBuffer`.
     pub input_slot: u32,
     /// Slot de output (a dónde escribe).
     pub output_slot: u32,
-    /// Absolute weight element base in `ResultBuffer` for matmul.
+    /// Absolute weight (or key) element base in `ResultBuffer`.
     pub weight_base: u32,
     /// Número de filas (para matmul).
     pub n_rows: u32,
@@ -402,235 +412,6 @@ fn emit_matmul(
     }
 }
 
-/// Compila un fragmento de attention simplificado.
-///
-/// Versión simplificada: score = bml(q, k), attn = bml(score, v)
-pub fn compile_attention_fragment(
-    name: &str,
-    q_slot: u32,
-    k_slot: u32,
-    v_slot: u32,
-    output_slot: u32,
-    n_elems: u32,
-) -> OperationFragment {
-    // Para cada elemento: attn[i] = bml(bml(q[i], k[i]), v[i])
-    let body_len = 6;
-    let body: Vec<RpnOp> = vec![
-        RpnOp::VarIndexed { base: q_slot },       // q[i]
-        RpnOp::VarIndexed { base: k_slot },       // k[i]
-        RpnOp::Bml,                               // score = bml(q, k)
-        RpnOp::VarIndexed { base: v_slot },       // v[i]
-        RpnOp::Bml,                               // attn = bml(score, v)
-        RpnOp::StoreResult { slot: output_slot }, // y[i]
-    ];
-
-    let ops = vec![
-        RpnOp::Loop {
-            count: n_elems,
-            body_len,
-        },
-        body[0],
-        body[1],
-        body[2],
-        body[3],
-        body[4],
-        body[5],
-    ];
-
-    OperationFragment {
-        const_pool: None,
-        fragment: Fragment { ops },
-        meta: FragmentMeta {
-            name: name.to_string(),
-            input_slot: q_slot,
-            output_slot,
-            weight_base: k_slot, // reutilizado
-            n_rows: n_elems,
-            n_cols: 1,
-        },
-    }
-}
-
-/// Compila un fragmento de MLP simplificado.
-///
-/// gate_out = bml(x, gate_weight)
-/// up_out = bml(x, up_weight)
-/// act = bml(gate_out, up_out)  // SwiGLU simplificado
-/// La proyección down todavía no se emite; su base se reserva en la API.
-pub fn compile_mlp_fragment(
-    name: &str,
-    input_slot: u32,
-    output_slot: u32,
-    gate_base: u32,
-    up_base: u32,
-    _down_base: u32,
-    n_elems: u32,
-) -> OperationFragment {
-    let body_len = 6;
-    let body: Vec<RpnOp> = vec![
-        RpnOp::VarIndexed { base: input_slot },   // x[i]
-        RpnOp::VarIndexed { base: gate_base },    // gate_w[i]
-        RpnOp::Bml,                               // gate = bml(x, gate_w)
-        RpnOp::VarIndexed { base: up_base },      // up_w[i]
-        RpnOp::Bml,                               // act = bml(gate, up_w)
-        RpnOp::StoreResult { slot: output_slot }, // y[i]
-    ];
-
-    let ops = vec![
-        RpnOp::Loop {
-            count: n_elems,
-            body_len,
-        },
-        body[0],
-        body[1],
-        body[2],
-        body[3],
-        body[4],
-        body[5],
-    ];
-
-    OperationFragment {
-        const_pool: None,
-        fragment: Fragment { ops },
-        meta: FragmentMeta {
-            name: name.to_string(),
-            input_slot,
-            output_slot,
-            weight_base: gate_base,
-            n_rows: n_elems,
-            n_cols: 1,
-        },
-    }
-}
-
-/// Compila todos los fragmentos de una capa del transformer.
-///
-/// Historical structural helper: attention/MLP remain simplified and
-/// its slot numbers are not converted to absolute buffer bases. This is not an
-/// executable full-layer contract; use explicit per-operation layouts instead.
-///
-/// Retorna una lista de `OperationFragment` que se ejecutan secuencialmente.
-/// Cada fragmento lee de un slot y escribe a otro.
-pub fn compile_layer_fragments(
-    layer: u32,
-    input_slot: u32,
-    n_embd: u32,
-    // Bases de pesos en el pool (offsets)
-    norm_base: u32,
-    q_base: u32,
-    k_base: u32,
-    v_base: u32,
-    o_base: u32,
-    ffn_norm_base: u32,
-    gate_base: u32,
-    up_base: u32,
-    down_base: u32,
-    n_cols_const_id: u32,
-) -> Vec<OperationFragment> {
-    let mut fragments = Vec::new();
-    let mut next_slot = input_slot + 1; // slots se asignan secuencialmente
-
-    // 1. RMSNorm de atención
-    let norm_slot = next_slot;
-    next_slot += 1;
-    fragments.push(compile_rmsnorm_fragment(
-        &format!("blk.{layer}.attn_norm"),
-        input_slot,
-        norm_slot,
-        norm_base,
-        n_embd,
-    ));
-
-    // 2. Matmul Q
-    let q_slot = next_slot;
-    next_slot += 1;
-    fragments.push(compile_matmul_fragment(
-        &format!("blk.{layer}.attn_q"),
-        norm_slot,
-        q_slot,
-        q_base,
-        n_embd,
-        n_embd,
-        n_cols_const_id,
-    ));
-
-    // 3. Matmul K
-    let k_slot = next_slot;
-    next_slot += 1;
-    fragments.push(compile_matmul_fragment(
-        &format!("blk.{layer}.attn_k"),
-        norm_slot,
-        k_slot,
-        k_base,
-        n_embd,
-        n_embd,
-        n_cols_const_id,
-    ));
-
-    // 4. Matmul V
-    let v_slot = next_slot;
-    next_slot += 1;
-    fragments.push(compile_matmul_fragment(
-        &format!("blk.{layer}.attn_v"),
-        norm_slot,
-        v_slot,
-        v_base,
-        n_embd,
-        n_embd,
-        n_cols_const_id,
-    ));
-
-    // 5. Attention (Q·K^T · V)
-    let attn_slot = next_slot;
-    next_slot += 1;
-    fragments.push(compile_attention_fragment(
-        &format!("blk.{layer}.attention"),
-        q_slot,
-        k_slot,
-        v_slot,
-        attn_slot,
-        n_embd,
-    ));
-
-    // 6. Output projection
-    let o_slot = next_slot;
-    next_slot += 1;
-    fragments.push(compile_matmul_fragment(
-        &format!("blk.{layer}.attn_output"),
-        attn_slot,
-        o_slot,
-        o_base,
-        n_embd,
-        n_embd,
-        n_cols_const_id,
-    ));
-
-    // 7. MLP RMSNorm
-    let mlp_norm_slot = next_slot;
-    next_slot += 1;
-    fragments.push(compile_rmsnorm_fragment(
-        &format!("blk.{layer}.ffn_norm"),
-        o_slot,
-        mlp_norm_slot,
-        ffn_norm_base,
-        n_embd,
-    ));
-
-    // 8. MLP (gate + up + down simplificado)
-    let mlp_slot = next_slot;
-    fragments.push(compile_mlp_fragment(
-        &format!("blk.{layer}.mlp"),
-        mlp_norm_slot,
-        mlp_slot,
-        gate_base,
-        up_base,
-        down_base,
-        n_embd,
-    ));
-
-    fragments
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -671,7 +452,12 @@ mod tests {
         let frag = compile_attention_fragment("test_attn", 1, 2, 3, 4, 8);
         assert_eq!(frag.meta.input_slot, 1);
         assert_eq!(frag.meta.output_slot, 4);
-        assert!(matches!(frag.fragment.ops[0], RpnOp::Loop { count: 8, .. }));
+        assert!(frag.const_pool.is_some());
+        assert!(frag
+            .fragment
+            .ops
+            .iter()
+            .any(|op| matches!(op, RpnOp::Loop { count: 8, .. })));
     }
 
     #[test]
@@ -685,15 +471,21 @@ mod tests {
     #[test]
     fn layer_fragments_count() {
         let frags =
-            compile_layer_fragments(0, 0, 2048, 0, 100, 200, 300, 400, 500, 600, 700, 800, 0);
-        // 8 fragmentos: norm, Q, K, V, attention, output, mlp_norm, mlp
-        assert_eq!(frags.len(), 8);
-
-        // Verificar que los slots se asignan secuencialmente
+            compile_layer_fragments(0, 0, 4, 100, 104, 120, 136, 152, 168, 172, 188, 204, 0);
+        assert!(frags.len() >= 14);
+        // Slot reads become absolute addresses, including intermediates.
         assert_eq!(frags[0].meta.input_slot, 0);
         assert_eq!(frags[0].meta.output_slot, 1);
-        assert_eq!(frags[1].meta.input_slot, 1);
+        assert_eq!(frags[1].meta.input_slot, 4);
         assert_eq!(frags[1].meta.output_slot, 2);
+        assert_eq!(frags.last().unwrap().meta.output_slot, 18);
+        assert_eq!(
+            frags
+                .iter()
+                .filter(|f| f.meta.name.ends_with("residual"))
+                .count(),
+            2
+        );
     }
 
     #[test]

@@ -27,14 +27,14 @@ class DispatcherAudit(unittest.TestCase):
                                      [(0x300, 'log2'), (0x310, 'socket'), (0x320, 'accept4'), (0x330, 'send'), (0x340, 'recv')])
 
     def check(self, assembly=None, relocations=None, offsets=None, symbols=None):
-        with patch('audit_hot_loop_binary.mapped_bytes', return_value=struct.pack('<16i', *(offsets or [-256]*16))):
+        with patch('audit_hot_loop_binary.mapped_bytes', return_value=struct.pack(f'<{len(RPN_VARIANTS)}i', *(offsets or [-256]*len(RPN_VARIANTS)))):
             return audit(b'', assembly or self.assembly, symbols or self.symbols,
-                         relocations or self.relocations, 16)
+                         relocations or self.relocations, len(RPN_VARIANTS))
 
     def test_got_target_comes_from_relocation_not_disassembler_annotation(self):
         result = self.check()
         self.assertEqual(result['calls'][0]['target'], 'log2')
-        self.assertEqual(result['jump_tables'][0]['targets'], [0x100]*16)
+        self.assertEqual(result['jump_tables'][0]['targets'], [0x100]*len(RPN_VARIANTS))
 
     def test_socket_call_and_direct_rpc_call_fail(self):
         with self.assertRaisesRegex(ValueError, 'indirect call'):
@@ -49,7 +49,7 @@ class DispatcherAudit(unittest.TestCase):
 
     def test_jump_table_escape_or_changed_computation_fails(self):
         with self.assertRaisesRegex(ValueError, 'escapes'):
-            self.check(offsets=[-256]*15 + [-224])  # one target is RPC, at 0x120
+            self.check(offsets=[-256]*(len(RPN_VARIANTS)-1) + [-224])  # one target is RPC, at 0x120
         with self.assertRaisesRegex(ValueError, 'computation'):
             self.check(assembly=self.assembly.replace('addq %rdx, %rcx', 'addq %rax, %rcx'))
         with self.assertRaisesRegex(ValueError, 'Branch escapes'):

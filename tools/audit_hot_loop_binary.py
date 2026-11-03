@@ -17,7 +17,7 @@ DIRECT = {HOT, '<alloc::raw_vec::RawVec<f64>>::grow_one',
 MATH = {'exp2', 'log2'}
 RPN_VARIANTS = ('One', 'Zero', 'Bml', 'Dup', 'Var', 'Const', 'VarIndexed',
                 'ContextVarIndexed', 'ContextConstIndexed', 'StoreResult', 'Loop',
-                'FAdd', 'FMul', 'Pick', 'Drop', 'Swap')
+                'FAdd', 'FMul', 'Pick', 'Drop', 'Swap', 'FMax')
 
 
 def run(args):

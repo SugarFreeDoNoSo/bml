@@ -77,6 +77,7 @@ fn serialize_program(program: &RpnProgram) -> Vec<u8> {
             }
             RpnOp::Drop => bytes.push(12),
             RpnOp::Swap => bytes.push(13),
+            RpnOp::FMax => bytes.push(16),
             RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. } => {
                 panic!("indexed context opcodes require a v3 graph, not this legacy SHM fixture")
             }
@@ -134,6 +135,7 @@ fn deserialize_program(bytes: &[u8]) -> RpnProgram {
             }
             12 => RpnOp::Drop,
             13 => RpnOp::Swap,
+            16 => RpnOp::FMax,
             _ => panic!("tag desconocido: {tag}"),
         };
         ops.push(op);
@@ -151,6 +153,17 @@ fn serialize_deserialize_roundtrip() {
     let restored = deserialize_program(&bytes);
     assert_eq!(program.ops, restored.ops);
     assert_eq!(program.evaluate(), restored.evaluate());
+
+    // Use the same additive opcode tag as the production SHM codec.
+    let selection = RpnProgram {
+        ops: vec![RpnOp::Zero, RpnOp::One, RpnOp::FMax],
+        const_pool: Vec::new(),
+    };
+    let bytes = serialize_program(&selection);
+    assert_eq!(bytes, [3, 0, 0, 0, 6, 0, 16]);
+    let restored = deserialize_program(&bytes);
+    assert_eq!(selection.ops, restored.ops);
+    assert_eq!(restored.evaluate(), 1.0);
 }
 
 #[test]

@@ -272,6 +272,11 @@ fn dispatch_ops(
                 }
                 stack.push(a * b);
             }
+            RpnOp::FMax => {
+                let right = stack.pop().unwrap_or(f64::NAN);
+                let left = stack.pop().unwrap_or(f64::NAN);
+                stack.push(bml_compiler::rpn::finite_max(left, right));
+            }
             RpnOp::Pick { depth: d } => {
                 let d = d as usize;
                 let len = stack.len();

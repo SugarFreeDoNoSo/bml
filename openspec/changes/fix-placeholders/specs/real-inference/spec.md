@@ -1,5 +1,27 @@
 ## ADDED Requirements
 
+### Requirement: Fragmentos públicos completos con layout explícito
+Las APIs públicas de atención, MLP y composición de capa SHALL ejecutar sus operaciones completas con direcciones absolutas de entrada/pesos y slots de salida explícitos. Las declaraciones BML acotadas SHALL conservar sus dominios parciales, sin sustituirlas por aritmética nativa de datos ni afirmar rango IEEE universal. Los constructores configurables SHALL rechazar dimensiones y layouts incompatibles; las constantes por operación SHALL pertenecer al programa que las usa.
+
+#### Scenario: Atención de una consulta sobre un prefijo KV
+- **WHEN** se proporciona una cabeza de consulta, dimensiones explícitas y varias filas KV
+- **THEN** el programa calcula cada dot, escala por la raíz del ancho, selecciona el máximo para softmax y suma todos los valores ponderados
+- **AND** la variante con scratch declarado evita recalcular los scores por cada dimensión de salida
+- **AND** la firma histórica sin parámetro de contexto representa un único token KV y no acredita GQA
+
+#### Scenario: MLP rectangular y pesos down
+- **WHEN** embedding y FFN tienen anchos distintos y pesos firmados no triviales
+- **THEN** gate y up usan matrices completas, SwiGLU es `gate * sigmoid(gate) * up` y down produce todas las dimensiones de embedding
+- **AND** el plan con scratch conserva cada bucle completo dentro del presupuesto de fragmento
+- **AND** modificar cualquiera de las tres matrices cambia el resultado correspondiente
+
+#### Scenario: Capa causal completa
+- **WHEN** se ejecuta una capa de una cabeza en dos posiciones consecutivas con sus pesos y caché KV explícitos
+- **THEN** cada posición aplica RMS, QKV, RoPE, atención al prefijo, proyección de salida, residual original, segundo RMS, MLP y segundo residual
+- **AND** conserva las filas KV anteriores, las entradas y los pesos
+- **AND** un oráculo independiente verifica la capa completa y las direcciones de slots se convierten con el tamaño real de slot
+- **AND** esta API de operaciones no acredita por sí sola el compilador, worker ni CLI distribuidos históricos
+
 ### Requirement: Matmul vectorial completo
 El sistema SHALL implementar matmul real con acumulador de suma de productos, donde cada peso W[i][j] se aplica a su dimensión correspondiente del hidden state.
 

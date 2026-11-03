@@ -334,6 +334,23 @@ impl BMLTransformer {
         Ok(self.bounded_positive_add(inputs[0], value, c[1]))
     }
 
+    /// Add a previously computed exponential to the ordered softmax total.
+    ///
+    /// Inputs are `[total, exponential]`. The exponential must come from
+    /// [`Self::softmax_bounded_exp`] with the same configuration and maximum.
+    /// This is the same positive addition used by [`Self::softmax_bounded_reduce`],
+    /// allowing an explicit caller-owned scratch buffer to retain exponentials.
+    /// Shape, node and configuration checks precede mutation; every BML still
+    /// requires finite-real evaluation.
+    pub fn softmax_bounded_sum(
+        &mut self,
+        inputs: &[NodeId],
+        config: &BoundedOpConfig,
+    ) -> Result<NodeId, BoundedBuildError> {
+        let c = self.bounded_softmax_stage_literals(inputs, 2, config)?;
+        Ok(self.bounded_positive_add(inputs[0], inputs[1], c[1]))
+    }
+
     /// Build the shared bounded softmax reciprocal from `[total]`.
     ///
     /// The positive total must come from the ordered exponential reduction.
@@ -365,6 +382,22 @@ impl BMLTransformer {
         let c = self.bounded_softmax_stage_literals(inputs, 3, config)?;
         let value = self.bounded_softmax_exp_with_literals(inputs[0], inputs[1], &c);
         Ok(self.bounded_positive_mul(value, inputs[2], c[0]))
+    }
+
+    /// Normalize a stored exponential with the shared softmax reciprocal.
+    ///
+    /// Inputs are `[exponential, inverse]` from [`Self::softmax_bounded_exp`]
+    /// and [`Self::softmax_bounded_inverse`] under the same configuration. The
+    /// BML multiplication is identical to [`Self::softmax_bounded_output`];
+    /// retaining the exponential does not change its operands or sum order.
+    /// Configuration and finite-real requirements match the other stages.
+    pub fn softmax_bounded_normalize(
+        &mut self,
+        inputs: &[NodeId],
+        config: &BoundedOpConfig,
+    ) -> Result<NodeId, BoundedBuildError> {
+        let c = self.bounded_softmax_stage_literals(inputs, 2, config)?;
+        Ok(self.bounded_positive_mul(inputs[0], inputs[1], c[0]))
     }
 
     /// Build the configured operation from existing input/external node IDs.

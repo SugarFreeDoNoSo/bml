@@ -195,7 +195,7 @@ impl ValidatedGraph {
         constants: &[f64],
         buffer: &mut ResultBuffer,
     ) -> Result<f64, GraphError> {
-        self.execute_symbolic_context(inputs, constants, buffer, false)
+        self.execute_symbolic_context(inputs, constants, buffer, false, false, false)
     }
 
     /// Execute the finite-real BML basis with bounded loops and explicit indexed
@@ -208,7 +208,35 @@ impl ValidatedGraph {
         constants: &[f64],
         buffer: &mut ResultBuffer,
     ) -> Result<f64, GraphError> {
-        self.execute_symbolic_context(inputs, constants, buffer, true)
+        self.execute_symbolic_context(inputs, constants, buffer, true, false, false)
+    }
+
+    /// Opt in to finite maximum selection alongside indexed checked BML.
+    /// Existing symbolic profiles continue to reject FMax. Nonfinite operands
+    /// fail with Numerical; all existing context, loop and stack limits apply.
+    pub fn execute_indexed_symbolic_with_selection(
+        &self,
+        inputs: &[f64],
+        constants: &[f64],
+        buffer: &mut ResultBuffer,
+    ) -> Result<f64, GraphError> {
+        self.execute_symbolic_context(inputs, constants, buffer, true, true, false)
+    }
+
+    /// Execute an explicitly general operation program with finite-real checks.
+    ///
+    /// Unlike persisted symbolic profiles this permits native FAdd/FMul, Zero,
+    /// result-buffer loads and maximum selection. Each arithmetic result must
+    /// be finite; dynamic addresses must be exact nonnegative integers in range.
+    /// It does not prove that native arithmetic is used only for addressing.
+    /// Errors may leave earlier output writes, as in other checked entrypoints.
+    pub fn execute_operation_with_constants(
+        &self,
+        inputs: &[f64],
+        constants: &[f64],
+        buffer: &mut ResultBuffer,
+    ) -> Result<f64, GraphError> {
+        self.execute_symbolic_context(inputs, constants, buffer, true, true, true)
     }
 
     fn execute_symbolic_context(
@@ -217,6 +245,8 @@ impl ValidatedGraph {
         constants: &[f64],
         buffer: &mut ResultBuffer,
         indexed: bool,
+        selection: bool,
+        operation: bool,
     ) -> Result<f64, GraphError> {
         if self.external_constants != Some(constants.len())
             || inputs.len() != self.inputs
@@ -226,7 +256,9 @@ impl ValidatedGraph {
             return Err(GraphError::Context);
         }
         if !self.graph.fragments.iter().flat_map(|f| &f.ops).all(|op| {
-            bml_compiler::symbolic_kernels::is_symbolic_opcode(op)
+            operation
+                || bml_compiler::symbolic_kernels::is_symbolic_opcode(op)
+                || (selection && matches!(op, RpnOp::FMax))
                 || (indexed
                     && matches!(
                         op,
@@ -278,6 +310,31 @@ fn execute_checked_ops(
     while position < ops.len() {
         match ops[position] {
             RpnOp::One => stack.push(1.0),
+            RpnOp::Zero => stack.push(0.0),
+            RpnOp::VarIndexed { base } => {
+                let offset = stack.pop().ok_or(GraphError::Stack)?;
+                let index = bml_compiler::rpn::context_index(base, offset)
+                    .filter(|&index| (index as usize) < buffer.len())
+                    .ok_or(GraphError::Reference)?;
+                let value = buffer.read_indexed(index, 0);
+                if !value.is_finite() {
+                    return Err(GraphError::Numerical);
+                }
+                stack.push(value);
+            }
+            RpnOp::FAdd | RpnOp::FMul => {
+                let right = stack.pop().ok_or(GraphError::Stack)?;
+                let left = stack.pop().ok_or(GraphError::Stack)?;
+                let value = if matches!(ops[position], RpnOp::FAdd) {
+                    left + right
+                } else {
+                    left * right
+                };
+                if !value.is_finite() {
+                    return Err(GraphError::Numerical);
+                }
+                stack.push(value);
+            }
             RpnOp::Var(id) => stack.push(inputs[id as usize]),
             RpnOp::Const(id) => stack.push(constants[id as usize]),
             RpnOp::ContextVarIndexed { base } | RpnOp::ContextConstIndexed { base } => {
@@ -290,6 +347,15 @@ fn execute_checked_ops(
                     constants
                 };
                 stack.push(*context.get(index).ok_or(GraphError::Reference)?);
+            }
+            RpnOp::FMax => {
+                let right = stack.pop().ok_or(GraphError::Stack)?;
+                let left = stack.pop().ok_or(GraphError::Stack)?;
+                let result = bml_compiler::rpn::finite_max(left, right);
+                if !result.is_finite() {
+                    return Err(GraphError::Numerical);
+                }
+                stack.push(result);
             }
             RpnOp::Bml => {
                 let right = stack.pop().ok_or(GraphError::Stack)?;
@@ -336,7 +402,6 @@ fn execute_checked_ops(
                 position = end;
                 continue;
             }
-            _ => return Err(GraphError::SymbolicBasis),
         }
         position += 1;
     }
@@ -411,7 +476,7 @@ impl StackBudget {
             self.step()?;
             match ops[i] {
                 RpnOp::One | RpnOp::Zero | RpnOp::Var(_) | RpnOp::Const(_) => self.effect(0, 1)?,
-                RpnOp::Bml | RpnOp::FAdd | RpnOp::FMul => self.effect(2, 1)?,
+                RpnOp::Bml | RpnOp::FAdd | RpnOp::FMul | RpnOp::FMax => self.effect(2, 1)?,
                 RpnOp::Dup => self.effect(1, 2)?,
                 RpnOp::Pick { depth } => {
                     if depth as usize >= self.height {

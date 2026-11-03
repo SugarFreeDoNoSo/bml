@@ -32,7 +32,12 @@ fn indexed_context_graphs_use_new_tags_and_version_without_changing_legacy_bytes
     let decoded = BmlGraph::deserialize(&bytes, 32768).unwrap();
     assert_eq!(decoded.fragments[0].ops, new.fragments[0].ops);
     assert_eq!(decoded.serialize(), bytes);
-    for version in [1u32, 2, 4] {
+    bytes[4..8].copy_from_slice(&4u32.to_le_bytes());
+    assert_eq!(
+        BmlGraph::deserialize(&bytes, 32768).unwrap().fragments[0].ops,
+        new.fragments[0].ops
+    );
+    for version in [1u32, 2, 5] {
         bytes[4..8].copy_from_slice(&version.to_le_bytes());
         assert!(BmlGraph::deserialize(&bytes, 32768).is_err());
     }

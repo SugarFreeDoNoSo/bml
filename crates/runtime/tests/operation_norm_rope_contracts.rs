@@ -6,6 +6,58 @@ use bml_compiler::{symbolic_kernels::RmsBounds, Fragment, RpnOp, RpnProgram};
 use bml_domain::EvalContext;
 use bml_runtime::{buffer::ResultBuffer, HotLoop};
 
+#[test]
+fn compact_rope_retains_original_bounded_dag_bits_and_fits_one_fragment() {
+    use bml_domain::{transformer::BoundedOpConfig, BMLTransformer};
+    let input = [-3.0, 0.25, 0.0, -0.0, -1.5, 2.25, 4.0, -2.0];
+    for bound in [4.0, 16.0] {
+        let mut builder = BMLTransformer::new();
+        let inputs = [builder.var(0), builder.var(1)];
+        let coefficients = [builder.var(2), builder.var(3)];
+        let roots = builder
+            .operation_bounded(
+                &inputs,
+                &coefficients,
+                &BoundedOpConfig::rope(bound).unwrap(),
+            )
+            .unwrap();
+        let raw = builder.into_soa();
+        let original: Vec<_> = roots
+            .iter()
+            .map(|&root| bml_compiler::linearize(&raw, root))
+            .collect();
+        for position in [0, 1, 127] {
+            let config = RopeVectorConfig {
+                heads: 2,
+                head_dim: 4,
+                position,
+                frequency_base: 37.0,
+                input_bound: bound,
+            };
+            let compiled = bml_rope_vector_program(0, 1, config).unwrap();
+            compiled.validate_values(&input).unwrap();
+            assert!(compiled.program().ops.len() * std::mem::size_of::<RpnOp>() <= 32768);
+            let mut buffer = ResultBuffer::new(2, 8);
+            buffer.slot_mut(0).copy_from_slice(&input);
+            let context = EvalContext::new(&[], &compiled.program().const_pool);
+            execute(compiled.program(), &context, &mut buffer);
+            for pair in 0..4 {
+                let angle = position as f64 * 37.0_f64.powf(-2.0 * (pair % 2) as f64 / 4.0);
+                let (sin, cos) = angle.sin_cos();
+                let values = [input[2 * pair], input[2 * pair + 1], cos, sin];
+                for (component, scalar) in original.iter().enumerate() {
+                    let expected =
+                        scalar.evaluate_with_ctx(&EvalContext::new(&values, &scalar.const_pool));
+                    assert_eq!(
+                        buffer.read(1, (2 * pair + component) as u32).to_bits(),
+                        expected.to_bits()
+                    );
+                }
+            }
+        }
+    }
+}
+
 fn execute(program: &RpnProgram, context: &EvalContext, buffer: &mut ResultBuffer) {
     let mut hot = HotLoop::with_capacity(program.ops.len() + 64);
     hot.execute_fragment(&Fragment {

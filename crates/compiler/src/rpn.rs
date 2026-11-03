@@ -105,6 +105,24 @@ pub enum RpnOp {
     Drop,
     /// Intercambia los dos valores en el tope de la pila: (a, b) -> (b, a).
     Swap,
+    /// Select the larger of two finite operands, consuming both values.
+    /// Nonfinite operands produce NaN; +0 wins a tie with -0.
+    FMax,
+}
+
+/// Finite maximum selection shared by every RPN evaluator.
+///
+/// Both operands must be finite. Equal nonzero operands retain their value;
+/// +0 wins a signed-zero tie, while two negative zeros remain negative zero.
+#[inline]
+pub fn finite_max(left: f64, right: f64) -> f64 {
+    if !left.is_finite() || !right.is_finite() {
+        f64::NAN
+    } else if left == 0.0 && right == 0.0 {
+        f64::from_bits(left.to_bits() & right.to_bits())
+    } else {
+        left.max(right)
+    }
 }
 
 /// Resolve an exact, finite, nonnegative u32 offset without saturating casts.
@@ -168,7 +186,7 @@ impl RpnProgram {
     /// `Var(id)` se resuelve desde `ctx.inputs` y `Const(id)` desde `ctx.weights`.
     pub fn evaluate_with_ctx(&self, ctx: &bml_domain::EvalContext) -> f64 {
         let mut stack: Vec<f64> = Vec::with_capacity(self.ops.len());
-        if has_indexed_context(&self.ops) {
+        if uses_counter_loops(&self.ops) {
             return if evaluate_indexed_ops(&self.ops, &mut stack, ctx, 0).is_ok() {
                 stack.pop().unwrap_or(f64::NAN)
             } else {
@@ -222,6 +240,11 @@ impl RpnProgram {
                     let b = stack.pop().unwrap_or(0.0);
                     let a = stack.pop().unwrap_or(0.0);
                     stack.push(a * b);
+                }
+                RpnOp::FMax => {
+                    let right = stack.pop().unwrap_or(f64::NAN);
+                    let left = stack.pop().unwrap_or(f64::NAN);
+                    stack.push(finite_max(left, right));
                 }
                 RpnOp::Pick { depth } => {
                     let d = depth as usize;
@@ -289,6 +312,11 @@ impl RpnProgram {
                                     let b = stack.pop().unwrap_or(0.0);
                                     let a = stack.pop().unwrap_or(0.0);
                                     stack.push(a * b);
+                                }
+                                RpnOp::FMax => {
+                                    let right = stack.pop().unwrap_or(f64::NAN);
+                                    let left = stack.pop().unwrap_or(f64::NAN);
+                                    stack.push(finite_max(left, right));
                                 }
                                 RpnOp::Pick { depth } => {
                                     let d = depth as usize;
@@ -362,6 +390,11 @@ impl RpnProgram {
                                                     let a = stack.pop().unwrap_or(0.0);
                                                     stack.push(a * b);
                                                 }
+                                                RpnOp::FMax => {
+                                                    let right = stack.pop().unwrap_or(f64::NAN);
+                                                    let left = stack.pop().unwrap_or(f64::NAN);
+                                                    stack.push(finite_max(left, right));
+                                                }
                                                 RpnOp::Pick { depth } => {
                                                     let d = depth as usize;
                                                     let idx = stack.len().saturating_sub(1 + d);
@@ -401,11 +434,11 @@ impl RpnProgram {
     }
 }
 
-pub(crate) fn has_indexed_context(ops: &[RpnOp]) -> bool {
+pub(crate) fn uses_counter_loops(ops: &[RpnOp]) -> bool {
     ops.iter().any(|op| {
         matches!(
             op,
-            RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. }
+            RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. } | RpnOp::FMax
         )
     })
 }
@@ -437,12 +470,13 @@ pub(crate) fn evaluate_indexed_ops(
                 });
                 stack.push(value);
             }
-            RpnOp::Bml | RpnOp::FAdd | RpnOp::FMul => {
+            RpnOp::Bml | RpnOp::FAdd | RpnOp::FMul | RpnOp::FMax => {
                 let right = stack.pop().ok_or(())?;
                 let left = stack.pop().ok_or(())?;
                 stack.push(match ops[i] {
                     RpnOp::Bml => bml_domain::bml_base_op(left, right),
                     RpnOp::FAdd => left + right,
+                    RpnOp::FMax => finite_max(left, right),
                     _ => left * right,
                 });
             }

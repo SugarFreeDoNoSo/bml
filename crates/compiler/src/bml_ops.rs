@@ -765,6 +765,11 @@ pub fn bml_rope_vector_program(
     }
     check_vector_read(input_base, width)?;
     let (dag, roots) = rope_pair_dag(config.input_bound)?;
+    // Preserve the bounded arithmetic and its operand order while eliminating
+    // repeated nodes and releasing dead temporaries inside each pair. The raw
+    // DAG remains available to the finite-real preflight below.
+    let (compact, compact_roots) =
+        crate::symbolic_bounded::compact_stage(dag.clone(), roots.to_vec());
     let mut coefficients = Vec::with_capacity(width as usize / 2);
     for _ in 0..config.heads {
         for pair in 0..config.head_dim / 2 {
@@ -792,8 +797,8 @@ pub fn bml_rope_vector_program(
         .const_pool
         .extend(coefficients.iter().flatten().copied());
     let mut body = Vec::new();
-    for (component, &root) in roots.iter().enumerate() {
-        let scalar = crate::linearize(&dag, root);
+    for (component, &root) in compact_roots.iter().enumerate() {
+        let scalar = crate::symbolic_bounded::linearize_stage(&compact, root);
         body.extend(indexed_scalar_body(&scalar, |id, depth| {
             let mut load = vec![RpnOp::Pick { depth }, RpnOp::Const(two_id), RpnOp::FMul];
             if !id.is_multiple_of(2) {
@@ -877,6 +882,7 @@ mod tests {
                 | RpnOp::Dup
                 | RpnOp::FAdd
                 | RpnOp::FMul
+                | RpnOp::FMax
                 | RpnOp::Drop
                 | RpnOp::Swap => 1,
                 RpnOp::Var(_)

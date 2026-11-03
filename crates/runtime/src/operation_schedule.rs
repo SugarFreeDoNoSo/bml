@@ -114,7 +114,7 @@ impl Analyzer<'_> {
                         *write = true;
                     }
                 }
-                RpnOp::Bml | RpnOp::FAdd | RpnOp::FMul => {
+                RpnOp::Bml | RpnOp::FAdd | RpnOp::FMul | RpnOp::FMax => {
                     let right = stack.pop()?;
                     let left = stack.pop()?;
                     stack.push(match ops[pc] {

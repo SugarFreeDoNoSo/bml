@@ -34,7 +34,7 @@
 //!
 //! 22 capas × 200 MB = ~4.4 GB + embeddings 32000×2048 = 262 MB ≈ 4.6 GB total
 
-use crate::fragment::{BMLGRAPH_MAGIC, BMLGRAPH_VERSION};
+use crate::fragment::{BMLGRAPH_MAGIC, BMLGRAPH_SELECTION_VERSION, BMLGRAPH_VERSION};
 use crate::gguf_compiler::{read_model_config, read_tensor_f32, ModelConfig};
 use crate::rpn::RpnOp;
 use bml_domain::encoder::RealEncoder;
@@ -290,6 +290,15 @@ pub fn serialize_distributed(
     }) {
         return Err("indexed context loads require the single-file v3 graph format".into());
     }
+    let version = if fragments
+        .iter()
+        .flat_map(|f| &f.ops)
+        .any(|op| matches!(op, RpnOp::FMax))
+    {
+        BMLGRAPH_SELECTION_VERSION
+    } else {
+        BMLGRAPH_VERSION
+    };
     std::fs::create_dir_all(output_dir).map_err(|e| format!("crear dir: {e}"))?;
 
     // Header: magic, version, n_fragments, config
@@ -298,7 +307,7 @@ pub fn serialize_distributed(
 
     f.write_all(&BMLGRAPH_MAGIC.to_le_bytes())
         .map_err(|e| format!("write magic: {e}"))?;
-    f.write_all(&BMLGRAPH_VERSION.to_le_bytes())
+    f.write_all(&version.to_le_bytes())
         .map_err(|e| format!("write version: {e}"))?;
     f.write_all(&(fragments.len() as u32).to_le_bytes())
         .map_err(|e| format!("write n_frag: {e}"))?;
@@ -329,7 +338,7 @@ pub fn serialize_distributed(
         // Magic + version
         ff.write_all(&BMLGRAPH_MAGIC.to_le_bytes())
             .map_err(|e| format!("write magic: {e}"))?;
-        ff.write_all(&BMLGRAPH_VERSION.to_le_bytes())
+        ff.write_all(&version.to_le_bytes())
             .map_err(|e| format!("write version: {e}"))?;
 
         // Fragment ID
@@ -415,14 +424,15 @@ impl<'a> DistributedReader<'a> {
         String::from_utf8(self.take(count)?.to_vec())
             .map_err(|_| "invalid distributed UTF-8".into())
     }
-    fn prefix(&mut self) -> Result<(), String> {
+    fn prefix(&mut self) -> Result<u32, String> {
         if self.u32()? != BMLGRAPH_MAGIC {
             return Err("invalid distributed magic".into());
         }
-        if self.u32()? != BMLGRAPH_VERSION {
+        let version = self.u32()?;
+        if !matches!(version, BMLGRAPH_VERSION | BMLGRAPH_SELECTION_VERSION) {
             return Err("unsupported distributed version".into());
         }
-        Ok(())
+        Ok(version)
     }
     fn finish(self) -> Result<(), String> {
         if self.bytes.is_empty() {
@@ -444,7 +454,7 @@ pub fn load_distributed_fragment(frag_path: &Path) -> Result<DistributedFragment
     let (config, _) = load_distributed_header(directory)?;
     let bytes = crate::causal_artifact::read_bounded(frag_path, MAX_DISTRIBUTED_FRAGMENT_BYTES)?;
     let mut reader = DistributedReader { bytes: &bytes };
-    reader.prefix()?;
+    let version = reader.prefix()?;
     let fragment_id = reader.u32()?;
     let layer_start = reader.u32()?;
     let layer_end = reader.u32()?;
@@ -458,6 +468,9 @@ pub fn load_distributed_fragment(frag_path: &Path) -> Result<DistributedFragment
     let mut ops = Vec::with_capacity(n_ops);
     for _ in 0..n_ops {
         let (op, consumed) = deserialize_op(reader.bytes)?;
+        if op == RpnOp::FMax && version < BMLGRAPH_SELECTION_VERSION {
+            return Err("maximum selection requires distributed v4".into());
+        }
         reader.take(consumed)?;
         ops.push(op);
     }
@@ -579,6 +592,7 @@ fn serialize_op(f: &mut std::fs::File, op: &RpnOp) -> Result<(), String> {
         }
         RpnOp::FAdd => f.write_all(&[9]).map_err(|e| format!("write op: {e}")),
         RpnOp::FMul => f.write_all(&[10]).map_err(|e| format!("write op: {e}")),
+        RpnOp::FMax => f.write_all(&[16]).map_err(|e| format!("write op: {e}")),
         RpnOp::Pick { depth } => {
             f.write_all(&[11]).map_err(|e| format!("write op: {e}"))?;
             f.write_all(&depth.to_le_bytes())
@@ -599,7 +613,7 @@ fn deserialize_op(bytes: &[u8]) -> Result<(RpnOp, usize), String> {
     }
     let tag = bytes[0];
     let width = match tag {
-        0 | 1 | 2 | 6 | 9 | 10 | 12 | 13 => 1,
+        0 | 1 | 2 | 6 | 9 | 10 | 12 | 13 | 16 => 1,
         3 => 9,
         4 | 5 | 7 | 8 | 11 => 5,
         _ => return Err(format!("tag desconocido: {tag}")),
@@ -635,6 +649,7 @@ fn deserialize_op(bytes: &[u8]) -> Result<(RpnOp, usize), String> {
         }
         9 => (RpnOp::FAdd, 1),
         10 => (RpnOp::FMul, 1),
+        16 => (RpnOp::FMax, 1),
         11 => {
             let depth = u32::from_le_bytes(bytes[1..5].try_into().unwrap());
             (RpnOp::Pick { depth }, 5)
@@ -1211,6 +1226,7 @@ fn op_size(op: &RpnOp) -> usize {
         | RpnOp::Dup
         | RpnOp::FAdd
         | RpnOp::FMul
+        | RpnOp::FMax
         | RpnOp::Drop
         | RpnOp::Swap => 1,
         RpnOp::Var(_)
@@ -1356,6 +1372,11 @@ pub fn serialize_sub_fragments(
     std::fs::create_dir_all(&frag_dir).map_err(|e| format!("crear dir: {e}"))?;
 
     for sf in sub_frags {
+        let version = if sf.ops.iter().any(|op| matches!(op, RpnOp::FMax)) {
+            BMLGRAPH_SELECTION_VERSION
+        } else {
+            BMLGRAPH_VERSION
+        };
         let path = frag_dir.join(format!("sub_{}.bmlgraph", sf.sub_id));
         let mut f =
             std::fs::File::create(&path).map_err(|e| format!("crear sub {}: {e}", sf.sub_id))?;
@@ -1363,7 +1384,7 @@ pub fn serialize_sub_fragments(
         // Header
         f.write_all(&BMLGRAPH_MAGIC.to_le_bytes())
             .map_err(|e| format!("write magic: {e}"))?;
-        f.write_all(&BMLGRAPH_VERSION.to_le_bytes())
+        f.write_all(&version.to_le_bytes())
             .map_err(|e| format!("write version: {e}"))?;
 
         // IDs

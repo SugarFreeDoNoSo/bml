@@ -15,8 +15,8 @@
 //! [fragment_1_size: u32]
 //! [fragment_1_ops: ...]
 //! ...
-//! [constant_count: u64]    // v2 only
-//! [constants: f64 LE ...] // v2 only
+//! [constant_count: u64]    // v2 and later
+//! [constants: f64 LE ...] // v2 and later
 //! ```
 //!
 //! Cada fragmento es un subconjunto contiguo de operaciones RPN. El
@@ -32,8 +32,10 @@ pub const BMLGRAPH_MAGIC: u32 = 0x4C4D4247;
 pub const BMLGRAPH_VERSION: u32 = 2;
 
 /// Single-file format supporting explicit indexed input/constant loads.
-/// Graphs without these instructions retain the historical v2 bytes.
+/// Graphs using only historical opcodes retain their original v2 bytes.
 pub const BMLGRAPH_CONTEXT_VERSION: u32 = 3;
+/// Format supporting finite maximum selection. Older opcode bytes are unchanged.
+pub const BMLGRAPH_SELECTION_VERSION: u32 = 4;
 
 /// Umbral por defecto: 32 KB (L1 cache).
 pub const DEFAULT_L1_THRESHOLD: usize = 32 * 1024;
@@ -89,7 +91,7 @@ impl Fragment {
 
     /// Evalúa el fragmento sobre una pila con contexto de inputs y pesos.
     pub fn evaluate_on_stack_with_ctx(&self, stack: &mut Vec<f64>, ctx: &bml_domain::EvalContext) {
-        if crate::rpn::has_indexed_context(&self.ops) {
+        if crate::rpn::uses_counter_loops(&self.ops) {
             if crate::rpn::evaluate_indexed_ops(&self.ops, stack, ctx, 0).is_err() {
                 stack.clear();
                 stack.push(f64::NAN);
@@ -143,6 +145,11 @@ impl Fragment {
                     let b = stack.pop().unwrap_or(0.0);
                     let a = stack.pop().unwrap_or(0.0);
                     stack.push(a * b);
+                }
+                RpnOp::FMax => {
+                    let right = stack.pop().unwrap_or(f64::NAN);
+                    let left = stack.pop().unwrap_or(f64::NAN);
+                    stack.push(crate::rpn::finite_max(left, right));
                 }
                 RpnOp::Pick { depth } => {
                     let d = depth as usize;
@@ -210,6 +217,11 @@ impl Fragment {
                                     let b = stack.pop().unwrap_or(0.0);
                                     let a = stack.pop().unwrap_or(0.0);
                                     stack.push(a * b);
+                                }
+                                RpnOp::FMax => {
+                                    let right = stack.pop().unwrap_or(f64::NAN);
+                                    let left = stack.pop().unwrap_or(f64::NAN);
+                                    stack.push(crate::rpn::finite_max(left, right));
                                 }
                                 RpnOp::Pick { depth } => {
                                     let d = depth as usize;
@@ -282,6 +294,11 @@ impl Fragment {
                                                     let b = stack.pop().unwrap_or(0.0);
                                                     let a = stack.pop().unwrap_or(0.0);
                                                     stack.push(a * b);
+                                                }
+                                                RpnOp::FMax => {
+                                                    let right = stack.pop().unwrap_or(f64::NAN);
+                                                    let left = stack.pop().unwrap_or(f64::NAN);
+                                                    stack.push(crate::rpn::finite_max(left, right));
                                                 }
                                                 RpnOp::Pick { depth } => {
                                                     let d = depth as usize;
@@ -376,7 +393,7 @@ impl BmlGraph {
         let indexed = self
             .fragments
             .iter()
-            .any(|f| crate::rpn::has_indexed_context(&f.ops));
+            .any(|f| crate::rpn::uses_counter_loops(&f.ops));
         for fragment in &self.fragments {
             let inputs = [x];
             let context = bml_domain::EvalContext::new(&inputs, &self.const_pool);
@@ -397,7 +414,14 @@ impl BmlGraph {
     pub fn serialize(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&BMLGRAPH_MAGIC.to_le_bytes());
-        let version = if self.fragments.iter().flat_map(|f| &f.ops).any(|op| {
+        let version = if self
+            .fragments
+            .iter()
+            .flat_map(|f| &f.ops)
+            .any(|op| matches!(op, RpnOp::FMax))
+        {
+            BMLGRAPH_SELECTION_VERSION
+        } else if self.fragments.iter().flat_map(|f| &f.ops).any(|op| {
             matches!(
                 op,
                 RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. }
@@ -440,6 +464,7 @@ impl BmlGraph {
                     }
                     RpnOp::FAdd => bytes.push(9),
                     RpnOp::FMul => bytes.push(10),
+                    RpnOp::FMax => bytes.push(16),
                     RpnOp::Pick { depth } => {
                         bytes.push(11);
                         bytes.extend_from_slice(&depth.to_le_bytes());
@@ -485,7 +510,7 @@ impl BmlGraph {
             return Err(format!("magic inválido: 0x{magic:08X}"));
         }
         let version = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
-        if !(1..=BMLGRAPH_CONTEXT_VERSION).contains(&version) {
+        if !(1..=BMLGRAPH_SELECTION_VERSION).contains(&version) {
             return Err(format!("versión no soportada: {version}"));
         }
         let num_fragments = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
@@ -568,6 +593,7 @@ impl BmlGraph {
                     }
                     9 => RpnOp::FAdd,
                     10 => RpnOp::FMul,
+                    16 if version >= BMLGRAPH_SELECTION_VERSION => RpnOp::FMax,
                     11 => {
                         if offset + 4 > bytes.len() {
                             return Err("offset fuera de rango leyendo Pick".to_string());

@@ -859,7 +859,9 @@
       "bounded_softmax_stages_match_oracle_across_widths_and_valid_score_bounds",
       "bounded_softmax_stages_keep_ten_literals_and_constant_node_counts",
       "bounded_softmax_stage_configuration_and_structure_errors_do_not_mutate",
-      "bounded_softmax_stages_retain_the_complete_vector_maximum_contract"
+      "bounded_softmax_stages_retain_the_complete_vector_maximum_contract",
+      "cached_exponential_sum_and_normalization_preserve_recomputed_stage_bits",
+      "cached_softmax_stage_validation_precedes_any_builder_mutation"
     ]
   },
   "C90": {
@@ -896,6 +898,7 @@
     "package": "bml-runtime",
     "target": "operation_norm_rope_contracts",
     "tests": [
+      "compact_rope_retains_original_bounded_dag_bits_and_fits_one_fragment",
       "legacy_rms_scale_writes_each_signed_output_using_precomputed_factor",
       "legacy_rms_scale_retains_native_ieee_range_and_signed_zero",
       "configured_rms_scale_supports_inverse_above_one_and_checks_operands",
@@ -916,6 +919,63 @@
       "indexed_literal_counts_values_and_complete_prefix_plan_are_enforced",
       "indexed_missing_outputs_never_commit_cache_and_valid_replacement_is_executed",
       "indexed_prefix_plan_storage_grows_linearly_without_omitting_any_prefix"
+    ]
+  },
+  "C95": {
+    "package": "bml-compiler",
+    "target": "fmax_codec_contracts",
+    "tests": [
+      "single_file_selection_version_preserves_old_bytes_and_rejects_new_tag_in_old_versions",
+      "directory_and_distributed_selection_records_roundtrip_with_version_guards",
+      "maximum_selection_does_not_enter_existing_symbolic_artifact_bases"
+    ]
+  },
+  "C96": {
+    "package": "bml-runtime",
+    "target": "fmax_execution_contracts",
+    "tests": [
+      "finite_max_is_identical_in_reference_fragment_native_and_checked_evaluators",
+      "maximum_selection_uses_runtime_loop_counters_and_preserves_cross_fragment_stack",
+      "checked_general_operations_validate_buffer_indices_native_arithmetic_and_every_bml",
+      "shm_maximum_tag_roundtrips_without_changing_legacy_records",
+      "scheduling_respects_reads_selected_by_maximum_even_with_incomplete_metadata"
+    ]
+  },
+  "C97": {
+    "package": "bml-runtime",
+    "target": "operation_attention_contracts",
+    "tests": [
+      "complete_attention_matches_nonuniform_signed_oracle_with_and_without_scratch",
+      "historical_attention_is_one_kv_token_with_owned_constants_and_real_outputs",
+      "attention_rejects_bad_dimensions_addresses_profiles_and_actual_intermediates",
+      "attention_layout_preflight_rejects_overlap_bad_scratch_and_capacity",
+      "scratch_attention_code_literals_and_stack_are_constant_across_dimensions",
+      "attention_native_arithmetic_is_only_used_for_indices"
+    ]
+  },
+  "C98": {
+    "package": "bml-runtime",
+    "target": "operation_mlp_contracts",
+    "tests": [
+      "public_mlp_uses_rectangular_gate_up_and_down_and_preserves_unrelated_state",
+      "mlp_fold_preserves_unfolded_bits_for_custom_configuration",
+      "every_matrix_element_influences_the_complete_mlp_and_legacy_is_square",
+      "mlp_preflight_rejects_shapes_bounds_and_each_invalid_stage",
+      "scratch_mlp_executes_checked_graph_and_runtime_binds_its_owned_constants",
+      "mlp_dimensions_addresses_and_explicit_scratch_layout_are_checked",
+      "mlp_storage_is_constant_and_native_arithmetic_is_only_addressing"
+    ]
+  },
+  "C99": {
+    "package": "bml-runtime",
+    "target": "operation_layer_contracts",
+    "tests": [
+      "complete_causal_layer_matches_dense_oracle_for_two_positions_and_all_bml_nodes",
+      "layer_dependency_scheduler_preserves_same_causal_result_and_owned_pools",
+      "every_learned_layer_tensor_changes_the_nontrivial_causal_result",
+      "layer_rejects_bad_shapes_overflows_and_aliased_buffers",
+      "legacy_layer_converts_nonzero_slots_to_absolute_bases_and_keeps_both_residuals",
+      "large_layer_keeps_each_atomic_fragment_within_declared_instruction_budget"
     ]
   }
 }

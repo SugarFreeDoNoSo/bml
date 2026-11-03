@@ -1,7 +1,7 @@
 //! Bounded decoder for the legacy directory container, distinct from BmlGraph's
 //! single-file serialization. Parsing does not validate execution stack/loops.
 use crate::{
-    fragment::{BmlGraph, Fragment, BMLGRAPH_MAGIC, BMLGRAPH_VERSION},
+    fragment::{BmlGraph, Fragment, BMLGRAPH_MAGIC, BMLGRAPH_SELECTION_VERSION, BMLGRAPH_VERSION},
     gguf_compiler::ModelConfig,
     rpn::RpnOp,
 };
@@ -111,7 +111,8 @@ pub fn load_from_dir_with_limits(
     if cursor.u32()? != BMLGRAPH_MAGIC {
         return Err("invalid graph directory magic".into());
     }
-    if cursor.u32()? != BMLGRAPH_VERSION {
+    let version = cursor.u32()?;
+    if !matches!(version, BMLGRAPH_VERSION | BMLGRAPH_SELECTION_VERSION) {
         return Err("unsupported graph directory version".into());
     }
     let count = cursor.u32()? as usize;
@@ -184,6 +185,7 @@ pub fn load_from_dir_with_limits(
                 },
                 9 => RpnOp::FAdd,
                 10 => RpnOp::FMul,
+                16 if version >= BMLGRAPH_SELECTION_VERSION => RpnOp::FMax,
                 11 => RpnOp::Pick {
                     depth: cursor.u32()?,
                 },

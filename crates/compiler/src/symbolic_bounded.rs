@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 #[path = "symbolic_bounded_rms.rs"]
 mod rms;
-pub(crate) use rms::compile_rms_program;
+pub(crate) use rms::{append_stage, compact_stage, compile_rms_program, linearize_stage};
 #[path = "symbolic_bounded_softmax.rs"]
 mod softmax;
 

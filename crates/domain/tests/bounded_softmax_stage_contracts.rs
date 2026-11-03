@@ -234,3 +234,83 @@ fn bounded_softmax_stages_retain_the_complete_vector_maximum_contract() {
         );
     }
 }
+
+#[test]
+fn cached_exponential_sum_and_normalization_preserve_recomputed_stage_bits() {
+    let mut sizes = Vec::new();
+    for width in [1, 4, 288, 2048] {
+        let config = BoundedOpConfig::softmax(width, 16.0).unwrap();
+        let scores: Vec<_> = (0..width)
+            .map(|i| -16.0 + (i * 7 % 29) as f64 / 2.0)
+            .collect();
+        let maximum = scores.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        let (exp, exp_root) = Stage::Exp.build(&config);
+        let (reduce, reduce_root) = Stage::Reduce.build(&config);
+        let (inverse, inverse_root) = Stage::Inverse.build(&config);
+        let (output, output_root) = Stage::Output.build(&config);
+        let mut sum = BMLTransformer::new();
+        let sum_vars = [sum.var(0), sum.var(1)];
+        let sum_root = sum.softmax_bounded_sum(&sum_vars, &config).unwrap();
+        let mut normalize = BMLTransformer::new();
+        let norm_vars = [normalize.var(0), normalize.var(1)];
+        let norm_root = normalize
+            .softmax_bounded_normalize(&norm_vars, &config)
+            .unwrap();
+        assert_eq!(sum.soa().const_pool, config.fixed_literals());
+        assert_eq!(normalize.soa().const_pool, config.fixed_literals());
+        sizes.push((sum.soa().len(), normalize.soa().len()));
+        let exponentials: Vec<_> = scores
+            .iter()
+            .map(|&score| checked(&exp, &[exp_root], &[score, maximum])[0])
+            .collect();
+        let mut total = exponentials[0];
+        for (&score, &exponential) in scores[1..].iter().zip(&exponentials[1..]) {
+            let expected = checked(&reduce, &[reduce_root], &[total, score, maximum])[0];
+            total = checked(&sum, &[sum_root], &[total, exponential])[0];
+            assert_eq!(total.to_bits(), expected.to_bits());
+        }
+        let reciprocal = checked(&inverse, &[inverse_root], &[total])[0];
+        let denominator = scores
+            .iter()
+            .map(|score| (score - maximum).exp())
+            .sum::<f64>();
+        for (&score, &exponential) in scores.iter().zip(&exponentials) {
+            let expected = checked(&output, &[output_root], &[score, maximum, reciprocal])[0];
+            let actual = checked(&normalize, &[norm_root], &[exponential, reciprocal])[0];
+            assert_eq!(actual.to_bits(), expected.to_bits());
+            assert!((actual - (score - maximum).exp() / denominator).abs() < 2e-9);
+        }
+    }
+    assert!(sizes.iter().all(|&size| size == sizes[0]));
+}
+
+#[test]
+fn cached_softmax_stage_validation_precedes_any_builder_mutation() {
+    type Append =
+        fn(&mut BMLTransformer, &[NodeId], &BoundedOpConfig) -> Result<NodeId, BoundedBuildError>;
+    let stages: [Append; 2] = [
+        BMLTransformer::softmax_bounded_sum,
+        BMLTransformer::softmax_bounded_normalize,
+    ];
+    let config = BoundedOpConfig::softmax(4, 16.0).unwrap();
+    let other = BoundedOpConfig::product(1.0, 1.0).unwrap();
+    for stage in stages {
+        let mut builder = BMLTransformer::new();
+        let variables = [builder.var(0), builder.var(1)];
+        let nodes = builder.soa().len();
+        assert!(matches!(
+            stage(&mut builder, &variables[..1], &config),
+            Err(BoundedBuildError::Shape)
+        ));
+        assert!(matches!(
+            stage(&mut builder, &[variables[0], u32::MAX], &config),
+            Err(BoundedBuildError::InvalidNode(_))
+        ));
+        assert!(matches!(
+            stage(&mut builder, &variables, &other),
+            Err(BoundedBuildError::Parameter("softmax_stage"))
+        ));
+        assert_eq!(builder.soa().len(), nodes);
+        assert!(builder.soa().const_pool.is_empty());
+    }
+}
