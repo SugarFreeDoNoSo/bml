@@ -78,6 +78,14 @@ enum Command {
         #[arg(long, requires_all = ["symbolic", "rms_input_bound"])]
         rms_weight_bound: Option<f64>,
 
+        /// Perfil acotado completo v4 con comprobación de cada operación BML.
+        #[arg(long, requires = "symbolic", conflicts_with_all = ["rms_input_bound", "rms_weight_bound"])]
+        bounded: bool,
+
+        /// Presupuesto diagnóstico explícito: 2M nodos/ops por programa, 4M ops totales.
+        #[arg(long, requires = "symbolic")]
+        symbolic_large_budget: bool,
+
         /// Capas por fragmento (solo --distributed, default: 1 = una capa por fragmento)
         #[arg(long = "layers-per-fragment", default_value_t = 1)]
         layers_per_fragment: u32,
@@ -124,6 +132,10 @@ enum Command {
         /// Usar proyecciones RPN IEEE en la ruta GGUF experimental
         #[arg(long = "bml")]
         bml: bool,
+
+        /// Presupuesto simbólico diagnóstico: 2M ops por programa y 4M pasos/valores.
+        #[arg(long)]
+        symbolic_large_budget: bool,
     },
 
     /// Distribuye fragmentos a nodos workers via TCP
@@ -176,6 +188,8 @@ fn main() {
             context_size,
             rms_input_bound,
             rms_weight_bound,
+            bounded,
+            symbolic_large_budget,
             layers_per_fragment,
         } => {
             if !model.exists() {
@@ -235,12 +249,26 @@ fn main() {
                     std::process::exit(1);
                 }
             } else if symbolic {
-                let limits = bml_compiler::symbolic_kernels::KernelLimits {
+                let mut limits = bml_compiler::symbolic_kernels::KernelLimits {
                     fragment_bytes: l1_threshold,
                     ..Default::default()
                 };
+                if symbolic_large_budget {
+                    limits.max_nodes = 2_000_000;
+                    limits.max_ops = 4_000_000;
+                    limits.max_output_ops = 2_000_000;
+                    limits.max_programs = 4096;
+                }
                 let context = context_size.expect("clap requires symbolic context");
-                let manifest = inference_result(if let Some(input) = rms_input_bound {
+                let manifest = inference_result(if bounded {
+                    bml_compiler::symbolic_artifact::compile_directory_bounded(
+                        &model,
+                        &output,
+                        context,
+                        Default::default(),
+                        limits,
+                    )
+                } else if let Some(input) = rms_input_bound {
                     bml_compiler::symbolic_artifact::compile_directory_with_rms_bounds(
                         &model,
                         &output,
@@ -302,7 +330,20 @@ fn main() {
             temp,
             context_size,
             bml,
+            symbolic_large_budget,
         } => {
+            if symbolic_large_budget
+                && weight_evaluation.is_none()
+                && !model
+                    .join(bml_compiler::symbolic_artifact::MANIFEST)
+                    .is_file()
+            {
+                eprintln!(
+                    "--symbolic-large-budget requiere un artefacto simbólico o evaluación BMLGGUF"
+                );
+                std::process::exit(1);
+            }
+            let symbolic_limits = symbolic_limits(symbolic_large_budget);
             if weights.is_some()
                 && !model
                     .join(bml_compiler::causal_artifact::MANIFEST)
@@ -332,7 +373,7 @@ fn main() {
                         Default::default(),
                         count,
                         evaluation.into(),
-                        Default::default(),
+                        symbolic_limits,
                     ),
                 );
                 println!("BMLGGUF evaluation: checked-exact-f32; max_evaluated_weights: {count}");
@@ -362,6 +403,7 @@ fn main() {
                         num_tokens,
                         temp,
                         context_size,
+                        symbolic_limits,
                     );
                 } else {
                     eprintln!("El contenedor escalar heredado no contiene un modelo causal ejecutable. Recompila el GGUF con `bml-cli compile` en un directorio nuevo.");
@@ -390,8 +432,28 @@ enum TextArtifact {
     Native(Box<bml_runtime::causal_artifact::CompiledCausalModel>),
     Symbolic(Box<bml_runtime::symbolic_causal::SymbolicCausalModel>),
 }
+fn symbolic_limits(large: bool) -> bml_runtime::symbolic_causal::SymbolicLimits {
+    if large {
+        bml_runtime::symbolic_causal::SymbolicLimits {
+            max_nodes: 2_000_000,
+            max_cached_ops: 4_000_000,
+            max_programs: 4096,
+            graph: bml_runtime::graph::GraphLimits {
+                max_ops: 2_000_000,
+                max_steps: 4_000_000,
+                max_values: 4_000_000,
+            },
+        }
+    } else {
+        Default::default()
+    }
+}
 impl TextArtifact {
-    fn open(directory: &std::path::Path, source: Option<&std::path::Path>) -> Result<Self, String> {
+    fn open(
+        directory: &std::path::Path,
+        source: Option<&std::path::Path>,
+        limits: bml_runtime::symbolic_causal::SymbolicLimits,
+    ) -> Result<Self, String> {
         let native = directory
             .join(bml_compiler::causal_artifact::MANIFEST)
             .is_file();
@@ -404,9 +466,7 @@ impl TextArtifact {
             ))),
             (false, true) => Ok(Self::Symbolic(Box::new(
                 bml_runtime::symbolic_causal::SymbolicCausalModel::open_artifact(
-                    directory,
-                    source,
-                    Default::default(),
+                    directory, source, limits,
                 )?,
             ))),
             _ => Err("artefacto causal ausente o ambiguo".into()),
@@ -450,8 +510,9 @@ fn run_from_causal_artifact(
     num_tokens: u32,
     temp: f64,
     context_size: u32,
+    limits: bml_runtime::symbolic_causal::SymbolicLimits,
 ) {
-    let model = inference_result(TextArtifact::open(directory, source));
+    let model = inference_result(TextArtifact::open(directory, source, limits));
     run_text_model(
         model,
         prompt,

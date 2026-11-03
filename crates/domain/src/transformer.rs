@@ -27,6 +27,8 @@ mod operations;
 pub use operations::OperationBuildError;
 mod bounded;
 pub use bounded::{BoundedBuildError, BoundedRmsConfig};
+mod bounded_ops;
+pub use bounded_ops::BoundedOpConfig;
 
 /// Traductor de operaciones estándar a la gramática BML.
 ///

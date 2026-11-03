@@ -294,6 +294,8 @@ mod tests {
                 RpnOp::Var(_)
                 | RpnOp::Const(_)
                 | RpnOp::VarIndexed { .. }
+                | RpnOp::ContextVarIndexed { .. }
+                | RpnOp::ContextConstIndexed { .. }
                 | RpnOp::StoreResult { .. }
                 | RpnOp::Pick { .. } => 5,
                 RpnOp::Loop { .. } => 9,

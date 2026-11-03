@@ -509,3 +509,58 @@ Then it rejects the request before expensive generation
     Then a v3 artifact runs with relocated weights and emits the expected UTF-8 bytes and EOS
     And missing paired options, absent symbolic mode and invalid bounds reject before publication
     And valid compile bounds that are violated by actual activations fail during run
+
+  @C82
+  Scenario: Indexed context opcodes use an explicit single-file graph version
+    Given existing v1/v2 graph bytes and explicit input and constant indexed loads
+    When graphs are serialized and decoded under count budgets
+    Then old graphs retain their v2 bytes and new loads require single-file v3 tags
+    And every truncated prefix, incompatible version and exceeded decode budget is rejected
+    And new reference loops resolve exact context indices while historical reference loops retain their behavior
+    And legacy directory containers reject the new instructions before creating output files
+
+  @C83
+  Scenario: Indexed symbolic loops execute within checked stack and context budgets
+    Given preflighted indexed graphs with explicit external contexts and bounded loop depth
+    When checked execution preserves the stack across fragments and iterations
+    Then indexed inputs and weights match independently calculated finite BML results within exact step and value budgets
+    And fractional, negative, overflowing and out-of-context indices fail without saturating casts
+    And every BML intermediate is checked even when discarded inside a loop
+    And zero-iteration bodies still reject invalid references, nested structure and native arithmetic
+    And the older checked entry point and unversioned shared-memory transport reject the new instruction set
+
+  @C79
+  Scenario: Bounded transformer operations preserve finite-real arithmetic and explicit operand declarations
+    Given configuration-derived literal prefixes for products, sums, dot steps, RoPE, SwiGLU and softmax
+    When their BML DAGs execute across signs, zeros, boundary values and the real first-token RoPE counterexample
+    Then every BML intermediate is finite-real and outputs match independent native arithmetic within measured tolerances
+    And softmax receives the selected maximum explicitly and handles negative extrema and permutations accurately
+    And malformed parameters, operands, maximum declarations and node references reject before construction or execution
+    And softmax graph growth is linear with fixed configuration literals
+
+  @C80
+  Scenario: Indexed bounded dot templates separate operand roles and keep storage independent of vector width
+    Given distinct learned-projection, query-key and probability-value operand bounds with external constants
+    When serialized loop programs execute widths one, thirty-two, two hundred eighty-eight and seven hundred sixty-eight
+    Then signed results agree with independent scalar sums for changing external weights
+    And stored bytecode size and peak stack stay constant while exact executed work grows linearly
+    And a one-step-short execution budget, inadequate storage or an undersized loop fragment is rejected
+    And role-specific operand bounds and the extra selected-maximum softmax input are enforced
+
+  @C81
+  Scenario: Complete bounded v4 artifacts preserve causal behavior and exact numerical metadata
+    Given an explicitly selected bounded profile and a complete persisted operation plan with external mapped weights
+    When artifacts execute causal prefill and decode with zero construction budget and relocated sources
+    Then outputs match an independent GQA, nonidentity RoPE and nonzero MLP oracle
+    And every dot role rejects exceeded bounds without advancing committed KV state
+    And profile, literals, layouts and role mismatches reject while floating-point literals survive JSON roundtrip exactly
+    And v3 artifacts retain their separate profile and nonindexed bytecode
+
+  @C84
+  Scenario: CLI complete bounded compilation persists explicit arithmetic and checked indexed programs
+    Given independently encoded normalized byte-output and one-layer causal fixtures
+    When symbolic compilation explicitly selects the complete bounded profile
+    Then the v4 artifact contains indexed dot bytecode and runs nonempty prompts with the declared operation families
+    And relocated weights generate the expected UTF-8 bytes and EOS with either default or explicit large execution budgets
+    And mixed numerical profiles, wrong budget modes and insufficient loop fragment sizes fail before publication
+    And a large symbolic budget cannot silently select native GGUF or native artifact execution

@@ -96,3 +96,25 @@ parcial no sustituye la obligación de completar la inferencia del transformer.
 #### Scenario: Límites y tolerancia independientes
 - **WHEN** se verifica el perfil con ceros, signos, extremos y datos reales de un RMS
 - **THEN** se compara contra un oráculo numérico independiente con tolerancia explícita y se rechazan operandos fuera de los límites, sin atribuir equivalencia IEEE ni éxito de inferencia completa
+
+### Requirement: Perfil completo de aritmética acotada
+El sistema SHALL ofrecer un perfil explícito v4 que comprueba cada operación
+BML de todas las familias ejecutadas. Los límites de operandos SHALL distinguir
+proyecciones aprendidas, productos query/key y sumas probability/value. Los
+perfiles anteriores SHALL conservar su representación y comportamiento.
+
+#### Scenario: Proyección compacta con pesos externos
+- **WHEN** se compila un dot de ancho creciente bajo el perfil v4
+- **THEN** el cuerpo BML persistido mantiene tamaño constante y accede por índices comprobados a inputs y pesos externos, mientras el presupuesto de pasos refleja el trabajo lineal ejecutado
+
+#### Scenario: Softmax con máximo auxiliar explícito
+- **WHEN** el runtime prepara los scores de softmax
+- **THEN** selecciona y copia su máximo como dato auxiliar validado y todas las restas, exponenciales, sumas y divisiones se ejecutan con BML, incluyendo los casos con todos los scores negativos
+
+#### Scenario: Artefacto completo y compatible
+- **WHEN** se carga un artefacto v4 con presupuesto de construcción cero
+- **THEN** se ejecutan sus programas persistidos sin regenerarlos, se preservan exactamente los literales JSON finitos y se rechazan perfiles, roles, límites y referencias inconsistentes
+
+#### Scenario: Bucle finito y verificable
+- **WHEN** se ejecuta un programa con índices de contexto y bucles
+- **THEN** cada índice debe ser entero, finito, no negativo y estar dentro del contexto, el presupuesto incluye todas las iteraciones y cada BML rechaza intermedios fuera de dominio/rango

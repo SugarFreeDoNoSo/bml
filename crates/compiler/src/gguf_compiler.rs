@@ -146,6 +146,15 @@ pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result
     let fragment_count = u32::try_from(result.num_fragments).map_err(|_| "too many fragments")?;
     for fragment in &result.graph.fragments {
         u32::try_from(fragment.ops.len()).map_err(|_| "too many fragment operations")?;
+        if fragment.ops.iter().any(|op| {
+            matches!(
+                op,
+                crate::rpn::RpnOp::ContextVarIndexed { .. }
+                    | crate::rpn::RpnOp::ContextConstIndexed { .. }
+            )
+        }) {
+            return Err("indexed context loads require the single-file v3 graph format".into());
+        }
     }
     std::fs::create_dir_all(output_dir).map_err(|e| format!("crear dir: {e}"))?;
 
@@ -253,6 +262,11 @@ pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result
                 }
                 RpnOp::Swap => {
                     ff.write_all(&[13]).map_err(|e| format!("write op: {e}"))?;
+                }
+                RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. } => {
+                    return Err(
+                        "indexed context loads require the single-file v3 graph format".into(),
+                    );
                 }
             }
         }

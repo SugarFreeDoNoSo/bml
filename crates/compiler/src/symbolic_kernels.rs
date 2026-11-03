@@ -34,6 +34,10 @@ impl RmsBounds {
 pub enum Operation {
     /// Signed dot product with external weight constants.
     Dot,
+    /// Bounded-profile query/key dot product, with its own operand bounds.
+    AttentionDot,
+    /// Bounded-profile probability/value dot product.
+    WeightedSum,
     /// Learned RMS normalization.
     Norm,
     /// Adjacent-pair rotary embedding.
@@ -52,6 +56,8 @@ impl Operation {
     pub fn name(self) -> &'static str {
         match self {
             Self::Dot => "dot",
+            Self::AttentionDot => "attention_dot",
+            Self::WeightedSum => "weighted_sum",
             Self::Norm => "rms_norm",
             Self::Rope => "rope",
             Self::Softmax => "softmax",
@@ -423,7 +429,9 @@ fn build_dag(
                 t.scale_signed(x, y)
             }]
         }
-        Operation::Dot => return Err("dot products require their row compiler".into()),
+        Operation::Dot | Operation::AttentionDot | Operation::WeightedSum => {
+            return Err("dot products require their row compiler".into())
+        }
     };
     Ok(OperationDag {
         soa: t.into_soa(),
@@ -439,6 +447,18 @@ fn finish(
     programs: Vec<RpnProgram>,
     signature: KernelSignature,
     limits: KernelLimits,
+) -> Result<CompiledKernel, String> {
+    finish_with_basis(operation, width, layout, programs, signature, limits, false)
+}
+
+pub(super) fn finish_with_basis(
+    operation: Operation,
+    width: usize,
+    layout: OutputLayout,
+    programs: Vec<RpnProgram>,
+    signature: KernelSignature,
+    limits: KernelLimits,
+    indexed: bool,
 ) -> Result<CompiledKernel, String> {
     let expected = match layout {
         OutputLayout::Scalars => signature.outputs,
@@ -459,8 +479,28 @@ fn finish(
         if ops > limits.max_ops {
             return Err("symbolic opcode cache budget exceeded".into());
         }
-        if !program.const_pool.is_empty() || !program.ops.iter().all(is_symbolic_opcode) {
+        let valid_basis = if indexed {
+            program
+                .ops
+                .iter()
+                .all(crate::symbolic_bounded::is_bounded_opcode)
+        } else {
+            program.ops.iter().all(is_symbolic_opcode)
+        };
+        if !program.const_pool.is_empty() || !valid_basis {
             return Err("invalid symbolic basis or owned weights".into());
+        }
+        if program
+            .ops
+            .iter()
+            .any(|op| matches!(op, RpnOp::Loop { .. }))
+            && program
+                .ops
+                .len()
+                .checked_mul(std::mem::size_of::<RpnOp>())
+                .is_none_or(|bytes| bytes > limits.fragment_bytes)
+        {
+            return Err("symbolic loop body exceeds fragment budget".into());
         }
         graphs.push(fragment_program(&program, limits.fragment_bytes));
     }

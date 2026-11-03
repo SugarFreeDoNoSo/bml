@@ -743,5 +743,66 @@
       "bounded_rms_cli_persists_explicit_profile_and_runs_with_relocated_weights",
       "bounded_rms_cli_rejects_unpaired_options_bad_bounds_and_actual_input_violations"
     ]
+  },
+  "C82": {
+    "package": "bml-compiler",
+    "target": "indexed_context_codec_contracts",
+    "tests": [
+      "indexed_context_graphs_use_new_tags_and_version_without_changing_legacy_bytes",
+      "indexed_context_codec_rejects_all_truncated_prefixes_and_honors_budgets",
+      "reference_evaluators_load_context_vectors_inside_loops_and_reject_lossy_indices",
+      "legacy_directory_containers_reject_context_loads_before_creating_outputs"
+    ]
+  },
+  "C83": {
+    "package": "bml-runtime",
+    "target": "indexed_symbolic_execution",
+    "tests": [
+      "indexed_symbolic_loops_preserve_context_and_cross_fragment_stack_with_exact_budgets",
+      "indexed_symbolic_rejects_fractional_negative_overflowing_and_out_of_context_offsets",
+      "indexed_symbolic_checks_every_bml_inside_loops_even_when_the_result_is_discarded",
+      "indexed_symbolic_nested_loops_and_zero_iteration_structure_are_bounded",
+      "legacy_shm_rejects_new_context_loads_explicitly"
+    ]
+  },
+  "C79": {
+    "package": "bml-domain",
+    "target": "bounded_operation_contracts",
+    "tests": [
+      "bounded_products_sums_and_dot_steps_match_independent_signed_arithmetic",
+      "bounded_rope_handles_real_bos_failure_and_rotation_boundaries",
+      "bounded_swiglu_covers_gate_signs_extremes_and_zero",
+      "bounded_softmax_uses_selected_maximum_for_negative_extremes_and_permutations",
+      "bounded_operation_parameters_and_contexts_are_enforced_without_builder_mutation",
+      "bounded_softmax_literals_and_graph_growth_are_independent_of_observed_values"
+    ]
+  },
+  "C80": {
+    "package": "bml-compiler",
+    "target": "full_bounded_contracts",
+    "tests": [
+      "indexed_dot_roles_preserve_external_context_and_independent_signed_results",
+      "indexed_dot_storage_is_constant_and_executed_work_has_exact_linear_budgets",
+      "complete_bounded_role_bounds_and_explicit_softmax_shift_are_enforced"
+    ]
+  },
+  "C81": {
+    "package": "bml-compiler",
+    "target": "full_bounded_contracts",
+    "tests": [
+      "full_bounded_v4_artifacts_match_independent_causal_oracle_without_recompilation",
+      "full_bounded_runtime_rejects_each_dot_role_without_committing_cache",
+      "full_bounded_artifacts_reject_malformed_profile_literals_layout_and_roles",
+      "bounded_v3_artifacts_remain_separate_from_the_new_indexed_profile"
+    ]
+  },
+  "C84": {
+    "package": "bml-cli",
+    "target": "full_bounded_cli",
+    "tests": [
+      "full_bounded_cli_persists_profile_and_runs_utf8_with_relocated_weights",
+      "full_bounded_cli_runs_nonempty_causal_prompt_with_all_operation_families",
+      "full_bounded_cli_rejects_mixed_profiles_wrong_budget_modes_and_short_fragments"
+    ]
   }
 }

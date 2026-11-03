@@ -1,0 +1,357 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "base_commit": "8a3479084db1ada2cd9ebf8110520a103a5ba014",
+  "scope": "Explicit v4 bounded arithmetic for all causal operation families, compact indexed dots and verified two-token real-model execution; not completion of every spec",
+  "profile": "llama-symbolic-bml-bounded-f64-f32kv-v4",
+  "source_hashes": {
+    "crates/cli/src/main.rs": "47da84e7b43c2d25a828f88c6b5890030ff476431ecc7e346d755391cab39275",
+    "crates/cli/tests/full_bounded_cli.rs": "9fc034e2b6a26e6beb696bb51881e47881427acb79ddc501c60572e7291276d4",
+    "crates/compiler/Cargo.toml": "f263a79fb0a7f211561d61065356f55d3a7e551279aee026f3e03ae16fca728d",
+    "crates/compiler/examples/bounded_inference_diagnostic.rs": "d76da41ec1c8fdc773f2d59389942e6039497ac11ce187ac9211ace9e0324a26",
+    "crates/compiler/src/bml_ops.rs": "296ae6819cb3f11a37642166477c0ef17d81c17e2681eeaf069f137848133a8d",
+    "crates/compiler/src/distributed.rs": "91bcd60bad9f2c3bee3b8b80b1314a73f1d35e1fa7d7df63fed227880ade3e21",
+    "crates/compiler/src/fragment.rs": "6906e818307c329e6618eb343e58d0fa8600c4b3e6a199e796083e5ed6300fee",
+    "crates/compiler/src/gguf_compiler.rs": "5b6e9e4b321736238cdb090a84ca56b98d6ba628728c403eb326b35618b8d0a4",
+    "crates/compiler/src/lib.rs": "f47abfaf96dd1a5552269c894dbbd80ff4955cf8e96ee7acadce268fe3a70788",
+    "crates/compiler/src/rpn.rs": "946649559d8b9140351cdfd346c11380406f3c4c04c9282eab891f6db492a6a3",
+    "crates/compiler/src/symbolic_artifact.rs": "0b41edab9d1dedd645b255d50b84d8369d960675afcd7c11a1c716286f4c1a90",
+    "crates/compiler/src/symbolic_bounded.rs": "c5c5efafe9f1ef0524e83e3b392a6bb6c97afe8a65c3a9016e6b7a029e7cd765",
+    "crates/compiler/src/symbolic_kernels.rs": "40f492388566bd1fda389e4aeda64f4ccbd63a12de0b1a5ce3e766786dd6b92b",
+    "crates/compiler/tests/full_bounded_contracts.rs": "da536c8242ce3597502561c97c99a3849a9d50846347f0839b8c3857cf0ef413",
+    "crates/compiler/tests/indexed_context_codec_contracts.rs": "a20e7442f7cd091aa65cb994f9df124617717b4e5d8d886d94e1712df7988914",
+    "crates/domain/src/transformer.rs": "0b0900a28a10f6c274e9617c8eac7c6a19955188c84abf3095d3b46abc9ddd10",
+    "crates/domain/src/transformer/bounded.rs": "533d41de3f661dcc6fd878dcbce1043d55b100104bc5d55e4f2bec6b95fd4a63",
+    "crates/domain/src/transformer/bounded_ops.rs": "87b826f37c2be96462bef18345301b257c52984fc1685b5fd41ee2f93f61c068",
+    "crates/domain/tests/bounded_operation_contracts.rs": "30dbac2ac5fd8608557a5a48d7df01b62d54f7bae95e65485064d4517832dd02",
+    "crates/runtime/src/graph.rs": "10c2818a9e6a927dab7c213d04faf273dc0dde4d043c96bdcf7ebd82bc6f048b",
+    "crates/runtime/src/hot_loop.rs": "f9c95d5c94d1b1122ef8cd6758d7bfc23298cbd457d85e8abbc198a4be1d2cfa",
+    "crates/runtime/src/shm.rs": "f7d06d667ac540c503000a116be4b1d27f4c8af3eaa2dbe65855c387334d1593",
+    "crates/runtime/src/symbolic_causal.rs": "d52905870fccf65cd4d793df54b565e5ea5a22c07260dbfd2ac2f125e203d113",
+    "crates/runtime/tests/indexed_symbolic_execution.rs": "6165dbcc6d5aa1e386c2355840a98dc62cb92d2f0fb8bb24fd5a96f669bcaa81",
+    "docs/INFERENCE_VALIDATION.md": "341241fadb269eaeb992a5aedfab536ecb26623874d581f4af02e9eeb5334d43",
+    "openspec/changes/bml-inference-pipeline/specs/gguf-compiler/spec.md": "a2a1d28f080977774186505de2f431e0bce36ec9b4f606c95a030898578b70b3",
+    "quality/contracts.feature": "6132292b5c3990127972dfc647f86b884ba37dc6fa9d7861f43665673a05a2ab",
+    "quality/traceability.json": "5b9e06878172bdd73a8142dfc35e7f68e34b5ee5e53918ed7f78d04fb3458954",
+    "tests/stress/distributed_shm.rs": "4f92e04c9791b27e6b4c0ff3c715043f8716dd4258216d588da6abbb4c153744",
+    "tools/diagnostics/bounded_basis.c": "a722494f10ad360e75703379c49298bc6136363c0f8efc8fee8e9caf26d69239",
+    "tools/diagnostics/bounded_inference_oracle.py": "97f48781176afec2458b7b857d6d5ef99657de7e5426d72c5661342a86d94d54"
+  },
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "log": "target/quality/full-bounded-worktree-gate.log",
+    "sha256": "68792a0cdf5af167cacb7a0c9a689b57c38b52c1786f8d58b3ada0141571db5c",
+    "exit_code": 0,
+    "rust_tests_passed": 778,
+    "python_tests_passed": 82,
+    "traceability": "84/84",
+    "historical_discrepancies": 0,
+    "new_clippy_diagnostics": 0
+  },
+  "all_features": {
+    "command": "cargo check --workspace --all-features --locked",
+    "log": "target/quality/full-bounded-all-features-final.log",
+    "sha256": "c05ce6d81cb11bbf6a849bb5e1ee0d6001ec43ebc673a55d523a502a32c385fc",
+    "exit_code": 0
+  },
+  "openspec": {
+    "command": "npx --yes --package @fission-ai/openspec@1.13.0 openspec validate --all --strict",
+    "log": "target/quality/full-bounded-openspec-final.log",
+    "sha256": "c057d40ba75ba779a12f9596c1d64c0deb0b80ab7d41bfc6a8077c73b0fda44c",
+    "exit_code": 0,
+    "passed": 11,
+    "scope": "Before independent model-weights archive"
+  },
+  "rust_real_model": {
+    "command": "cargo run --release -p bml-compiler --example bounded_inference_diagnostic --locked -- target/bml-1.0/stories15M.gguf target/full-bounded-stories-v4-roundtrip 2",
+    "log": "target/quality/full-bounded-stories-rust-roundtrip.jsonl",
+    "sha256": "609ded9718aa22bf17e58d36f04e4b87ed8744b174965e8ddfd08559b63ca81e",
+    "exit_code": 0,
+    "reports": [
+      {
+        "artifact": "target/full-bounded-stories-v4-roundtrip",
+        "bounds": {
+          "attention": 16.0,
+          "gate": 16.0,
+          "projection_input": 128.0,
+          "projection_weight": 2.0,
+          "residual": 32.0,
+          "rms": {
+            "input": 16.0,
+            "weight": 16.0
+          },
+          "rope": 16.0,
+          "scale_input": 256.0,
+          "score": 16.0,
+          "up": 16.0,
+          "value": 16.0
+        },
+        "compile_seconds": 0.611786506,
+        "construction_budget_on_load": 0,
+        "context": 2,
+        "kernels": 12,
+        "profile": "llama-symbolic-bml-bounded-f64-f32kv-v4",
+        "source_sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+        "stage": "compiled_and_loaded"
+      },
+      {
+        "cache_position": 1,
+        "executed_families": [
+          "attention_dot",
+          "dot",
+          "residual_add",
+          "rms_norm",
+          "rope",
+          "scale",
+          "softmax",
+          "swiglu",
+          "weighted_sum"
+        ],
+        "input": 1,
+        "logits": 32000,
+        "max_abs_error": 1.6198153041102614e-08,
+        "native_argmax": 9038,
+        "position": 0,
+        "rms_error": 2.2718347465181055e-09,
+        "seconds": 141.984431787,
+        "stage": "token",
+        "symbolic_argmax": 9038
+      },
+      {
+        "cache_position": 2,
+        "executed_families": [
+          "attention_dot",
+          "dot",
+          "residual_add",
+          "rms_norm",
+          "rope",
+          "scale",
+          "softmax",
+          "swiglu",
+          "weighted_sum"
+        ],
+        "input": 9038,
+        "logits": 32000,
+        "max_abs_error": 2.9445231559677154e-06,
+        "native_argmax": 2501,
+        "position": 1,
+        "rms_error": 4.79904362208755e-07,
+        "seconds": 136.563636928,
+        "stage": "token",
+        "symbolic_argmax": 2501
+      },
+      {
+        "records": [
+          {
+            "cache_position": 1,
+            "executed_families": [
+              "attention_dot",
+              "dot",
+              "residual_add",
+              "rms_norm",
+              "rope",
+              "scale",
+              "softmax",
+              "swiglu",
+              "weighted_sum"
+            ],
+            "input": 1,
+            "logits": 32000,
+            "max_abs_error": 1.6198153041102614e-08,
+            "native_argmax": 9038,
+            "position": 0,
+            "rms_error": 2.2718347465181055e-09,
+            "seconds": 141.984431787,
+            "stage": "token",
+            "symbolic_argmax": 9038
+          },
+          {
+            "cache_position": 2,
+            "executed_families": [
+              "attention_dot",
+              "dot",
+              "residual_add",
+              "rms_norm",
+              "rope",
+              "scale",
+              "softmax",
+              "swiglu",
+              "weighted_sum"
+            ],
+            "input": 9038,
+            "logits": 32000,
+            "max_abs_error": 2.9445231559677154e-06,
+            "native_argmax": 2501,
+            "position": 1,
+            "rms_error": 4.79904362208755e-07,
+            "seconds": 136.563636928,
+            "stage": "token",
+            "symbolic_argmax": 2501
+          }
+        ],
+        "scope": "Persisted Rust bounded BML execution versus native causal path on the same local GGUF; not a llama.cpp equivalence claim",
+        "stage": "completed",
+        "tokens": 2
+      }
+    ],
+    "absolute_error_tolerance": 0.0001,
+    "argmax_requirement": "exact equality for each of the two tokens",
+    "source_snapshot": "target/quality/full-bounded-runtime-snapshot.json",
+    "source_snapshot_sha256": "7d532c315de599d130c25aa3dc57ce11a7065d45f55cc4be69fd6dbf358ff6a3",
+    "post_execution_changes": [
+      "A new compile-time guard rejects unrepresentable u32 constant namespaces; it does not alter valid-model arithmetic.",
+      "The legacy SHM test serializer now explicitly rejects indexed opcodes.",
+      "Regression assertions and documentation were completed."
+    ]
+  },
+  "artifact_inventory": {
+    "kernels": [
+      {
+        "operation": "dot",
+        "width": 288,
+        "programs": 1,
+        "program_bytes": 3999
+      },
+      {
+        "operation": "dot",
+        "width": 768,
+        "programs": 1,
+        "program_bytes": 3999
+      },
+      {
+        "operation": "attention_dot",
+        "width": 48,
+        "programs": 1,
+        "program_bytes": 3999
+      },
+      {
+        "operation": "weighted_sum",
+        "width": 1,
+        "programs": 1,
+        "program_bytes": 3999
+      },
+      {
+        "operation": "weighted_sum",
+        "width": 2,
+        "programs": 1,
+        "program_bytes": 3999
+      },
+      {
+        "operation": "norm",
+        "width": 288,
+        "programs": 1,
+        "program_bytes": 1753115
+      },
+      {
+        "operation": "rope",
+        "width": 2,
+        "programs": 1,
+        "program_bytes": 13509
+      },
+      {
+        "operation": "softmax",
+        "width": 1,
+        "programs": 1,
+        "program_bytes": 4166
+      },
+      {
+        "operation": "softmax",
+        "width": 2,
+        "programs": 1,
+        "program_bytes": 8121
+      },
+      {
+        "operation": "swiglu",
+        "width": 1,
+        "programs": 1,
+        "program_bytes": 12153
+      },
+      {
+        "operation": "add",
+        "width": 1,
+        "programs": 1,
+        "program_bytes": 274
+      },
+      {
+        "operation": "scale",
+        "width": 1,
+        "programs": 1,
+        "program_bytes": 3726
+      }
+    ],
+    "program_bytes_total": 1815059,
+    "manifest_bytes": 1328911
+  },
+  "independent_reference": {
+    "source": "tools/diagnostics/bounded_inference_oracle.py",
+    "basis": "tools/diagnostics/bounded_basis.c",
+    "command": "python3 tools/diagnostics/bounded_inference_oracle.py MODEL.gguf --tokens 1,9038 --output OUTPUT_DIR",
+    "original_report": "target/full-bounded-oracle/max-shift/report.json",
+    "sha256": "bc4ccd7bf3694f5246a1967e07efe21339e06e97f4a98b337b9a7ae1939a2bb0",
+    "report": {
+      "scope": "Independent Python orchestration with checked C implementations of proposed BML formulas; not production Rust inference validation",
+      "source_sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+      "ids": [
+        1,
+        9038
+      ],
+      "native_seconds": 4.938105283974437,
+      "bounded_seconds": 195.58678422201774,
+      "result": {
+        "status": "completed",
+        "max_logit_absolute_error": 9.77811183133781e-08,
+        "rms_logit_error": 1.2722082174855547e-08,
+        "native_argmax": 2501,
+        "bounded_argmax": 2501,
+        "native_argmax_margin": 3.9154767564407855
+      },
+      "total_bml_nodes": 7610877846
+    },
+    "package_equivalence": {
+      "packaged_native_records_equal_original": true,
+      "records": 92,
+      "packaged_c_body_identical_to_full_two_token_maxshift_backend": true,
+      "model_sha256_equal": true,
+      "source_hashes": {
+        "tools/diagnostics/bounded_inference_oracle.py": "97f48781176afec2458b7b857d6d5ef99657de7e5426d72c5661342a86d94d54",
+        "tools/diagnostics/bounded_basis.c": "a722494f10ad360e75703379c49298bc6136363c0f8efc8fee8e9caf26d69239"
+      }
+    },
+    "self_check": {
+      "command": "python3 tools/diagnostics/bounded_inference_oracle.py --self-check --output OUTPUT_DIR",
+      "cases": 82,
+      "all_bitwise_equal": true,
+      "report": "target/full-bounded-oracle/package-self-check-final/report.json",
+      "sha256": "0c9a312f5147040057feb501155ad3033b5bb4c3ac6aaa3cdff73861dc82b7f0"
+    }
+  },
+  "detected_regressions": {
+    "json_literal": {
+      "detail": "Default JSON parsing changed exp(-16) by one ULP; exact parsing via float_roundtrip fixes it without weakening canonical literal comparison.",
+      "log": "target/quality/full-bounded-roundtrip-diagnostic.log",
+      "sha256": "8bf4abe9a033a29529ef7808e0074eb24fe0518145e5de7b1ffc2a4d9ccacf46"
+    },
+    "indexed_namespace": {
+      "detail": "The fixed constant prefix plus u32::MAX external weights could not be addressed; compilation now rejects it before constructing a width-sized context.",
+      "before_exit": 101,
+      "after_exit": 0,
+      "before_log": "target/quality/full-bounded-index-overflow-before.log",
+      "before_sha256": "5680e9dd7cbb8bb7ee629739f511fdc29e2a1b043c12329bd7b29cb09426ab7d",
+      "after_log": "target/quality/full-bounded-index-overflow-after.log",
+      "after_sha256": "82f3f7af3a5dd99bce446cff92a0485098299e4a55695e05243330aa33e9dcd6"
+    }
+  },
+  "numerical_contract": [
+    "Every v4 activation arithmetic instruction is BML and is checked for finite-real inputs, positive logarithm arguments, and exponential overflow/underflow.",
+    "Softmax selects/copies its maximum in the host and validates it as an extra input; subtraction, exponentials, sums and division remain BML.",
+    "Embedding/row decoding, F32 KV storage, and position/dimension constants remain host responsibilities.",
+    "The profile is approximate, bounded and opt-in; v1/v2/v3 programs remain distinct and compatible."
+  ],
+  "remaining": [
+    "RMS vector storage and per-prefix softmax plan scalability.",
+    "V4 evaluation of larger models, including TinyLlama, and additional prompts.",
+    "No uniform floating-point error guarantee or llama.cpp equivalence claim.",
+    "Global mutation/coverage release gate, actual ARM/NEON, PMU and external stress requirements remain open.",
+    "The ~142s/~137s per-token measurements in this VM are diagnostic, not a competitive throughput claim."
+  ]
+}

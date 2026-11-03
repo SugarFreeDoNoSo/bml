@@ -188,6 +188,20 @@ fn dispatch_ops(
             RpnOp::Zero => stack.push(0.0),
             RpnOp::Var(id) => stack.push(ctx.get_var(id)),
             RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+            RpnOp::ContextVarIndexed { base } => {
+                let offset = stack.pop().unwrap_or(f64::NAN);
+                stack.push(
+                    bml_compiler::rpn::context_index(base, offset)
+                        .map_or(f64::NAN, |id| ctx.get_var(id)),
+                );
+            }
+            RpnOp::ContextConstIndexed { base } => {
+                let offset = stack.pop().unwrap_or(f64::NAN);
+                stack.push(
+                    bml_compiler::rpn::context_index(base, offset)
+                        .map_or(f64::NAN, |id| ctx.get_const(id)),
+                );
+            }
             RpnOp::VarIndexed { base } => {
                 let offset = stack.pop().unwrap_or(0.0) as u32;
                 stack.push(buf.read_indexed(base, offset));

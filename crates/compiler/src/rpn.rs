@@ -38,13 +38,25 @@ pub enum RpnOp {
     /// Empuja el valor de una constante (peso del modelo) a la pila.
     /// El índice se resuelve desde el pool de pesos.
     Const(u32),
-    /// Empuja el valor de `Var(base + offset)` a la pila.
-    ///
-    /// `base` es fijo (del bytecode), `offset` se lee del tope de la pila
-    /// (y se consume). Esto permite indexación dinámica en loops:
-    /// el contador del loop determina qué peso/input leer.
+    /// Lee el buffer de resultados del runtime en `base + offset`.
+    /// Consume el offset y conserva la conversión permisiva histórica a u32.
+    /// No direcciona `EvalContext`; para inputs y constantes usar las cargas
+    /// explícitas `ContextVarIndexed` y `ContextConstIndexed`.
     VarIndexed {
         /// Base del índice.
+        base: u32,
+    },
+    /// Pop an exact nonnegative integer offset and load an input at base+offset.
+    /// Unlike `VarIndexed`, this addresses `EvalContext::inputs`, not a buffer.
+    /// Invalid indices produce NaN in IEEE evaluators and fail checked execution.
+    ContextVarIndexed {
+        /// First input index in the addressed vector.
+        base: u32,
+    },
+    /// Pop an exact nonnegative integer offset and load an external constant.
+    /// Invalid indices produce NaN in IEEE evaluators and fail checked execution.
+    ContextConstIndexed {
+        /// First constant index in the addressed vector.
         base: u32,
     },
     /// Writes a value to `ResultBuffer` at `slot[offset]`.
@@ -93,6 +105,16 @@ pub enum RpnOp {
     Drop,
     /// Intercambia los dos valores en el tope de la pila: (a, b) -> (b, a).
     Swap,
+}
+
+/// Resolve an exact, finite, nonnegative u32 offset without saturating casts.
+/// Negative zero denotes index zero. Overflow of either operand or their sum
+/// is rejected; the caller must additionally check its context slice length.
+pub fn context_index(base: u32, offset: f64) -> Option<u32> {
+    if !offset.is_finite() || offset < 0.0 || offset.fract() != 0.0 || offset > u32::MAX as f64 {
+        return None;
+    }
+    base.checked_add(offset as u32)
 }
 
 /// Programa RPN: arreglo unidimensional de operaciones.
@@ -146,6 +168,13 @@ impl RpnProgram {
     /// `Var(id)` se resuelve desde `ctx.inputs` y `Const(id)` desde `ctx.weights`.
     pub fn evaluate_with_ctx(&self, ctx: &bml_domain::EvalContext) -> f64 {
         let mut stack: Vec<f64> = Vec::with_capacity(self.ops.len());
+        if has_indexed_context(&self.ops) {
+            return if evaluate_indexed_ops(&self.ops, &mut stack, ctx, 0).is_ok() {
+                stack.pop().unwrap_or(f64::NAN)
+            } else {
+                f64::NAN
+            };
+        }
         let mut i = 0;
         while i < self.ops.len() {
             match self.ops[i] {
@@ -153,6 +182,20 @@ impl RpnProgram {
                 RpnOp::Zero => stack.push(0.0),
                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                RpnOp::ContextVarIndexed { base } => {
+                    let offset = stack.pop().unwrap_or(f64::NAN);
+                    stack.push(
+                        crate::rpn::context_index(base, offset)
+                            .map_or(f64::NAN, |id| ctx.get_var(id)),
+                    );
+                }
+                RpnOp::ContextConstIndexed { base } => {
+                    let offset = stack.pop().unwrap_or(f64::NAN);
+                    stack.push(
+                        crate::rpn::context_index(base, offset)
+                            .map_or(f64::NAN, |id| ctx.get_const(id)),
+                    );
+                }
                 RpnOp::VarIndexed { base: _ } => {
                     let _offset = stack.pop().unwrap_or(0.0) as u32;
                     stack.push(f64::NAN); // No result buffer is available in this evaluator.
@@ -206,6 +249,20 @@ impl RpnProgram {
                                 RpnOp::Zero => stack.push(0.0),
                                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                                RpnOp::ContextVarIndexed { base } => {
+                                    let offset = stack.pop().unwrap_or(f64::NAN);
+                                    stack.push(
+                                        crate::rpn::context_index(base, offset)
+                                            .map_or(f64::NAN, |id| ctx.get_var(id)),
+                                    );
+                                }
+                                RpnOp::ContextConstIndexed { base } => {
+                                    let offset = stack.pop().unwrap_or(f64::NAN);
+                                    stack.push(
+                                        crate::rpn::context_index(base, offset)
+                                            .map_or(f64::NAN, |id| ctx.get_const(id)),
+                                    );
+                                }
                                 RpnOp::VarIndexed { base: _base } => {
                                     let _offset = stack.pop().unwrap_or(0.0);
                                     stack.push(f64::NAN);
@@ -262,6 +319,22 @@ impl RpnProgram {
                                                 RpnOp::Zero => stack.push(0.0),
                                                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                                                RpnOp::ContextVarIndexed { base } => {
+                                                    let offset = stack.pop().unwrap_or(f64::NAN);
+                                                    stack.push(
+                                                        crate::rpn::context_index(base, offset)
+                                                            .map_or(f64::NAN, |id| ctx.get_var(id)),
+                                                    );
+                                                }
+                                                RpnOp::ContextConstIndexed { base } => {
+                                                    let offset = stack.pop().unwrap_or(f64::NAN);
+                                                    stack.push(
+                                                        crate::rpn::context_index(base, offset)
+                                                            .map_or(f64::NAN, |id| {
+                                                                ctx.get_const(id)
+                                                            }),
+                                                    );
+                                                }
                                                 RpnOp::VarIndexed { base: _ } => {
                                                     let _offset = stack.pop().unwrap_or(0.0);
                                                     stack.push(f64::NAN);
@@ -326,6 +399,93 @@ impl RpnProgram {
         }
         stack.pop().unwrap_or(f64::NAN)
     }
+}
+
+pub(crate) fn has_indexed_context(ops: &[RpnOp]) -> bool {
+    ops.iter().any(|op| {
+        matches!(
+            op,
+            RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. }
+        )
+    })
+}
+
+// The historical reference interpreters repeat loop bodies without injecting
+// counters. New indexed programs explicitly select the runtime counter semantics;
+// leaving the old branch intact preserves previously constructed program results.
+pub(crate) fn evaluate_indexed_ops(
+    ops: &[RpnOp],
+    stack: &mut Vec<f64>,
+    ctx: &bml_domain::EvalContext,
+    depth: usize,
+) -> Result<(), ()> {
+    let mut i = 0usize;
+    while i < ops.len() {
+        match ops[i] {
+            RpnOp::One => stack.push(1.0),
+            RpnOp::Zero => stack.push(0.0),
+            RpnOp::Var(id) => stack.push(ctx.get_var(id)),
+            RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+            RpnOp::ContextVarIndexed { base } | RpnOp::ContextConstIndexed { base } => {
+                let offset = stack.pop().ok_or(())?;
+                let value = context_index(base, offset).map_or(f64::NAN, |id| {
+                    if matches!(ops[i], RpnOp::ContextVarIndexed { .. }) {
+                        ctx.get_var(id)
+                    } else {
+                        ctx.get_const(id)
+                    }
+                });
+                stack.push(value);
+            }
+            RpnOp::Bml | RpnOp::FAdd | RpnOp::FMul => {
+                let right = stack.pop().ok_or(())?;
+                let left = stack.pop().ok_or(())?;
+                stack.push(match ops[i] {
+                    RpnOp::Bml => bml_domain::bml_base_op(left, right),
+                    RpnOp::FAdd => left + right,
+                    _ => left * right,
+                });
+            }
+            RpnOp::Dup => stack.push(*stack.last().ok_or(())?),
+            RpnOp::Pick { depth } => {
+                let index = stack.len().checked_sub(depth as usize + 1).ok_or(())?;
+                stack.push(stack[index]);
+            }
+            RpnOp::Drop => {
+                stack.pop().ok_or(())?;
+            }
+            RpnOp::Swap => {
+                let n = stack.len();
+                if n < 2 {
+                    return Err(());
+                }
+                stack.swap(n - 1, n - 2);
+            }
+            RpnOp::VarIndexed { .. } => {
+                stack.pop().ok_or(())?;
+                stack.push(f64::NAN);
+            }
+            RpnOp::StoreResult { .. } => {
+                stack.pop().ok_or(())?;
+                stack.pop().ok_or(())?;
+            }
+            RpnOp::Loop { count, body_len } => {
+                if depth >= 2 {
+                    return Err(());
+                }
+                let end = (i + 1).checked_add(body_len as usize).ok_or(())?;
+                let body = ops.get(i + 1..end).ok_or(())?;
+                for index in 0..count {
+                    stack.push(f64::from(index));
+                    evaluate_indexed_ops(body, stack, ctx, depth + 1)?;
+                }
+                i = end;
+                continue;
+            }
+        }
+        i += 1;
+    }
+    Ok(())
 }
 
 impl Default for RpnProgram {

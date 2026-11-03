@@ -60,6 +60,17 @@ impl ShmChannel {
     ///
     /// El fragmento se serializa en el formato nativo de BML.
     pub fn write_fragment(&self, fragment: &Fragment) -> io::Result<PathBuf> {
+        if fragment.ops.iter().any(|op| {
+            matches!(
+                op,
+                RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. }
+            )
+        }) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "indexed context loads require the single-file v3 graph format",
+            ));
+        }
         let id = self
             .counter
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
@@ -106,6 +117,9 @@ impl ShmChannel {
                 }
                 RpnOp::Drop => f.write_all(&[12])?,
                 RpnOp::Swap => f.write_all(&[13])?,
+                RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. } => {
+                    unreachable!("unsupported opcodes checked before opening the file");
+                }
             }
         }
         f.flush()?;
@@ -161,21 +175,21 @@ impl ShmChannel {
                     offset += 4;
                     RpnOp::VarIndexed { base }
                 }
-8 => {
-                        let slot = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-                        offset += 4;
-                        RpnOp::StoreResult { slot }
-                    }
-                    9 => RpnOp::FAdd,
-                    10 => RpnOp::FMul,
-                    11 => {
-                        let depth = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-                        offset += 4;
-                        RpnOp::Pick { depth }
-                    }
-                    12 => RpnOp::Drop,
-                    13 => RpnOp::Swap,
-                    _ => {
+                8 => {
+                    let slot = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                    offset += 4;
+                    RpnOp::StoreResult { slot }
+                }
+                9 => RpnOp::FAdd,
+                10 => RpnOp::FMul,
+                11 => {
+                    let depth = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+                    offset += 4;
+                    RpnOp::Pick { depth }
+                }
+                12 => RpnOp::Drop,
+                13 => RpnOp::Swap,
+                _ => {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidData,
                         format!("tag desconocido: {tag}"),

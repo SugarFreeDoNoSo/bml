@@ -13,6 +13,7 @@ use crate::{
 };
 use bml_compiler::{
     gguf_compiler::InferenceCompiler,
+    symbolic_bounded::{is_bounded_opcode, BoundedProfile},
     symbolic_kernels::{
         compile_operation_with_rms_bounds, is_symbolic_opcode, CompiledKernel, KernelLimits,
         Operation, OutputLayout, RmsBounds,
@@ -52,6 +53,7 @@ struct Kernel {
     ops: usize,
     calls: usize,
     checked_real: bool,
+    indexed: bool,
 }
 impl Kernel {
     fn compile(
@@ -59,34 +61,47 @@ impl Kernel {
         width: usize,
         epsilon: f64,
         rms_bounds: Option<RmsBounds>,
+        bounded_profile: Option<BoundedProfile>,
         limits: SymbolicLimits,
-        remaining_ops: usize,
-        remaining_programs: usize,
+        remaining: (usize, usize),
     ) -> Result<Self, String> {
-        let compiled = compile_operation_with_rms_bounds(
-            op,
-            width,
-            epsilon,
-            OutputLayout::for_operation(op),
-            rms_bounds,
-            KernelLimits {
-                max_nodes: limits.max_nodes,
-                max_ops: remaining_ops,
-                max_output_ops: limits.graph.max_ops,
-                max_programs: remaining_programs,
-                fragment_bytes: 32768,
-            },
-        )?;
+        let kernel_limits = KernelLimits {
+            max_nodes: limits.max_nodes,
+            max_ops: remaining.0,
+            max_output_ops: limits.graph.max_ops,
+            max_programs: remaining.1,
+            fragment_bytes: 32768,
+        };
+        let compiled = if let Some(profile) = bounded_profile {
+            bml_compiler::symbolic_bounded::compile_operation(
+                op,
+                width,
+                epsilon,
+                profile,
+                kernel_limits,
+            )?
+        } else {
+            compile_operation_with_rms_bounds(
+                op,
+                width,
+                epsilon,
+                OutputLayout::for_operation(op),
+                rms_bounds,
+                kernel_limits,
+            )?
+        };
         Self::from_compiled(
             compiled,
             limits.graph,
             rms_bounds.is_some() && op == Operation::Norm,
+            bounded_profile.is_some(),
         )
     }
     fn from_compiled(
         compiled: CompiledKernel,
         limits: GraphLimits,
         checked_real: bool,
+        indexed: bool,
     ) -> Result<Self, String> {
         let signature = compiled.signature;
         let expected_programs = match compiled.layout {
@@ -105,7 +120,11 @@ impl Kernel {
         let mut ops = 0usize;
         for graph in compiled.graphs {
             for fragment in &graph.fragments {
-                if !fragment.ops.iter().all(is_symbolic_opcode) {
+                if !fragment.ops.iter().all(if indexed {
+                    is_bounded_opcode
+                } else {
+                    is_symbolic_opcode
+                }) {
                     return Err("native arithmetic in symbolic program".into());
                 }
                 ops = ops
@@ -137,6 +156,7 @@ impl Kernel {
             ops,
             calls: 0,
             checked_real,
+            indexed,
         })
     }
     fn execute(&mut self, inputs: &[f64], external: &[f64]) -> Result<Vec<f64>, String> {
@@ -170,7 +190,9 @@ impl Kernel {
             } else {
                 ResultBuffer::new(0, 0)
             };
-            let value = if self.checked_real {
+            let value = if self.indexed {
+                program.execute_indexed_symbolic_with_constants(inputs, constants, &mut buffer)
+            } else if self.checked_real {
                 program.execute_symbolic_with_constants(inputs, constants, &mut buffer)
             } else {
                 program.execute_with_constants(inputs, constants, &mut buffer)
@@ -204,6 +226,7 @@ pub struct SymbolicCausalModel {
     compiled_context: Option<u32>,
     profile: String,
     rms_bounds: Option<RmsBounds>,
+    bounded_profile: Option<BoundedProfile>,
 }
 impl SymbolicCausalModel {
     /// Open an autonomous BMLGGUF model with explicit checked F32 weight evaluation.
@@ -230,11 +253,12 @@ impl SymbolicCausalModel {
             compiled_context: None,
             profile: "bmlgguf-checked-exact-f32-symbolic-causal-v1".into(),
             rms_bounds: None,
+            bounded_profile: None,
         })
     }
     /// Open a validated mapped Llama model. No matrix weights are expanded here.
     pub fn open(path: &Path, limits: SymbolicLimits) -> Result<Self, String> {
-        Self::open_with_optional_rms_bounds(path, limits, None)
+        Self::open_with_optional_rms_bounds(path, limits, None, None)
     }
 
     /// Opt into bounded RMSNorm while preserving the other symbolic identities.
@@ -244,15 +268,33 @@ impl SymbolicCausalModel {
         limits: SymbolicLimits,
         bounds: RmsBounds,
     ) -> Result<Self, String> {
-        Self::open_with_optional_rms_bounds(path, limits, Some(bounds))
+        Self::open_with_optional_rms_bounds(path, limits, Some(bounds), None)
+    }
+
+    /// Open with checked arithmetic for all families and compact indexed dots.
+    /// Softmax receives a copied maximum score as an auxiliary shift; all
+    /// subtraction, exponential, reduction and division arithmetic stays BML.
+    pub fn open_bounded(
+        path: &Path,
+        limits: SymbolicLimits,
+        profile: BoundedProfile,
+    ) -> Result<Self, String> {
+        Self::open_with_optional_rms_bounds(path, limits, None, Some(profile))
     }
 
     fn open_with_optional_rms_bounds(
         path: &Path,
         limits: SymbolicLimits,
         rms_bounds: Option<RmsBounds>,
+        bounded_profile: Option<BoundedProfile>,
     ) -> Result<Self, String> {
         let compiler = InferenceCompiler::open_mapped(path)?;
+        if let Some(profile) = bounded_profile {
+            profile.validate(
+                compiler.config().n_embd as usize,
+                compiler.rms_norm_epsilon(),
+            )?;
+        }
         if let Some(bounds) = rms_bounds {
             bounds.config(
                 compiler.config().n_embd as usize,
@@ -266,13 +308,16 @@ impl SymbolicCausalModel {
             cached_ops: 0,
             cached_programs: 0,
             compiled_context: None,
-            profile: if rms_bounds.is_some() {
+            profile: if bounded_profile.is_some() {
+                bml_compiler::symbolic_artifact::BOUNDED_PROFILE
+            } else if rms_bounds.is_some() {
                 bml_compiler::symbolic_artifact::BOUNDED_RMS_PROFILE
             } else {
                 bml_compiler::symbolic_artifact::PROFILE
             }
             .into(),
             rms_bounds,
+            bounded_profile,
         })
     }
     /// Load every persisted symbolic program and validate it before execution.
@@ -311,7 +356,12 @@ impl SymbolicCausalModel {
             let checked_real = artifact.manifest.rms_bounds.is_some() && key.0 == Operation::Norm;
             kernels.insert(
                 key,
-                Kernel::from_compiled(compiled, limits.graph, checked_real)?,
+                Kernel::from_compiled(
+                    compiled,
+                    limits.graph,
+                    checked_real,
+                    artifact.manifest.bounded_profile.is_some(),
+                )?,
             );
         }
         Ok(Self {
@@ -323,6 +373,7 @@ impl SymbolicCausalModel {
             compiled_context: Some(artifact.manifest.context_length),
             profile: artifact.manifest.profile,
             rms_bounds: artifact.manifest.rms_bounds,
+            bounded_profile: artifact.manifest.bounded_profile,
         })
     }
 
@@ -360,9 +411,12 @@ impl SymbolicCausalModel {
                 width,
                 self.compiler.rms_norm_epsilon(),
                 self.rms_bounds,
+                self.bounded_profile,
                 self.limits,
-                self.limits.max_cached_ops - self.cached_ops,
-                self.limits.max_programs - self.cached_programs,
+                (
+                    self.limits.max_cached_ops - self.cached_ops,
+                    self.limits.max_programs - self.cached_programs,
+                ),
             )?;
             self.cached_ops += kernel.ops;
             self.cached_programs += kernel.programs.len();
@@ -377,7 +431,33 @@ impl SymbolicCausalModel {
         inputs: &[f64],
         constants: &[f64],
     ) -> Result<Vec<f64>, String> {
-        if op == Operation::Norm {
+        let shifted;
+        let inputs = if self.bounded_profile.is_some() && op == Operation::Softmax {
+            let maximum = inputs
+                .iter()
+                .copied()
+                .max_by(f64::total_cmp)
+                .ok_or("empty bounded softmax")?;
+            shifted = inputs
+                .iter()
+                .copied()
+                .chain(std::iter::once(maximum))
+                .collect::<Vec<_>>();
+            &shifted
+        } else {
+            inputs
+        };
+        if let Some(profile) = self.bounded_profile {
+            profile
+                .validate_values(
+                    op,
+                    width,
+                    self.compiler.rms_norm_epsilon(),
+                    inputs,
+                    constants,
+                )
+                .map_err(|e| format!("{}: {e}", op.name()))?;
+        } else if op == Operation::Norm {
             if let Some(bounds) = self.rms_bounds {
                 bounds
                     .config(width, self.compiler.rms_norm_epsilon())?
@@ -394,6 +474,8 @@ impl SymbolicCausalModel {
     }
     fn project(&mut self, input: &[f64], name: &str) -> Result<Vec<f64>, String> {
         let width = input.len();
+        let profile = self.bounded_profile;
+        let epsilon = self.compiler.rms_norm_epsilon();
         self.ensure_kernel(Operation::Dot, width)?;
         let kernel = self
             .kernels
@@ -401,6 +483,9 @@ impl SymbolicCausalModel {
             .expect("kernel inserted");
         self.compiler.project_rows(input, name, |x, row| {
             let weights: Vec<_> = row.iter().map(|&v| f64::from(v)).collect();
+            if let Some(profile) = profile {
+                profile.validate_values(Operation::Dot, width, epsilon, x, &weights)?;
+            }
             Ok(kernel.execute(x, &weights)?[0])
         })
     }
@@ -527,7 +612,12 @@ impl SymbolicCausalModel {
                             .into_iter()
                             .map(f64::from)
                             .collect();
-                        let dot = self.run(Operation::Dot, dim, query, &key)?[0];
+                        let dot_op = if self.bounded_profile.is_some() {
+                            Operation::AttentionDot
+                        } else {
+                            Operation::Dot
+                        };
+                        let dot = self.run(dot_op, dim, query, &key)?[0];
                         scores.push(
                             self.run(Operation::Scale, 1, &[dot, 1.0 / (dim as f64).sqrt()], &[])?
                                 [0],
@@ -541,8 +631,16 @@ impl SymbolicCausalModel {
                             })
                             .collect();
                         attention.push(
-                            self.run(Operation::Dot, probabilities.len(), &probabilities, &values)?
-                                [0],
+                            self.run(
+                                if self.bounded_profile.is_some() {
+                                    Operation::WeightedSum
+                                } else {
+                                    Operation::Dot
+                                },
+                                probabilities.len(),
+                                &probabilities,
+                                &values,
+                            )?[0],
                         );
                     }
                 }

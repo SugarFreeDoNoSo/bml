@@ -282,6 +282,14 @@ pub fn serialize_distributed(
     fragments: &[DistributedFragment],
     output_dir: &Path,
 ) -> Result<(), String> {
+    if fragments.iter().flat_map(|f| &f.ops).any(|op| {
+        matches!(
+            op,
+            RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. }
+        )
+    }) {
+        return Err("indexed context loads require the single-file v3 graph format".into());
+    }
     std::fs::create_dir_all(output_dir).map_err(|e| format!("crear dir: {e}"))?;
 
     // Header: magic, version, n_fragments, config
@@ -578,6 +586,9 @@ fn serialize_op(f: &mut std::fs::File, op: &RpnOp) -> Result<(), String> {
         }
         RpnOp::Drop => f.write_all(&[12]).map_err(|e| format!("write op: {e}")),
         RpnOp::Swap => f.write_all(&[13]).map_err(|e| format!("write op: {e}")),
+        RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. } => {
+            Err("indexed context loads require the single-file v3 graph format".into())
+        }
     }
 }
 
@@ -1205,6 +1216,8 @@ fn op_size(op: &RpnOp) -> usize {
         RpnOp::Var(_)
         | RpnOp::Const(_)
         | RpnOp::VarIndexed { .. }
+        | RpnOp::ContextVarIndexed { .. }
+        | RpnOp::ContextConstIndexed { .. }
         | RpnOp::StoreResult { .. }
         | RpnOp::Pick { .. } => 5,
         RpnOp::Loop { .. } => 9,
@@ -1331,6 +1344,14 @@ pub fn serialize_sub_fragments(
     frag: &DistributedFragment,
     sub_frags: &[SubFragment],
 ) -> Result<(), String> {
+    if sub_frags.iter().flat_map(|f| &f.ops).any(|op| {
+        matches!(
+            op,
+            RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. }
+        )
+    }) {
+        return Err("indexed context loads require the single-file v3 graph format".into());
+    }
     let frag_dir = parent_dir.join(format!("fragment_{}", frag.fragment_id));
     std::fs::create_dir_all(&frag_dir).map_err(|e| format!("crear dir: {e}"))?;
 

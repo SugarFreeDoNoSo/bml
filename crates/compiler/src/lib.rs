@@ -25,6 +25,7 @@ pub mod op_fragments;
 pub mod rpn;
 pub mod sampler;
 pub mod symbolic_artifact;
+pub mod symbolic_bounded;
 pub mod symbolic_kernels;
 pub mod symbolic_projection;
 pub mod tokenizer;

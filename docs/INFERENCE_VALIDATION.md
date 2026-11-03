@@ -31,6 +31,73 @@ embeddings compartidos.
 
 ## Regresiones pequeñas y reproducibles
 
+El perfil optativo `llama-symbolic-bml-bounded-f64-f32kv-v4` extiende la
+aritmética acotada a las nueve familias ejecutadas: proyección aprendida,
+productos query/key, suma probability/value, RMSNorm, RoPE, softmax, SwiGLU,
+residual y escala. Comprueba cada BML y mantiene los pesos externos. Los dots
+usan un cuerpo constante dentro de un bucle: su código no crece con el ancho,
+pero los pasos y las lecturas siguen creciendo linealmente. Los nuevos índices
+de contexto se guardan en contenedores single-file v3; los contenedores legacy
+no los aceptan silenciosamente.
+
+Softmax recibe los scores y una copia de su máximo seleccionado. Esa selección
+usa comparaciones del host; todas las restas, exponenciales, sumas y divisiones
+permanecen en el programa BML. El validador comprueba el máximo auxiliar. Esta
+decisión evita la pérdida de precisión observada con un desplazamiento fijo
+cuando todos los scores son negativos. Los literales JSON se leen con
+`float_roundtrip`; la comparación con la firma canónica no usa tolerancias.
+
+```sh
+cargo run -p bml-cli --release --locked -- compile --model /ruta/stories15M.gguf \
+  --output stories-bounded --symbolic --bounded --context-size 3 --symbolic-large-budget
+cargo run -p bml-cli --release --locked -- run --model stories-bounded \
+  --prompt "" --num-tokens 2 --context-size 3 --temp 0 --symbolic-large-budget
+cargo test -p bml-compiler --test full_bounded_contracts --locked
+cargo test -p bml-runtime --test indexed_symbolic_execution --locked
+```
+
+`--symbolic-large-budget` es una ampliación explícita para diagnóstico:
+compilación de hasta 2M nodos/ops por programa y 4M ops totales; ejecución de
+hasta 4M pasos y valores por programa. No elimina los límites del contenedor
+ni garantiza evaluabilidad de un modelo o prompt. El perfil conserva límites
+de operandos distintos para cada familia, que puede rechazar en ejecución.
+
+El diagnóstico con publicación y recarga AOT, presupuesto de construcción cero
+al cargar y comparación de todos los logits contra la ruta causal nativa es:
+
+```sh
+cargo run --release -p bml-compiler --example bounded_inference_diagnostic --locked -- \
+  /ruta/stories15M.gguf /ruta/directorio-nuevo 2
+```
+
+La campaña Rust del 3 de noviembre de 2026 compiló Stories15M en 0,612 s,
+publicó doce kernels y los recargó con presupuesto de construcción cero.
+Completó los inputs `[1, 9038]`, con 32.000 logits finitos por posición y
+argmax `9038`/`2501`, iguales a la ruta causal nativa. Los errores absolutos
+máximos fueron `1.620e-8` y `2.945e-6`. La ejecución simbólica tardó
+aproximadamente 142 y 137 segundos por posición en esta VM; son mediciones
+locales del diagnóstico, no una comparación con llama.cpp ni una promesa de
+rendimiento. Evidencia: `quality/evidence/full-bounded-2026-11-03.json`.
+
+Un oráculo independiente F32 Llama está disponible sin imports de producción:
+
+```sh
+python3 tools/diagnostics/bounded_inference_oracle.py --self-check --output /ruta/autoprueba
+python3 tools/diagnostics/bounded_inference_oracle.py /ruta/stories15M.gguf \
+  --tokens 1,9038 --output /ruta/oraculo
+```
+
+Requiere Python 3.11+ y un compilador C11. Comprueba cada BML en una
+implementación separada y compara contra fórmulas nativas independientes;
+no sustituye la prueba del artefacto Rust. La selección del máximo de softmax,
+la conversión F32 del KV y las constantes de posición están explícitas.
+
+La reducción de código del dot no acredita mejoras de tokens/segundo: cada
+peso aún exige muchas operaciones BML. RMS conserva su programa vectorial
+lineal y el plan AOT de softmax conserva un programa por longitud de prefijo.
+Su escalabilidad, modelos mayores y prompts adicionales requieren campañas
+independientes. Las pruebas ordinarias siguen sin necesitar modelos descargados.
+
 El perfil optativo `llama-symbolic-bml-bounded-rms-f64-f32kv-v3` reemplaza
 exclusivamente la expansión RMSNorm y comprueba cada operación BML de esa
 normalización bajo el contrato de reales finitos. Conserva las identidades de

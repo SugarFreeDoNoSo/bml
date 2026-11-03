@@ -178,30 +178,35 @@ impl BoundedRmsConfig {
 impl BMLTransformer {
     // With D(a,b)=a-b for positive a, N_C(x)=D(D(C,x),C)=-x
     // and A_C(x,y)=D(C,D(D(C,x),y))=x+y. Both require x<C.
-    fn bounded_neg(&mut self, x: NodeId, c: NodeId) -> NodeId {
+    pub(super) fn bounded_neg(&mut self, x: NodeId, c: NodeId) -> NodeId {
         let difference = self.sub(c, x);
         self.sub(difference, c)
     }
 
-    fn bounded_add(&mut self, x: NodeId, y: NodeId, c: NodeId) -> NodeId {
+    pub(super) fn bounded_add(&mut self, x: NodeId, y: NodeId, c: NodeId) -> NodeId {
         let difference = self.sub(c, x);
         let remainder = self.sub(difference, y);
         self.sub(c, remainder)
     }
 
-    fn bounded_positive_add(&mut self, positive_x: NodeId, y: NodeId, c: NodeId) -> NodeId {
+    pub(super) fn bounded_positive_add(
+        &mut self,
+        positive_x: NodeId,
+        y: NodeId,
+        c: NodeId,
+    ) -> NodeId {
         let negative_y = self.bounded_neg(y, c);
         self.sub(positive_x, negative_y)
     }
 
-    fn bounded_positive_mul(&mut self, x: NodeId, y: NodeId, c64: NodeId) -> NodeId {
+    pub(super) fn bounded_positive_mul(&mut self, x: NodeId, y: NodeId, c64: NodeId) -> NodeId {
         let log_x = self.log2(x);
         let log_y = self.log2(y);
         let exponent = self.bounded_add(log_x, log_y, c64);
         self.exp2(exponent)
     }
 
-    fn bounded_normalize(
+    pub(super) fn bounded_normalize(
         &mut self,
         x: NodeId,
         twice_bound: NodeId,
@@ -217,7 +222,7 @@ impl BMLTransformer {
     // Inputs already normalized into [-1,1]; the old signed-product identity
     // then has small positive components. Shift by two before rescaling so
     // opposite-sign endpoints cannot supply log2(0).
-    fn bounded_product_from_normalized(
+    pub(super) fn bounded_product_from_normalized(
         &mut self,
         x: NodeId,
         y: NodeId,

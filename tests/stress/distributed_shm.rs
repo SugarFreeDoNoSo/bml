@@ -77,6 +77,9 @@ fn serialize_program(program: &RpnProgram) -> Vec<u8> {
             }
             RpnOp::Drop => bytes.push(12),
             RpnOp::Swap => bytes.push(13),
+            RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. } => {
+                panic!("indexed context opcodes require a v3 graph, not this legacy SHM fixture")
+            }
         }
     }
     bytes

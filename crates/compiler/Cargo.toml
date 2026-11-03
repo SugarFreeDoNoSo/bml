@@ -12,7 +12,7 @@ bml-parser = { path = "../parser" }
 bml-inference = { path = "../inference" }
 bml-model-weights = { path = "../model-weights" }
 serde.workspace = true
-serde_json.workspace = true
+serde_json = { workspace = true, features = ["float_roundtrip"] }
 sha2 = "0.10"
 
 [dev-dependencies]

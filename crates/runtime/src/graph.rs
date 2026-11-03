@@ -195,6 +195,29 @@ impl ValidatedGraph {
         constants: &[f64],
         buffer: &mut ResultBuffer,
     ) -> Result<f64, GraphError> {
+        self.execute_symbolic_context(inputs, constants, buffer, false)
+    }
+
+    /// Execute the finite-real BML basis with bounded loops and explicit indexed
+    /// context loads. Loops preserve the same preflight depth/step/stack limits.
+    /// Invalid dynamic indices fail before a load; preceding writes may remain.
+    /// The historical checked entry point still rejects these extra opcodes.
+    pub fn execute_indexed_symbolic_with_constants(
+        &self,
+        inputs: &[f64],
+        constants: &[f64],
+        buffer: &mut ResultBuffer,
+    ) -> Result<f64, GraphError> {
+        self.execute_symbolic_context(inputs, constants, buffer, true)
+    }
+
+    fn execute_symbolic_context(
+        &self,
+        inputs: &[f64],
+        constants: &[f64],
+        buffer: &mut ResultBuffer,
+        indexed: bool,
+    ) -> Result<f64, GraphError> {
         if self.external_constants != Some(constants.len())
             || inputs.len() != self.inputs
             || buffer.n_slots() != self.slots
@@ -202,13 +225,16 @@ impl ValidatedGraph {
         {
             return Err(GraphError::Context);
         }
-        if !self
-            .graph
-            .fragments
-            .iter()
-            .flat_map(|f| &f.ops)
-            .all(bml_compiler::symbolic_kernels::is_symbolic_opcode)
-        {
+        if !self.graph.fragments.iter().flat_map(|f| &f.ops).all(|op| {
+            bml_compiler::symbolic_kernels::is_symbolic_opcode(op)
+                || (indexed
+                    && matches!(
+                        op,
+                        RpnOp::Loop { .. }
+                            | RpnOp::ContextVarIndexed { .. }
+                            | RpnOp::ContextConstIndexed { .. }
+                    ))
+        }) {
             return Err(GraphError::SymbolicBasis);
         }
         if inputs.iter().chain(constants).any(|v| !v.is_finite()) {
@@ -218,52 +244,8 @@ impl ValidatedGraph {
         stack
             .try_reserve_exact(self.peak)
             .map_err(|_| GraphError::Allocation)?;
-        for op in self.graph.fragments.iter().flat_map(|f| &f.ops) {
-            match *op {
-                RpnOp::One => stack.push(1.0),
-                RpnOp::Var(id) => stack.push(inputs[id as usize]),
-                RpnOp::Const(id) => stack.push(constants[id as usize]),
-                RpnOp::Bml => {
-                    let right = stack.pop().ok_or(GraphError::Stack)?;
-                    let left = stack.pop().ok_or(GraphError::Stack)?;
-                    stack.push(
-                        bml_domain::symbolic::Basis::Bml
-                            .apply_real(left, right)
-                            .map_err(|_| GraphError::Numerical)?,
-                    );
-                }
-                RpnOp::Pick { depth } => {
-                    let index = stack
-                        .len()
-                        .checked_sub(depth as usize + 1)
-                        .ok_or(GraphError::Stack)?;
-                    stack.push(stack[index]);
-                }
-                RpnOp::Dup => stack.push(*stack.last().ok_or(GraphError::Stack)?),
-                RpnOp::Drop => {
-                    stack.pop().ok_or(GraphError::Stack)?;
-                }
-                RpnOp::Swap => {
-                    let n = stack.len();
-                    if n < 2 {
-                        return Err(GraphError::Stack);
-                    }
-                    stack.swap(n - 1, n - 2);
-                }
-                RpnOp::StoreResult { slot } => {
-                    let offset = stack.pop().ok_or(GraphError::Stack)?;
-                    let value = stack.pop().ok_or(GraphError::Stack)?;
-                    if offset < 0.0
-                        || offset.fract() != 0.0
-                        || offset > u32::MAX as f64
-                        || offset as usize >= self.slot_size
-                    {
-                        return Err(GraphError::Reference);
-                    }
-                    buffer.write(slot, offset as u32, value);
-                }
-                _ => return Err(GraphError::SymbolicBasis),
-            }
+        for fragment in &self.graph.fragments {
+            execute_checked_ops(&fragment.ops, inputs, constants, &mut stack, buffer)?;
         }
         stack.pop().ok_or(GraphError::Stack)
     }
@@ -285,6 +267,81 @@ impl ValidatedGraph {
         Ok(hot.execute_fragments_full(&self.graph.fragments, &context, buffer))
     }
 }
+fn execute_checked_ops(
+    ops: &[RpnOp],
+    inputs: &[f64],
+    constants: &[f64],
+    stack: &mut Vec<f64>,
+    buffer: &mut ResultBuffer,
+) -> Result<(), GraphError> {
+    let mut position = 0;
+    while position < ops.len() {
+        match ops[position] {
+            RpnOp::One => stack.push(1.0),
+            RpnOp::Var(id) => stack.push(inputs[id as usize]),
+            RpnOp::Const(id) => stack.push(constants[id as usize]),
+            RpnOp::ContextVarIndexed { base } | RpnOp::ContextConstIndexed { base } => {
+                let offset = stack.pop().ok_or(GraphError::Stack)?;
+                let index = bml_compiler::rpn::context_index(base, offset)
+                    .ok_or(GraphError::Reference)? as usize;
+                let context = if matches!(ops[position], RpnOp::ContextVarIndexed { .. }) {
+                    inputs
+                } else {
+                    constants
+                };
+                stack.push(*context.get(index).ok_or(GraphError::Reference)?);
+            }
+            RpnOp::Bml => {
+                let right = stack.pop().ok_or(GraphError::Stack)?;
+                let left = stack.pop().ok_or(GraphError::Stack)?;
+                stack.push(
+                    bml_domain::symbolic::Basis::Bml
+                        .apply_real(left, right)
+                        .map_err(|_| GraphError::Numerical)?,
+                );
+            }
+            RpnOp::Pick { depth } => {
+                let index = stack
+                    .len()
+                    .checked_sub(depth as usize + 1)
+                    .ok_or(GraphError::Stack)?;
+                stack.push(stack[index]);
+            }
+            RpnOp::Dup => stack.push(*stack.last().ok_or(GraphError::Stack)?),
+            RpnOp::Drop => {
+                stack.pop().ok_or(GraphError::Stack)?;
+            }
+            RpnOp::Swap => {
+                let n = stack.len();
+                if n < 2 {
+                    return Err(GraphError::Stack);
+                }
+                stack.swap(n - 1, n - 2);
+            }
+            RpnOp::StoreResult { slot } => {
+                let offset = stack.pop().ok_or(GraphError::Stack)?;
+                let value = stack.pop().ok_or(GraphError::Stack)?;
+                let index = bml_compiler::rpn::context_index(0, offset)
+                    .filter(|i| (*i as usize) < buffer.slot_size())
+                    .ok_or(GraphError::Reference)?;
+                buffer.write(slot, index, value);
+            }
+            RpnOp::Loop { count, body_len } => {
+                let end = position + 1 + body_len as usize; // bounded during preflight
+                let body = &ops[position + 1..end];
+                for index in 0..count {
+                    stack.push(f64::from(index));
+                    execute_checked_ops(body, inputs, constants, stack, buffer)?;
+                }
+                position = end;
+                continue;
+            }
+            _ => return Err(GraphError::SymbolicBasis),
+        }
+        position += 1;
+    }
+    Ok(())
+}
 fn structure(
     ops: &[RpnOp],
     depth: usize,
@@ -295,8 +352,14 @@ fn structure(
     let mut i = 0;
     while i < ops.len() {
         match ops[i] {
-            RpnOp::Var(id) if id as usize >= inputs => return Err(GraphError::Reference),
-            RpnOp::Const(id) if id as usize >= constants => return Err(GraphError::Reference),
+            RpnOp::Var(id) | RpnOp::ContextVarIndexed { base: id } if id as usize >= inputs => {
+                return Err(GraphError::Reference)
+            }
+            RpnOp::Const(id) | RpnOp::ContextConstIndexed { base: id }
+                if id as usize >= constants =>
+            {
+                return Err(GraphError::Reference)
+            }
             RpnOp::StoreResult { slot } if slot as usize >= slots => {
                 return Err(GraphError::Reference)
             }
@@ -358,7 +421,9 @@ impl StackBudget {
                 }
                 RpnOp::Drop => self.effect(1, 0)?,
                 RpnOp::Swap => self.effect(2, 2)?,
-                RpnOp::VarIndexed { .. } => self.effect(1, 1)?,
+                RpnOp::VarIndexed { .. }
+                | RpnOp::ContextVarIndexed { .. }
+                | RpnOp::ContextConstIndexed { .. } => self.effect(1, 1)?,
                 RpnOp::StoreResult { .. } => self.effect(2, 0)?,
                 RpnOp::Loop { count, body_len } => {
                     let end = i + 1 + body_len as usize; // checked by structure

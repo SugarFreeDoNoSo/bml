@@ -31,6 +31,10 @@ pub const BMLGRAPH_MAGIC: u32 = 0x4C4D4247;
 /// Versión del formato `.bmlgraph`.
 pub const BMLGRAPH_VERSION: u32 = 2;
 
+/// Single-file format supporting explicit indexed input/constant loads.
+/// Graphs without these instructions retain the historical v2 bytes.
+pub const BMLGRAPH_CONTEXT_VERSION: u32 = 3;
+
 /// Umbral por defecto: 32 KB (L1 cache).
 pub const DEFAULT_L1_THRESHOLD: usize = 32 * 1024;
 
@@ -85,6 +89,13 @@ impl Fragment {
 
     /// Evalúa el fragmento sobre una pila con contexto de inputs y pesos.
     pub fn evaluate_on_stack_with_ctx(&self, stack: &mut Vec<f64>, ctx: &bml_domain::EvalContext) {
+        if crate::rpn::has_indexed_context(&self.ops) {
+            if crate::rpn::evaluate_indexed_ops(&self.ops, stack, ctx, 0).is_err() {
+                stack.clear();
+                stack.push(f64::NAN);
+            }
+            return;
+        }
         let mut i = 0;
         while i < self.ops.len() {
             match self.ops[i] {
@@ -92,6 +103,20 @@ impl Fragment {
                 RpnOp::Zero => stack.push(0.0),
                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                RpnOp::ContextVarIndexed { base } => {
+                    let offset = stack.pop().unwrap_or(f64::NAN);
+                    stack.push(
+                        crate::rpn::context_index(base, offset)
+                            .map_or(f64::NAN, |id| ctx.get_var(id)),
+                    );
+                }
+                RpnOp::ContextConstIndexed { base } => {
+                    let offset = stack.pop().unwrap_or(f64::NAN);
+                    stack.push(
+                        crate::rpn::context_index(base, offset)
+                            .map_or(f64::NAN, |id| ctx.get_const(id)),
+                    );
+                }
                 RpnOp::VarIndexed { base: _ } => {
                     let _offset = stack.pop().unwrap_or(0.0);
                     stack.push(f64::NAN);
@@ -145,6 +170,20 @@ impl Fragment {
                                 RpnOp::Zero => stack.push(0.0),
                                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                                RpnOp::ContextVarIndexed { base } => {
+                                    let offset = stack.pop().unwrap_or(f64::NAN);
+                                    stack.push(
+                                        crate::rpn::context_index(base, offset)
+                                            .map_or(f64::NAN, |id| ctx.get_var(id)),
+                                    );
+                                }
+                                RpnOp::ContextConstIndexed { base } => {
+                                    let offset = stack.pop().unwrap_or(f64::NAN);
+                                    stack.push(
+                                        crate::rpn::context_index(base, offset)
+                                            .map_or(f64::NAN, |id| ctx.get_const(id)),
+                                    );
+                                }
                                 RpnOp::VarIndexed { base: _ } => {
                                     let _offset = stack.pop().unwrap_or(0.0);
                                     stack.push(f64::NAN);
@@ -201,6 +240,22 @@ impl Fragment {
                                                 RpnOp::Zero => stack.push(0.0),
                                                 RpnOp::Var(id) => stack.push(ctx.get_var(id)),
                                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
+                                                RpnOp::ContextVarIndexed { base } => {
+                                                    let offset = stack.pop().unwrap_or(f64::NAN);
+                                                    stack.push(
+                                                        crate::rpn::context_index(base, offset)
+                                                            .map_or(f64::NAN, |id| ctx.get_var(id)),
+                                                    );
+                                                }
+                                                RpnOp::ContextConstIndexed { base } => {
+                                                    let offset = stack.pop().unwrap_or(f64::NAN);
+                                                    stack.push(
+                                                        crate::rpn::context_index(base, offset)
+                                                            .map_or(f64::NAN, |id| {
+                                                                ctx.get_const(id)
+                                                            }),
+                                                    );
+                                                }
                                                 RpnOp::VarIndexed { base: _ } => {
                                                     let _offset = stack.pop().unwrap_or(0.0);
                                                     stack.push(f64::NAN);
@@ -318,11 +373,21 @@ impl BmlGraph {
     /// La pila se mantiene entre fragmentos.
     pub fn evaluate(&self, x: f64) -> f64 {
         let mut stack: Vec<f64> = Vec::new();
+        let indexed = self
+            .fragments
+            .iter()
+            .any(|f| crate::rpn::has_indexed_context(&f.ops));
         for fragment in &self.fragments {
-            fragment.evaluate_on_stack_with_ctx(
-                &mut stack,
-                &bml_domain::EvalContext::new(&[x], &self.const_pool),
-            );
+            let inputs = [x];
+            let context = bml_domain::EvalContext::new(&inputs, &self.const_pool);
+            if indexed {
+                if crate::rpn::evaluate_indexed_ops(&fragment.ops, &mut stack, &context, 0).is_err()
+                {
+                    return f64::NAN;
+                }
+            } else {
+                fragment.evaluate_on_stack_with_ctx(&mut stack, &context);
+            }
         }
         let _ = x;
         stack.pop().unwrap_or(f64::NAN)
@@ -332,7 +397,17 @@ impl BmlGraph {
     pub fn serialize(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&BMLGRAPH_MAGIC.to_le_bytes());
-        bytes.extend_from_slice(&BMLGRAPH_VERSION.to_le_bytes());
+        let version = if self.fragments.iter().flat_map(|f| &f.ops).any(|op| {
+            matches!(
+                op,
+                RpnOp::ContextVarIndexed { .. } | RpnOp::ContextConstIndexed { .. }
+            )
+        }) {
+            BMLGRAPH_CONTEXT_VERSION
+        } else {
+            BMLGRAPH_VERSION
+        };
+        bytes.extend_from_slice(&version.to_le_bytes());
         bytes.extend_from_slice(&(self.fragments.len() as u32).to_le_bytes());
         for fragment in &self.fragments {
             bytes.extend_from_slice(&(fragment.ops.len() as u32).to_le_bytes());
@@ -371,6 +446,14 @@ impl BmlGraph {
                     }
                     RpnOp::Drop => bytes.push(12),
                     RpnOp::Swap => bytes.push(13),
+                    RpnOp::ContextVarIndexed { base } => {
+                        bytes.push(14);
+                        bytes.extend_from_slice(&base.to_le_bytes());
+                    }
+                    RpnOp::ContextConstIndexed { base } => {
+                        bytes.push(15);
+                        bytes.extend_from_slice(&base.to_le_bytes());
+                    }
                 }
             }
         }
@@ -402,7 +485,7 @@ impl BmlGraph {
             return Err(format!("magic inválido: 0x{magic:08X}"));
         }
         let version = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
-        if !(1..=BMLGRAPH_VERSION).contains(&version) {
+        if !(1..=BMLGRAPH_CONTEXT_VERSION).contains(&version) {
             return Err(format!("versión no soportada: {version}"));
         }
         let num_fragments = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
@@ -496,6 +579,19 @@ impl BmlGraph {
                     }
                     12 => RpnOp::Drop,
                     13 => RpnOp::Swap,
+                    14 | 15 if version >= BMLGRAPH_CONTEXT_VERSION => {
+                        let end = offset
+                            .checked_add(4)
+                            .ok_or("context index range overflow")?;
+                        let encoded = bytes.get(offset..end).ok_or("truncated context index")?;
+                        let base = u32::from_le_bytes(encoded.try_into().unwrap());
+                        offset = end;
+                        if tag == 14 {
+                            RpnOp::ContextVarIndexed { base }
+                        } else {
+                            RpnOp::ContextConstIndexed { base }
+                        }
+                    }
                     _ => return Err(format!("tag desconocido: {tag}")),
                 };
                 ops.push(op);
