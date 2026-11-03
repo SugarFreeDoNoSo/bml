@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "scope": "Bounded artifact reader pre-read admission and inclusive post-read limit",
+  "base_commit": "2f4c1c3",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "historical_mutants": [
+    "crates/compiler/src/causal_artifact.rs:98:28: replace || with && in read_bounded",
+    "crates/compiler/src/causal_artifact.rs:105:20: replace > with == in read_bounded"
+  ],
+  "snapshot": "target/delivery-snapshots/artifact-reader-replay",
+  "contract": "stored_program_byte_budget_accepts_64_kib_and_rejects_one_more_byte",
+  "test_file": "crates/compiler/tests/causal_artifact_contracts.rs",
+  "test_change": "None. Reuse the independent encoded-size boundary contract introduced earlier. Integrity hashes and independent opcode/count budgets are valid in both byte-size cases.",
+  "method": "Archive HEAD; baseline suite; independently mutate initial file metadata predicate and post-read byte comparison; restore and rerun. Fresh dedicated build initially, same snapshot path rebuilt on edits. Production source/tests untouched.",
+  "verification": [
+    {"source": "original baseline", "exit_code": 0, "passed": 9, "log": "target/quality/artifact-reader-baseline.log", "sha256": "38cc957c8004400880f611fff1ebcac32c763a83f77d7ac0a21504af71d9b879"},
+    {"source": "metadata file/size OR changed to AND", "exit_code": 101, "passed": 8, "failed": 1, "diagnostic": "artifact file grew past its byte budget instead of artifact file exceeds its byte budget", "log": "target/quality/artifact-reader-admission.log", "sha256": "692cff3ca3e1833a5cb0ce476aec93f35118a147abe7e7a6bc11bbde9c5e559c"},
+    {"source": "post-read > limit changed to == limit", "exit_code": 101, "passed": 8, "failed": 1, "diagnostic": "inclusive 64 KiB program budget: Some(\"artifact file grew past its byte budget\")", "log": "target/quality/artifact-reader-inclusive.log", "sha256": "62c612c0eb9d90996b5d0f12d651248f27461016b56d45f1a37f83f84769a140"},
+    {"source": "restored implementation", "exit_code": 0, "passed": 9, "log": "target/quality/artifact-reader-restored.log", "sha256": "6c51008f2cf3d2fc19b5adb76a3f4ba0f742dfb68b5595f67d81f7cc6deafa1f"}
+  ],
+  "command": "cargo test -p bml-compiler --test causal_artifact_contracts --locked",
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/artifact-reader-build; CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0; TMPDIR under target.",
+  "interpretation": "First mutant still rejects oversize data eventually but loses pre-read metadata admission; test observes the error stage rather than measuring allocation. Second mutant rejects the valid inclusive limit. Current detection does not establish historical survival on current HEAD; original outcomes remain unchanged.",
+  "remaining": "Seventeen historical survivors now have local detecting-contract evidence; 30 still require disposition. Both historical timeouts have diagnosis and fast detection. Global campaign retains end_time=null and is not approved."
+}
