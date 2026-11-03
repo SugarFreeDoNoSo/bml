@@ -14,6 +14,39 @@ use bml_inference::{Result, Tensor};
 const VOCAB: usize = 262;
 const TOKENS: [u32; 3] = [259, 260, 261];
 
+#[test]
+fn q6_output_rows_stay_quantized_and_match_a_closed_form_projection() {
+    let mut fixture = Fixture::empty_projections(256, 4, 2, 256);
+    fixture.weight("token_embd.weight").bytes = bytes(&vec![1.0; 256 * VOCAB]);
+    let mut encoded = Vec::new();
+    for token in 0..VOCAB {
+        let mut block = [0u8; 210];
+        block[192..208].fill((token as i32 % 7 - 3) as i8 as u8);
+        block[208..].copy_from_slice(&0x3800u16.to_le_bytes());
+        encoded.extend(block);
+    }
+    let output = fixture.weight("output.weight");
+    output.dtype = GgufDataType::Q6_K;
+    output.bytes = encoded;
+    let pointer = output.bytes.as_ptr();
+    let model = fixture.model().unwrap();
+    let stored = model
+        .tensors()
+        .iter()
+        .find(|t| t.name == "output.weight")
+        .unwrap();
+    assert_eq!(stored.data.as_ptr(), pointer);
+    assert_eq!(stored.data.len(), 210 * VOCAB);
+    let logits = model.session(2).unwrap().decode(TOKENS[0]).unwrap();
+    for (token, &actual) in logits.iter().enumerate() {
+        let expected = -16.0 * (token as i32 % 7 - 3) as f64 * 256.0 / 1.125f64.sqrt();
+        assert!(
+            (f64::from(actual) - expected).abs() < 0.002,
+            "token {token}: {actual} vs {expected}"
+        );
+    }
+}
+
 struct Weight {
     name: String,
     dims: Vec<u64>,
@@ -601,4 +634,339 @@ fn nonfinite_quantization_scale_is_rejected_at_import() {
     embedding.bytes = vec![0; VOCAB * 34];
     embedding.bytes[..2].copy_from_slice(&0x7c00_u16.to_le_bytes());
     assert!(fixture.model().is_err());
+}
+
+#[test]
+fn staged_layer_sessions_match_causal_logits_across_tokens_and_requests() {
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    let budget = bml_inference::model::DEFAULT_SESSION_MEMORY_LIMIT;
+    let mut first = model.layer_session(0..1, 4, budget).unwrap();
+    let mut second = model.layer_session(1..2, 4, budget).unwrap();
+    let mut other_first = model.layer_session(0..1, 4, budget).unwrap();
+    let mut other_second = model.layer_session(1..2, 4, budget).unwrap();
+    let mut local = model.session(4).unwrap();
+    let mut other_local = model.session(4).unwrap();
+    for (position, &token) in TOKENS.iter().enumerate() {
+        let hidden = first
+            .forward(position, &model.embed_token(token).unwrap())
+            .unwrap();
+        let hidden = second.forward(position, &hidden).unwrap();
+        assert_eq!(
+            model.final_logits(&hidden).unwrap(),
+            local.decode(token).unwrap()
+        );
+        // Interleave a separate request with a different token order.
+        let other = TOKENS[TOKENS.len() - 1 - position];
+        let hidden = other_first
+            .forward(position, &model.embed_token(other).unwrap())
+            .unwrap();
+        let hidden = other_second.forward(position, &hidden).unwrap();
+        assert_eq!(
+            model.final_logits(&hidden).unwrap(),
+            other_local.decode(other).unwrap()
+        );
+    }
+    assert_eq!(first.layers(), 0..1);
+    assert_eq!(second.position(), TOKENS.len());
+}
+
+#[test]
+fn staged_layers_reject_bad_positions_inputs_and_budgets_without_commit() {
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    let budget = bml_inference::model::DEFAULT_SESSION_MEMORY_LIMIT;
+    assert!(model.layer_session(0..0, 2, budget).is_err());
+    assert!(model.layer_session(0..3, 2, budget).is_err());
+    assert!(model.layer_session(0..1, 2, 0).is_err());
+    assert!(model.embed_token(u32::MAX).is_err());
+    assert!(model.final_logits(&[]).is_err());
+    let input = model.embed_token(TOKENS[0]).unwrap();
+    let mut session = model.layer_session(0..2, 1, budget).unwrap();
+    assert!(session.forward(1, &input).is_err());
+    assert!(session.forward(0, &[]).is_err());
+    let mut invalid = input.clone();
+    invalid[0] = f32::NAN;
+    assert!(session.forward(0, &invalid).is_err());
+    assert_eq!(session.position(), 0);
+    let output = session.forward(0, &input).unwrap();
+    assert!(session.forward(0, &input).is_err());
+    assert!(session.forward(1, &input).is_err());
+    session.reset();
+    assert_eq!(session.forward(0, &input).unwrap(), output);
+    assert_eq!(session.kv_bytes(), model.session(1).unwrap().kv_bytes());
+}
+
+#[test]
+fn staged_numerical_failure_does_not_commit_partial_layer_caches() {
+    let mut fixture = Fixture::tiny(2, 1, true);
+    fixture.weight("blk.1.ffn_gate.weight").bytes = bytes(&[f32::MAX; 12]);
+    let model = fixture.model().unwrap();
+    let budget = bml_inference::model::DEFAULT_SESSION_MEMORY_LIMIT;
+    let mut session = model.layer_session(0..2, 4, budget).unwrap();
+    assert!(session
+        .forward(0, &model.embed_token(TOKENS[0]).unwrap())
+        .is_err());
+    assert_eq!(session.position(), 0);
+    let zero = model.embed_token(0).unwrap();
+    let retry = session.forward(0, &zero).unwrap();
+    let mut fresh = model.layer_session(0..2, 4, budget).unwrap();
+    assert_eq!(retry, fresh.forward(0, &zero).unwrap());
+    assert_eq!(
+        session.forward(1, &zero).unwrap(),
+        fresh.forward(1, &zero).unwrap()
+    );
+}
+
+#[test]
+fn tcp_layer_pipeline_matches_local_logits_and_preserves_causal_order() {
+    use bml_inference::remote::{serve_layer_connection, LayerClient, RemoteLimits};
+    use std::net::TcpListener;
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    let first = TcpListener::bind("127.0.0.1:0").unwrap();
+    let second = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addresses = [first.local_addr().unwrap(), second.local_addr().unwrap()];
+    let limits = RemoteLimits {
+        timeout: std::time::Duration::from_secs(3),
+        ..Default::default()
+    };
+    std::thread::scope(|scope| {
+        let model_ref = &model;
+        let a = scope.spawn(move || {
+            serve_layer_connection(model_ref, 0..1, first.accept().unwrap().0, limits)
+        });
+        let b = scope.spawn(move || {
+            serve_layer_connection(model_ref, 1..2, second.accept().unwrap().0, limits)
+        });
+        let mut first = LayerClient::connect(addresses[0], 4, model.fingerprint(), limits).unwrap();
+        let mut second =
+            LayerClient::connect(addresses[1], 4, model.fingerprint(), limits).unwrap();
+        assert_eq!(first.layers(), 0..1);
+        assert_eq!(second.layers(), 1..2);
+        let mut local = model.session(4).unwrap();
+        for (position, token) in TOKENS.into_iter().enumerate() {
+            let input = model.embed_token(token).unwrap();
+            assert!(first.forward(position + 1, &input).is_err());
+            let hidden = first.forward(position, &input).unwrap();
+            assert!(first.forward(position, &input).is_err());
+            let hidden = second.forward(position, &hidden).unwrap();
+            assert_eq!(
+                model.final_logits(&hidden).unwrap(),
+                local.decode(token).unwrap()
+            );
+        }
+        first.reset().unwrap();
+        second.reset().unwrap();
+        local.reset();
+        let hidden = first
+            .forward(0, &model.embed_token(TOKENS[1]).unwrap())
+            .unwrap();
+        let hidden = second.forward(0, &hidden).unwrap();
+        assert_eq!(
+            model.final_logits(&hidden).unwrap(),
+            local.decode(TOKENS[1]).unwrap()
+        );
+        first.close().unwrap();
+        second.close().unwrap();
+        a.join().unwrap().unwrap();
+        b.join().unwrap().unwrap();
+    });
+}
+
+#[test]
+fn remote_layer_server_rejects_oversized_frame_before_payload_allocation() {
+    use bml_inference::remote::{serve_layer_connection, RemoteLimits};
+    use std::io::Write;
+    use std::net::{TcpListener, TcpStream};
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    std::thread::scope(|scope| {
+        let server = scope.spawn(|| {
+            serve_layer_connection(
+                &model,
+                0..1,
+                listener.accept().unwrap().0,
+                RemoteLimits {
+                    frame_bytes: 128,
+                    ..Default::default()
+                },
+            )
+        });
+        let mut client = TcpStream::connect(address).unwrap();
+        client.write_all(&u32::MAX.to_le_bytes()).unwrap();
+        assert!(server
+            .join()
+            .unwrap()
+            .unwrap_err()
+            .to_string()
+            .contains("frame size"));
+    });
+}
+
+#[test]
+fn numerical_fingerprint_is_order_independent_and_detects_config_and_weights() {
+    let fixture = Fixture::tiny(2, 1, false);
+    let original = fixture.model().unwrap().fingerprint();
+    let mut reordered = Fixture::tiny(2, 1, false);
+    reordered.weights.reverse();
+    let model = reordered.model().unwrap();
+    assert_eq!(model.fingerprint(), original);
+    assert_eq!(model.fingerprint(), original); // Cached identity is stable.
+    let mut changed = Fixture::tiny(2, 1, false);
+    changed.config.rope_freq_base *= 2.;
+    assert_ne!(changed.model().unwrap().fingerprint(), original);
+    let mut changed = Fixture::tiny(2, 1, false);
+    changed.weight("blk.0.attn_norm.weight").bytes[..4].copy_from_slice(&2.0f32.to_le_bytes());
+    assert_ne!(changed.model().unwrap().fingerprint(), original);
+}
+
+#[test]
+fn remote_open_rejects_another_model_revision() {
+    use bml_inference::remote::{serve_layer_connection, LayerClient, RemoteLimits};
+    use std::net::TcpListener;
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    std::thread::scope(|scope| {
+        let server = scope.spawn(|| {
+            serve_layer_connection(
+                &model,
+                0..1,
+                listener.accept().unwrap().0,
+                RemoteLimits::default(),
+            )
+        });
+        let mut wrong = model.fingerprint();
+        wrong[0] ^= 1;
+        let error = LayerClient::connect(address, 4, wrong, RemoteLimits::default())
+            .err()
+            .unwrap();
+        assert!(error.to_string().contains("model identity"));
+        server.join().unwrap().unwrap();
+    });
+}
+
+#[test]
+fn remote_coordinator_validates_prompt_and_runs_full_layer_pipeline() {
+    use bml_inference::remote::{serve_layer_connection, RemoteLimits, RemotePipeline};
+    use std::net::TcpListener;
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    let listeners = [
+        TcpListener::bind("127.0.0.1:0").unwrap(),
+        TcpListener::bind("127.0.0.1:0").unwrap(),
+    ];
+    let addresses = listeners.each_ref().map(|l| l.local_addr().unwrap());
+    let limits = RemoteLimits::default();
+    std::thread::scope(|scope| {
+        let model_ref = &model;
+        let servers: Vec<_> = listeners
+            .into_iter()
+            .enumerate()
+            .map(|(i, listener)| {
+                scope.spawn(move || {
+                    serve_layer_connection(
+                        model_ref,
+                        i..i + 1,
+                        listener.accept().unwrap().0,
+                        limits,
+                    )
+                })
+            })
+            .collect();
+        let mut pipeline = RemotePipeline::connect(&model, &addresses, 4, limits).unwrap();
+        assert!(pipeline.prefill(&[TOKENS[0], u32::MAX]).is_err());
+        assert!(pipeline.decode(u32::MAX).is_err());
+        assert_eq!(pipeline.position(), 0);
+        assert_eq!(
+            pipeline.prefill(&TOKENS).unwrap(),
+            model.session(4).unwrap().prefill(&TOKENS).unwrap()
+        );
+        assert_eq!(pipeline.position(), 3);
+        assert!(pipeline.prefill(&TOKENS).is_err());
+        pipeline.reset().unwrap();
+        assert_eq!(
+            pipeline.decode(TOKENS[2]).unwrap(),
+            model.session(4).unwrap().decode(TOKENS[2]).unwrap()
+        );
+        pipeline.close().unwrap();
+        for server in servers {
+            server.join().unwrap().unwrap();
+        }
+    });
+}
+
+#[test]
+fn remote_coordinator_rejects_an_incomplete_layer_plan() {
+    use bml_inference::remote::{serve_layer_connection, RemoteLimits, RemotePipeline};
+    use std::net::TcpListener;
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    std::thread::scope(|scope| {
+        let server = scope.spawn(|| {
+            serve_layer_connection(
+                &model,
+                0..1,
+                listener.accept().unwrap().0,
+                RemoteLimits::default(),
+            )
+        });
+        let error = RemotePipeline::connect(&model, &[address], 4, RemoteLimits::default())
+            .err()
+            .unwrap();
+        assert!(error.to_string().contains("every model layer"));
+        // The failed coordinator drops the connection; no token was submitted.
+        assert!(server.join().unwrap().is_err());
+    });
+}
+
+#[test]
+fn remote_coordinator_invalidates_all_stages_after_partial_commit() {
+    use bml_inference::remote::{serve_layer_connection, RemoteLimits, RemotePipeline};
+    use std::net::TcpListener;
+    let mut fixture = Fixture::tiny(2, 1, true);
+    fixture.weight("blk.1.ffn_gate.weight").bytes = bytes(&[f32::MAX; 12]);
+    let model = fixture.model().unwrap();
+    let listeners = [
+        TcpListener::bind("127.0.0.1:0").unwrap(),
+        TcpListener::bind("127.0.0.1:0").unwrap(),
+    ];
+    let addresses = listeners.each_ref().map(|l| l.local_addr().unwrap());
+    std::thread::scope(|scope| {
+        let model_ref = &model;
+        let servers: Vec<_> = listeners
+            .into_iter()
+            .enumerate()
+            .map(|(i, listener)| {
+                scope.spawn(move || {
+                    serve_layer_connection(
+                        model_ref,
+                        i..i + 1,
+                        listener.accept().unwrap().0,
+                        RemoteLimits::default(),
+                    )
+                })
+            })
+            .collect();
+        let mut pipeline =
+            RemotePipeline::connect(&model, &addresses, 4, RemoteLimits::default()).unwrap();
+        assert!(pipeline.decode(TOKENS[0]).is_err());
+        assert_eq!(pipeline.position(), 0);
+        assert!(pipeline
+            .decode(0)
+            .unwrap_err()
+            .to_string()
+            .contains("pipeline is invalid"));
+        assert!(pipeline.reset().is_err());
+        drop(pipeline);
+        for server in servers {
+            assert!(server.join().unwrap().is_err());
+        }
+    });
 }

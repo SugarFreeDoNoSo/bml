@@ -1,6 +1,6 @@
 //! Normalized, hashed model resources and an ELF appendix for autonomous CPU use.
 //!
-//! Weights retain their original F32/F16/Q4_0/Q8_0 encoding. The container stores
+//! Weights retain their original F32/F16/Q4_0/Q8_0/Q6_K encoding. The container stores
 //! model configuration and tokenizer data once, and borrows tensors from a
 //! read-only mapping. It does not contain or parse a GGUF at runtime.
 
@@ -38,7 +38,7 @@ pub struct TensorDescriptor {
     pub name: String,
     /// Dimensions in GGML order, with axis zero contiguous.
     pub dims: Vec<u64>,
-    /// GGML dtype number; only F32/F16/Q4_0/Q8_0 are accepted.
+    /// GGML dtype number; only F32/F16/Q4_0/Q8_0/Q6_K are accepted.
     pub dtype: u32,
     /// Byte offset relative to the aligned tensor section.
     pub offset: u64,
@@ -594,7 +594,8 @@ fn dtype(number: u32) -> Result<GgufDataType> {
             value @ (GgufDataType::F32
             | GgufDataType::F16
             | GgufDataType::Q4_0
-            | GgufDataType::Q8_0),
+            | GgufDataType::Q8_0
+            | GgufDataType::Q6_K),
         ) => Ok(value),
         _ => Err(Error("unsupported normalized tensor dtype".into())),
     }
@@ -612,6 +613,7 @@ fn encoded_length(dtype: GgufDataType, dims: &[u64]) -> Result<usize> {
     let length = match dtype {
         GgufDataType::F32 => elements.checked_mul(4),
         GgufDataType::F16 => elements.checked_mul(2),
+        GgufDataType::Q6_K if dims[0].is_multiple_of(256) => (elements / 256).checked_mul(210),
         GgufDataType::Q4_0 | GgufDataType::Q8_0 if dims[0].is_multiple_of(32) => {
             (elements / 32).checked_mul(if dtype == GgufDataType::Q4_0 { 18 } else { 34 })
         }

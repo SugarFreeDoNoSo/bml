@@ -8,6 +8,7 @@
 
 pub mod driver;
 pub mod model;
+pub mod remote;
 pub mod resources;
 pub mod tokenizer;
 

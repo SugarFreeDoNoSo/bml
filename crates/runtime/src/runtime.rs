@@ -1,14 +1,14 @@
 //! Runtime BML: encapsula el hot loop con inicialización única de buffers.
 //!
 //! El `Runtime` se crea una sola vez al arrancar. Pre-asigna todos los
-//! buffers necesarios (pila del hot loop, buffer de resultados append-only).
+//! buffers necesarios (pila del hot loop y buffer circular histórico).
 //! Durante la ejecución, no se hacen allocs.
 //!
-//! # Append-only
+//! # Almacenamiento de resultados
 //!
-//! Cada evaluación escribe el resultado a una nueva posición del buffer
-//! de resultados pre-asignado, nunca sobrescribe. El buffer rota cuando
-//! se llena, pero siempre dentro de la memoria pre-asignada.
+//! `execute` conserva el buffer circular histórico, que sobrescribe al rotar.
+//! Para resultados sin sobrescritura, `execute_append_only` publica en un
+//! `AppendOnlyResults` compartido y devuelve error cuando se llena.
 
 use crate::buffer::ResultBuffer;
 use crate::hot_loop::HotLoop;
@@ -58,6 +58,17 @@ impl Runtime {
         let result = self.hot_loop.execute(program);
         self.write_result(result);
         result
+    }
+
+    /// Execute into shared immutable result storage rather than the legacy ring.
+    /// Each runtime retains its own evaluation stack. Output slots are never
+    /// reused; full capacity returns the computed value without changing slots.
+    pub fn execute_append_only(
+        &mut self,
+        program: &RpnProgram,
+        output: &crate::append_only::AppendOnlyResults,
+    ) -> Result<usize, f64> {
+        output.append(self.hot_loop.execute(program))
     }
 
     /// Ejecuta un `BmlGraph` (fragmentos) y almacena el resultado.

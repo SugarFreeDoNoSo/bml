@@ -14,9 +14,11 @@
 #![deny(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod append_only;
 pub mod buffer;
 pub mod causal_artifact;
 pub mod graph;
+pub mod graph_rpc;
 pub mod hot_loop;
 pub mod net;
 pub mod prepared_projection;

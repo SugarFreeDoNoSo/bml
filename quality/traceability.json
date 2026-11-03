@@ -93,7 +93,10 @@
       "all_binary16_encodings_match_an_independent_arithmetic_oracle",
       "every_truncation_and_extra_byte_is_rejected_for_all_codecs",
       "q4_fixture_uses_low_then_high_nibbles_and_each_blocks_own_scale",
-      "q8_fixture_sign_extends_bytes_and_keeps_block_order"
+      "q8_fixture_sign_extends_bytes_and_keeps_block_order",
+      "q6_matches_pinned_ggml_reference_bit_for_bit",
+      "q6_superblocks_preserve_all_bit_planes_signed_scales_and_order",
+      "q6_non_finite_and_signed_zero_scales_follow_ggml_multiplication_order"
     ]
   },
   "C11": {
@@ -113,7 +116,10 @@
     "tests": [
       "views_borrow_the_readers_actual_metadata_and_exact_distinct_ranges",
       "missing_and_unknown_layout_views_return_distinct_typed_errors",
-      "a_known_scalar_layout_can_be_inspected_without_claiming_f32_conversion"
+      "a_known_scalar_layout_can_be_inspected_without_claiming_f32_conversion",
+      "q6_views_require_complete_rows_and_keep_distinct_superblocks",
+      "row_decode_flattens_outer_axes_and_checks_indices_before_slicing",
+      "quantized_row_decode_preserves_distinct_scales_without_expanding_neighbors"
     ]
   },
   "C13": {
@@ -140,7 +146,9 @@
     "tests": [
       "rectangular_embeddings_use_contiguous_ne0_values_for_each_token",
       "tied_embedding_projection_matches_independent_rectangular_dot_products",
-      "q4_embedding_columns_keep_their_own_blocks_and_scales"
+      "q4_embedding_columns_keep_their_own_blocks_and_scales",
+      "separate_output_head_is_used_by_both_legacy_forward_paths",
+      "malformed_or_unsupported_explicit_head_cannot_fall_back_to_embeddings"
     ]
   },
   "C16": {
@@ -192,7 +200,8 @@
       "two_layer_gqa_matches_independent_full_sequence_oracle",
       "residuals_final_norm_and_untied_head_match_closed_form",
       "rotary_frequencies_honor_nondefault_base_and_position",
-      "emitted_native_layer_sequence_matches_regular_session_and_oracle"
+      "emitted_native_layer_sequence_matches_regular_session_and_oracle",
+      "q6_output_rows_stay_quantized_and_match_a_closed_form_projection"
     ]
   },
   "C21": {
@@ -253,7 +262,8 @@
     "package": "bml-inference",
     "target": "resource_contracts",
     "tests": [
-      "normalized_resources_preserve_compressed_rows_and_model_identity"
+      "normalized_resources_preserve_compressed_rows_and_model_identity",
+      "q6_export_roundtrip_preserves_bytes_and_multitoken_logits"
     ]
   },
   "C28": {
@@ -261,6 +271,409 @@
     "target": "cli_contracts",
     "tests": [
       "diagnostic_logit_budget_is_checked_before_expensive_generation"
+    ]
+  },
+  "C29": {
+    "package": "bml-inference",
+    "target": "embedded_contracts",
+    "tests": [
+      "cli_and_embedded_stop_after_eos_and_retain_its_final_logits"
+    ]
+  },
+  "C30": {
+    "package": "bml-domain",
+    "target": "bml_stream",
+    "tests": [
+      "wire_format_preserves_leaves_and_empty_streams",
+      "fixed_width_exports_never_truncate",
+      "malformed_streams_and_limits_are_rejected"
+    ]
+  },
+  "C31": {
+    "package": "bml-domain",
+    "target": "bml_exact_input",
+    "tests": [
+      "decimal_targets_are_reduced_without_float_rounding",
+      "ieee_fields_cover_subnormals_normals_and_zero",
+      "generated_decimals_match_independent_euclidean_u128_oracle",
+      "signed_decimal_byte_preflight_accepts_the_exact_digit_budget",
+      "input_failures_have_readable_diagnostics_without_fabricated_causes",
+      "decimal_syntax_and_digit_limit_have_stable_failure_precedence"
+    ]
+  },
+  "C32": {
+    "package": "bml-domain",
+    "target": "bml_certified",
+    "tests": [
+      "small_naturals_match_independent_integer_tree_interpreter",
+      "proof_replay_rejects_false_claims_forward_references_and_domains",
+      "small_exact_result_can_have_overflowing_direct_evaluation",
+      "exact_failure_diagnostics_are_nonempty_and_keep_typed_causes",
+      "replay_accepts_exact_inclusive_budgets_and_rejects_before_oversized_build",
+      "positive_rules_reject_each_nonpositive_operand",
+      "replay_checks_structural_and_rational_budgets_independently",
+      "synthesis_depth_budget_is_inclusive_for_literals_and_decomposition",
+      "synthesis_checks_the_supplied_rational_budget_before_decomposing",
+      "rational_long_carry_chains_and_input_budgets_are_enforced"
+    ]
+  },
+  "C33": {
+    "package": "bml-domain",
+    "target": "bml_checked",
+    "tests": [
+      "certified_arithmetic_covers_signs_zero_and_division",
+      "assignments_commit_only_complete_results",
+      "mixed_operands_are_values_and_preserve_order"
+    ]
+  },
+  "C34": {
+    "package": "bml-domain",
+    "target": "bml_recognition",
+    "tests": [
+      "recover_exact_proofs_from_serialized_trees",
+      "unsupported_domains_and_budgets_do_not_gain_certificates",
+      "raw_tree_operators_preserve_order_and_support_chaining",
+      "raw_tree_assignment_failures_are_transactional",
+      "structural_methods_remain_distinct_from_checked_operators"
+    ]
+  },
+  "C35": {
+    "package": "bml-domain",
+    "target": "bml_matrix",
+    "tests": [
+      "rectangular_product_matches_independent_integer_oracle",
+      "empty_products_use_symbolic_zero_and_bound_zero_size_shapes",
+      "generalized_product_preserves_nonassociative_order_and_empty_policy",
+      "failures_are_localized_and_do_not_mutate_inputs",
+      "numeric_scalar_is_prepared_once_before_the_kernel",
+      "shapes_access_and_transactional_replacement"
+    ]
+  },
+  "C36": {
+    "package": "bml-domain",
+    "target": "bml_search",
+    "tests": [
+      "expanded_cost_counts_duplicate_subtrees_and_depth",
+      "strategies_are_auditable_and_selected_cost_is_minimum_among_attempts",
+      "budgets_limit_candidates_factorization_and_cache",
+      "failures_are_reported_without_approximate_success_and_ties_are_deterministic",
+      "numeric_observations_are_explicit_and_cannot_change_exact_ranking",
+      "logical_growth_storage_and_structural_equality_are_separate"
+    ]
+  },
+  "C37": {
+    "package": "bml-domain",
+    "target": "bml_simplified_eval",
+    "tests": [
+      "proven_simplification_avoids_overflow_without_changing_direct_evaluation",
+      "round_trip_finite_ieee_values_including_subnormals",
+      "ties_use_even_significands_and_decimal_oracle_agrees",
+      "normal_subnormal_overflow_and_underflow_boundaries_are_explicit",
+      "independent_hardware_division_oracle_for_exactly_representable_integer_inputs",
+      "simplified_failures_preserve_diagnostic_and_typed_error_chain",
+      "rounding_carries_from_the_last_significand_bit_into_the_exponent",
+      "rounding_estimated_exponent_boundaries_do_not_reject_finite_results"
+    ]
+  },
+  "C38": {
+    "package": "bml-domain",
+    "target": "bml_bounded_properties",
+    "tests": [
+      "exhaustive_small_prefix_codes_match_independent_grammar_and_streams",
+      "bounded_signed_arithmetic_agrees_with_independent_small_integer_results"
+    ]
+  },
+  "C39": {
+    "package": "bml-kernels",
+    "target": "code_comparison",
+    "tests": [
+      "vector_backends_match_independent_binary_string_order_including_tails",
+      "every_word_difference_position_and_unsigned_order_are_preserved",
+      "structural_order_does_not_evaluate_signs_or_domains",
+      "preflight_preserves_first_error_and_never_modifies_inputs"
+    ]
+  },
+  "C40": {
+    "package": "bml-inference",
+    "target": "model_contracts",
+    "tests": [
+      "staged_layer_sessions_match_causal_logits_across_tokens_and_requests",
+      "staged_layers_reject_bad_positions_inputs_and_budgets_without_commit",
+      "staged_numerical_failure_does_not_commit_partial_layer_caches"
+    ]
+  },
+  "C41": {
+    "package": "bml-inference",
+    "target": "model_contracts",
+    "tests": [
+      "tcp_layer_pipeline_matches_local_logits_and_preserves_causal_order",
+      "remote_layer_server_rejects_oversized_frame_before_payload_allocation",
+      "numerical_fingerprint_is_order_independent_and_detects_config_and_weights",
+      "remote_open_rejects_another_model_revision"
+    ]
+  },
+  "C42": {
+    "package": "bml-inference",
+    "target": "cli_contracts",
+    "tests": [
+      "layer_worker_process_serves_real_causal_logits_and_exits_cleanly",
+      "layer_worker_cli_rejects_missing_and_invalid_limits"
+    ]
+  },
+  "C43": {
+    "package": "bml-inference",
+    "target": "model_contracts",
+    "tests": [
+      "remote_coordinator_validates_prompt_and_runs_full_layer_pipeline",
+      "remote_coordinator_rejects_an_incomplete_layer_plan",
+      "remote_coordinator_invalidates_all_stages_after_partial_commit"
+    ]
+  },
+  "C44": {
+    "package": "bml-compiler",
+    "target": "contracts",
+    "tests": [
+      "indexed_reads_without_buffer_are_nan_at_every_supported_loop_depth"
+    ]
+  },
+  "C45": {
+    "package": "bml-compiler",
+    "target": "contracts",
+    "tests": [
+      "hot_loop_invalid_result_addresses_cannot_alias_valid_cells"
+    ]
+  },
+  "C46": {
+    "package": "bml-runtime",
+    "target": "graph_contracts",
+    "tests": [
+      "graph_preserves_stack_constants_inputs_and_results_across_fragments",
+      "nested_loops_use_inclusive_work_and_stack_budgets",
+      "malformed_references_loops_and_stack_effects_fail_before_execution",
+      "buffer_context_mismatch_is_transactional_and_valid_stores_are_visible",
+      "compiled_serialized_shared_dag_executes_after_preflight"
+    ]
+  },
+  "C47": {
+    "package": "bml-runtime",
+    "target": "graph_rpc_contracts",
+    "tests": [
+      "graph_rpc_rejects_every_truncation_trailing_data_versions_and_large_counts",
+      "bounded_graph_decoder_rejects_declared_allocations_before_payload_reads",
+      "graph_rpc_rejects_invalid_execution_and_preserves_ieee_bits",
+      "graph_frame_limit_is_enforced_before_body_even_with_larger_legacy_budget",
+      "client_rejects_malformed_or_wrong_type_graph_replies"
+    ]
+  },
+  "C48": {
+    "package": "bml-runtime",
+    "target": "graph_rpc_contracts",
+    "tests": [
+      "completed_rpc_results_publish_all_fields_or_return_unchanged"
+    ]
+  },
+  "C49": {
+    "package": "bml-compiler",
+    "target": "inference_contracts",
+    "tests": [
+      "swiglu_matches_closed_form_values_without_a_scaled_sigmoid",
+      "final_rmsnorm_uses_metadata_epsilon_and_weights_before_both_output_paths",
+      "invalid_final_norm_or_epsilon_is_rejected_before_execution"
+    ]
+  },
+  "C50": {
+    "package": "bml-compiler",
+    "target": "tokenizer_contracts",
+    "tests": [
+      "legacy_vocabulary_uses_scored_bpe_bos_and_lossless_byte_fallback",
+      "legacy_gguf_adapter_preserves_the_stored_tokenizer_policy",
+      "missing_bpe_metadata_is_rejected_instead_of_enabling_word_lookup"
+    ]
+  },
+  "C51": {
+    "package": "bml-cli",
+    "target": "token_output",
+    "tests": [
+      "cli_preserves_multibyte_token_pieces_and_stops_at_eos",
+      "cli_rpn_enforces_context_without_truncating_prompt_history"
+    ]
+  },
+  "C52": {
+    "package": "bml-compiler",
+    "target": "causal_contracts",
+    "tests": [
+      "causal_prefix_and_incremental_gqa_match_uniform_attention_and_raw_residuals",
+      "invalid_prefix_cache_layout_and_context_fail_before_committing_history",
+      "arithmetic_failure_keeps_committed_prefix_and_retry_overwrites_uncommitted_rows",
+      "cache_allocation_budget_and_size_arithmetic_are_checked_before_allocating",
+      "distributed_metadata_keeps_the_actual_gguf_kv_head_count",
+      "projection_backend_errors_and_invalid_outputs_do_not_commit_cache_positions",
+      "late_projection_failure_preserves_committed_history_for_retry"
+    ]
+  },
+  "C53": {
+    "package": "bml-cli",
+    "target": "rpn_causal",
+    "tests": [
+      "rpn_signed_rectangular_projection_uses_contiguous_rows_and_checked_ranges",
+      "rpn_causal_prefix_and_incremental_gqa_match_closed_form_and_native"
+    ]
+  },
+  "C54": {
+    "package": "bml-compiler",
+    "target": "graph_directory_contracts",
+    "tests": [
+      "directory_decodes_every_opcode_and_preserves_ieee_constant_bits",
+      "every_directory_record_truncation_and_trailing_byte_is_rejected",
+      "malformed_counts_version_utf8_and_opcodes_fail_without_large_allocations",
+      "directory_budgets_are_inclusive_and_accumulate_across_fragments",
+      "serializer_rejects_inconsistent_fragment_count_before_writing"
+    ]
+  },
+  "C55": {
+    "package": "bml-compiler",
+    "target": "inference_contracts",
+    "tests": [
+      "mapped_quantized_weights_preserve_projections_without_a_dense_matrix_pool"
+    ]
+  },
+  "C56": {
+    "package": "bml-compiler",
+    "target": "causal_artifact_contracts",
+    "tests": [
+      "stored_causal_graphs_match_closed_form_and_incremental_native_inference",
+      "loader_executes_saved_bytecode_instead_of_regenerating_a_projection",
+      "artifact_rejects_stale_sources_corrupt_programs_and_invalid_bindings",
+      "runtime_preflight_rejects_bad_stacks_and_expanded_loop_budgets",
+      "relocated_source_is_hash_checked_and_compile_does_not_overwrite_existing_files"
+    ]
+  },
+  "C57": {
+    "package": "bml-cli",
+    "target": "compiled_token_output",
+    "tests": [
+      "compiled_cli_generates_utf8_and_eos_using_saved_metadata_and_relocated_weights"
+    ]
+  },
+  "C58": {
+    "package": "bml-server",
+    "target": "compiled_server",
+    "tests": [
+      "compiled_http_and_sse_use_persisted_programs_and_do_not_echo_the_prompt"
+    ]
+  },
+  "C59": {
+    "package": "bml-domain",
+    "target": "transformer_signed",
+    "tests": [
+      "signed_products_match_fractional_oracles_with_finite_real_intermediates",
+      "negation_and_positive_scaling_do_not_use_infinite_intermediates",
+      "signed_expansions_do_not_claim_native_range_or_invalid_scaling_domains",
+      "legacy_negation_keeps_its_ieee_range_contract"
+    ]
+  },
+  "C60": {
+    "package": "bml-domain",
+    "target": "transformer_operations",
+    "tests": [
+      "rectangular_signed_matmul_uses_all_rows_columns_and_inner_terms",
+      "rms_norm_matches_closed_form_with_fractional_variance_and_signed_weights",
+      "rope_rotates_every_adjacent_pair_with_distinct_signed_angles",
+      "softmax_uses_natural_exponentials_and_swiglu_uses_both_branches",
+      "malformed_operations_fail_before_mutating_the_graph"
+    ]
+  },
+  "C61": {
+    "package": "bml-compiler",
+    "target": "transformer_bml_programs",
+    "tests": [
+      "all_transformer_operations_execute_after_bml_only_serialization"
+    ]
+  },
+  "C62": {
+    "package": "bml-runtime",
+    "target": "graph_contracts",
+    "tests": [
+      "external_constants_are_borrowed_per_execution_and_do_not_replace_owned_pools",
+      "external_constant_context_is_checked_before_buffer_writes",
+      "external_constant_references_and_value_budgets_are_inclusive"
+    ]
+  },
+  "C63": {
+    "package": "bml-compiler",
+    "target": "symbolic_projection_contracts",
+    "tests": [
+      "symbolic_row_templates_execute_mapped_gguf_weights_without_serializing_them",
+      "row_node_budget_is_exact_and_rejects_overflow_before_building"
+    ]
+  },
+  "C64": {
+    "package": "bml-runtime",
+    "target": "symbolic_causal_contracts",
+    "tests": [
+      "full_symbolic_causal_model_matches_independent_gqa_rope_and_nonzero_mlp_oracle",
+      "symbolic_failures_preserve_committed_positions_and_allow_retry",
+      "symbolic_numerical_and_construction_limits_are_explicit"
+    ]
+  },
+  "C65": {
+    "package": "bml-compiler",
+    "target": "symbolic_artifact_contracts",
+    "tests": [
+      "symbolic_aot_executes_saved_programs_without_lazy_compilation_or_weight_copies",
+      "symbolic_artifacts_reject_stale_sources_incomplete_plans_and_changed_literals",
+      "symbolic_aot_preflight_rejects_bad_bytecode_and_runtime_budgets",
+      "symbolic_aot_compile_budgets_do_not_publish_partial_manifests_or_overwrite_files"
+    ]
+  },
+  "C66": {
+    "package": "bml-cli",
+    "target": "symbolic_token_output",
+    "tests": [
+      "symbolic_cli_compiles_aot_and_generates_utf8_eos_with_relocated_weights"
+    ]
+  },
+  "C67": {
+    "package": "bml-server",
+    "target": "compiled_server",
+    "tests": [
+      "symbolic_http_and_sse_execute_saved_programs_with_compiled_context_limits"
+    ]
+  },
+  "C68": {
+    "package": "bml-compiler",
+    "target": "distributed_loading_contracts",
+    "tests": [
+      "distributed_roundtrip_restores_header_configuration_and_all_opcode_encodings",
+      "distributed_loader_rejects_malformed_counts_ranges_names_and_envelopes",
+      "distributed_header_is_required_complete_and_bounded"
+    ]
+  },
+  "C69": {
+    "package": "bml-compiler",
+    "target": "rpn_multi_output_contracts",
+    "tests": [
+      "persisted_shared_outputs_preserve_external_weights_and_repeated_roots",
+      "vector_reductions_share_nodes_and_keep_scalar_rounding",
+      "shared_outputs_retain_legacy_ieee_infinite_intermediates",
+      "multi_output_preflight_rejects_invalid_roots_children_and_index_overflow"
+    ]
+  },
+  "C70": {
+    "package": "bml-compiler",
+    "target": "symbolic_vector_contracts",
+    "tests": [
+      "persisted_vector_outputs_match_each_legacy_scalar_bit_for_bit",
+      "vector_program_storage_grows_linearly_with_operation_width",
+      "vector_compilation_respects_exact_node_and_persisted_program_budgets"
+    ]
+  },
+  "C71": {
+    "package": "bml-compiler",
+    "target": "symbolic_artifact_contracts",
+    "tests": [
+      "historical_scalar_v1_artifacts_execute_bitwise_like_buffered_v2",
+      "buffered_artifact_execution_rejects_missing_outputs_and_uses_stored_writes"
     ]
   },
   "C72": {

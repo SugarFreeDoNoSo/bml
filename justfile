@@ -82,10 +82,10 @@ test-integration:
 
 # ─── Tests: Concurrencia ─────────────────────────────────────────────────────
 
-# Tests de concurrencia con loom (verificación formal de sync primitives)
-# Requiere LOOM_MAX_PREEMPTIONS (default: 3), single-threaded
+# Modelos Loom de los algoritmos de publicación y cola utilizados en producción.
 test-loom:
-    LOOM_MAX_PREEMPTIONS=3 cargo test -p bml-tests --test concurrency_loom -- --test-threads=1 --nocapture
+    cargo test -p bml-runtime --lib --features loom --locked append_only::loom_tests
+    cargo test -p bml-queue --lib --features loom --locked model::tests
 
 # Test de concurrencia del runtime (crossbeam, sin loom)
 test-concurrency:

@@ -1,0 +1,17 @@
+[package]
+name = "bml-sandbox"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Independent workspace: edited notebook cells are not part of library CI.
+[workspace]
+
+[dependencies]
+bml = { path = "../crates/bml", features = ["gguf-tensor"] }
+bml-domain = { path = "../crates/domain" }
+bml-compiler = { path = "../crates/compiler" }
+
+[[bin]]
+name = "notebook-cell"
+path = ".local/runner.rs"

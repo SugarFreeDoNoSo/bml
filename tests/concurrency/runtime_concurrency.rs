@@ -1,4 +1,5 @@
-//! Pruebas de concurrencia y append-only con `loom`.
+//! Pruebas de concurrencia y append-only con hilos del sistema.
+//! No son pruebas de exploración de interleavings con Loom.
 //!
 //! Verifica que el runtime es thread-safe cuando múltiples hilos
 //! ejecutan programas concurrentemente. Como el `Runtime` no es

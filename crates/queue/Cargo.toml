@@ -1,0 +1,13 @@
+[package]
+name = "bml-queue"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+loom = ["dep:loom"]
+
+[dependencies]
+crossbeam-utils = "0.8.21"
+loom = { workspace = true, optional = true }

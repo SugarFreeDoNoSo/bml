@@ -8,6 +8,11 @@
 //! sin dependencias entre sí en "waves" que se ejecutan en paralelo,
 //! con barreras entre waves.
 //!
+//! Actualmente se distribuyen todos los fragmentos entre los workers, pero
+//! el acceso al buffer compartido serializa su ejecución mediante un mutex.
+//! Esta implementación garantiza cobertura de la wave y barreras; no acredita
+//! aceleración paralela del cálculo.
+//!
 //! ```text
 //! Wave 1 (paralela): Q, K, V, gate, up    → 4 threads
 //! ─── barrera ───
@@ -22,6 +27,12 @@ use bml_compiler::distributed::SubFragment;
 use bml_domain::EvalContext;
 use std::sync::{Arc, Barrier, Mutex};
 use std::thread;
+
+mod requests;
+pub use requests::{
+    AdmissionError, BatchConfigError, RequestBatch, RequestBatchConfig, RequestBatcher,
+    RequestSubmitter,
+};
 
 /// Scheduler de waves para sub-fragmentos con dependencias.
 pub struct WaveScheduler {
@@ -61,7 +72,7 @@ impl WaveScheduler {
 
         while !remaining.is_empty() {
             // Sub-fragmentos cuyas dependencias ya están completadas
-            let wave: Vec<u32> = remaining
+            let mut wave: Vec<u32> = remaining
                 .iter()
                 .filter(|&&sid| {
                     let idx = self.id_to_idx[&sid];
@@ -71,6 +82,7 @@ impl WaveScheduler {
                 .copied()
                 .collect();
 
+            wave.sort_unstable();
             if wave.is_empty() {
                 // Deadlock: dependencias circulares
                 panic!(
@@ -131,8 +143,14 @@ impl WaveScheduler {
 
         let handles: Vec<_> = (0..n_threads)
             .map(|tid| {
-                let sid = wave[tid];
-                let sf = self.sub_fragments[self.id_to_idx[&sid]].clone();
+                let fragments: Vec<_> = wave
+                    .iter()
+                    .skip(tid)
+                    .step_by(n_threads)
+                    .map(|sid| bml_compiler::Fragment {
+                        ops: self.sub_fragments[self.id_to_idx[sid]].ops.clone(),
+                    })
+                    .collect();
                 let barrier = Arc::clone(&barrier);
                 let buf = Arc::clone(&buf_arc);
                 let inputs = ctx_inputs.clone();
@@ -140,20 +158,18 @@ impl WaveScheduler {
 
                 thread::spawn(move || {
                     let ctx = EvalContext::new(&inputs, &weights);
-                    let frag = bml_compiler::Fragment {
-                        ops: sf.ops.clone(),
-                    };
-                    let mut hot = HotLoop::with_capacity(8192);
-
-                    // Warmup
-                    hot.execute_fragment_full(&frag, &ctx, &mut ResultBuffer::new(0, 0));
 
                     // Barrera: todos listos
                     barrier.wait();
 
-                    // Ejecutar
-                    let mut buf_guard = buf.lock().unwrap();
-                    hot.execute_fragment_full(&frag, &ctx, &mut buf_guard);
+                    // Every fragment in the wave runs exactly once, including
+                    // waves wider than the worker count. Buffer writes remain
+                    // serialized until disjoint access can be established.
+                    for frag in fragments {
+                        let mut hot = HotLoop::with_capacity(8192);
+                        let mut buf_guard = buf.lock().unwrap();
+                        hot.execute_fragment_full(&frag, &ctx, &mut buf_guard);
+                    }
                 })
             })
             .collect();
@@ -284,5 +300,41 @@ mod tests {
         ];
         let sched = WaveScheduler::new(subs);
         assert_eq!(sched.num_waves(), 3);
+    }
+
+    #[test]
+    fn wide_wave_executes_every_fragment_before_dependents() {
+        // Seven independent writes exceed two/three workers, including a tail.
+        let mut subs = Vec::new();
+        for id in 0..7 {
+            let mut sub = make_sub(id, vec![]);
+            sub.ops = vec![
+                RpnOp::Var(id),
+                RpnOp::Const(0),
+                RpnOp::StoreResult { slot: id },
+            ];
+            subs.push(sub);
+        }
+        let mut dependent = make_sub(7, (0..7).collect());
+        dependent.ops = (0..7)
+            .flat_map(|id| {
+                [
+                    RpnOp::Const(0),
+                    RpnOp::VarIndexed { base: id },
+                    RpnOp::Const(0),
+                    RpnOp::StoreResult { slot: id + 7 },
+                ]
+            })
+            .collect();
+        subs.push(dependent);
+        let scheduler = WaveScheduler::new(subs);
+        let inputs = [11., 22., 33., 44., 55., 66., 77.];
+        let ctx = EvalContext::new(&inputs, &[0.]);
+        for workers in [0, 1, 2, 3, 7, 12] {
+            let mut buffer = ResultBuffer::new(14, 1);
+            scheduler.execute(workers, &ctx, &mut buffer);
+            assert_eq!(&buffer.data()[..7], &inputs, "workers={workers}");
+            assert_eq!(&buffer.data()[7..], &inputs, "workers={workers}");
+        }
     }
 }

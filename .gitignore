@@ -25,3 +25,7 @@ openspec/.cache/
 *.bmlgraph
 /mutants.out*/
 __pycache__/
+
+# Local notebook edits, generated runner, output files and compilation cache
+/sandbox/.local/
+/sandbox/target/

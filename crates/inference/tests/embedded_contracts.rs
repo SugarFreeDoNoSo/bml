@@ -38,8 +38,12 @@ impl Files {
     }
 
     fn artifact(&self) -> (PathBuf, ChildRequest) {
+        self.artifact_with_output_token(261)
+    }
+
+    fn artifact_with_output_token(&self, output_token: usize) -> (PathBuf, ChildRequest) {
         let gguf = self.path("model.gguf");
-        std::fs::write(&gguf, fixture()).unwrap();
+        std::fs::write(&gguf, fixture(output_token)).unwrap();
         let reader = GgufReader::open(gguf).unwrap();
         let resources = self.path("model.bmlres");
         write_model_file(&reader, &resources).unwrap();
@@ -135,11 +139,35 @@ fn embedded_entrypoint_child() {
     embedded_main(&request.resource_sha256, &request.plan, native_token);
 }
 
+// Parallel test processes can briefly inherit a writable file descriptor across
+// fork before exec closes CLOEXEC handles. Linux then rejects executing that
+// inode with ETXTBSY even after the creating thread has closed its own handle.
+// Retry only that pre-exec error; never retry a launched child's failure.
+trait CommandOutputRetry {
+    fn output_with_exec_retry(&mut self) -> std::io::Result<std::process::Output>;
+}
+impl CommandOutputRetry for Command {
+    fn output_with_exec_retry(&mut self) -> std::io::Result<std::process::Output> {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+        loop {
+            match self.output() {
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::ExecutableFileBusy
+                        && std::time::Instant::now() < deadline =>
+                {
+                    std::thread::sleep(std::time::Duration::from_millis(5));
+                }
+                result => return result,
+            }
+        }
+    }
+}
+
 fn child(executable: &Path, request: &ChildRequest) -> ChildOutput {
     let result = Command::new(executable)
         .args(["--ignored", "--exact", "embedded_child", "--nocapture"])
         .env(CHILD_REQUEST, serde_json::to_string(request).unwrap())
-        .output()
+        .output_with_exec_retry()
         .unwrap();
     assert!(
         result.status.success(),
@@ -224,6 +252,72 @@ fn embedded_native_output_matches_interpreted_prefill_and_decode() {
         assert!(output[field]
             .as_f64()
             .is_some_and(|value| value.is_finite() && value >= 0.0));
+    }
+}
+
+#[test]
+fn cli_and_embedded_stop_after_eos_and_retain_its_final_logits() {
+    let files = Files::new();
+    let (executable, mut request) = files.artifact_with_output_token(2);
+    request.arguments = arguments(&[
+        "--prompt",
+        "ab",
+        "--predict",
+        "4",
+        "--context",
+        "8",
+        "--logits",
+    ]);
+    let artifact = Artifact::open(files.path("model.bmlres")).unwrap();
+    let model = artifact.model().unwrap();
+    let prompt = [1, 260, 261];
+    let mut session = model.session(8).unwrap();
+    let expected_logits = vec![
+        session.prefill(&prompt).unwrap(),
+        session.decode(2).unwrap(),
+    ];
+    // Only the EOS head row is nonzero. It remains the unique maximum after
+    // EOS, so ignoring the stop condition would generate four EOS tokens.
+    for scores in &expected_logits {
+        assert!(scores[2] > 0.0);
+        assert!(scores
+            .iter()
+            .enumerate()
+            .all(|(id, &score)| id == 2 || score == 0.0));
+    }
+
+    let native = child(&executable, &request);
+    assert!(native.error.is_none());
+    assert_eq!(native.native_calls, prompt.len() + 1);
+    let native_output = native.output.unwrap();
+    let cli = Command::new(env!("CARGO_BIN_EXE_bml-model"))
+        .arg("run")
+        .arg("--model")
+        .arg(files.path("model.gguf"))
+        .args(&request.arguments)
+        .output_with_exec_retry()
+        .unwrap();
+    assert!(
+        cli.status.success(),
+        "{}",
+        String::from_utf8_lossy(&cli.stderr)
+    );
+    assert!(cli.stderr.is_empty());
+    let cli_output: Value = serde_json::from_slice(&cli.stdout).unwrap();
+    for output in [cli_output, native_output] {
+        assert_eq!(output["prompt_tokens"], serde_json::json!(prompt));
+        assert_eq!(output["eos_id"], 2);
+        assert_eq!(output["tokens"], serde_json::json!([2]));
+        assert_eq!(output["bytes"], serde_json::json!([]));
+        assert_eq!(output["text"], "");
+        let logits: Vec<Vec<f32>> = serde_json::from_value(output["logits"].clone()).unwrap();
+        assert_eq!(logits.len(), 2);
+        assert_eq!(logits, expected_logits);
+        for field in ["prefill_ms", "decode_ms"] {
+            assert!(output[field]
+                .as_f64()
+                .is_some_and(|value| value.is_finite() && value >= 0.0));
+        }
     }
 }
 
@@ -355,7 +449,7 @@ fn embedded_entrypoint_reports_invalid_process_arguments_and_exits_failure() {
             "--nocapture",
         ])
         .env(CHILD_REQUEST, serde_json::to_string(&request).unwrap())
-        .output()
+        .output_with_exec_retry()
         .unwrap();
     assert_eq!(result.status.code(), Some(1));
     let stderr = String::from_utf8(result.stderr).unwrap();
@@ -378,7 +472,7 @@ fn array(kind: u32, values: Vec<Vec<u8>>) -> Vec<u8> {
     bytes
 }
 
-fn fixture() -> Vec<u8> {
+fn fixture(output_token: usize) -> Vec<u8> {
     let mut tokens = vec!["<unk>".to_owned(), "<s>".into(), "</s>".into(), "▁".into()];
     tokens.extend((0..256).map(|byte| format!("<0x{byte:02X}>")));
     tokens.extend(["▁a".into(), "b".into()]);
@@ -469,7 +563,7 @@ fn fixture() -> Vec<u8> {
         ));
     }
     let mut output = vec![0.0; (vocab * 4) as usize];
-    output[261 * 4..262 * 4].fill(0.4);
+    output[output_token * 4..(output_token + 1) * 4].fill(0.4);
     tensors.push(("output.weight", vec![4, vocab], output));
     let mut bytes = b"GGUF".to_vec();
     bytes.extend(3u32.to_le_bytes());
@@ -495,4 +589,27 @@ fn fixture() -> Vec<u8> {
     bytes.resize(bytes.len().div_ceil(32) * 32, 0);
     bytes.extend(data);
     bytes
+}
+
+#[test]
+fn embedded_child_launch_waits_for_a_transient_write_handle() {
+    let files = Files::new();
+    let (executable, request) = files.artifact();
+    let writer = std::fs::OpenOptions::new()
+        .write(true)
+        .open(&executable)
+        .unwrap();
+    let error = Command::new(&executable)
+        .arg("--help")
+        .output()
+        .unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::ExecutableFileBusy);
+    let release = std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(25));
+        drop(writer);
+    });
+    let result = child(&executable, &request);
+    assert!(result.error.is_none());
+    assert!(result.native_calls > 0);
+    release.join().unwrap();
 }

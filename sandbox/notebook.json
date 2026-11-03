@@ -1,0 +1,17 @@
+{
+  "title": "Laboratorio BML",
+  "cells": [
+    {"id": "01-codificacion", "title": "01 · Codificación de números", "description": "Inspecciona el prefijo binario y distingue el entero que codifica un árbol de su valor evaluado.", "file": "examples/01_codificacion.rs"},
+    {"id": "02-conversion", "title": "02 · Conversión desde f64", "description": "Sintetiza términos, compara el error numérico y prueba un presupuesto de bits insuficiente.", "file": "examples/02_conversion.rs"},
+    {"id": "03-operaciones", "title": "03 · Aritmética simbólica", "description": "Construye suma, resta, producto, cociente, potencias y raíces; evalúa los resultados por separado.", "file": "examples/03_operaciones.rs"},
+    {"id": "04-variables", "title": "04 · Variables y bases", "description": "Asigna variables paso a paso y evalúa el mismo término cerrado con las bases BML y EML.", "file": "examples/04_variables.rs"},
+    {"id": "05-dominio", "title": "05 · Errores de dominio y rango", "description": "Observa errores esperados de logaritmo, overflow y underflow sin hacer fallar el script.", "file": "examples/05_dominio_real.rs"},
+    {"id": "06-formas", "title": "06 · Tensores, formas y vistas", "description": "Explora índices row-major y vistas que comparten memoria, incluyendo cambios de forma inválidos.", "file": "examples/06_formas_y_vistas.rs"},
+    {"id": "07-kernels", "title": "07 · Kernels nativos", "description": "Calcula suma, producto y dot con aritmética IEEE; comprueba su diferencia respecto a la evaluación simbólica.", "file": "examples/07_kernels.rs"},
+    {"id": "08-matrices", "title": "08 · Multiplicación de matrices", "description": "Multiplica una matriz 2×3 por otra 3×2 y revisa el resultado con valores conocidos.", "file": "examples/08_matrices.rs"},
+    {"id": "09-base-tensor", "title": "09 · BML/EML sobre tensores", "description": "Aplica la primitiva comprobada elemento a elemento y localiza el primer índice inválido.", "file": "examples/09_base_tensor.rs"},
+    {"id": "10-codecs", "title": "10 · Codecs GGUF", "description": "Decodifica buffers sintéticos F32, F16, Q4_0 y Q8_0, y prueba el rechazo de un bloque truncado.", "file": "examples/10_codecs.rs"},
+    {"id": "11-gguf", "title": "11 · De GGUF a tensor", "description": "Lee un archivo sintético local: GGML [3,2] se convierte a row-major [2,3] sin reordenar valores.", "file": "examples/11_gguf_tensor.rs"},
+    {"id": "12-compilador", "title": "12 · Compilador histórico", "description": "Deduplica un DAG, genera RPN y serializa/restaura un grafo pequeño. No ejecuta inferencia de un modelo.", "file": "examples/12_compilador.rs"}
+  ]
+}

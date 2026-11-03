@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BML · Cuaderno de pruebas</title>
+    <link rel="stylesheet" href="/style.css">
+<script src="/rust-editor.js" defer></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#notebook">Ir a los ejemplos</a>
+    <aside class="sidebar" aria-label="Navegación del cuaderno">
+      <a class="brand" href="#top"><span class="brand-mark">bml</span><span>Sandbox<small>Cuaderno de pruebas</small></span></a>
+      <p class="eyebrow sidebar-label">EXPLORAR FUNCIONALIDADES</p>
+      <nav id="navigation" aria-label="Ejemplos"><p class="loading">Cargando ejemplos…</p></nav>
+      <div class="sidebar-footer"><span class="local-dot"></span> Ejecución local · Rust<p>Un programa independiente por celda.</p></div>
+    </aside>
+    <main id="top">
+      <header class="page-header">
+        <div><p class="eyebrow">BML / LABORATORIO LOCAL</p><h1 id="notebook-title">Cuaderno de pruebas</h1><p class="intro">Explora una funcionalidad a la vez. Cambia el código, ejecútalo y observa el resultado.</p></div>
+        <span class="notebook-badge">RUST</span>
+      </header>
+      <div class="guide"><span class="guide-symbol" aria-hidden="true">↳</span><p><strong>Tu espacio para experimentar.</strong> Guardar y ejecutar conserva tus cambios en <code>sandbox/.local/</code>, ignorado por Git. Los ejemplos originales se pueden restaurar.</p><span class="shortcut"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> ejecuta la celda</span></div>
+      <div class="notebook-toolbar"><span id="cell-count">Cargando…</span><span id="session-status" role="status" aria-live="polite">Conectando con el servidor local</span></div>
+      <p id="connection-error" class="error-banner" role="alert" hidden></p>
+      <section id="notebook" aria-label="Celdas del cuaderno" tabindex="-1"></section>
+      <footer class="page-footer">Los resultados corresponden al código de cada celda. Las variables no se comparten entre ejecuciones.</footer>
+    </main>
+    <template id="cell-template">
+      <article class="cell">
+        <header class="cell-heading"><span class="cell-number"></span><div class="cell-heading-text"><h2></h2><p class="cell-description"></p></div><span class="cell-status">Sin ejecutar</span></header>
+        <div class="editor-label"><label></label><span class="saved-state">Ejemplo original</span></div>
+        <div class="editor"><pre class="line-numbers" aria-hidden="true"></pre><textarea spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off"></textarea></div>
+        <div class="cell-actions"><button class="run-button" type="button"><span aria-hidden="true">▶</span> Ejecutar</button><button class="save-button secondary" type="button">Guardar cambios</button><button class="reset-button text-button" type="button">Restaurar original</button><span class="cell-message" role="status" aria-live="polite"></span></div>
+        <section class="output" aria-label="Resultado de ejecución"><div class="output-heading"><span>SALIDA</span><span class="output-meta">Todavía no ejecutado</span></div><p class="output-placeholder">Ejecuta esta celda para ver su resultado.</p><div class="stdout-block" hidden><h3>stdout</h3><pre class="stdout" tabindex="0"></pre></div><div class="stderr-block" hidden><h3>stderr</h3><pre class="stderr" tabindex="0"></pre></div><p class="output-note" hidden></p></section>
+      </article>
+    </template>
+  </body>
+</html>

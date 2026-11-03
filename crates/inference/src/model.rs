@@ -172,6 +172,7 @@ pub struct Model<'a> {
     output_norm: usize,
     output: usize,
     plan: Vec<Operation>,
+    fingerprint: std::sync::OnceLock<[u8; 32]>,
 }
 
 impl<'a> Model<'a> {
@@ -324,6 +325,49 @@ impl<'a> Model<'a> {
             output_norm,
             output,
             plan,
+            fingerprint: std::sync::OnceLock::new(),
+        })
+    }
+
+    /// SHA-256 identity of numerical configuration and encoded tensor resources.
+    /// Computed once on demand, in canonical tensor-name order. Includes encoding
+    /// and dimensions; excludes tokenizer metadata and file layout. This detects
+    /// accidental deployment mismatches, not malicious/unauthenticated servers.
+    pub fn fingerprint(&self) -> [u8; 32] {
+        *self.fingerprint.get_or_init(|| {
+            use sha2::{Digest, Sha256};
+            let mut hash = Sha256::new();
+            hash.update(b"BML-numerical-model-v1\0");
+            let c = &self.config;
+            for value in [
+                c.embedding_length,
+                c.block_count,
+                c.head_count,
+                c.head_count_kv,
+                c.feed_forward_length,
+                c.context_length,
+                c.vocab_size,
+                c.rope_dimension_count,
+            ] {
+                hash.update((value as u64).to_le_bytes());
+            }
+            hash.update(c.rope_freq_base.to_bits().to_le_bytes());
+            hash.update(c.rms_norm_eps.to_bits().to_le_bytes());
+            let mut tensors: Vec<_> = self.tensors.iter().collect();
+            tensors.sort_unstable_by(|a, b| a.name.cmp(&b.name));
+            hash.update((tensors.len() as u64).to_le_bytes());
+            for tensor in tensors {
+                hash.update((tensor.name.len() as u64).to_le_bytes());
+                hash.update(tensor.name.as_bytes());
+                hash.update((tensor.dtype as u32).to_le_bytes());
+                hash.update((tensor.dims.len() as u64).to_le_bytes());
+                for dimension in &tensor.dims {
+                    hash.update(dimension.to_le_bytes());
+                }
+                hash.update((tensor.data.len() as u64).to_le_bytes());
+                hash.update(tensor.data);
+            }
+            hash.finalize().into()
         })
     }
 
@@ -438,6 +482,43 @@ impl<'a> Model<'a> {
         })
     }
 
+    /// Decode one validated token embedding for a distributed layer pipeline.
+    pub fn embed_token(&self, token: u32) -> Result<Vec<f32>> {
+        if token as usize >= self.config.vocab_size {
+            return Err(Error("token ID outside model vocabulary".into()));
+        }
+        self.row(self.embedding, token as usize)
+    }
+
+    /// Apply final normalization and vocabulary projection after all layers.
+    /// The caller is responsible for having executed the complete layer plan.
+    pub fn final_logits(&self, hidden: &[f32]) -> Result<Vec<f32>> {
+        if hidden.len() != self.config.embedding_length {
+            return Err(Error("hidden state width mismatch".into()));
+        }
+        finite(hidden, "final hidden state")?;
+        let normalized = self.normalize(self.output_norm, hidden)?;
+        self.project(self.output, &normalized)
+    }
+
+    /// Create an independent causal session for one fixed, nonempty layer range.
+    /// Currently retains this full model and allocates full-model KV under the
+    /// supplied budget; this API does not claim memory sharding of model weights.
+    pub fn layer_session(
+        &self,
+        layers: std::ops::Range<usize>,
+        context: usize,
+        maximum_bytes: usize,
+    ) -> Result<LayerSession<'_>> {
+        if layers.start >= layers.end || layers.end > self.config.block_count {
+            return Err(Error("invalid layer session range".into()));
+        }
+        Ok(LayerSession {
+            session: self.session_with_memory_limit(context, maximum_bytes)?,
+            layers,
+        })
+    }
+
     fn row(&self, tensor: usize, row: usize) -> Result<Vec<f32>> {
         decode_row(&self.tensors[tensor], row)
     }
@@ -496,6 +577,54 @@ pub struct Session<'a> {
     context: usize,
 }
 
+/// Causal execution state for a fixed range of layers in a staged pipeline.
+/// Each instance belongs to one logical request/session. The transport must
+/// preserve session identity and reject cross-session routing mistakes.
+pub struct LayerSession<'a> {
+    session: Session<'a>,
+    layers: std::ops::Range<usize>,
+}
+impl LayerSession<'_> {
+    /// Execute the next token's hidden state through the fixed layer range.
+    /// Rejects duplicate/out-of-order positions before changing KV. Numerical
+    /// failure leaves the committed position unchanged; retry overwrites the
+    /// uncommitted cache slot before it becomes visible to later tokens.
+    pub fn forward(&mut self, position: usize, hidden: &[f32]) -> Result<Vec<f32>> {
+        if position != self.session.position || position >= self.session.context {
+            return Err(Error(
+                "layer session position mismatch or context exhausted".into(),
+            ));
+        }
+        if hidden.len() != self.session.model.config.embedding_length {
+            return Err(Error("hidden state width mismatch".into()));
+        }
+        finite(hidden, "layer input")?;
+        let mut output = zeros(hidden.len())?;
+        output.copy_from_slice(hidden);
+        for layer in self.layers.clone() {
+            self.session.forward_layer(&mut output, layer)?;
+        }
+        self.session.position += 1;
+        Ok(output)
+    }
+    /// Number of committed tokens for this layer range.
+    pub fn position(&self) -> usize {
+        self.session.position
+    }
+    /// Fixed half-open layer range handled by this session.
+    pub fn layers(&self) -> std::ops::Range<usize> {
+        self.layers.clone()
+    }
+    /// Discard causal context; only a new position-zero token may follow.
+    pub fn reset(&mut self) {
+        self.session.reset();
+    }
+    /// Allocated KV scalar bytes (currently full-model allocation).
+    pub fn kv_bytes(&self) -> usize {
+        self.session.kv_bytes()
+    }
+}
+
 /// Signature of a source-generated native token evaluator.
 pub type NativeToken = fn(&mut Session<'_>, u32) -> Result<Vec<f32>>;
 
@@ -534,8 +663,7 @@ impl TokenStep<'_, '_> {
             ));
         }
         let model = self.session.model;
-        let normalized = model.normalize(model.output_norm, &self.hidden)?;
-        let logits = model.project(model.output, &normalized)?;
+        let logits = model.final_logits(&self.hidden)?;
         self.session.position += 1;
         Ok(logits)
     }
@@ -598,7 +726,7 @@ impl<'model> Session<'model> {
         if token as usize >= self.model.config.vocab_size {
             return Err(Error("token ID outside the model vocabulary".into()));
         }
-        let hidden = self.model.row(self.model.embedding, token as usize)?;
+        let hidden = self.model.embed_token(token)?;
         Ok(TokenStep {
             session: self,
             hidden,
@@ -744,6 +872,7 @@ fn encoding(dtype: GgufDataType) -> Result<(usize, usize)> {
         GgufDataType::F16 => Ok((1, 2)),
         GgufDataType::Q4_0 => Ok((32, 18)),
         GgufDataType::Q8_0 => Ok((32, 34)),
+        GgufDataType::Q6_K => Ok((256, 210)),
         _ => Err(Error(format!("unsupported tensor encoding {dtype:?}"))),
     }
 }

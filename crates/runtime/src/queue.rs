@@ -14,6 +14,37 @@ use bml_compiler::Fragment;
 use crossbeam::{deque::Steal, queue::SegQueue};
 use std::sync::Arc;
 
+/// Bounded multi-producer queue for pending work shared by connection threads.
+/// Each successful pop transfers ownership once; transport failures after pop
+/// need application-level acknowledgement/recovery and are not exactly-once delivery.
+pub struct PendingWork<T> {
+    queue: bml_queue::ArrayQueue<T>,
+}
+impl<T> PendingWork<T> {
+    /// Construct a nonempty-capacity queue; zero capacity is rejected.
+    pub fn new(capacity: usize) -> Option<Self> {
+        (capacity > 0).then(|| Self {
+            queue: bml_queue::ArrayQueue::new(capacity),
+        })
+    }
+    /// Admit work or return it unchanged when full.
+    pub fn push(&self, work: T) -> Result<(), T> {
+        self.queue.push(work)
+    }
+    /// Remove pending work for local execution or remote stealing.
+    pub fn pop(&self) -> Option<T> {
+        self.queue.pop()
+    }
+    /// Snapshot of queued work, excluding work already owned by a consumer.
+    pub fn len(&self) -> usize {
+        self.queue.len()
+    }
+    /// Whether no work is currently queued.
+    pub fn is_empty(&self) -> bool {
+        self.queue.is_empty()
+    }
+}
+
 /// Handle clonable de extracción FIFO para otros nodos.
 ///
 /// Reemplaza el handle específico del deque. La cola segmentada reclama la

@@ -65,6 +65,11 @@ fn array(kind: u32, values: Vec<Vec<u8>>) -> Vec<u8> {
 }
 
 fn fixture() -> Vec<u8> {
+    fixture_with_q6(false)
+}
+
+fn fixture_with_q6(q6_output: bool) -> Vec<u8> {
+    let width = if q6_output { 256u32 } else { 32 };
     let mut tokens = vec!["<unk>".to_owned(), "<s>".into(), "</s>".into(), "▁".into()];
     tokens.extend((0..256).map(|byte| format!("<0x{byte:02X}>")));
     let vocab = tokens.len() as u64;
@@ -113,13 +118,13 @@ fn fixture() -> Vec<u8> {
         ("llama.rope.freq_base", 6, 10000.0f32.to_le_bytes().to_vec()),
     ];
     for (name, value) in [
-        ("llama.embedding_length", 32u32),
+        ("llama.embedding_length", width),
         ("llama.block_count", 1),
         ("llama.attention.head_count", 4),
         ("llama.attention.head_count_kv", 2),
-        ("llama.feed_forward_length", 32),
+        ("llama.feed_forward_length", width),
         ("llama.context_length", 8),
-        ("llama.rope.dimension_count", 8),
+        ("llama.rope.dimension_count", width / 4),
         ("tokenizer.ggml.bos_token_id", 1),
         ("tokenizer.ggml.eos_token_id", 2),
         ("tokenizer.ggml.unknown_token_id", 0),
@@ -137,27 +142,27 @@ fn fixture() -> Vec<u8> {
     }
     let quantized = |rows: u64, value: u8| {
         let mut bytes = Vec::new();
-        for _ in 0..rows {
+        for _ in 0..rows * u64::from(width / 32) {
             bytes.extend(0x3800u16.to_le_bytes()); // Independent half encoding: 0.5.
             bytes.extend([value; 16]);
         }
         bytes
     };
     let norm = || {
-        (0..32)
+        (0..width)
             .flat_map(|_| 1.0f32.to_le_bytes())
             .collect::<Vec<_>>()
     };
     let mut tensors = vec![
         (
             "token_embd.weight",
-            vec![32, vocab],
+            vec![u64::from(width), vocab],
             2u32,
             quantized(vocab, 0xc2),
         ),
-        ("output_norm.weight", vec![32], 0, norm()),
-        ("blk.0.attn_norm.weight", vec![32], 0, norm()),
-        ("blk.0.ffn_norm.weight", vec![32], 0, norm()),
+        ("output_norm.weight", vec![u64::from(width)], 0, norm()),
+        ("blk.0.attn_norm.weight", vec![u64::from(width)], 0, norm()),
+        ("blk.0.ffn_norm.weight", vec![u64::from(width)], 0, norm()),
     ];
     for (name, rows) in [
         ("blk.0.attn_q.weight", 32u64),
@@ -168,7 +173,18 @@ fn fixture() -> Vec<u8> {
         ("blk.0.ffn_up.weight", 32),
         ("blk.0.ffn_down.weight", 32),
     ] {
-        tensors.push((name, vec![32, rows], 2, quantized(rows, 0x88)));
+        let rows = rows * u64::from(width / 32);
+        tensors.push((name, vec![u64::from(width), rows], 2, quantized(rows, 0x88)));
+    }
+    if q6_output {
+        let mut data = Vec::new();
+        for token in 0..vocab {
+            let mut block = [0u8; 210];
+            block[192..208].fill((token as i32 % 7 - 3) as i8 as u8);
+            block[208..].copy_from_slice(&0x3800u16.to_le_bytes());
+            data.extend(block);
+        }
+        tensors.push(("output.weight", vec![256, vocab], 14, data));
     }
     let mut bytes = b"GGUF".to_vec();
     bytes.extend(3u32.to_le_bytes());
@@ -265,6 +281,41 @@ fn normalized_resources_preserve_compressed_rows_and_model_identity() {
     assert_eq!(&first[16..], &[2.0; 16]);
     assert!(bytes.starts_with(b"BMLRS001"));
     assert!(!bytes.windows(4).any(|window| window == b"GGUF"));
+}
+
+#[test]
+fn q6_export_roundtrip_preserves_bytes_and_multitoken_logits() {
+    let files = Files::new();
+    let source = files.path("mixed.gguf");
+    write(&source, &fixture_with_q6(true));
+    let reader = GgufReader::open(&source).unwrap();
+    let original = bml_inference::model::Model::from_gguf(&reader).unwrap();
+    let mut encoded = Vec::new();
+    write_model(&reader, &mut encoded).unwrap();
+    let path = files.path("mixed.bml");
+    write(&path, &encoded);
+    let artifact = Artifact::open(&path).unwrap();
+    let restored = artifact.model().unwrap();
+    let output = restored
+        .tensors()
+        .iter()
+        .find(|t| t.name == "output.weight")
+        .unwrap();
+    assert_eq!(output.dtype, GgufDataType::Q6_K);
+    assert_eq!(
+        output.data,
+        reader.tensor_view("output.weight").unwrap().bytes()
+    );
+    let mut expected = original.session(4).unwrap();
+    let mut actual = restored.session(4).unwrap();
+    for token in [1, 42, 80] {
+        let a = actual.decode(token).unwrap();
+        let b = expected.decode(token).unwrap();
+        assert_eq!(
+            a.iter().map(|x| x.to_bits()).collect::<Vec<_>>(),
+            b.iter().map(|x| x.to_bits()).collect::<Vec<_>>()
+        );
+    }
 }
 
 #[test]

@@ -9,9 +9,13 @@ description = "Scalar BML terms with optional tensor and GGUF integration"
 [features]
 default = []
 tensor = []
+tensor-simd = ["tensor", "dep:bml-kernels", "bml-kernels/tensor-simd"]
+code-simd = ["dep:bml-kernels"]
 gguf = ["dep:bml-gguf"]
 gguf-tensor = ["gguf", "tensor", "bml-gguf/tensor"]
 
 [dependencies]
 bml-domain = { path = "../domain", version = "1.0.0" }
 bml-gguf = { path = "../gguf", version = "1.0.0", default-features = false, optional = true }
+
+bml-kernels = { path = "../kernels", version = "1.0.0", optional = true }

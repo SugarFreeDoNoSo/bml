@@ -6,9 +6,14 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+loom = ["dep:loom"]
+
 [dependencies]
+loom = { workspace = true, optional = true }
 bml-domain = { path = "../domain" }
 bml-compiler = { path = "../compiler" }
+bml-queue = { path = "../queue" }
 bml-model-weights = { path = "../model-weights" }
 crossbeam.workspace = true
 
