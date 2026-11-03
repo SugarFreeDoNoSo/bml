@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "scope": "Inclusive causal artifact program-table maximum; distinct historical survivor replay",
+  "base_commit": "3975c10",
+  "historical_mutant": "crates/compiler/src/causal_artifact.rs:250:36: replace > with >= in load_directory",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/artifact-inclusive-replay",
+  "mutation": "manifest.programs.len() > MAX_PROGRAMS becomes manifest.programs.len() >= MAX_PROGRAMS",
+  "contract": "artifact_table_budgets_are_independent_and_inclusive",
+  "test_file": "crates/compiler/tests/causal_artifact_contracts.rs",
+  "test_change": "None. Reuse the contract introduced for independent table admission. Exactly 256 programs must pass size admission and reach binding validation; 257 must be rejected at size admission.",
+  "method": "Archive HEAD, baseline suite, mutate only the program-count comparison, run suite, restore source and rerun. Fresh dedicated build initially, same snapshot path for rebuilds. Main worktree source/tests untouched.",
+  "verification": [
+    {"source": "original baseline", "exit_code": 0, "passed": 9, "log": "target/quality/artifact-inclusive-baseline.log", "sha256": "25096b6d63cd5a348f32486d831ec6dd5b74632c9a49734a7aee5c494728d250"},
+    {"source": "mutated comparison", "exit_code": 101, "passed": 8, "failed": 1, "diagnostic": "program_table=true, count=256", "log": "target/quality/artifact-inclusive-mutant.log", "sha256": "917a81b82832abd8c0dcfbb681ddcb8645b50ceef79e1089bda160f1eeb18055"},
+    {"source": "restored implementation", "exit_code": 0, "passed": 9, "log": "target/quality/artifact-inclusive-restored.log", "sha256": "e206601a70c1f2e37439ec927eb37a1bdb62b45e713fc9dd00ccfa9ca1f0fdc1"}
+  ],
+  "command": "cargo test -p bml-compiler --test causal_artifact_contracts --locked",
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/artifact-inclusive-build; CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0; TMPDIR under target.",
+  "interpretation": "The duplicated 256-entry fixture is intentionally invalid at binding validation, not at size admission. The mutant wrongly rejects it earlier. This distinguishes inclusivity without claiming it is an executable model. It is a separate mutation from the earlier || to && replay.",
+  "remaining": "Nine historical survivors now have local detecting-contract evidence; 38 still require disposition. Both historical timeouts have diagnosis and fast detection. Global campaign remains unchanged with end_time=null and is not approved."
+}
