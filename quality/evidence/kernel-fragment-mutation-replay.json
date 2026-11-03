@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "scope": "Current contractual detection of a historical minimum-fragment-budget survivor",
+  "base_commit": "6b3e090",
+  "historical_mutant": "crates/compiler/src/symbolic_kernels.rs:213:30: replace < with == in compile_operation_with_layout",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/kernel-fragment-replay",
+  "mutation": "limits.fragment_bytes < size_of::<RpnOp>() becomes limits.fragment_bytes == size_of::<RpnOp>()",
+  "contract": "fragment_budget_must_fit_one_opcode_and_accepts_the_exact_boundary",
+  "test_file": "crates/compiler/tests/symbolic_kernel_boundaries.rs",
+  "test_change": "None. Existing contract rejects zero and opcode-size-minus-one budgets, accepts one-opcode budget and checks every generated fragment fits that boundary.",
+  "method": "Archive HEAD into isolated snapshot; run original, mutate only the comparison, run focused suite, restore and rerun. Fresh build initially; same source path rebuilt after each edit. Main worktree source/tests untouched.",
+  "verification": [
+    {"source": "original baseline", "exit_code": 0, "passed": 2, "log": "target/quality/kernel-fragment-baseline.log", "sha256": "5a48e716794add6bdf3526a647afa9f4f489364a2d1d53fe77a2cb657da800b3"},
+    {"source": "mutated comparison", "exit_code": 101, "passed": 1, "failed": 1, "diagnostic": "fragment_budget_must_fit_one_opcode_and_accepts_the_exact_boundary fails its rejection assertion at symbolic_kernel_boundaries.rs:28", "log": "target/quality/kernel-fragment-mutant.log", "sha256": "3599d345f1447de7e125a2bc02f81b3875814f0928012df190bad3e8185fdb26"},
+    {"source": "restored implementation", "exit_code": 0, "passed": 2, "log": "target/quality/kernel-fragment-restored.log", "sha256": "0737dc5b743769ec021908af8a54840df38967c484c95ab8f5ed69ba80b4cb5d"}
+  ],
+  "command": "cargo test -p bml-compiler --test symbolic_kernel_boundaries --locked",
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/kernel-fragment-build; CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0; TMPDIR under target.",
+  "interpretation": "Current test catches permissive admission of a sub-opcode budget before reaching the exact-boundary check. Original passes both rejection and inclusive acceptance. Historical survival is not reproduced on current HEAD; original campaign remains unchanged.",
+  "remaining": "Eight historical survivors now have local detecting-contract evidence; 39 still require disposition. Both historical timeouts have diagnosis and fast independent detection. Global campaign remains incomplete with end_time=null and is not approved."
+}
