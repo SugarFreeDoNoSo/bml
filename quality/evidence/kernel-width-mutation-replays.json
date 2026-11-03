@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "scope": "Two historical symbolic signature width survivors detected by current contracts",
+  "base_commit": "5540494",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "historical_mutants": [
+    "crates/compiler/src/symbolic_kernels.rs:56:27: replace match guard width == 2 with true in Operation::signature",
+    "crates/compiler/src/symbolic_kernels.rs:58:40: replace match guard width == 1 with true in Operation::signature"
+  ],
+  "snapshot": "target/delivery-snapshots/kernel-width-replay",
+  "contract": "fixed_width_signatures_reject_other_nonempty_widths",
+  "test_file": "crates/compiler/tests/symbolic_kernel_boundaries.rs",
+  "test_change": "None: current contract already covers widths 0, 1, 2, 3 and usize::MAX for Rope, Swiglu, Add and Scale. Reproduction verifies detection rather than adding redundant tests.",
+  "method": "Archive HEAD, establish baseline, mutate each historical guard independently, restore source, rerun full focused target. Fresh dedicated build initially; all subsequent rebuilds use the same snapshot path. Production source and tests untouched.",
+  "verification": [
+    {"source": "original baseline", "exit_code": 0, "passed": 2, "log": "target/quality/kernel-width-baseline.log", "sha256": "ff0d8e811a16e42fb0cd97ede4f201b4878956913c05668f8c8aadf022d8f631"},
+    {"source": "Rope guard replaced by true", "exit_code": 101, "passed": 1, "failed": 1, "diagnostic": "Rope width=1", "log": "target/quality/kernel-width-rope.log", "sha256": "04ec08c360a172b13e7fcbb551b49d1488e6259018e7ac00d02c4da9b618f212"},
+    {"source": "Add/Scale guard replaced by true", "exit_code": 101, "passed": 1, "failed": 1, "diagnostic": "Add width=2", "log": "target/quality/kernel-width-add-scale.log", "sha256": "2c97b005cdd641c18721ca47a5ec3ed9baf24f61f0047058fa4d7144ca96e720"},
+    {"source": "restored implementation", "exit_code": 0, "passed": 2, "log": "target/quality/kernel-width-restored.log", "sha256": "7d504a6669817b899a22123f701d52f9eb9e9b264b578625a7d35e4b6d142022"}
+  ],
+  "command": "cargo test -p bml-compiler --test symbolic_kernel_boundaries --locked",
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/kernel-width-build; CARGO_INCREMENTAL=0; DEV/TEST DEBUG=0; TMPDIR under target.",
+  "interpretation": "Current contracts detect both mutations. This does not establish why the historical campaign reported survival; it does not change its outcomes or claim reproduction of historical survival on current HEAD.",
+  "remaining": "Seven historical survivors now have local detecting-contract evidence; 40 still require disposition. Both historical timeouts have separate diagnosis and fast detection. Global campaign retains end_time=null and is not approved."
+}
