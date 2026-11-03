@@ -52,6 +52,61 @@ impl Drop for Directory {
 }
 
 #[test]
+fn stored_program_byte_budget_accepts_64_kib_and_rejects_one_more_byte() {
+    use bml_compiler::causal_artifact::load_directory;
+
+    let source = causal_fixture::fixture(false);
+    let dir = Directory::new();
+    compile_directory(&source.0, &dir.0, 32768).unwrap();
+    let budget = 65_536;
+    let mut graph = BmlGraph {
+        fragments: vec![Fragment { ops: vec![] }],
+        const_pool: vec![0.0; 4096],
+        threshold: 32768,
+    };
+    let framing = graph.serialize().len();
+    let wide_op = RpnOp::Loop {
+        count: 1,
+        body_len: 0,
+    };
+    graph.fragments[0].ops.push(wide_op);
+    let wide_bytes = graph.serialize().len() - framing;
+    // The container loader admits serialized programs; execution preflight is
+    // a separate runtime contract. Wide opcodes and constants reach the byte
+    // boundary without exceeding the independent 4096-opcode limit.
+    for bytes in [budget, budget + 1] {
+        let payload_bytes = bytes - framing;
+        graph.fragments[0].ops = vec![wide_op; payload_bytes / wide_bytes];
+        graph.fragments[0]
+            .ops
+            .extend(vec![RpnOp::Zero; payload_bytes % wide_bytes]);
+        assert!(graph.fragments[0].ops.len() <= 4096);
+        let encoded = graph.serialize();
+        let mut manifest = dir.manifest();
+        manifest.programs[0].sha256 = format!("{:x}", Sha256::digest(&encoded));
+        std::fs::write(dir.0.join("program_0.bmlgraph"), encoded).unwrap();
+        dir.save(&manifest);
+        assert_eq!(
+            std::fs::metadata(dir.0.join("program_0.bmlgraph"))
+                .unwrap()
+                .len(),
+            bytes as u64
+        );
+        let result = load_directory(&dir.0, None);
+        if bytes == budget {
+            assert!(
+                result.is_ok(),
+                "inclusive 64 KiB program budget: {:?}",
+                result.err()
+            );
+        } else {
+            let error = result.err().expect("oversized program must be rejected");
+            assert_eq!(error, "artifact file exceeds its byte budget");
+        }
+    }
+}
+
+#[test]
 fn stored_causal_graphs_match_closed_form_and_incremental_native_inference() {
     let source = causal_fixture::fixture(false);
     let dir = Directory::new();

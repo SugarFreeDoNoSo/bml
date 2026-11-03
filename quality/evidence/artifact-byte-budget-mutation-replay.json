@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "scope": "Targeted replay of a surviving causal artifact byte-budget mutation",
+  "base_commit": "2835a6e",
+  "historical_mutant": "crates/compiler/src/causal_artifact.rs:25:37: replace * with +",
+  "mutation": "const MAX_PROGRAM_BYTES: usize = 64 * 1024 changed to 64 + 1024",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/artifact-budget-mutant",
+  "method": "Archive HEAD, modify only the recorded constant in the isolated snapshot, run existing causal artifact suite, add new contract, and repeat with mutated and restored source. Main worktree production source remains unchanged.",
+  "test": "stored_program_byte_budget_accepts_64_kib_and_rejects_one_more_byte",
+  "test_file": "crates/compiler/tests/causal_artifact_contracts.rs",
+  "contract": "Public container loader accepts a structurally encoded 65536-byte program and rejects 65537 bytes. Integrity hashes are recomputed for both. Fixture stays within independent 4096-opcode and 4096-constant bounds. This is container admission, not runtime execution preflight.",
+  "fixture_review": "Initial narrow-opcode fixtures exceeded the independent opcode bound. Final fixture uses a bounded constant pool and wide Loop encodings plus one-byte padding opcodes; encoded file length and opcode count are explicitly checked. Only final fixture runs are credited.",
+  "verification": [
+    {"source": "mutated constant, original tests", "command": "cargo test -p bml-compiler --test causal_artifact_contracts --locked", "exit_code": 0, "passed": 5, "log": "target/quality/artifact-budget-mutant-before.log", "sha256": "3b31b4197652fb1edc22185561fbff4d3d372f723f7c3c438cccac066c2e16ad"},
+    {"source": "mutated constant, added contract", "command": "cargo test -p bml-compiler --test causal_artifact_contracts --locked", "exit_code": 101, "passed": 5, "failed": 1, "diagnostic": "inclusive 64 KiB program budget: Some(\"artifact file exceeds its byte budget\")", "log": "target/quality/artifact-budget-mutant-after.log", "sha256": "21efd28fa78f1f32172f26a4647401122455cc61f69ba9699df3f512f90b2215"},
+    {"source": "restored implementation, added contract", "command": "cargo test -p bml-compiler --test causal_artifact_contracts --locked", "exit_code": 0, "passed": 6, "log": "target/quality/artifact-budget-baseline-after.log", "sha256": "0d26560d1a115f470d0dafe523377a65f2c2d9f8d9744f57d8ad204702340bba"}
+  ],
+  "environment": "Pinned toolchain, fresh target/artifact-budget-build initially; same snapshot path rebuilt after each edit. TMPDIR under target, CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0.",
+  "remaining": "Two historical survivors now have detecting contracts (RMSNorm and causal program byte limit). Remaining 45 survivors and two timeouts require disposition. Original global report remains incomplete and unchanged; no successful global mutation campaign claimed."
+}
