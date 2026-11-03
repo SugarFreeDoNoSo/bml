@@ -29,6 +29,16 @@ pub struct HotLoop {
 }
 
 impl HotLoop {
+    /// Reserve a bounded execution stack without panicking on allocation failure.
+    pub fn try_with_capacity(
+        stack_capacity: usize,
+    ) -> Result<Self, std::collections::TryReserveError> {
+        let mut stack = Vec::new();
+        stack.try_reserve_exact(stack_capacity)?;
+        stack.resize(stack_capacity, 0.0);
+        stack.clear();
+        Ok(Self { stack })
+    }
     /// Crea un `HotLoop` con la capacidad de pila dada.
     ///
     /// La pila se pre-asigna y nunca crece durante `execute`.

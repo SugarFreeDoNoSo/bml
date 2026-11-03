@@ -47,11 +47,11 @@ pub enum RpnOp {
         /// Base del índice.
         base: u32,
     },
-    /// Escribe el tope de la pila al `ResultBuffer` en `slot[offset]`.
+    /// Writes a value to `ResultBuffer` at `slot[offset]`.
     ///
-    /// `offset` se lee del tope de la pila (debajo del valor a escribir).
-    /// El valor a escribir queda en el nuevo tope después de consumir `offset`.
-    /// Esto permite que los loops escriban resultados por índice dinámico.
+    /// Pops the offset from the top of the stack, then pops the value below it.
+    /// Both operands are consumed; duplicate the value before pushing the
+    /// offset if it must remain on the stack. Loops can supply dynamic offsets.
     StoreResult {
         /// Slot del buffer donde escribir.
         slot: u32,
@@ -155,7 +155,7 @@ impl RpnProgram {
                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                 RpnOp::VarIndexed { base: _ } => {
                     let _offset = stack.pop().unwrap_or(0.0) as u32;
-                    stack.push(0.0); // placeholder: sin buffer en evaluate_with_ctx
+                    stack.push(f64::NAN); // No result buffer is available in this evaluator.
                 }
                 RpnOp::StoreResult { slot: _ } => {
                     let _offset = stack.pop().unwrap_or(0.0);
@@ -397,6 +397,121 @@ pub fn linearize(soa: &NodeSoA, root: NodeId) -> RpnProgram {
         program.push(RpnOp::Drop);
     }
     program
+}
+
+/// Lower several DAG roots into one program, reusing their shared node values.
+///
+/// Each output is written to `slot[index]`, in root order, using the value of
+/// `Const(output_constants_start + index)` as its offset. The caller must bind
+/// those constants to the exact consecutive offsets `0, 1, ...`. Existing
+/// constant indices and the owned constant pool are preserved; this function
+/// does not insert or remap the offset literals. An external execution context
+/// may supply both the original constants and the offset literals.
+///
+/// Every reachable node is evaluated once with the same ordered operands as
+/// [`linearize`]. Reusing the resulting f64 value preserves the legacy IEEE
+/// arithmetic, including infinite intermediates; it adds no real-domain checks
+/// or native arithmetic. After storing every output, the program discards its
+/// retained values and leaves a single administrative `One` on the stack.
+///
+/// Empty outputs, malformed SoA columns, invalid roots, nonpreceding children,
+/// and overflowing constant indices are rejected before emitting any bytecode.
+/// Input/constant context lengths and buffer bounds still require runtime
+/// validation. Construction and execution budgets remain the caller's concern.
+pub fn linearize_outputs(
+    soa: &NodeSoA,
+    roots: &[NodeId],
+    slot: u32,
+    output_constants_start: u32,
+) -> Result<RpnProgram, String> {
+    let output_count = u32::try_from(roots.len()).map_err(|_| "too many DAG outputs")?;
+    let last_output = output_count.checked_sub(1).ok_or("empty DAG outputs")?;
+    output_constants_start
+        .checked_add(last_output)
+        .ok_or("output constant index overflow")?;
+    if soa.len() > u32::MAX as usize
+        || soa.lefts.len() != soa.len()
+        || soa.rights.len() != soa.len()
+    {
+        return Err("invalid DAG columns".into());
+    }
+    // Validate all reachable references before creating a partial output
+    // program. Const/Var indices refer to the caller's execution context, not
+    // necessarily to the owned pool, so they are checked by the runtime.
+    let mut reachable = vec![false; soa.len()];
+    let mut pending_ids = Vec::new();
+    for &root in roots {
+        if root as usize >= soa.len() {
+            return Err("unknown DAG output node".into());
+        }
+        pending_ids.push(root);
+    }
+    while let Some(id) = pending_ids.pop() {
+        let index = id as usize;
+        if reachable[index] {
+            continue;
+        }
+        if soa.kinds[index] == NodeKind::Bml {
+            let left = soa.lefts[index];
+            let right = soa.rights[index];
+            if left >= id || right >= id {
+                return Err("DAG children must precede their parent".into());
+            }
+            pending_ids.push(right);
+            pending_ids.push(left);
+        }
+        reachable[index] = true;
+    }
+
+    let mut program = RpnProgram::new();
+    program.const_pool.clone_from(&soa.const_pool);
+    let mut slots = vec![None; soa.len()];
+    let mut pending = Vec::new();
+    let mut height = 0usize;
+    for (output, &root) in roots.iter().enumerate() {
+        pending.push((root, false));
+        while let Some((id, expanded)) = pending.pop() {
+            let index = id as usize;
+            if slots[index].is_some() {
+                continue;
+            }
+            if soa.kinds[index] == NodeKind::Bml && !expanded {
+                pending.push((id, true));
+                pending.push((soa.rights[index], false));
+                pending.push((soa.lefts[index], false));
+                continue;
+            }
+            match soa.kinds[index] {
+                NodeKind::One => program.push(RpnOp::One),
+                NodeKind::Zero => program.push(RpnOp::Zero),
+                NodeKind::Var(var) => program.push(RpnOp::Var(var)),
+                NodeKind::Const(value) => program.push(RpnOp::Const(value)),
+                NodeKind::Bml => {
+                    let left = slots[soa.lefts[index] as usize].unwrap();
+                    let right = slots[soa.rights[index] as usize].unwrap();
+                    program.push(RpnOp::Pick {
+                        depth: (height - 1 - left) as u32,
+                    });
+                    program.push(RpnOp::Pick {
+                        depth: (height - right) as u32,
+                    });
+                    program.push(RpnOp::Bml);
+                }
+            }
+            slots[index] = Some(height);
+            height += 1;
+        }
+        program.push(RpnOp::Pick {
+            depth: (height - 1 - slots[root as usize].unwrap()) as u32,
+        });
+        program.push(RpnOp::Const(output_constants_start + output as u32));
+        program.push(RpnOp::StoreResult { slot });
+    }
+    for _ in 0..height {
+        program.push(RpnOp::Drop);
+    }
+    program.push(RpnOp::One);
+    Ok(program)
 }
 
 #[cfg(test)]

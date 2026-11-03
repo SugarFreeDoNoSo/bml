@@ -317,3 +317,52 @@ proptest! {
         prop_assert!(if expected.is_nan(){actual.is_nan()}else{actual.to_bits()==expected.to_bits()},"expected {expected}, got {actual}");
     }
 }
+
+#[test]
+fn indexed_reads_without_buffer_are_nan_at_every_supported_loop_depth() {
+    use bml_compiler::Fragment;
+    for depth in 0..=2 {
+        let mut ops = vec![RpnOp::Zero, RpnOp::VarIndexed { base: 0 }];
+        for _ in 0..depth {
+            let body_len = ops.len() as u32;
+            ops.insert(0, RpnOp::Loop { count: 1, body_len });
+        }
+        let program = RpnProgram {
+            ops: ops.clone(),
+            const_pool: vec![],
+        };
+        assert!(program.evaluate().is_nan(), "program depth {depth}");
+        // The runtime with a real buffer must still return the stored value.
+        let mut buffer = bml_runtime::buffer::ResultBuffer::new(1, 1);
+        buffer.write(0, 0, 17.0);
+        let mut hot_loop = bml_runtime::HotLoop::with_capacity(16);
+        let context = EvalContext::new(&[], &[]);
+        assert_eq!(hot_loop.execute_full(&program, &context, &mut buffer), 17.0);
+        let fragment = Fragment { ops };
+        let mut stack = Vec::new();
+        fragment.evaluate_on_stack(&mut stack);
+        assert!(stack.last().unwrap().is_nan(), "fragment depth {depth}");
+    }
+}
+
+#[test]
+fn hot_loop_invalid_result_addresses_cannot_alias_valid_cells() {
+    let mut buffer = bml_runtime::buffer::ResultBuffer::new(2, 1);
+    buffer.write(0, 0, 12.0);
+    buffer.write(1, 0, 13.0);
+    let mut hot = bml_runtime::HotLoop::with_capacity(8);
+    let program = RpnProgram {
+        ops: vec![RpnOp::One, RpnOp::VarIndexed { base: u32::MAX }],
+        const_pool: vec![],
+    };
+    let context = EvalContext::new(&[], &[]);
+    assert!(hot.execute_full(&program, &context, &mut buffer).is_nan());
+    let write = RpnProgram {
+        // Store value 1 at offset 1 of slot 0: outside that slot, even though
+        // the adjacent slot has an element at the same flattened index.
+        ops: vec![RpnOp::One, RpnOp::One, RpnOp::StoreResult { slot: 0 }],
+        const_pool: vec![],
+    };
+    hot.execute_full(&write, &context, &mut buffer);
+    assert_eq!(buffer.data(), &[12.0, 13.0]);
+}

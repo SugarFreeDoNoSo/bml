@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "scope": "Checked-F32 BMLGGUF causal execution and required validated symbolic graph infrastructure",
+  "base_commit": "fa2dceb",
+  "tested_staged_tree_before_evidence": "abac6aaa115a5c9dd4ff90e600243ffab00df423",
+  "selection": "Signed transformer operations, multi-output lowering, bounded graph validation/execution, symbolic kernels/projections and persisted causal/symbolic artifacts, SymbolicCausalModel including open_bmlgguf, with domain/compiler/runtime contracts. Excludes queue, scheduler, remote graph transport and remaining distributed loader changes.",
+  "contracts": "CheckedExactF32 explicitly evaluates each persisted weight and requires exact rational equality to its certified target. No fallback is introduced. Independent prepared fixtures cover inference after removal of the GGUF source; structural symbolic projection remains a separate API.",
+  "verification": {
+    "command": "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/home/dev/Work/bml/target/delivery-causal-runtime-build cargo test -p bml-domain -p bml-compiler -p bml-runtime --locked",
+    "working_directory": "target/delivery-snapshots/causal-runtime",
+    "fresh_build_directory": true,
+    "exit_code": 0,
+    "passed_including_doctests": 400,
+    "log": "target/quality/delivery-causal-runtime.log",
+    "sha256": "e1fd22dfece7761a7e7964e63cae6c416d4d39c73d928db3655d1f653bc32817"
+  },
+  "remaining": "CLI integration and final delivery documentation remain pending. This verification does not certify workspace mutation, hardware measurements or Loom work-stealing."
+}

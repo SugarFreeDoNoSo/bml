@@ -1,0 +1,400 @@
+//! Compile BML-only operation templates independently of the runtime.
+use crate::{
+    fragment_program, linearize, rpn::linearize_outputs, symbolic_projection::compile_row,
+    BmlGraph, RpnOp, RpnProgram,
+};
+use bml_domain::{BMLTransformer, NodeId, NodeKind, NodeSoA};
+use serde::{Deserialize, Serialize};
+
+/// Arithmetic operation families used by the symbolic causal execution profile.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Operation {
+    /// Signed dot product with external weight constants.
+    Dot,
+    /// Learned RMS normalization.
+    Norm,
+    /// Adjacent-pair rotary embedding.
+    Rope,
+    /// Natural-exponential softmax.
+    Softmax,
+    /// Standard Llama SwiGLU.
+    Swiglu,
+    /// Signed residual addition.
+    Add,
+    /// Signed activation multiplied by a positive scale.
+    Scale,
+}
+impl Operation {
+    /// Stable diagnostic label.
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Dot => "dot",
+            Self::Norm => "rms_norm",
+            Self::Rope => "rope",
+            Self::Softmax => "softmax",
+            Self::Swiglu => "swiglu",
+            Self::Add => "residual_add",
+            Self::Scale => "scale",
+        }
+    }
+    /// Canonical context and literal bindings for this version of the profile.
+    /// This validates metadata without regenerating any operation bytecode.
+    pub fn signature(self, width: usize, epsilon: f64) -> Result<KernelSignature, String> {
+        if width == 0 {
+            return Err("empty symbolic operation width".into());
+        }
+        let (inputs, external, outputs, fixed) = match self {
+            Self::Dot => (width, width, 1, vec![]),
+            Self::Norm => {
+                if !epsilon.is_finite() || epsilon <= 0.0 {
+                    return Err("invalid symbolic RMS epsilon".into());
+                }
+                (width, width, width, vec![1.0 / width as f64, epsilon, 0.5])
+            }
+            Self::Softmax => (width, 0, width, vec![std::f64::consts::LOG2_E]),
+            Self::Rope if width == 2 => (2, 2, 2, vec![]),
+            Self::Swiglu if width == 1 => (2, 0, 1, vec![std::f64::consts::LOG2_E]),
+            Self::Add | Self::Scale if width == 1 => (2, 0, 1, vec![]),
+            _ => return Err("invalid symbolic operation width".into()),
+        };
+        Ok(KernelSignature {
+            inputs,
+            external,
+            outputs,
+            fixed,
+        })
+    }
+
+    /// Canonical bindings for an explicit persisted output representation.
+    /// Buffer output adds exact integer offsets after the operation literals;
+    /// external weights follow that complete fixed prefix. This materializes
+    /// O(width) literals: callers must apply their construction/storage budgets
+    /// before requesting a buffered signature for an untrusted width.
+    pub fn signature_for_layout(
+        self,
+        width: usize,
+        epsilon: f64,
+        layout: OutputLayout,
+    ) -> Result<KernelSignature, String> {
+        let mut signature = self.signature(width, epsilon)?;
+        if layout == OutputLayout::Buffer {
+            if OutputLayout::for_operation(self) != OutputLayout::Buffer {
+                return Err("buffer output is unsupported for this symbolic operation".into());
+            }
+            let count = signature
+                .fixed
+                .len()
+                .checked_add(signature.outputs)
+                .ok_or("symbolic output constant size overflow")?;
+            if count > u32::MAX as usize {
+                return Err("symbolic output constant index overflow".into());
+            }
+            signature
+                .fixed
+                .try_reserve_exact(signature.outputs)
+                .map_err(|_| "cannot reserve symbolic output constants")?;
+            signature
+                .fixed
+                .extend((0..signature.outputs).map(|i| i as f64));
+        }
+        Ok(signature)
+    }
+}
+
+/// How the persisted program exposes logical scalar outputs.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OutputLayout {
+    /// One graph and one returned scalar per logical output (legacy format).
+    #[default]
+    Scalars,
+    /// One graph writes all logical outputs to result-buffer slot zero.
+    Buffer,
+}
+impl OutputLayout {
+    /// Default representation used for newly compiled operation programs.
+    pub fn for_operation(operation: Operation) -> Self {
+        match operation {
+            Operation::Norm | Operation::Softmax | Operation::Rope => Self::Buffer,
+            _ => Self::Scalars,
+        }
+    }
+}
+/// Constant and input dimensions independent of serialized program contents.
+#[derive(Clone, Debug, PartialEq)]
+pub struct KernelSignature {
+    /// Activation values supplied on each execution.
+    pub inputs: usize,
+    /// External weight/coefficient values following the fixed literal prefix.
+    pub external: usize,
+    /// Number of logical scalar outputs, independent of stored program count.
+    pub outputs: usize,
+    /// Canonical fixed literals, never model matrix weights.
+    pub fixed: Vec<f64>,
+}
+/// Construction and storage budgets, independent of runtime execution budgets.
+#[derive(Clone, Copy, Debug)]
+pub struct KernelLimits {
+    /// Maximum nodes in one operation DAG.
+    pub max_nodes: usize,
+    /// Maximum stored opcodes across the output programs.
+    pub max_ops: usize,
+    /// Maximum opcodes in any one persisted program.
+    pub max_output_ops: usize,
+    /// Maximum persisted programs.
+    pub max_programs: usize,
+    /// Target bytes per fragment.
+    pub fragment_bytes: usize,
+}
+impl Default for KernelLimits {
+    fn default() -> Self {
+        Self {
+            max_nodes: 100_000,
+            max_ops: 1_000_000,
+            max_output_ops: 100_000,
+            max_programs: 1024,
+            fragment_bytes: 32768,
+        }
+    }
+}
+/// Compiled programs and their external context declaration.
+pub struct CompiledKernel {
+    /// Operation family.
+    pub operation: Operation,
+    /// Vector width or canonical scalar-operation width.
+    pub width: usize,
+    /// Declared activation, external constant and output dimensions.
+    pub signature: KernelSignature,
+    /// Whether outputs are returned individually or written to one buffer slot.
+    pub layout: OutputLayout,
+    /// Programs containing no owned constant pool; fixed literals are in signature.
+    pub graphs: Vec<BmlGraph>,
+}
+/// True only for the extended BML basis, stack operations and output stores.
+pub fn is_symbolic_opcode(op: &RpnOp) -> bool {
+    matches!(
+        op,
+        RpnOp::One
+            | RpnOp::Var(_)
+            | RpnOp::Const(_)
+            | RpnOp::Bml
+            | RpnOp::Pick { .. }
+            | RpnOp::Dup
+            | RpnOp::Drop
+            | RpnOp::Swap
+            | RpnOp::StoreResult { .. }
+    )
+}
+/// Compile an operation under explicit node, opcode, program and fragment budgets.
+pub fn compile_operation(
+    op: Operation,
+    width: usize,
+    epsilon: f64,
+    limits: KernelLimits,
+) -> Result<CompiledKernel, String> {
+    compile_operation_with_layout(op, width, epsilon, OutputLayout::for_operation(op), limits)
+}
+
+/// Compile the same arithmetic using either the legacy scalar representation or
+/// one shared vector program. Explicit layout is useful when validating older
+/// artifacts against new programs without changing their mathematical DAGs.
+pub fn compile_operation_with_layout(
+    op: Operation,
+    width: usize,
+    epsilon: f64,
+    layout: OutputLayout,
+    limits: KernelLimits,
+) -> Result<CompiledKernel, String> {
+    let base_signature = op.signature(width, epsilon)?;
+    if layout == OutputLayout::Buffer && OutputLayout::for_operation(op) != layout {
+        return Err("buffer output is unsupported for this symbolic operation".into());
+    }
+    if limits.fragment_bytes < std::mem::size_of::<RpnOp>() {
+        return Err("symbolic fragment threshold too small".into());
+    }
+    let program_count = match layout {
+        OutputLayout::Scalars => base_signature.outputs,
+        OutputLayout::Buffer => 1,
+    };
+    if program_count > limits.max_programs {
+        return Err("symbolic program budget exceeded".into());
+    }
+    if op == Operation::Dot {
+        let row = compile_row(width, limits.max_nodes)?;
+        return finish(op, width, layout, vec![row.program], base_signature, limits);
+    }
+
+    // RMSNorm consists of a per-input square and output expansion, n-1 sum
+    // additions, and a fixed normalization block. Softmax likewise has per-input
+    // exponential/output expansions, n-1 additions, and a fixed reciprocal.
+    // Thus their constructed node counts are affine for all nonempty widths.
+    // Small probes measure the current identities, and check the increment,
+    // before any user-width allocation. Fixed-width families use one exact probe.
+    let nodes = required_nodes(op, width, epsilon)?;
+    if nodes > limits.max_nodes || nodes > u32::MAX as usize {
+        return Err("symbolic node budget exceeded".into());
+    }
+    let OperationDag {
+        mut soa,
+        roots,
+        weights,
+    } = build_dag(op, width, epsilon, nodes)?;
+    if soa.len() != nodes || soa.len() > limits.max_nodes {
+        return Err("symbolic construction node count changed".into());
+    }
+    if soa.const_pool != base_signature.fixed || weights.len() != base_signature.external {
+        return Err("symbolic construction signature changed".into());
+    }
+    let output_constants_start =
+        u32::try_from(soa.const_pool.len()).map_err(|_| "constant index overflow")?;
+    let signature = op.signature_for_layout(width, epsilon, layout)?;
+    // Owned operation literals and output indices occupy a fixed prefix. Every
+    // external weight is remapped after that prefix before either linearizer runs.
+    soa.const_pool = signature.fixed.clone();
+    for (index, &node) in weights.iter().enumerate() {
+        let id = signature
+            .fixed
+            .len()
+            .checked_add(index)
+            .and_then(|n| u32::try_from(n).ok())
+            .ok_or("constant index overflow")?;
+        soa.kinds[node as usize] = NodeKind::Const(id);
+    }
+    let mut programs = Vec::with_capacity(program_count);
+    match layout {
+        OutputLayout::Buffer => {
+            let mut program = linearize_outputs(&soa, &roots, 0, output_constants_start)?;
+            program.const_pool.clear();
+            programs.push(program);
+        }
+        OutputLayout::Scalars => {
+            let mut stored = 0usize;
+            for root in roots {
+                let mut program = linearize(&soa, root);
+                stored = stored
+                    .checked_add(program.ops.len())
+                    .ok_or("symbolic opcode overflow")?;
+                if stored > limits.max_ops {
+                    return Err("symbolic opcode cache budget exceeded".into());
+                }
+                program.const_pool.clear();
+                programs.push(program);
+            }
+        }
+    }
+    finish(op, width, layout, programs, signature, limits)
+}
+
+struct OperationDag {
+    soa: NodeSoA,
+    roots: Vec<NodeId>,
+    weights: Vec<NodeId>,
+}
+
+fn required_nodes(op: Operation, width: usize, epsilon: f64) -> Result<usize, String> {
+    if matches!(op, Operation::Norm | Operation::Softmax) {
+        let one = build_dag(op, 1, epsilon, 0)?.soa.len();
+        let two = build_dag(op, 2, epsilon, 0)?.soa.len();
+        let three = build_dag(op, 3, epsilon, 0)?.soa.len();
+        let increment = two.checked_sub(one).ok_or("invalid symbolic node count")?;
+        if three.checked_sub(two) != Some(increment) {
+            return Err("symbolic vector node construction is not affine".into());
+        }
+        (width - 1)
+            .checked_mul(increment)
+            .and_then(|n| n.checked_add(one))
+            .ok_or_else(|| "symbolic node size overflow".into())
+    } else {
+        Ok(build_dag(op, width, epsilon, 0)?.soa.len())
+    }
+}
+
+fn build_dag(
+    op: Operation,
+    width: usize,
+    epsilon: f64,
+    capacity: usize,
+) -> Result<OperationDag, String> {
+    let mut t = BMLTransformer::with_capacity(capacity);
+    let mut weights = Vec::new();
+    let roots = match op {
+        Operation::Norm => {
+            let x: Vec<_> = (0..width).map(|i| t.var(i as u32)).collect();
+            weights = (0..width).map(|i| t.external_constant(i as u32)).collect();
+            t.rms_norm(&x, &weights, epsilon)
+                .map_err(|e| e.to_string())?
+        }
+        Operation::Softmax => {
+            let x: Vec<_> = (0..width).map(|i| t.var(i as u32)).collect();
+            t.softmax(&x).map_err(|e| e.to_string())?
+        }
+        Operation::Rope => {
+            let x = [t.var(0), t.var(1)];
+            weights = vec![t.external_constant(0), t.external_constant(1)];
+            t.rope(&x, &weights[..1], &weights[1..])
+                .map_err(|e| e.to_string())?
+        }
+        Operation::Swiglu => {
+            let g = t.var(0);
+            let u = t.var(1);
+            t.swiglu(&[g], &[u]).map_err(|e| e.to_string())?
+        }
+        Operation::Add | Operation::Scale => {
+            let x = t.var(0);
+            let y = t.var(1);
+            vec![if op == Operation::Add {
+                t.add(x, y)
+            } else {
+                t.scale_signed(x, y)
+            }]
+        }
+        Operation::Dot => return Err("dot products require their row compiler".into()),
+    };
+    Ok(OperationDag {
+        soa: t.into_soa(),
+        roots,
+        weights,
+    })
+}
+
+fn finish(
+    operation: Operation,
+    width: usize,
+    layout: OutputLayout,
+    programs: Vec<RpnProgram>,
+    signature: KernelSignature,
+    limits: KernelLimits,
+) -> Result<CompiledKernel, String> {
+    let expected = match layout {
+        OutputLayout::Scalars => signature.outputs,
+        OutputLayout::Buffer => 1,
+    };
+    if programs.len() != expected || programs.len() > limits.max_programs {
+        return Err("symbolic program budget exceeded".into());
+    }
+    let mut graphs = Vec::with_capacity(programs.len());
+    let mut ops = 0usize;
+    for program in programs {
+        if program.ops.len() > limits.max_output_ops {
+            return Err("symbolic output opcode budget exceeded".into());
+        }
+        ops = ops
+            .checked_add(program.ops.len())
+            .ok_or("symbolic opcode overflow")?;
+        if ops > limits.max_ops {
+            return Err("symbolic opcode cache budget exceeded".into());
+        }
+        if !program.const_pool.is_empty() || !program.ops.iter().all(is_symbolic_opcode) {
+            return Err("invalid symbolic basis or owned weights".into());
+        }
+        graphs.push(fragment_program(&program, limits.fragment_bytes));
+    }
+    Ok(CompiledKernel {
+        operation,
+        width,
+        signature,
+        layout,
+        graphs,
+    })
+}

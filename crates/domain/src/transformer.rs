@@ -15,12 +15,16 @@
 //!
 //! Las identidades f64 pueden perder precisión, desbordarse o producir NaN
 //! fuera de su dominio. sub requiere minuendo positivo; mul, div y recip
-//! operandos positivos; pow requiere x > 1, y > 0. neg usa infinitos
-//! intermedios del evaluador IEEE heredado, no del evaluador real estricto
-//! de symbolic. No se garantiza aceleración frente a operaciones nativas.
+//! operandos positivos; pow requiere x > 1, y > 0. Las expansiones
+//! neg_real, scale_signed y mul_signed admiten signos sin introducir log2(0),
+//! pero siguen sujetas al rango y la precisión de sus intermedios. neg
+//! conserva la convención IEEE heredada con infinitos intermedios. No se garantiza aceleración frente a operaciones nativas.
 
 use crate::ast::NodeId;
 use crate::soa::NodeSoA;
+
+mod operations;
+pub use operations::OperationBuildError;
 
 /// Traductor de operaciones estándar a la gramática BML.
 ///
@@ -67,6 +71,25 @@ impl BMLTransformer {
     /// Adds a variable resolved from EvalContext inputs.
     pub fn var(&mut self, id: crate::ast::VarId) -> NodeId {
         self.soa.push_var(id)
+    }
+
+    /// Add a Const reference to an explicitly supplied external constant pool.
+    ///
+    /// This does not append an owned value. Do not mix external references with
+    /// [`Self::constant`] unless the caller deliberately provides a compatible
+    /// complete index namespace. The evaluator must check the external bounds.
+    pub fn external_constant(&mut self, id: crate::ConstId) -> NodeId {
+        self.soa.push_const(id)
+    }
+
+    /// Add an arbitrary value to the owned constant pool and return its node.
+    ///
+    /// Evaluation must use `soa().const_pool` as its constant context. This is
+    /// the extended legacy AST, not a pure symbolic closed term.
+    pub fn constant(&mut self, value: f64) -> NodeId {
+        let id = self.soa.const_pool.len() as crate::ConstId;
+        self.soa.const_pool.push(value);
+        self.soa.push_const(id)
     }
 
     /// Agrega `BML(left, right)` al grafo y retorna su `NodeId`.
@@ -120,16 +143,16 @@ impl BMLTransformer {
     //   exp2(z) = bml(z, 1)                    [Lemma 1]
     //   log2(x) = bml(1, bml(bml(1, x), 1))    [Lemma 2]
     //   x - y   = bml(log2(x), exp2(y))        [Lemma 3]
-    //   -x      = bml(log2(0), exp2(x)) = bml(-inf, exp2(x)) = 0 - x
-    //   x + y   = x - (-y) = sub(x, neg(y))
+    //   -x      = q - p (neg_real), with p = 2^x and q = p - x > 0
+    //   x + y   = p - (q - y), with the same positive p and q
     //   1/x     = exp2(-log2(x)) = exp2(neg(log2(x)))
     //   x * y   = exp2(log2(x) + log2(y)) = exp2(add(log2(x), log2(y)))
     //   x / y   = x * (1/y) = mul(x, recip(y))
     //   x^y     = exp2(y * log2(x)) = exp2(mul(y, log2(x)))
     //
-    // Nota: log2(0) = -inf, 2^(-inf) = 0. Estas fórmulas funcionan en f64
-    // con la convención IEEE 754 de infinitos. Requieren x > 0 para que
-    // log2(x) esté definido en los reales.
+    // Excepto neg (convención IEEE heredada), las identidades usan
+    // argumentos positivos para cada logaritmo.
+    // Sus intermedios pueden perder precisión o exceder el rango f64.
 
     /// `x - y = bml(log2(x), exp2(y))`.
     ///
@@ -141,37 +164,61 @@ impl BMLTransformer {
         self.bml(log2_x, exp2_y) // 2^log2(x) - log2(2^y) = x - y
     }
 
-    /// `-x = bml(log2(0), exp2(x)) = 0 - x`.
+    /// Legacy IEEE negation using `log2(0) = -inf` as an intermediate.
     ///
-    /// Usa la convención `log2(0) = -inf`, `2^(-inf) = 0`.
-    /// Identidad del Remark después del Lemma 3.
+    /// Retained for compatibility with existing reciprocal/power expansions.
+    /// Use [`Self::neg_real`] when every intermediate must be finite, subject
+    /// to its narrower numerical range.
     pub fn neg(&mut self, x: NodeId) -> NodeId {
-        // 0 = log2(1). Construimos el nodo 0 primero.
         let one = self.one();
-        let zero = self.log2(one); // log2(1) = 0
-                                   // -x = 0 - x = sub(0, x) = bml(log2(0), exp2(x))
-                                   // Pero sub(0, x) requiere log2(0) = -inf, que no es representable.
-                                   //
-                                   // Alternativa: -x = bml(bml(1,1), exp2(x)) no funciona (da 4-x).
-                                   //
-                                   // El paper usa L(0) = -inf como convención. En f64, log2(0.0) = -inf.
-                                   // Pero en la gramática BML pura, no hay nodo que evalúe a -inf.
-                                   //
-                                   // Solución: usar sub(ONE, x) solo cuando x < 1... no general.
-                                   //
-                                   // Para el transformer, neg se usa sobre log2(x) que puede ser
-                                   // negativo. Pero sub requiere log2 del primer arg, que sería
-                                   // log2(log2(x))... que no está definido si log2(x) < 0.
-                                   //
-                                   // La forma más limpia: -x = 1/x^(-1)... circular.
-                                   //
-                                   // Por ahora, implementamos neg como 0 - x usando la convención
-                                   // de que el runtime maneja -inf. En la gramática BML, usamos
-                                   // sub(zero, x) que expande a bml(log2(0), exp2(x)).
-                                   // El nodo log2(0) se construye como log2(zero) donde zero = log2(1).
-        let neg_zero = self.log2(zero); // log2(0) = -inf (en f64)
-        let exp2_x = self.exp2(x); // 2^x
-        self.bml(neg_zero, exp2_x) // 2^(-inf) - log2(2^x) = 0 - x = -x
+        let zero = self.log2(one);
+        let neg_zero = self.log2(zero);
+        let exp2_x = self.exp2(x);
+        self.bml(neg_zero, exp2_x)
+    }
+
+    /// Build real negation without introducing `log2(0)` or infinity.
+    ///
+    /// For `p = 2^x` and `q = p - x > 0`, `-x = q - p`.
+    /// Intermediate range and cancellation still limit f64 evaluation.
+    pub fn neg_real(&mut self, x: NodeId) -> NodeId {
+        let p = self.exp2(x);
+        let q = self.bml(x, p);
+        self.sub(q, p)
+    }
+
+    /// Multiply a signed value by a strictly positive value in the BML basis.
+    ///
+    /// With `p = 2^x` and `q = p - x > 0`, `x*y = p*y - q*y`.
+    /// This is a real identity, not an IEEE multiplication replacement:
+    /// intermediate overflow, underflow and cancellation remain possible.
+    pub fn scale_signed(&mut self, x: NodeId, positive_y: NodeId) -> NodeId {
+        let p = self.exp2(x);
+        let q = self.bml(x, p);
+        let left = self.mul(p, positive_y);
+        let right = self.mul(q, positive_y);
+        self.sub(left, right)
+    }
+
+    /// Multiply two signed values, including zero, using only BML nodes.
+    ///
+    /// Write `x = p-q` and `y = r-s`, where all four components are
+    /// strictly positive. The result is `(p*r + q*s) - (p*s + q*r)`.
+    /// Every positive product uses [`Self::mul`]. Finite intermediates and
+    /// sufficient precision are required; this expansion does not promise
+    /// the range, rounding or signed-zero behavior of native multiplication.
+    pub fn mul_signed(&mut self, x: NodeId, y: NodeId) -> NodeId {
+        let p = self.exp2(x);
+        let q = self.bml(x, p);
+        let r = self.exp2(y);
+        let s = self.bml(y, r);
+        let pr = self.mul(p, r);
+        let qs = self.mul(q, s);
+        let ps = self.mul(p, s);
+        let qr = self.mul(q, r);
+        let positive = self.add(pr, qs);
+        let negative = self.add(ps, qr);
+        self.sub(positive, negative)
     }
 
     /// Signed addition with positive minuends only.

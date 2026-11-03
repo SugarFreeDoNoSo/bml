@@ -11,6 +11,7 @@
 #![warn(missing_docs)]
 
 pub mod bml_ops;
+pub mod causal_artifact;
 pub mod dag;
 pub mod distributed;
 pub mod eml;
@@ -23,6 +24,9 @@ pub mod kv_cache;
 pub mod op_fragments;
 pub mod rpn;
 pub mod sampler;
+pub mod symbolic_artifact;
+pub mod symbolic_kernels;
+pub mod symbolic_projection;
 pub mod tokenizer;
 
 pub use dag::Dag;

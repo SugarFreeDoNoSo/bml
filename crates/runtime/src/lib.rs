@@ -15,7 +15,10 @@
 #![warn(missing_docs)]
 
 pub mod buffer;
+pub mod causal_artifact;
 pub mod hot_loop;
+pub mod graph;
+pub mod symbolic_causal;
 pub mod net;
 pub mod prepared_projection;
 pub mod queue;

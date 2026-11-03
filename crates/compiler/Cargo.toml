@@ -12,6 +12,8 @@ bml-parser = { path = "../parser" }
 bml-inference = { path = "../inference" }
 bml-model-weights = { path = "../model-weights" }
 serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
 
 [dev-dependencies]
 criterion.workspace = true

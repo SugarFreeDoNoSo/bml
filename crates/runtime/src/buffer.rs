@@ -18,6 +18,23 @@ pub struct ResultBuffer {
 }
 
 impl ResultBuffer {
+    /// Adopt a complete slot buffer without copying or allocating.
+    /// Mismatched or overflowing dimensions return the original values.
+    pub fn from_vec(n_slots: usize, slot_size: usize, data: Vec<f64>) -> Result<Self, Vec<f64>> {
+        if n_slots.checked_mul(slot_size) != Some(data.len()) {
+            return Err(data);
+        }
+        Ok(Self {
+            data,
+            slot_size,
+            n_slots,
+        })
+    }
+
+    /// Consume the layout wrapper and return its owned flat values.
+    pub fn into_vec(self) -> Vec<f64> {
+        self.data
+    }
     /// Crea un buffer con `n_slots` slots de `slot_size` elementos cada uno.
     pub fn new(n_slots: usize, slot_size: usize) -> Self {
         let total = n_slots * slot_size;
@@ -29,19 +46,19 @@ impl ResultBuffer {
     }
 
     /// Escribe un valor al slot en el offset dado.
+    /// Slots u offsets fuera de rango se ignoran sin modificar otros slots.
     #[inline]
     pub fn write(&mut self, slot: u32, offset: u32, value: f64) {
-        let idx = slot as usize * self.slot_size + offset as usize;
-        if idx < self.data.len() {
+        if let Some(idx) = self.slot_index(slot, offset) {
             self.data[idx] = value;
         }
     }
 
     /// Lee un valor del slot en el offset dado.
+    /// Un slot u offset fuera de rango devuelve NaN.
     #[inline]
     pub fn read(&self, slot: u32, offset: u32) -> f64 {
-        let idx = slot as usize * self.slot_size + offset as usize;
-        if idx < self.data.len() {
+        if let Some(idx) = self.slot_index(slot, offset) {
             self.data[idx]
         } else {
             f64::NAN
@@ -49,23 +66,34 @@ impl ResultBuffer {
     }
 
     /// Lee un valor por índice absoluto (base + offset).
+    /// Una suma desbordada o un índice fuera del buffer devuelve NaN.
     #[inline]
     pub fn read_indexed(&self, base: u32, offset: u32) -> f64 {
-        let idx = (base + offset) as usize;
-        if idx < self.data.len() {
-            self.data[idx]
-        } else {
-            f64::NAN
-        }
+        base.checked_add(offset)
+            .and_then(|index| self.data.get(index as usize))
+            .copied()
+            .unwrap_or(f64::NAN)
     }
 
     /// Escribe un valor por índice absoluto (base + offset).
+    /// Una suma desbordada o un índice fuera del buffer no modifica datos.
     #[inline]
     pub fn write_indexed(&mut self, base: u32, offset: u32, value: f64) {
-        let idx = (base + offset) as usize;
-        if idx < self.data.len() {
-            self.data[idx] = value;
+        if let Some(cell) = base
+            .checked_add(offset)
+            .and_then(|index| self.data.get_mut(index as usize))
+        {
+            *cell = value;
         }
+    }
+
+    fn slot_index(&self, slot: u32, offset: u32) -> Option<usize> {
+        let slot = slot as usize;
+        let offset = offset as usize;
+        if slot >= self.n_slots || offset >= self.slot_size {
+            return None;
+        }
+        slot.checked_mul(self.slot_size)?.checked_add(offset)
     }
 
     /// Retorna un slice del slot dado.
@@ -186,5 +214,47 @@ mod tests {
         for i in 0..8 {
             assert_eq!(buf.read(1, i), (i as f64) * 2.0 + 1.0);
         }
+    }
+
+    #[test]
+    fn invalid_addresses_never_cross_slots_or_wrap_to_valid_cells() {
+        let mut buffer = ResultBuffer::new(2, 2);
+        for i in 0..4 {
+            buffer.write_indexed(0, i, 10.0 + f64::from(i));
+        }
+        let original = buffer.data().to_vec();
+        // offset 2 is outside slot 0 even though flat index 2 exists.
+        for (slot, offset) in [(0, 2), (1, 2), (2, 0), (u32::MAX, u32::MAX)] {
+            assert!(buffer.read(slot, offset).is_nan());
+            buffer.write(slot, offset, -1.0);
+            assert_eq!(buffer.data(), original);
+        }
+        // u32::MAX + 1 must neither panic in debug nor alias zero in release.
+        for (base, offset) in [(u32::MAX, 1), (1, u32::MAX), (u32::MAX, u32::MAX), (4, 0)] {
+            assert!(buffer.read_indexed(base, offset).is_nan());
+            buffer.write_indexed(base, offset, -1.0);
+            assert_eq!(buffer.data(), original);
+        }
+        assert_eq!(buffer.read(1, 1), 13.0);
+        assert_eq!(buffer.read_indexed(2, 1), 13.0);
+        let mut empty = ResultBuffer::new(0, 0);
+        assert!(empty.read(0, 0).is_nan());
+        empty.write(0, 0, 1.0);
+        assert!(empty.data().is_empty());
+    }
+
+    #[test]
+    fn adopting_buffer_values_checks_layout_without_copying() {
+        let values = vec![12.0, 13.0];
+        let pointer = values.as_ptr();
+        let values = ResultBuffer::from_vec(usize::MAX, 2, values).unwrap_err();
+        assert_eq!(values.as_ptr(), pointer);
+        let values = ResultBuffer::from_vec(1, 1, values).unwrap_err();
+        assert_eq!(values, [12.0, 13.0]);
+        let buffer = ResultBuffer::from_vec(2, 1, values).unwrap();
+        assert_eq!(buffer.data().as_ptr(), pointer);
+        assert_eq!(buffer.read(1, 0), 13.0);
+        let values = buffer.into_vec();
+        assert_eq!(values.as_ptr(), pointer);
     }
 }

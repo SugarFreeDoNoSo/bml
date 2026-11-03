@@ -147,7 +147,7 @@ impl Fragment {
                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                                 RpnOp::VarIndexed { base: _ } => {
                                     let _offset = stack.pop().unwrap_or(0.0);
-                                    stack.push(0.0);
+                                    stack.push(f64::NAN);
                                 }
                                 RpnOp::StoreResult { slot: _ } => {
                                     let _offset = stack.pop().unwrap_or(0.0);
@@ -203,7 +203,7 @@ impl Fragment {
                                                 RpnOp::Const(id) => stack.push(ctx.get_const(id)),
                                                 RpnOp::VarIndexed { base: _ } => {
                                                     let _offset = stack.pop().unwrap_or(0.0);
-                                                    stack.push(0.0);
+                                                    stack.push(f64::NAN);
                                                 }
                                                 RpnOp::StoreResult { slot: _ } => {
                                                     let _offset = stack.pop().unwrap_or(0.0);
@@ -383,6 +383,17 @@ impl BmlGraph {
 
     /// Deserializa un grafo desde bytes (formato `.bmlgraph`).
     pub fn deserialize(bytes: &[u8], threshold: usize) -> Result<Self, String> {
+        Self::deserialize_with_limits(bytes, threshold, usize::MAX, usize::MAX, usize::MAX)
+    }
+
+    /// Decode with explicit allocation-count bounds before growing vectors.
+    pub fn deserialize_with_limits(
+        bytes: &[u8],
+        threshold: usize,
+        max_fragments: usize,
+        max_ops: usize,
+        max_constants: usize,
+    ) -> Result<Self, String> {
         if bytes.len() < 12 {
             return Err("archivo demasiado pequeño".to_string());
         }
@@ -395,6 +406,10 @@ impl BmlGraph {
             return Err(format!("versión no soportada: {version}"));
         }
         let num_fragments = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
+        if num_fragments > max_fragments {
+            return Err("fragment budget exceeded".into());
+        }
+        let mut total_ops = 0usize;
         let mut offset = 12;
         let mut fragments = Vec::new();
         for _ in 0..num_fragments {
@@ -403,6 +418,12 @@ impl BmlGraph {
             }
             let num_ops =
                 u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()) as usize;
+            total_ops = total_ops
+                .checked_add(num_ops)
+                .ok_or("opcode count overflow")?;
+            if total_ops > max_ops {
+                return Err("opcode budget exceeded".into());
+            }
             offset += 4;
             let mut ops = Vec::new();
             for _ in 0..num_ops {
@@ -489,6 +510,9 @@ impl BmlGraph {
                 .ok_or("missing constant pool length")?;
             let count = usize::try_from(u64::from_le_bytes(count_bytes.try_into().unwrap()))
                 .map_err(|_| "pool length overflow")?;
+            if count > max_constants {
+                return Err("constant pool budget exceeded".into());
+            }
             offset = end;
             let pool_size = count.checked_mul(8).ok_or("pool size overflow")?;
             let end = offset.checked_add(pool_size).ok_or("pool range overflow")?;
