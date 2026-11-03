@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "scope": "Signed GGUF integer dimension acceptance and range rejection",
+  "base_commit": "e250dc2",
+  "historical_mutant": "crates/compiler/src/gguf_compiler.rs:132:13: delete match arm Some(GgufMetadataValue::I32(v)) in read_model_config",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/metadata-i32-mutant",
+  "test_file": "crates/compiler/tests/metadata_integer_contracts.rs",
+  "test": "signed_gguf_dimension_preserves_positive_value_and_rejects_negative",
+  "contract": "Independent GGUF wire fixture changes llama.embedding_length from U32(4) to I32(4), requiring identical model configuration through open and open_mapped. I32(-1) must be rejected in both paths. The patch verifies unique metadata key and original wire tag/value. Compiler mappings are dropped before rewriting the fixture.",
+  "method": "Archive HEAD, delete only the recorded I32 match arm in the isolated source, run causal suite, add new contract, run mutant/restored source. Fresh dedicated build initially; same snapshot path rebuilt on edits. Worktree production source untouched.",
+  "verification": [
+    {"source": "mutant, existing causal suite", "command": "cargo test -p bml-compiler --test causal_contracts --locked", "exit_code": 0, "passed": 7, "log": "target/quality/metadata-i32-mutant-before.log", "sha256": "683250f3e75851c553ad4c7fa72e0354177b4f71d17b07f9b33e0c1eb7b13e7c"},
+    {"source": "mutant, causal suite and new contract", "command": "cargo test -p bml-compiler --test metadata_integer_contracts --test causal_contracts --locked", "exit_code": 101, "passed": 7, "failed": 1, "diagnostic": "positive I32 dimension must be accepted", "log": "target/quality/metadata-i32-mutant-after.log", "sha256": "c83c6150c285470fc2d7ae329ae025727156ba167daaac34673a7a4798c50053"},
+    {"source": "restored implementation, causal suite and new contract", "command": "cargo test -p bml-compiler --test metadata_integer_contracts --test causal_contracts --locked", "exit_code": 0, "passed": 8, "log": "target/quality/metadata-i32-baseline-after.log", "sha256": "cd614ba0861561f7c6738f5c3967fd97f20a57aac3deab7deb3082adc0c0ee21"}
+  ],
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/metadata-i32-build; CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0; TMPDIR under target.",
+  "remaining": "Fifteen historical survivors now have local detecting-contract evidence; 32 still require disposition. Both historical timeouts have diagnosis and fast detection. Global campaign remains unchanged with end_time=null and is not approved."
+}
