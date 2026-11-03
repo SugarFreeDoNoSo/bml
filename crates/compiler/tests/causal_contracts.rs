@@ -96,6 +96,55 @@ fn cache_allocation_budget_and_size_arithmetic_are_checked_before_allocating() {
 }
 
 #[test]
+fn default_cache_budget_accepts_a_mib_and_rejects_payloads_above_512_mib() {
+    use bml_compiler::kv_cache::DEFAULT_MAX_KV_BYTES;
+    let cache = HashConsedKV::try_new(1, 1, 128, 1024, DEFAULT_MAX_KV_BYTES).unwrap();
+    assert_eq!(cache.byte_size(), 1_048_576);
+    // Rejection happens before allocating the oversized payload.
+    assert!(HashConsedKV::try_new(1, 1, 128, 524_289, DEFAULT_MAX_KV_BYTES).is_err());
+}
+
+#[test]
+fn rotary_pairs_use_distinct_frequencies_and_absolute_cached_positions() {
+    let source = causal_fixture::wide_rope_fixture();
+    for mapped in [false, true] {
+        let model = if mapped {
+            InferenceCompiler::open_mapped(&source.0)
+        } else {
+            InferenceCompiler::open(&source.0)
+        }
+        .unwrap();
+        assert_eq!(model.head_dim(), 4);
+        let mut cache = HashConsedKV::new(1, 1, 4, 8);
+        model.forward_cached(&[69, 70], &mut cache).unwrap();
+        let logits = model.forward_cached(&[69], &mut cache).unwrap();
+        assert_eq!(logits, model.forward(&[69, 70, 69]).unwrap());
+        // Each embedding has two entries of 2: RMS denominator sqrt(8/4+3).
+        // Identity K then rotates adjacent pairs at angles pos and pos/4
+        // because base=16 and head width=4. Compare the persisted F32 keys.
+        let scale = 2.0 / 5.0_f64.sqrt();
+        for pos in 0..3 {
+            let mut expected = Vec::new();
+            for angle in [f64::from(pos), f64::from(pos) / 4.0] {
+                let pair = if pos == 1 {
+                    [-scale * angle.sin(), scale * angle.cos()]
+                } else {
+                    [scale * angle.cos(), scale * angle.sin()]
+                };
+                expected.extend(pair);
+            }
+            for (actual, expected) in cache.load_k(0, pos, 0).into_iter().zip(expected) {
+                assert!(
+                    (f64::from(actual) - expected).abs() < 1e-7,
+                    "mapped={mapped} position={pos}: {actual} != {expected}"
+                );
+            }
+        }
+        assert_eq!(cache.current_pos(), 3);
+    }
+}
+
+#[test]
 fn distributed_metadata_keeps_the_actual_gguf_kv_head_count() {
     use bml_compiler::distributed::{compile_distributed, compile_distributed_bml};
     let file = fixture(false);
@@ -135,6 +184,40 @@ fn projection_backend_errors_and_invalid_outputs_do_not_commit_cache_positions()
             compiler.forward(&[69]).unwrap()
         );
     }
+}
+
+#[test]
+fn nonfinite_activations_are_rejected_before_calling_the_projection_backend() {
+    let source = fixture(false);
+    let model = InferenceCompiler::open(&source.0).unwrap();
+    let mut cache = HashConsedKV::new(1, 1, 2, 4);
+    let mut down_called = false;
+    let result = model.forward_cached_with_projection(&[69], &mut cache, &mut |input, name| {
+        assert!(
+            input.iter().all(|x| x.is_finite()),
+            "backend input for {name}"
+        );
+        down_called |= name.ends_with("ffn_down.weight");
+        let &(_, rows) = model.tensor_dims().get(name).unwrap();
+        // Individually finite gate/up projections overflow in SwiGLU. A backend
+        // must never receive that nonfinite activation as its down-projection input.
+        let value = if name.ends_with("ffn_gate.weight") || name.ends_with("ffn_up.weight") {
+            f64::MAX
+        } else {
+            0.0
+        };
+        Ok(vec![value; rows])
+    });
+    assert_eq!(
+        result.unwrap_err(),
+        "invalid projection input for blk.0.ffn_down.weight"
+    );
+    assert!(!down_called);
+    assert_eq!(cache.current_pos(), 0);
+    assert_eq!(
+        model.forward_cached(&[69], &mut cache).unwrap(),
+        model.forward(&[69]).unwrap()
+    );
 }
 
 #[test]

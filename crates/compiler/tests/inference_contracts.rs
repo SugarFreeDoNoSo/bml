@@ -197,6 +197,44 @@ fn final_rmsnorm_uses_metadata_epsilon_and_weights_before_both_output_paths() {
 }
 
 #[test]
+fn zero_model_dimensions_and_context_are_rejected_independently() {
+    let source = embedding_fixture(2, 2, 0, &[0u8; 16]);
+    let original = std::fs::read(&source.0).unwrap();
+    for key in [
+        "llama.attention.head_count",
+        "llama.embedding_length",
+        "llama.context_length",
+    ] {
+        let mut bytes = original.clone();
+        let at = bytes
+            .windows(key.len())
+            .position(|w| w == key.as_bytes())
+            .unwrap()
+            + key.len();
+        assert_eq!(&bytes[at..at + 4], &4u32.to_le_bytes());
+        bytes[at + 4..at + 8].copy_from_slice(&0u32.to_le_bytes());
+        std::fs::write(&source.0, bytes).unwrap();
+        for mapped in [false, true] {
+            let result = if mapped {
+                InferenceCompiler::open_mapped(&source.0)
+            } else {
+                InferenceCompiler::open(&source.0)
+            };
+            assert_eq!(
+                result
+                    .err()
+                    .expect("zero metadata must fail model admission"),
+                "invalid model dimensions or context",
+                "{key}, mapped={mapped}"
+            );
+        }
+    }
+    std::fs::write(&source.0, original).unwrap();
+    assert!(InferenceCompiler::open(&source.0).is_ok());
+    assert!(InferenceCompiler::open_mapped(&source.0).is_ok());
+}
+
+#[test]
 fn invalid_final_norm_or_epsilon_is_rejected_before_execution() {
     let data = [0u8; 16];
     for epsilon in [0.0, -1.0, f32::NAN, f32::INFINITY] {

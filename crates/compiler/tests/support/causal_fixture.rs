@@ -21,6 +21,16 @@ fn array(kind: u32, values: Vec<Vec<u8>>) -> Vec<u8> {
     bytes
 }
 pub fn fixture(overflow_scores: bool) -> Fixture {
+    build(overflow_scores, false)
+}
+
+/// Two rotary pairs, with identity Q/K/V and nonzero entries in both pairs.
+#[allow(dead_code)] // The fixture module is shared by several integration targets.
+pub fn wide_rope_fixture() -> Fixture {
+    build(false, true)
+}
+
+fn build(overflow_scores: bool, wide_rope: bool) -> Fixture {
     let mut tokens = vec!["<unk>".into(), "<s>".into(), "</s>".into(), "▁".into()];
     tokens.extend((0..256).map(|b| format!("<0x{b:02X}>")));
     let vocab = tokens.len();
@@ -67,12 +77,12 @@ pub fn fixture(overflow_scores: bool) -> Fixture {
     ];
     for (name, value) in [
         ("llama.block_count", 1u32),
-        ("llama.attention.head_count", 2),
+        ("llama.attention.head_count", if wide_rope { 1 } else { 2 }),
         ("llama.attention.head_count_kv", 1),
         ("llama.embedding_length", 4),
         ("llama.feed_forward_length", 4),
         ("llama.context_length", 8),
-        ("llama.rope.dimension_count", 2),
+        ("llama.rope.dimension_count", if wide_rope { 4 } else { 2 }),
         ("llama.vocab_size", vocab as u32),
         ("tokenizer.ggml.bos_token_id", 1),
         ("tokenizer.ggml.eos_token_id", 2),
@@ -83,20 +93,32 @@ pub fn fixture(overflow_scores: bool) -> Fixture {
     let mut embedding = vec![0f32; 4 * vocab];
     embedding[69 * 4] = 2.0;
     embedding[70 * 4 + 1] = 2.0;
+    if wide_rope {
+        embedding[69 * 4 + 2] = 2.0;
+        embedding[70 * 4 + 3] = 2.0;
+    }
     let mut head = vec![0f32; 4 * vocab];
     for i in 0..4 {
         head[i * 4 + i] = 1.0;
     }
     let mut q = vec![0f32; 16];
-    let mut k = vec![0f32; 8];
+    let kv_width = if wide_rope { 4 } else { 2 };
+    let mut k = vec![0f32; 4 * kv_width];
     if overflow_scores {
         q[0] = f32::MAX;
         q[8] = f32::MAX;
         k[0] = f32::MAX;
     }
-    let mut v = vec![0f32; 8];
+    let mut v = vec![0f32; 4 * kv_width];
     v[0] = 1.0;
     v[5] = 1.0;
+    if wide_rope {
+        for i in 0..4 {
+            q[i * 4 + i] = 1.0;
+            k[i * 4 + i] = 1.0;
+            v[i * 4 + i] = 1.0;
+        }
+    }
     let mut identity = vec![0f32; 16];
     for i in 0..4 {
         identity[i * 4 + i] = 1.0;
@@ -108,8 +130,8 @@ pub fn fixture(overflow_scores: bool) -> Fixture {
         ("blk.0.attn_norm.weight", vec![4], vec![1.; 4]),
         ("blk.0.ffn_norm.weight", vec![4], vec![1.; 4]),
         ("blk.0.attn_q.weight", vec![4, 4], q),
-        ("blk.0.attn_k.weight", vec![4, 2], k),
-        ("blk.0.attn_v.weight", vec![4, 2], v),
+        ("blk.0.attn_k.weight", vec![4, kv_width as u64], k),
+        ("blk.0.attn_v.weight", vec![4, kv_width as u64], v),
         ("blk.0.attn_output.weight", vec![4, 4], identity),
         ("blk.0.ffn_gate.weight", vec![4, 4], vec![0.; 16]),
         ("blk.0.ffn_up.weight", vec![4, 4], vec![0.; 16]),

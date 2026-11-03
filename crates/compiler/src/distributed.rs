@@ -1,8 +1,8 @@
 //! Compilación distribuida: fragmenta un GGUF por capa del transformer.
 //!
-//! Cada fragmento `.bmlgraph` es **self-contained**: contiene bytecode RPN
-//! + los pesos f32 de esa capa. Un nodo puede cargar un solo fragmento y
-//! ejecutar su porción del transformer sin necesidad del GGUF original.
+//! Cada fragmento `.bmlgraph` contiene bytecode RPN y pesos f32. Su configuración
+//! se recupera del archivo `header.bmlgraph` del mismo directorio; ambos son
+//! necesarios para cargar un shard, sin necesidad del GGUF original.
 //!
 //! # Formato fragmento v2
 //!
@@ -15,6 +15,7 @@
 //!   [n_weights 8B][weights: N × 4B f32] ← pesos de esas capas
 //!   [n_tensors 4B]
 //!     [name_len 4B][name][offset 8B][n_rows 4B][n_cols 4B] × n_tensors
+//!   [n_kv_heads 4B][head_dim 4B]
 //! ```
 //!
 //! # Tamaño por fragmento
@@ -55,10 +56,10 @@ pub struct TensorMeta {
     pub n_cols: u32,
 }
 
-/// Un fragmento distribuido self-contained.
+/// Un fragmento distribuido con configuración restaurada.
 ///
-/// Contiene todo lo que un nodo necesita para ejecutar una porción
-/// del transformer: bytecode + pesos + metadata.
+/// En memoria contiene bytecode, pesos, metadata y configuración; en disco
+/// la configuración compartida se guarda en el header del directorio.
 #[derive(Debug)]
 pub struct DistributedFragment {
     /// ID del fragmento (0-indexed).
@@ -81,11 +82,11 @@ pub struct DistributedFragment {
     pub head_dim: u32,
 }
 
-/// Compila un GGUF a fragmentos distribuidos self-contained.
+/// Compila un GGUF a fragmentos distribuidos con pesos embebidos.
 ///
 /// Cada capa del transformer se convierte en un fragmento independiente
-/// con sus pesos embebidos. Un nodo puede cargar un solo fragmento y
-/// ejecutar su porción del transformer sin el GGUF original.
+/// con sus pesos embebidos. Un nodo carga el fragmento y su header compartido
+/// para recuperar la configuración sin el GGUF original.
 ///
 /// # Parámetros
 ///
@@ -276,7 +277,7 @@ fn compile_layer_range(
 ///
 /// Genera:
 /// - `header.bmlgraph`: magic, version, n_fragments, config
-/// - `fragment_N.bmlgraph`: self-contained (bytecode + pesos + tensors)
+/// - `fragment_N.bmlgraph`: bytecode + pesos + tensors; requiere el header hermano
 pub fn serialize_distributed(
     fragments: &[DistributedFragment],
     output_dir: &Path,
@@ -311,7 +312,7 @@ pub fn serialize_distributed(
     f.write_all(&config.vocab_size.to_le_bytes())
         .map_err(|e| format!("write vocab: {e}"))?;
 
-    // Fragmentos: cada uno self-contained
+    // Fragmentos: la configuración compartida está en el header.
     for frag in fragments {
         let frag_path = output_dir.join(format!("fragment_{}.bmlgraph", frag.fragment_id));
         let mut ff = std::fs::File::create(&frag_path)
@@ -375,93 +376,125 @@ pub fn serialize_distributed(
     Ok(())
 }
 
-/// Carga un fragmento distribuido desde un archivo.
+/// Maximum accepted sizes for the legacy distributed container. These bounds
+/// apply before allocations driven by encoded counts; they do not validate RPN
+/// execution semantics.
+const MAX_DISTRIBUTED_FRAGMENT_BYTES: usize = 512 * 1024 * 1024;
+const MAX_DISTRIBUTED_HEADER_BYTES: usize = 1024 * 1024;
+const MAX_DISTRIBUTED_OPS: usize = 1_000_000;
+const MAX_DISTRIBUTED_TENSORS: usize = 65_536;
+
+struct DistributedReader<'a> {
+    bytes: &'a [u8],
+}
+
+impl<'a> DistributedReader<'a> {
+    fn take(&mut self, count: usize) -> Result<&'a [u8], String> {
+        let (value, rest) = self
+            .bytes
+            .split_at_checked(count)
+            .ok_or("truncated distributed file")?;
+        self.bytes = rest;
+        Ok(value)
+    }
+    fn u32(&mut self) -> Result<u32, String> {
+        Ok(u32::from_le_bytes(self.take(4)?.try_into().unwrap()))
+    }
+    fn u64(&mut self) -> Result<u64, String> {
+        Ok(u64::from_le_bytes(self.take(8)?.try_into().unwrap()))
+    }
+    fn text(&mut self, count: usize) -> Result<String, String> {
+        String::from_utf8(self.take(count)?.to_vec())
+            .map_err(|_| "invalid distributed UTF-8".into())
+    }
+    fn prefix(&mut self) -> Result<(), String> {
+        if self.u32()? != BMLGRAPH_MAGIC {
+            return Err("invalid distributed magic".into());
+        }
+        if self.u32()? != BMLGRAPH_VERSION {
+            return Err("unsupported distributed version".into());
+        }
+        Ok(())
+    }
+    fn finish(self) -> Result<(), String> {
+        if self.bytes.is_empty() {
+            Ok(())
+        } else {
+            Err("trailing distributed bytes".into())
+        }
+    }
+}
+
+/// Load a legacy shard together with the configuration in its sibling header.
 ///
-/// El fragmento es self-contained: no necesita el GGUF ni el header.
+/// The fragment is bounded to 512 MiB, one million opcodes and 65,536 tensors;
+/// the header is bounded to 1 MiB. Counts, ranges, UTF-8 and complete consumption
+/// are checked before count-driven allocations. RPN execution needs its own
+/// semantic validation, and model execution must validate operation shapes.
 pub fn load_distributed_fragment(frag_path: &Path) -> Result<DistributedFragment, String> {
-    let bytes = std::fs::read(frag_path).map_err(|e| format!("leer fragmento: {e}"))?;
-    if bytes.len() < 20 {
-        return Err("fragmento demasiado pequeño".into());
+    let directory = frag_path.parent().unwrap_or_else(|| Path::new("."));
+    let (config, _) = load_distributed_header(directory)?;
+    let bytes = crate::causal_artifact::read_bounded(frag_path, MAX_DISTRIBUTED_FRAGMENT_BYTES)?;
+    let mut reader = DistributedReader { bytes: &bytes };
+    reader.prefix()?;
+    let fragment_id = reader.u32()?;
+    let layer_start = reader.u32()?;
+    let layer_end = reader.u32()?;
+    if layer_start > layer_end || layer_end > config.n_layers {
+        return Err("invalid distributed layer range".into());
     }
-
-    let mut offset = 0;
-
-    // Magic + version
-    let magic = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    if magic != BMLGRAPH_MAGIC {
-        return Err(format!("magic inválido: 0x{magic:08X}"));
+    let n_ops = reader.u32()? as usize;
+    if n_ops > MAX_DISTRIBUTED_OPS || n_ops > reader.bytes.len() {
+        return Err("distributed opcode count exceeds budget or available bytes".into());
     }
-    offset += 8;
-
-    // Fragment ID
-    let fragment_id = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-
-    // Layer range
-    let layer_start = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let layer_end = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-
-    // Bytecode RPN
-    let n_ops = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()) as usize;
-    offset += 4;
     let mut ops = Vec::with_capacity(n_ops);
     for _ in 0..n_ops {
-        let (op, consumed) = deserialize_op(&bytes[offset..])?;
+        let (op, consumed) = deserialize_op(reader.bytes)?;
+        reader.take(consumed)?;
         ops.push(op);
-        offset += consumed;
     }
-
-    // Pesos f32
-    let n_weights = u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap()) as usize;
-    offset += 8;
-    let mut weights = Vec::with_capacity(n_weights);
-    for _ in 0..n_weights {
-        let w = f32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-        offset += 4;
-        weights.push(w);
+    let n_weights =
+        usize::try_from(reader.u64()?).map_err(|_| "distributed weight count overflow")?;
+    let weight_bytes = n_weights
+        .checked_mul(4)
+        .ok_or("distributed weight byte overflow")?;
+    let raw_weights = reader.take(weight_bytes)?;
+    let weights: Vec<f32> = raw_weights
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|bytes| f32::from_le_bytes(*bytes))
+        .collect();
+    let n_tensors = reader.u32()? as usize;
+    // The final two u32 fields are not tensor metadata.
+    if n_tensors > MAX_DISTRIBUTED_TENSORS || n_tensors > reader.bytes.len().saturating_sub(8) / 20
+    {
+        return Err("distributed tensor count exceeds budget or available bytes".into());
     }
-
-    // Tensor metadata
-    let n_tensors = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()) as usize;
-    offset += 4;
     let mut tensors = Vec::with_capacity(n_tensors);
     for _ in 0..n_tensors {
-        let name_len = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()) as usize;
-        offset += 4;
-        let name = String::from_utf8_lossy(&bytes[offset..offset + name_len]).to_string();
-        offset += name_len;
-        let tensor_offset = u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap());
-        offset += 8;
-        let n_rows = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-        offset += 4;
-        let n_cols = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-        offset += 4;
+        let name_len = reader.u32()? as usize;
+        let name = reader.text(name_len)?;
+        let offset = reader.u64()?;
+        let n_rows = reader.u32()?;
+        let n_cols = reader.u32()?;
+        let end = u64::from(n_rows)
+            .checked_mul(u64::from(n_cols))
+            .and_then(|size| offset.checked_add(size))
+            .ok_or("distributed tensor range overflow")?;
+        if end > n_weights as u64 {
+            return Err("distributed tensor exceeds weight storage".into());
+        }
         tensors.push(TensorMeta {
             name,
-            offset: tensor_offset,
+            offset,
             n_rows,
             n_cols,
         });
     }
-
-    // Config del modelo
-    let n_kv_heads = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let head_dim = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-
-    // Cargar config desde el header (necesitamos el header para la config completa)
-    // Por ahora, usamos una config default que se completa al cargar el header.
-    let config = ModelConfig {
-        architecture: String::new(),
-        n_layers: 0,
-        n_heads: 0,
-        n_embd: 0,
-        context_length: 0,
-        vocab_size: 0,
-    };
-
+    let n_kv_heads = reader.u32()?;
+    let head_dim = reader.u32()?;
+    reader.finish()?;
     Ok(DistributedFragment {
         fragment_id,
         layer_start,
@@ -475,45 +508,31 @@ pub fn load_distributed_fragment(frag_path: &Path) -> Result<DistributedFragment
     })
 }
 
-/// Carga el header distribuido para obtener la config del modelo.
+/// Load the shared distributed configuration, checking the complete v2 header.
 pub fn load_distributed_header(dir: &Path) -> Result<(ModelConfig, usize), String> {
-    let header_path = dir.join("header.bmlgraph");
-    let bytes = std::fs::read(&header_path).map_err(|e| format!("leer header: {e}"))?;
-    if bytes.len() < 12 {
-        return Err("header demasiado pequeño".into());
+    let bytes = crate::causal_artifact::read_bounded(
+        &dir.join("header.bmlgraph"),
+        MAX_DISTRIBUTED_HEADER_BYTES,
+    )?;
+    let mut reader = DistributedReader { bytes: &bytes };
+    reader.prefix()?;
+    let n_fragments = reader.u32()? as usize;
+    if n_fragments == 0 || n_fragments > MAX_DISTRIBUTED_TENSORS {
+        return Err("invalid distributed fragment count".into());
     }
-    let magic = u32::from_le_bytes(bytes[0..4].try_into().unwrap());
-    if magic != BMLGRAPH_MAGIC {
-        return Err(format!("magic inválido: 0x{magic:08X}"));
-    }
-    let n_fragments = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
-
-    let mut offset = 12;
-    let arch_len = u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap()) as usize;
-    offset += 8;
-    let architecture = String::from_utf8_lossy(&bytes[offset..offset + arch_len]).to_string();
-    offset += arch_len;
-    let n_layers = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let n_heads = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let n_embd = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let context_length = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let vocab_size = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-
-    Ok((
-        ModelConfig {
-            architecture,
-            n_layers,
-            n_heads,
-            n_embd,
-            context_length,
-            vocab_size,
-        },
-        n_fragments,
-    ))
+    let arch_len =
+        usize::try_from(reader.u64()?).map_err(|_| "distributed architecture length overflow")?;
+    let architecture = reader.text(arch_len)?;
+    let config = ModelConfig {
+        architecture,
+        n_layers: reader.u32()?,
+        n_heads: reader.u32()?,
+        n_embd: reader.u32()?,
+        context_length: reader.u32()?,
+        vocab_size: reader.u32()?,
+    };
+    reader.finish()?;
+    Ok((config, n_fragments))
 }
 
 /// Serializa una operación RPN a bytes.
@@ -568,6 +587,15 @@ fn deserialize_op(bytes: &[u8]) -> Result<(RpnOp, usize), String> {
         return Err("bytes insuficientes para op".into());
     }
     let tag = bytes[0];
+    let width = match tag {
+        0 | 1 | 2 | 6 | 9 | 10 | 12 | 13 => 1,
+        3 => 9,
+        4 | 5 | 7 | 8 | 11 => 5,
+        _ => return Err(format!("tag desconocido: {tag}")),
+    };
+    if bytes.len() < width {
+        return Err("truncated distributed opcode".into());
+    }
     let (op, consumed) = match tag {
         0 => (RpnOp::One, 1),
         6 => (RpnOp::Zero, 1),
@@ -611,6 +639,45 @@ fn deserialize_op(bytes: &[u8]) -> Result<(RpnOp, usize), String> {
 mod tests {
     use super::*;
     use crate::hardware::HardwareSpec;
+
+    #[test]
+    fn opcode_decoder_accepts_exact_width_and_rejects_each_truncated_prefix() {
+        let cases = [
+            (vec![0], RpnOp::One),
+            (vec![1], RpnOp::Bml),
+            (vec![2], RpnOp::Dup),
+            (
+                vec![3, 2, 0, 0, 0, 1, 0, 0, 0],
+                RpnOp::Loop {
+                    count: 2,
+                    body_len: 1,
+                },
+            ),
+            (vec![4, 7, 0, 0, 0], RpnOp::Var(7)),
+            (vec![5, 7, 0, 0, 0], RpnOp::Const(7)),
+            (vec![6], RpnOp::Zero),
+            (vec![7, 7, 0, 0, 0], RpnOp::VarIndexed { base: 7 }),
+            (vec![8, 7, 0, 0, 0], RpnOp::StoreResult { slot: 7 }),
+            (vec![9], RpnOp::FAdd),
+            (vec![10], RpnOp::FMul),
+            (vec![11, 7, 0, 0, 0], RpnOp::Pick { depth: 7 }),
+            (vec![12], RpnOp::Drop),
+            (vec![13], RpnOp::Swap),
+        ];
+        for (bytes, expected) in cases {
+            assert_eq!(deserialize_op(&bytes).unwrap(), (expected, bytes.len()));
+            for cut in 0..bytes.len() {
+                assert!(
+                    deserialize_op(&bytes[..cut]).is_err(),
+                    "tag={} cut={cut}",
+                    bytes[0]
+                );
+            }
+            let mut following = bytes.clone();
+            following.push(255);
+            assert_eq!(deserialize_op(&following).unwrap(), (expected, bytes.len()));
+        }
+    }
 
     #[test]
     #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
