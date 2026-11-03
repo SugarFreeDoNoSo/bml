@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "scope": "Second independently testable prerequisite: Q6_K codec and bounded row decoding",
+  "tested_staged_tree_before_this_evidence_file": "91b01827687a6be1f43309239f9c47bda04bb537",
+  "isolation": "git archive of the selected index tree, including committed exact-number foundation but excluding unstaged compiler/runtime/inference work",
+  "review": [
+    "Q6_K geometry is 256 elements/210 bytes; each GGML row requires complete superblocks.",
+    "Decoder preserves signed scales, bit planes and GGML multiplication order; tests compare 2048 outputs bit-for-bit with pinned reference fixture.",
+    "Row decoding checks dimensions and indices before slicing and keeps outer axes in GGML order.",
+    "Fixture binaries, provenance and reference-generator sources are selected together."
+  ],
+  "verification": [
+    {"command": "cargo test -p bml-gguf --no-default-features --locked", "exit_code": 0, "passed": 50, "log": "target/quality/delivery-gguf-minimal.log", "sha256": "7b8ea72eb4efa778ac4cd14f73f0c5b160eec2da42aa80229ba8309ea0739183"},
+    {"command": "cargo test -p bml-gguf --all-features --locked", "exit_code": 0, "passed": 57, "log": "target/quality/delivery-gguf-all.log", "sha256": "47308b59ba1caff3fdeda4f61e2d65ff5d6147989cad5d0e431936d4b381487e"}
+  ],
+  "working_directory": "target/delivery-snapshots/gguf-codecs",
+  "limitations": "Does not certify the other uncommitted integration changes or close unrelated specs."
+}

@@ -425,7 +425,7 @@ impl GgufReader {
     /// Borrow the named tensor's descriptor and exact encoded byte range.
     ///
     /// No data or metadata is copied. The returned view cannot outlive this
-    /// reader. Scalar layouts, Q4_0 and Q8_0 are supported for byte inspection;
+    /// reader. Scalar layouts, Q4_0, Q8_0 and Q6_K are supported for byte inspection;
     /// quantizers with unknown byte layouts return `UnsupportedDataType`.
     /// Decoding into f32 remains a separate explicit operation.
     pub fn tensor_view(&self, name: &str) -> Result<GgufTensorView<'_>, GgufError> {
@@ -471,7 +471,7 @@ impl GgufReader {
     /// Retorna un slice zero-copy a los datos de un tensor.
     ///
     /// El slice referencia directamente el mmap, sin copias.
-    /// Soporta tipos escalares, Q4_0 y Q8_0; otros cuantizadores retornan None.
+    /// Soporta tipos escalares, Q4_0, Q8_0 y Q6_K; otros cuantizadores retornan None.
     /// Los bloques cuantizados deben estar completos en cada fila.
     pub fn tensor_data(&self, info: &GgufTensorInfo) -> Option<&[u8]> {
         let data_start = self
@@ -483,7 +483,11 @@ impl GgufReader {
 }
 
 fn supported_layout(dtype: GgufDataType) -> bool {
-    dtype.element_size() > 0 || matches!(dtype, GgufDataType::Q4_0 | GgufDataType::Q8_0)
+    dtype.element_size() > 0
+        || matches!(
+            dtype,
+            GgufDataType::Q4_0 | GgufDataType::Q8_0 | GgufDataType::Q6_K
+        )
 }
 
 fn encoded_tensor_len(info: &GgufTensorInfo) -> Option<usize> {
@@ -495,6 +499,12 @@ fn encoded_tensor_len(info: &GgufTensorInfo) -> Option<usize> {
         .iter()
         .try_fold(1usize, |acc, &d| acc.checked_mul(usize::try_from(d).ok()?))?;
     match info.data_type {
+        GgufDataType::Q6_K => {
+            if !info.dims[0].is_multiple_of(256) {
+                return None;
+            }
+            (elements / 256).checked_mul(210)
+        }
         GgufDataType::Q4_0 | GgufDataType::Q8_0 => {
             if !info.dims[0].is_multiple_of(32) {
                 return None;

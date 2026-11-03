@@ -1,6 +1,99 @@
 use bml_gguf::{codecs::decode_f32, GgufDataType, GgufError};
 
 #[test]
+fn q6_matches_pinned_ggml_reference_bit_for_bit() {
+    let encoded = include_bytes!("fixtures/q6-ggml.bin");
+    let reference = include_bytes!("fixtures/q6-ggml.f32le");
+    let actual = decode_f32(GgufDataType::Q6_K, encoded, 2048).unwrap();
+    assert_eq!(actual.len() * 4, reference.len());
+    for (index, (&value, expected)) in actual.iter().zip(reference.as_chunks::<4>().0).enumerate() {
+        assert_eq!(
+            value.to_bits(),
+            u32::from_le_bytes(*expected),
+            "element {index}"
+        );
+    }
+}
+
+#[test]
+fn q6_superblocks_preserve_all_bit_planes_signed_scales_and_order() {
+    let mut encoded = Vec::new();
+    let mut expected = Vec::new();
+    // Pack from logical values, independently of the decoder's index traversal.
+    for (seed, half_scale, scale) in [(0, 0x3800u16, 0.5f32), (19, 0xc000, -2.0)] {
+        let mut block = [0u8; 210];
+        let scales: [i8; 16] = [
+            -128, -127, -17, -1, 0, 1, 17, 127, 3, -3, 8, -8, 31, -31, 2, -2,
+        ];
+        let quants: Vec<u8> = (0..256).map(|i| ((i * 13 + seed) % 64) as u8).collect();
+        for half in 0..2 {
+            for lane in 0..32 {
+                let a = quants[half * 128 + lane];
+                let b = quants[half * 128 + 32 + lane];
+                let c = quants[half * 128 + 64 + lane];
+                let d = quants[half * 128 + 96 + lane];
+                block[half * 64 + lane] = a % 16 + (c % 16) * 16;
+                block[half * 64 + 32 + lane] = b % 16 + (d % 16) * 16;
+                block[128 + half * 32 + lane] =
+                    a / 16 + (b / 16) * 4 + (c / 16) * 16 + (d / 16) * 64;
+            }
+        }
+        for (i, subscale) in scales.iter().enumerate() {
+            block[192 + i] = *subscale as u8;
+        }
+        block[208..].copy_from_slice(&half_scale.to_le_bytes());
+        encoded.extend(block);
+        expected.extend(
+            quants
+                .iter()
+                .enumerate()
+                .map(|(i, &q)| (scale * f32::from(scales[i / 16])) * f32::from(i16::from(q) - 32)),
+        );
+    }
+    let actual = decode_f32(GgufDataType::Q6_K, &encoded, 512).unwrap();
+    assert_eq!(
+        actual.iter().map(|x| x.to_bits()).collect::<Vec<_>>(),
+        expected.iter().map(|x| x.to_bits()).collect::<Vec<_>>()
+    );
+    for elements in [1, 32, 128, 255, 257, 511, usize::MAX] {
+        assert!(matches!(
+            decode_f32(GgufDataType::Q6_K, &[], elements),
+            Err(GgufError::InvalidBlockElements {
+                block_elements: 256,
+                ..
+            })
+        ));
+    }
+}
+
+#[test]
+fn q6_non_finite_and_signed_zero_scales_follow_ggml_multiplication_order() {
+    for bits in [0u16, 0x8000, 1, 0x7c00, 0xfc00, 0x7e01] {
+        let mut block = [0u8; 210]; // quant -32, signed subscale -1
+        block[192..208].fill(255);
+        block[208..].copy_from_slice(&bits.to_le_bytes());
+        let scale = decode_f32(GgufDataType::F16, &bits.to_le_bytes(), 1).unwrap()[0];
+        let expected = (-scale) * -32.0;
+        for actual in decode_f32(GgufDataType::Q6_K, &block, 256).unwrap() {
+            if expected.is_nan() {
+                assert!(actual.is_nan());
+            } else {
+                assert_eq!(actual.to_bits(), expected.to_bits());
+            }
+        }
+        block[192..208].fill(0);
+        let expected = (scale * 0.0) * -32.0;
+        for actual in decode_f32(GgufDataType::Q6_K, &block, 256).unwrap() {
+            if expected.is_nan() {
+                assert!(actual.is_nan());
+            } else {
+                assert_eq!(actual.to_bits(), expected.to_bits());
+            }
+        }
+    }
+}
+
+#[test]
 fn f32_fixture_preserves_bits_including_non_finite_and_signed_zero() {
     let bytes = [
         0x00, 0x00, 0x00, 0x00, // +0
@@ -130,6 +223,7 @@ fn supported_types_accept_empty_buffers_only_for_zero_elements() {
         GgufDataType::F16,
         GgufDataType::Q4_0,
         GgufDataType::Q8_0,
+        GgufDataType::Q6_K,
     ] {
         assert!(decode_f32(data_type, &[], 0).unwrap().is_empty());
         assert!(matches!(
@@ -149,6 +243,7 @@ fn every_truncation_and_extra_byte_is_rejected_for_all_codecs() {
         (GgufDataType::F16, 2, 4),
         (GgufDataType::Q4_0, 64, 36),
         (GgufDataType::Q8_0, 64, 68),
+        (GgufDataType::Q6_K, 512, 420),
     ] {
         for actual in (0..expected).chain([expected + 1, expected * 2]) {
             assert!(

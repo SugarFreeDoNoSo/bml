@@ -4,8 +4,8 @@ use crate::{GgufDataType, GgufError};
 
 /// Decode exactly `elements` stored values into a new `f32` buffer.
 ///
-/// Supports F32, F16, Q4_0 and Q8_0. Quantized data must contain complete
-/// 32-element blocks; Q4_0 stores the low 16 nibbles before the high 16.
+/// Supports F32, F16, Q4_0, Q8_0 and Q6_K. Quantized data must contain complete
+/// blocks (256 elements for Q6_K, 32 otherwise). Q4_0 stores low nibbles first.
 /// The input must have exactly the expected length: neither trailing bytes
 /// nor truncated blocks are accepted. Empty input with zero elements is valid.
 ///
@@ -29,6 +29,7 @@ pub fn decode_f32(
         GgufDataType::F16 => (1, 2),
         GgufDataType::Q4_0 => (32, 18),
         GgufDataType::Q8_0 => (32, 34),
+        GgufDataType::Q6_K => (256, 210),
         _ => return Err(GgufError::UnsupportedDataType(data_type)),
     };
     if !elements.is_multiple_of(block_elements) {
@@ -85,6 +86,23 @@ pub fn decode_f32(
             for block in data.as_chunks::<34>().0 {
                 let scale = f16_to_f32(u16::from_le_bytes([block[0], block[1]]));
                 values.extend(block[2..].iter().map(|&q| q as i8 as f32 * scale));
+            }
+        }
+        GgufDataType::Q6_K => {
+            for block in data.as_chunks::<210>().0 {
+                let scale = f16_to_f32(u16::from_le_bytes([block[208], block[209]]));
+                for index in 0..256 {
+                    let half = index / 128;
+                    let quarter = (index % 128) / 32;
+                    let lane = index % 32;
+                    let low =
+                        (block[half * 64 + (quarter % 2) * 32 + lane] >> (4 * (quarter / 2))) & 15;
+                    let high = (block[128 + half * 32 + lane] >> (2 * quarter)) & 3;
+                    let quant = i32::from(low + 16 * high) - 32;
+                    let subscale = block[192 + index / 16] as i8;
+                    // Keep GGML's multiplication order, including IEEE signed zero.
+                    values.push((scale * f32::from(subscale)) * quant as f32);
+                }
             }
         }
         _ => unreachable!("the data type was validated before allocation"),

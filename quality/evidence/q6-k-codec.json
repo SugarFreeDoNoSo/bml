@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T15:31:30.165002+00:00",
+  "scope": "Q6_K 256-element/210-byte GGML blocks, reader, row-bounded Llama CPU projection and normalized export/reload",
+  "source_sha256": {
+    "crates/gguf/src/codecs.rs": "4459923eaf0677c16f4a356e93bfa8366acc7a734f045953daec1705620469db",
+    "crates/gguf/src/gguf.rs": "a19cf21a2cb6ea30123eb32b89dc066190488c63cbd5bad2fb00cdee45536c5d",
+    "crates/gguf/tests/codecs.rs": "3ec804c877bcb9b23002f23bc20552a1c8819290bc38503894ab4f69f32960b1",
+    "crates/gguf/tests/tensor_views.rs": "0fb01f594670510fc726f45b9c31ca7839217afad88b0940b9c780082bc4b484",
+    "crates/inference/src/model.rs": "e1b16678b1d4a5cbb6bd972bcd369d49a45e4a1873cc0f59830af4f164c9fae5",
+    "crates/inference/src/resources.rs": "ce155d7aed7c0eaf34b83a31df080f6b56cc2639a16fdb28d3e59ec538cb1d27",
+    "crates/inference/tests/model_contracts.rs": "da14caa3388afbb613cc29152cb40c6d54f50316a08a157a87336083ce47b7fb",
+    "crates/inference/tests/resource_contracts.rs": "e905587bfe53082b526c1c7fed3da9482280f2e6d8e0ba0858f4bbbccece94f2",
+    "tools/generate_q6_fixture.py": "ae8c4a62930c0e105ce3f9d951f4cf9da5a3dabc0cce94356046b4d3ab1308d2",
+    "tools/q6_reference.c": "93acf6cfe9493a5fcec91b848fc084b17e1dcdaa3ab41277d6b222b6a98ddb23"
+  },
+  "independent_oracle": {
+    "schema": 1,
+    "oracle": "ggml dequantize_row_q6_K",
+    "llama_cpp_revision": "785322d17f2d51e5185cf996a1f4e46d87640841",
+    "source": "https://github.com/ggml-org/llama.cpp/blob/785322d17f2d51e5185cf996a1f4e46d87640841/ggml/src/ggml-quants.c",
+    "regenerate": "python3 tools/generate_q6_fixture.py",
+    "blocks": 8,
+    "elements": 2048,
+    "encoding": "Q6_K input; IEEE binary32 little-endian output",
+    "sha256": {
+      "q6-ggml.bin": "1066588372c736fd21cbaab620edc1b8a4615dd1d8ed85ada7d9a71b2a91cbe2",
+      "q6-ggml.f32le": "78d7a507df5ea7d543f024475898284185d3d02389642c4ac294ccaef057e9ec"
+    },
+    "oracle_source_sha256": "bcda33625707fdfcb1367cdd2bb1a2f017430162ec9623abc84ad17459698f73"
+  },
+  "checks": [
+    {
+      "command": "cargo test -p bml-gguf --no-default-features --locked",
+      "status": "passed",
+      "log": "target/quality/spec-q6-feature-free.log",
+      "log_sha256": "e8fade414fd64029966023f6c0ce28cfd3190183d3715f973c643f253b960912"
+    },
+    {
+      "command": "cargo test -p bml-gguf --all-features --locked",
+      "status": "passed",
+      "log": "target/quality/spec-q6-all-features.log",
+      "log_sha256": "567050846058e3e0e2ec59df7c19f09a6c740c0cf9b0a28d9ec72f6832e40f27"
+    },
+    {
+      "command": "cargo test -p bml-inference --test model_contracts --locked q6_output",
+      "status": "passed",
+      "log": "target/quality/spec-q6-model.log",
+      "log_sha256": "abef4af6d749d7fd6711c0c74b0a18f282b9fa9afb78fc7d43caf00a22043f85"
+    },
+    {
+      "command": "cargo test -p bml-inference --test resource_contracts --locked",
+      "status": "passed",
+      "log": "target/quality/spec-q6-resources.log",
+      "log_sha256": "9d8bc5d2c4daba40fe0016fb476ab6af3ce52cd00cf50fdb1efce3b3a64256b7"
+    },
+    {
+      "command": "./scripts/check.sh origin/master",
+      "status": "passed",
+      "log": "target/quality/spec-q6-gate.log",
+      "log_sha256": "3c4877d665743de7d881182dc7512a5db61171ce571eeb0995df0ac7608104e5"
+    },
+    {
+      "command": "openspec validate bml-1-0-release",
+      "status": "passed",
+      "log": "target/quality/spec-q6-openspec.log",
+      "log_sha256": "1a1e5a33ab762c42ee5def6eab247780af15796a9cc93a41cc8e44097d3a6776"
+    }
+  ],
+  "limitations": [
+    "Codec parity is not end-to-end quantized inference parity.",
+    "No claim of TinyLlama token parity; separate diagnostic records divergence.",
+    "No ARM execution or performance claim."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "oracle": "ggml dequantize_row_q6_K",
+  "llama_cpp_revision": "785322d17f2d51e5185cf996a1f4e46d87640841",
+  "source": "https://github.com/ggml-org/llama.cpp/blob/785322d17f2d51e5185cf996a1f4e46d87640841/ggml/src/ggml-quants.c",
+  "regenerate": "python3 tools/generate_q6_fixture.py",
+  "blocks": 8,
+  "elements": 2048,
+  "encoding": "Q6_K input; IEEE binary32 little-endian output",
+  "sha256": {
+    "q6-ggml.bin": "1066588372c736fd21cbaab620edc1b8a4615dd1d8ed85ada7d9a71b2a91cbe2",
+    "q6-ggml.f32le": "78d7a507df5ea7d543f024475898284185d3d02389642c4ac294ccaef057e9ec"
+  },
+  "oracle_source_sha256": "bcda33625707fdfcb1367cdd2bb1a2f017430162ec9623abc84ad17459698f73"
+}

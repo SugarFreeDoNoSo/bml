@@ -61,6 +61,45 @@ fn f32_bytes(values: &[f32]) -> Vec<u8> {
 }
 
 #[test]
+fn q6_views_require_complete_rows_and_keep_distinct_superblocks() {
+    let mut bytes = Vec::new();
+    for (scale, subscale) in [(0x3800u16, 1u8), (0xc000, 255)] {
+        let mut block = [0; 210];
+        block[192..208].fill(subscale);
+        block[208..].copy_from_slice(&scale.to_le_bytes());
+        bytes.extend(block);
+    }
+    let fixture = Fixture::new(&[StoredTensor {
+        name: "q6",
+        dims: &[256, 2],
+        dtype: 14,
+        bytes: bytes.clone(),
+    }]);
+    let reader = fixture.open();
+    let view = reader.tensor_view("q6").unwrap();
+    assert_eq!(view.bytes(), bytes);
+    let decoded = view.decode_f32().unwrap();
+    assert_eq!(&decoded[..256], &[-16.; 256]);
+    assert_eq!(&decoded[256..], &[-64.; 256]);
+    #[cfg(feature = "tensor")]
+    {
+        let tensor = view.to_tensor_f32().unwrap();
+        assert_eq!(tensor.shape().dims(), [2, 256]);
+        assert_eq!(tensor.as_slice(), decoded);
+    }
+    let invalid = Fixture::new(&[StoredTensor {
+        name: "q6",
+        dims: &[128, 4],
+        dtype: 14,
+        bytes,
+    }]);
+    assert!(matches!(
+        GgufReader::open(&invalid.0),
+        Err(GgufError::InvalidTensorRange { .. })
+    ));
+}
+
+#[test]
 fn views_borrow_the_readers_actual_metadata_and_exact_distinct_ranges() {
     let fixture = Fixture::new(&[
         StoredTensor {
@@ -339,5 +378,84 @@ mod tensor {
                 actual: 2
             })
         );
+    }
+}
+
+#[test]
+fn row_decode_flattens_outer_axes_and_checks_indices_before_slicing() {
+    let fixture = Fixture::new(&[StoredTensor {
+        name: "rows",
+        dims: &[3, 2, 2],
+        dtype: 0,
+        bytes: f32_bytes(&[1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.]),
+    }]);
+    let reader = fixture.open();
+    let view = reader.tensor_view("rows").unwrap();
+    for row in 0..4 {
+        assert_eq!(
+            view.decode_row_f32(row).unwrap(),
+            [
+                (3 * row + 1) as f32,
+                (3 * row + 2) as f32,
+                (3 * row + 3) as f32
+            ]
+        );
+    }
+    for row in [4, usize::MAX] {
+        assert!(view.decode_row_f32(row).is_err());
+    }
+}
+
+#[test]
+fn quantized_row_decode_preserves_distinct_scales_without_expanding_neighbors() {
+    for (dtype, columns, blocks, expected) in [
+        (
+            2,
+            32,
+            vec![
+                [vec![0, 60], vec![0x99; 16]].concat(),
+                [vec![0, 56], vec![0x44; 16]].concat(),
+            ],
+            vec![1.0, -2.0],
+        ),
+        (
+            8,
+            32,
+            vec![
+                [vec![0, 60], vec![3; 32]].concat(),
+                [vec![0, 56], vec![254; 32]].concat(),
+            ],
+            vec![3.0, -1.0],
+        ),
+        (
+            14,
+            256,
+            [1u8, 255]
+                .into_iter()
+                .map(|scale| {
+                    let mut b = vec![0; 210];
+                    b[192..208].fill(scale);
+                    b[208..].copy_from_slice(&0x3800u16.to_le_bytes());
+                    b
+                })
+                .collect(),
+            vec![-16.0, 16.0],
+        ),
+    ] {
+        let fixture = Fixture::new(&[StoredTensor {
+            name: "q",
+            dims: &[columns, 2],
+            dtype,
+            bytes: blocks.concat(),
+        }]);
+        let reader = fixture.open();
+        let view = reader.tensor_view("q").unwrap();
+        for (row, value) in expected.into_iter().enumerate() {
+            assert_eq!(
+                view.decode_row_f32(row).unwrap(),
+                vec![value; columns as usize]
+            );
+        }
+        assert!(view.decode_row_f32(2).is_err());
     }
 }

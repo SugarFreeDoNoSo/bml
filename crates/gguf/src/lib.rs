@@ -1,4 +1,4 @@
-//! Standalone GGUF reader and F32/F16/Q4_0/Q8_0 codecs.
+//! Standalone GGUF reader and F32/F16/Q4_0/Q8_0/Q6_K codecs.
 //!
 //! The reader owns a read-only mmap; borrowed bytes cannot outlive it. The file
 //! must remain unchanged and untruncated while mapped. Mapping avoids a full

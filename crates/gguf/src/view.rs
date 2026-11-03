@@ -54,7 +54,7 @@ impl<'a> GgufTensorView<'a> {
 
     /// Allocate and decode to f32 while preserving the GGML flat element order.
     ///
-    /// Supports F32, F16, Q4_0 and Q8_0; other stored types produce
+    /// Supports F32, F16, Q4_0, Q8_0 and Q6_K; other stored types produce
     /// [`GgufError::UnsupportedDataType`]. This does not attach a row-major shape.
     pub fn decode_f32(&self) -> Result<Vec<f32>, GgufError> {
         let elements = self.info.dims.iter().try_fold(1usize, |n, &dimension| {
@@ -62,6 +62,27 @@ impl<'a> GgufTensorView<'a> {
                 .ok_or(GgufError::SizeOverflow)
         })?;
         crate::decode_f32(self.dtype(), self.data, elements)
+    }
+
+    /// Decode one axis-zero-contiguous row without expanding the whole tensor.
+    /// Outer axes are flattened in GGML order. The reader has already validated
+    /// row/block alignment; the row index is checked before slicing encoded bytes.
+    pub fn decode_row_f32(&self, row: usize) -> Result<Vec<f32>, GgufError> {
+        let invalid = || GgufError::InvalidTensorRange {
+            name: self.name().into(),
+        };
+        let (&columns, outer) = self.info.dims.split_first().ok_or_else(invalid)?;
+        let columns = usize::try_from(columns).map_err(|_| GgufError::SizeOverflow)?;
+        let rows = outer.iter().try_fold(1usize, |n, &dimension| {
+            n.checked_mul(usize::try_from(dimension).map_err(|_| GgufError::SizeOverflow)?)
+                .ok_or(GgufError::SizeOverflow)
+        })?;
+        if columns == 0 || row >= rows || !self.data.len().is_multiple_of(rows) {
+            return Err(invalid());
+        }
+        let stride = self.data.len() / rows;
+        let start = row.checked_mul(stride).ok_or(GgufError::SizeOverflow)?;
+        crate::decode_f32(self.dtype(), &self.data[start..start + stride], columns)
     }
 
     /// Convert GGML axis order to a row-major shape by reversing dimensions.
