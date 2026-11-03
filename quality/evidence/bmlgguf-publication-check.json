@@ -1,0 +1,29 @@
+{
+  "scope": "Publication check for committed BMLGGUF CLI before pushing master",
+  "source_commit": "189bb8ad63753dbddf8a86b97b2c7682f839d00f",
+  "source_tree": "d9bb4d01f235a8acdf54aa1337cc3eaea88bf33e",
+  "source_selection": "git archive of the committed tree; excludes uncommitted development files",
+  "command": "cargo test -p bml-cli --test prepared_token_output --locked",
+  "toolchain": "1.98.1",
+  "environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "2",
+    "target_directory": "Dedicated fresh build directory",
+    "temporary_directory": "Dedicated directory outside the full /tmp filesystem"
+  },
+  "exit_code": 0,
+  "tests_passed": 3,
+  "log": "target/quality/publish-bmlgguf-tests.log",
+  "log_sha256": "a049bea2311ebe3eb34496d052c45365dabf50ea25eadd78e933b2965ce0e685",
+  "verification": [
+    "Conversion and generation after deleting source GGUF",
+    "Explicit evaluation policy and materialization limits",
+    "Argument errors and container integrity"
+  ],
+  "limitations": [
+    "Focused CLI verification, not a new full-workspace quality campaign",
+    "Small synthetic fixture, not successful large real-model inference",
+    "This check records the code tree; the publication commit adds only instructions and this evidence"
+  ]
+}
