@@ -31,6 +31,36 @@ embeddings compartidos.
 
 ## Regresiones pequeñas y reproducibles
 
+El perfil optativo `llama-symbolic-bml-bounded-rms-f64-f32kv-v3` reemplaza
+exclusivamente la expansión RMSNorm y comprueba cada operación BML de esa
+normalización bajo el contrato de reales finitos. Conserva las identidades de
+las demás operaciones y la carga de artefactos v1/v2. Se selecciona con ambos
+límites explícitos al compilar:
+
+```sh
+cargo run -p bml-cli --locked -- compile --model fixture.gguf --output fixture-symbolic \
+  --symbolic --context-size 2 --rms-input-bound 16 --rms-weight-bound 16
+cargo test -p bml-domain --test bounded_transformer_contracts --locked
+cargo test -p bml-runtime --test checked_symbolic_execution --locked
+cargo test -p bml-compiler --test bounded_rms_artifact_contracts --locked
+```
+
+Los presupuestos de compilación y ejecución siguen vigentes; el comando de
+compilación anterior es para fixtures que caben en los límites por defecto.
+La comprobación optativa con un GGUF local usa presupuestos ampliados explícitos:
+
+```sh
+cargo run -p bml-compiler --example bounded_rms_diagnostic --locked -- /ruta/stories15M.gguf
+```
+
+El diagnóstico Rust del 3 de noviembre de 2026 ejecutó los 288 elementos del
+primer RMS de Stories15M, con todos los intermedios reales finitos, igualdad
+bit a bit entre DAG y RPN persistido y error absoluto máximo `4.144e-11` frente
+al cálculo nativo independiente. El caso cero produce un residuo aproximado de
+`-3.912e-10`; no hay equivalencia exacta con IEEE ni tolerancia universal probada.
+La ejecución del primer token aún falla en RoPE, cuya expansión no cambia en
+v3. Esta evidencia acredita el RMS concreto, no inferencia simbólica completa.
+
 ```sh
 cargo test -p bml-compiler --test inference_contracts --locked
 cargo test -p bml-compiler --lib --locked inference_projection_respects_gguf_contiguous_input_axis

@@ -6,6 +6,28 @@ use crate::{
 use bml_domain::{BMLTransformer, NodeId, NodeKind, NodeSoA};
 use serde::{Deserialize, Serialize};
 
+/// Explicit operand bounds for the experimental bounded RMS arithmetic.
+/// Other operation families retain their existing numerical identities.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RmsBounds {
+    /// Maximum absolute activation supplied to each normalization.
+    pub input: f64,
+    /// Maximum absolute learned normalization weight.
+    pub weight: f64,
+}
+impl RmsBounds {
+    /// Validate the bounds and dimension-dependent arithmetic constants.
+    pub fn config(
+        self,
+        width: usize,
+        epsilon: f64,
+    ) -> Result<bml_domain::transformer::BoundedRmsConfig, String> {
+        bml_domain::transformer::BoundedRmsConfig::new(width, epsilon, self.input, self.weight)
+            .map_err(|e| e.to_string())
+    }
+}
+
 /// Arithmetic operation families used by the symbolic causal execution profile.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -66,6 +88,22 @@ impl Operation {
         })
     }
 
+    /// Context declaration for the explicitly selected RMS arithmetic.
+    pub fn signature_with_rms_bounds(
+        self,
+        width: usize,
+        epsilon: f64,
+        bounds: Option<RmsBounds>,
+    ) -> Result<KernelSignature, String> {
+        let mut signature = self.signature(width, epsilon)?;
+        if self == Self::Norm {
+            if let Some(bounds) = bounds {
+                signature.fixed = bounds.config(width, epsilon)?.fixed_literals();
+            }
+        }
+        Ok(signature)
+    }
+
     /// Canonical bindings for an explicit persisted output representation.
     /// Buffer output adds exact integer offsets after the operation literals;
     /// external weights follow that complete fixed prefix. This materializes
@@ -77,7 +115,18 @@ impl Operation {
         epsilon: f64,
         layout: OutputLayout,
     ) -> Result<KernelSignature, String> {
-        let mut signature = self.signature(width, epsilon)?;
+        self.signature_for_layout_with_rms_bounds(width, epsilon, layout, None)
+    }
+
+    /// Output binding including the canonical bounded RMS literal prefix.
+    pub fn signature_for_layout_with_rms_bounds(
+        self,
+        width: usize,
+        epsilon: f64,
+        layout: OutputLayout,
+        bounds: Option<RmsBounds>,
+    ) -> Result<KernelSignature, String> {
+        let mut signature = self.signature_with_rms_bounds(width, epsilon, bounds)?;
         if layout == OutputLayout::Buffer {
             if OutputLayout::for_operation(self) != OutputLayout::Buffer {
                 return Err("buffer output is unsupported for this symbolic operation".into());
@@ -206,7 +255,20 @@ pub fn compile_operation_with_layout(
     layout: OutputLayout,
     limits: KernelLimits,
 ) -> Result<CompiledKernel, String> {
-    let base_signature = op.signature(width, epsilon)?;
+    compile_operation_with_rms_bounds(op, width, epsilon, layout, None, limits)
+}
+
+/// Compile an explicit arithmetic selection without changing legacy programs.
+/// Bounds affect RMSNorm only; all other families retain their existing DAGs.
+pub fn compile_operation_with_rms_bounds(
+    op: Operation,
+    width: usize,
+    epsilon: f64,
+    layout: OutputLayout,
+    bounds: Option<RmsBounds>,
+    limits: KernelLimits,
+) -> Result<CompiledKernel, String> {
+    let base_signature = op.signature_with_rms_bounds(width, epsilon, bounds)?;
     if layout == OutputLayout::Buffer && OutputLayout::for_operation(op) != layout {
         return Err("buffer output is unsupported for this symbolic operation".into());
     }
@@ -231,7 +293,7 @@ pub fn compile_operation_with_layout(
     // Thus their constructed node counts are affine for all nonempty widths.
     // Small probes measure the current identities, and check the increment,
     // before any user-width allocation. Fixed-width families use one exact probe.
-    let nodes = required_nodes(op, width, epsilon)?;
+    let nodes = required_nodes(op, width, epsilon, bounds)?;
     if nodes > limits.max_nodes || nodes > u32::MAX as usize {
         return Err("symbolic node budget exceeded".into());
     }
@@ -239,7 +301,7 @@ pub fn compile_operation_with_layout(
         mut soa,
         roots,
         weights,
-    } = build_dag(op, width, epsilon, nodes)?;
+    } = build_dag(op, width, epsilon, nodes, bounds)?;
     if soa.len() != nodes || soa.len() > limits.max_nodes {
         return Err("symbolic construction node count changed".into());
     }
@@ -248,7 +310,7 @@ pub fn compile_operation_with_layout(
     }
     let output_constants_start =
         u32::try_from(soa.const_pool.len()).map_err(|_| "constant index overflow")?;
-    let signature = op.signature_for_layout(width, epsilon, layout)?;
+    let signature = op.signature_for_layout_with_rms_bounds(width, epsilon, layout, bounds)?;
     // Owned operation literals and output indices occupy a fixed prefix. Every
     // external weight is remapped after that prefix before either linearizer runs.
     soa.const_pool = signature.fixed.clone();
@@ -292,11 +354,16 @@ struct OperationDag {
     weights: Vec<NodeId>,
 }
 
-fn required_nodes(op: Operation, width: usize, epsilon: f64) -> Result<usize, String> {
+fn required_nodes(
+    op: Operation,
+    width: usize,
+    epsilon: f64,
+    bounds: Option<RmsBounds>,
+) -> Result<usize, String> {
     if matches!(op, Operation::Norm | Operation::Softmax) {
-        let one = build_dag(op, 1, epsilon, 0)?.soa.len();
-        let two = build_dag(op, 2, epsilon, 0)?.soa.len();
-        let three = build_dag(op, 3, epsilon, 0)?.soa.len();
+        let one = build_dag(op, 1, epsilon, 0, bounds)?.soa.len();
+        let two = build_dag(op, 2, epsilon, 0, bounds)?.soa.len();
+        let three = build_dag(op, 3, epsilon, 0, bounds)?.soa.len();
         let increment = two.checked_sub(one).ok_or("invalid symbolic node count")?;
         if three.checked_sub(two) != Some(increment) {
             return Err("symbolic vector node construction is not affine".into());
@@ -306,7 +373,7 @@ fn required_nodes(op: Operation, width: usize, epsilon: f64) -> Result<usize, St
             .and_then(|n| n.checked_add(one))
             .ok_or_else(|| "symbolic node size overflow".into())
     } else {
-        Ok(build_dag(op, width, epsilon, 0)?.soa.len())
+        Ok(build_dag(op, width, epsilon, 0, bounds)?.soa.len())
     }
 }
 
@@ -315,6 +382,7 @@ fn build_dag(
     width: usize,
     epsilon: f64,
     capacity: usize,
+    bounds: Option<RmsBounds>,
 ) -> Result<OperationDag, String> {
     let mut t = BMLTransformer::with_capacity(capacity);
     let mut weights = Vec::new();
@@ -322,8 +390,14 @@ fn build_dag(
         Operation::Norm => {
             let x: Vec<_> = (0..width).map(|i| t.var(i as u32)).collect();
             weights = (0..width).map(|i| t.external_constant(i as u32)).collect();
-            t.rms_norm(&x, &weights, epsilon)
-                .map_err(|e| e.to_string())?
+            if let Some(bounds) = bounds {
+                let config = bounds.config(width, epsilon)?;
+                t.rms_norm_bounded(&x, &weights, &config)
+                    .map_err(|e| e.to_string())?
+            } else {
+                t.rms_norm(&x, &weights, epsilon)
+                    .map_err(|e| e.to_string())?
+            }
         }
         Operation::Softmax => {
             let x: Vec<_> = (0..width).map(|i| t.var(i as u32)).collect();

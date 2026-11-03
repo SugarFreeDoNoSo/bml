@@ -25,6 +25,8 @@ use crate::soa::NodeSoA;
 
 mod operations;
 pub use operations::OperationBuildError;
+mod bounded;
+pub use bounded::{BoundedBuildError, BoundedRmsConfig};
 
 /// Traductor de operaciones estándar a la gramática BML.
 ///

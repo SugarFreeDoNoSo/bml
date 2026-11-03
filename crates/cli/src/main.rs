@@ -70,6 +70,14 @@ enum Command {
         #[arg(long = "context-size", requires = "symbolic")]
         context_size: Option<u32>,
 
+        /// Perfil RMS acotado experimental: máximo absoluto de activaciones.
+        #[arg(long, requires_all = ["symbolic", "rms_weight_bound"])]
+        rms_input_bound: Option<f64>,
+
+        /// Perfil RMS acotado experimental: máximo absoluto de pesos RMS.
+        #[arg(long, requires_all = ["symbolic", "rms_input_bound"])]
+        rms_weight_bound: Option<f64>,
+
         /// Capas por fragmento (solo --distributed, default: 1 = una capa por fragmento)
         #[arg(long = "layers-per-fragment", default_value_t = 1)]
         layers_per_fragment: u32,
@@ -166,6 +174,8 @@ fn main() {
             distributed,
             symbolic,
             context_size,
+            rms_input_bound,
+            rms_weight_bound,
             layers_per_fragment,
         } => {
             if !model.exists() {
@@ -225,16 +235,27 @@ fn main() {
                     std::process::exit(1);
                 }
             } else if symbolic {
-                let manifest =
-                    inference_result(bml_compiler::symbolic_artifact::compile_directory(
+                let limits = bml_compiler::symbolic_kernels::KernelLimits {
+                    fragment_bytes: l1_threshold,
+                    ..Default::default()
+                };
+                let context = context_size.expect("clap requires symbolic context");
+                let manifest = inference_result(if let Some(input) = rms_input_bound {
+                    bml_compiler::symbolic_artifact::compile_directory_with_rms_bounds(
                         &model,
                         &output,
-                        context_size.expect("clap requires symbolic context"),
-                        bml_compiler::symbolic_kernels::KernelLimits {
-                            fragment_bytes: l1_threshold,
-                            ..Default::default()
+                        context,
+                        bml_compiler::symbolic_kernels::RmsBounds {
+                            input,
+                            weight: rms_weight_bound.expect("clap requires paired RMS bounds"),
                         },
-                    ));
+                        limits,
+                    )
+                } else {
+                    bml_compiler::symbolic_artifact::compile_directory(
+                        &model, &output, context, limits,
+                    )
+                });
                 println!("Perfil: {}", manifest.profile);
                 println!(
                     "Kernels BML: {}; contexto compilado: {}",

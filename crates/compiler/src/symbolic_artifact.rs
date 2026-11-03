@@ -5,8 +5,8 @@ use crate::{
     causal_artifact::{hash, read_bounded, required_projections},
     gguf_compiler::{InferenceCompiler, ModelConfig},
     symbolic_kernels::{
-        compile_operation, is_symbolic_opcode, CompiledKernel, KernelLimits, Operation,
-        OutputLayout,
+        compile_operation_with_rms_bounds, is_symbolic_opcode, CompiledKernel, KernelLimits,
+        Operation, OutputLayout, RmsBounds,
     },
     tokenizer::Vocabulary,
     BmlGraph, RpnOp,
@@ -23,6 +23,8 @@ use std::{
 pub const MANIFEST: &str = "symbolic.bmlgraph.json";
 /// Versioned numerical profile for persisted BML-only causal arithmetic.
 pub const PROFILE: &str = "llama-symbolic-bml-f64-f32kv-v2";
+/// Opt-in profile replacing RMSNorm only with explicitly bounded identities.
+pub const BOUNDED_RMS_PROFILE: &str = "llama-symbolic-bml-bounded-rms-f64-f32kv-v3";
 const LEGACY_PROFILE: &str = "llama-symbolic-bml-f64-f32kv-v1";
 const MAX_MANIFEST: usize = 16 * 1024 * 1024;
 const MAX_FILE: usize = 8 * 1024 * 1024;
@@ -54,6 +56,9 @@ pub struct Manifest {
     pub version: u32,
     /// Explicit symbolic numerical execution profile.
     pub profile: String,
+    /// Runtime-enforced RMS operand bounds, required only by the v3 profile.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rms_bounds: Option<RmsBounds>,
     /// Default external source locator.
     pub source: PathBuf,
     /// SHA-256 of the entire immutable GGUF source.
@@ -207,6 +212,31 @@ pub fn compile_directory(
     Ok(compiled.manifest)
 }
 
+/// Publish an opt-in bounded-RMS artifact. Other arithmetic remains unchanged;
+/// successful compilation does not certify full-model numerical evaluability.
+pub fn compile_directory_with_rms_bounds(
+    source: &Path,
+    output: &Path,
+    context_length: u32,
+    bounds: RmsBounds,
+    limits: KernelLimits,
+) -> Result<Manifest, String> {
+    check_output_directory(output)?;
+    let compiled = compile_with_rms_bounds(source, context_length, bounds, limits)?;
+    compiled.publish(output)?;
+    Ok(compiled.manifest)
+}
+
+/// Construct the complete AOT plan with an explicit bounded RMS profile.
+pub fn compile_with_rms_bounds(
+    source: &Path,
+    context_length: u32,
+    bounds: RmsBounds,
+    limits: KernelLimits,
+) -> Result<CompiledArtifact, String> {
+    compile_context_with_rms_bounds(source, Some(context_length), Some(bounds), limits)
+}
+
 /// Construct every operation needed for an explicit causal context, with no
 /// filesystem output. The same bytecode is published by [`compile_directory`].
 pub fn compile(
@@ -220,6 +250,15 @@ pub fn compile(
 pub(crate) fn compile_with_context(
     source: &Path,
     context_length: Option<u32>,
+    limits: KernelLimits,
+) -> Result<CompiledArtifact, String> {
+    compile_context_with_rms_bounds(source, context_length, None, limits)
+}
+
+fn compile_context_with_rms_bounds(
+    source: &Path,
+    context_length: Option<u32>,
+    rms_bounds: Option<RmsBounds>,
     mut limits: KernelLimits,
 ) -> Result<CompiledArtifact, String> {
     limits.max_programs = limits.max_programs.min(MAX_PROGRAMS);
@@ -234,6 +273,9 @@ pub(crate) fn compile_with_context(
     let source_sha256 = hash(parser.bytes());
     let tokenizer = TokenizerSpec::from_gguf(&parser).map_err(|e| e.to_string())?;
     let model = InferenceCompiler::from_mapped_parser(parser)?;
+    if let Some(bounds) = rms_bounds {
+        bounds.config(model.config().n_embd as usize, model.rms_norm_epsilon())?;
+    }
     let context_length = context_length.unwrap_or(model.config().context_length);
     let required = required_kernels(&model, context_length, limits.max_programs, true)?;
     let mut descriptors = Vec::with_capacity(required.len());
@@ -241,13 +283,21 @@ pub(crate) fn compile_with_context(
     let mut bytes_used = 0usize;
     let mut remaining = limits;
     for (operation, width) in required {
-        let compiled = compile_operation(operation, width, model.rms_norm_epsilon(), remaining)?;
+        let compiled = compile_operation_with_rms_bounds(
+            operation,
+            width,
+            model.rms_norm_epsilon(),
+            OutputLayout::for_operation(operation),
+            rms_bounds,
+            remaining,
+        )?;
         if compiled.layout != OutputLayout::for_operation(operation)
             || compiled.signature
-                != operation.signature_for_layout(
+                != operation.signature_for_layout_with_rms_bounds(
                     width,
                     model.rms_norm_epsilon(),
                     compiled.layout,
+                    rms_bounds,
                 )?
         {
             return Err("compiler symbolic signature mismatch".into());
@@ -280,8 +330,14 @@ pub(crate) fn compile_with_context(
         encoded.push(files);
     }
     let manifest = Manifest {
-        version: 2,
-        profile: PROFILE.into(),
+        version: if rms_bounds.is_some() { 3 } else { 2 },
+        profile: if rms_bounds.is_some() {
+            BOUNDED_RMS_PROFILE
+        } else {
+            PROFILE
+        }
+        .into(),
+        rms_bounds,
         source,
         source_sha256,
         config: model.config().clone(),
@@ -312,9 +368,14 @@ pub fn load_directory(
     let bytes = read_bounded(&directory.join(MANIFEST), MAX_MANIFEST)?;
     let manifest: Manifest =
         serde_json::from_slice(&bytes).map_err(|e| format!("symbolic manifest: {e}"))?;
-    let shared_outputs = match (manifest.version, manifest.profile.as_str()) {
-        (1, LEGACY_PROFILE) => false,
-        (2, PROFILE) => true,
+    let shared_outputs = match (
+        manifest.version,
+        manifest.profile.as_str(),
+        manifest.rms_bounds,
+    ) {
+        (1, LEGACY_PROFILE, None) => false,
+        (2, PROFILE, None) => true,
+        (3, BOUNDED_RMS_PROFILE, Some(_)) => true,
         _ => return Err("unsupported symbolic artifact profile".into()),
     };
     if manifest.kernels.is_empty()
@@ -344,6 +405,12 @@ pub fn load_directory(
         return Err("symbolic tokenizer differs from source".into());
     }
     let mut compiler = InferenceCompiler::from_mapped_parser(parser)?;
+    if let Some(bounds) = manifest.rms_bounds {
+        bounds.config(
+            compiler.config().n_embd as usize,
+            compiler.rms_norm_epsilon(),
+        )?;
+    }
     if compiler.config() != &manifest.config
         || compiler.n_kv_heads() != manifest.kv_heads
         || compiler.rms_norm_epsilon().to_bits() != manifest.rms_norm_epsilon.to_bits()
@@ -374,7 +441,11 @@ pub fn load_directory(
         };
         // Check the bounded manifest's literal count before materializing the
         // output-index literals for a potentially large source-model width.
-        let base_signature = operation.signature(width, compiler.rms_norm_epsilon())?;
+        let base_signature = operation.signature_with_rms_bounds(
+            width,
+            compiler.rms_norm_epsilon(),
+            manifest.rms_bounds,
+        )?;
         let fixed_count = base_signature
             .fixed
             .len()
@@ -387,8 +458,12 @@ pub fn load_directory(
         if descriptor.fixed.len() != fixed_count {
             return Err("symbolic kernel literal count mismatch".into());
         }
-        let signature =
-            operation.signature_for_layout(width, compiler.rms_norm_epsilon(), layout)?;
+        let signature = operation.signature_for_layout_with_rms_bounds(
+            width,
+            compiler.rms_norm_epsilon(),
+            layout,
+            manifest.rms_bounds,
+        )?;
         let programs = if layout == OutputLayout::Buffer {
             1
         } else {

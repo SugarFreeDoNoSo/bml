@@ -476,3 +476,36 @@ Then it rejects the request before expensive generation
     Then small known targets yield the independently expected syntax and value
     And invalid candidates consume attempts and exhausted searches retain explicit status
     And zero budgets and unsupported request limits cannot bypass the search bounds
+
+  @C75
+  Scenario: Explicitly bounded RMS uses finite-real BML arithmetic with declared operand ranges
+    Given validated activation and weight bounds and a fixed canonical literal prefix
+    When bounded RMS DAGs execute on signed, zero, boundary and sparse vectors
+    Then every intermediate is checked and outputs match an independent native oracle within measured tolerances
+    And the minimal learned-weight case that overflows the legacy expansion remains evaluable
+    And malformed parameters and shapes fail before graph mutation while construction grows linearly
+
+  @C78
+  Scenario: Checked symbolic execution validates every BML intermediate and exact output offset
+    Given preflighted externally bound bytecode and correctly sized output buffers
+    When the explicit finite-real execution path runs
+    Then overflow, underflow and invalid logarithms fail even when legacy final outputs are finite
+    And valid BML stack operations and stores preserve the legacy output bits
+    And native opcodes, mismatched contexts and nonfinite inputs fail before output writes
+    And fractional, negative and out-of-range store offsets are rejected without corrupting adjacent cells
+  @C76
+  Scenario: Explicit bounded RMS artifacts preserve finite-real arithmetic and declared operands
+    Given an opt-in v3 symbolic artifact with external mapped weights and explicit RMS bounds
+    When persisted fragmented BML programs run with zero construction budget
+    Then RMS boundary, zero and weight-four cases match an independent numerical oracle with every BML intermediate checked
+    And causal prefill, decode and relocated sources match the independent GQA and nonzero MLP fixture oracle
+    And violated runtime input or weight bounds fail before advancing the committed KV position
+    And malformed profile, bounds and each canonical literal are rejected
+    And default v2 artifacts and every non-RMS operation retain their existing bytecode
+  @C77
+  Scenario: CLI bounded RMS compilation requires explicit paired bounds
+    Given a normalized byte-output fixture and explicit symbolic context
+    When both RMS bounds are supplied to the compile command
+    Then a v3 artifact runs with relocated weights and emits the expected UTF-8 bytes and EOS
+    And missing paired options, absent symbolic mode and invalid bounds reject before publication
+    And valid compile bounds that are violated by actual activations fail during run

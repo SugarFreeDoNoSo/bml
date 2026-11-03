@@ -78,3 +78,21 @@ El sistema SHALL traducir cada operación del transformer (matmul, RMSNorm, RoPE
 #### Scenario: RMSNorm
 - **WHEN** se traduce RMSNorm(x)
 - **THEN** se produce un sub-DAG BML usando `mul`, `div`, `pow`, `add`
+
+### Requirement: Perfil experimental de RMS con límites explícitos
+El sistema SHALL permitir seleccionar una expansión RMS acotada con límites de
+activaciones y pesos persistidos en un perfil numérico distinto. Los artefactos
+existentes v1/v2 SHALL conservar sus identidades y resultados. Este perfil
+parcial no sustituye la obligación de completar la inferencia del transformer.
+
+#### Scenario: RMS acotado persistido
+- **WHEN** se compila y carga un artefacto con el perfil `llama-symbolic-bml-bounded-rms-f64-f32kv-v3`
+- **THEN** la configuración y los literales RMS se validan antes de ejecutar, los pesos siguen externos y los programas cargados no se regeneran
+
+#### Scenario: Dominio de cada operación BML
+- **WHEN** se ejecuta RMS acotado con operandos declarados válidos
+- **THEN** cada operación BML rechaza argumentos no reales finitos, logaritmos no positivos y desbordamiento o subdesbordamiento exponencial, aunque operaciones posteriores pudieran ocultarlos
+
+#### Scenario: Límites y tolerancia independientes
+- **WHEN** se verifica el perfil con ceros, signos, extremos y datos reales de un RMS
+- **THEN** se compara contra un oráculo numérico independiente con tolerancia explícita y se rechazan operandos fuera de los límites, sin atribuir equivalencia IEEE ni éxito de inferencia completa

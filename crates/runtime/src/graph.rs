@@ -23,7 +23,7 @@ impl Default for GraphLimits {
         }
     }
 }
-/// Validation or execution setup failure; no partial result is returned.
+/// Validation or execution failure. Discard partial buffer outputs on error.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GraphError {
     /// Stored instructions, expanded work or values exceed their budget.
@@ -38,6 +38,10 @@ pub enum GraphError {
     Context,
     /// The bounded stack allocation failed.
     Allocation,
+    /// A checked BML intermediate left the finite-real numerical domain/range.
+    Numerical,
+    /// Checked symbolic execution does not support an instruction in the graph.
+    SymbolicBasis,
 }
 impl fmt::Display for GraphError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -48,6 +52,8 @@ impl fmt::Display for GraphError {
             Self::Stack => "invalid graph stack effect",
             Self::Context => "graph execution context differs from preflight",
             Self::Allocation => "graph stack allocation failed",
+            Self::Numerical => "symbolic BML intermediate outside numerical domain/range",
+            Self::SymbolicBasis => "instruction outside checked symbolic basis",
         })
     }
 }
@@ -175,6 +181,91 @@ impl ValidatedGraph {
             return Err(GraphError::Context);
         }
         self.execute_context(inputs, constants, buffer)
+    }
+
+    /// Execute BML-only bytecode, checking every arithmetic intermediate.
+    ///
+    /// This opt-in path rejects nonfinite operands, invalid logarithms,
+    /// exponential overflow/underflow and invalid output offsets. Legacy
+    /// execution retains IEEE semantics. Context/basis errors precede writes;
+    /// a numerical error may leave earlier output cells modified.
+    pub fn execute_symbolic_with_constants(
+        &self,
+        inputs: &[f64],
+        constants: &[f64],
+        buffer: &mut ResultBuffer,
+    ) -> Result<f64, GraphError> {
+        if self.external_constants != Some(constants.len())
+            || inputs.len() != self.inputs
+            || buffer.n_slots() != self.slots
+            || buffer.slot_size() != self.slot_size
+        {
+            return Err(GraphError::Context);
+        }
+        if !self
+            .graph
+            .fragments
+            .iter()
+            .flat_map(|f| &f.ops)
+            .all(bml_compiler::symbolic_kernels::is_symbolic_opcode)
+        {
+            return Err(GraphError::SymbolicBasis);
+        }
+        if inputs.iter().chain(constants).any(|v| !v.is_finite()) {
+            return Err(GraphError::Numerical);
+        }
+        let mut stack = Vec::new();
+        stack
+            .try_reserve_exact(self.peak)
+            .map_err(|_| GraphError::Allocation)?;
+        for op in self.graph.fragments.iter().flat_map(|f| &f.ops) {
+            match *op {
+                RpnOp::One => stack.push(1.0),
+                RpnOp::Var(id) => stack.push(inputs[id as usize]),
+                RpnOp::Const(id) => stack.push(constants[id as usize]),
+                RpnOp::Bml => {
+                    let right = stack.pop().ok_or(GraphError::Stack)?;
+                    let left = stack.pop().ok_or(GraphError::Stack)?;
+                    stack.push(
+                        bml_domain::symbolic::Basis::Bml
+                            .apply_real(left, right)
+                            .map_err(|_| GraphError::Numerical)?,
+                    );
+                }
+                RpnOp::Pick { depth } => {
+                    let index = stack
+                        .len()
+                        .checked_sub(depth as usize + 1)
+                        .ok_or(GraphError::Stack)?;
+                    stack.push(stack[index]);
+                }
+                RpnOp::Dup => stack.push(*stack.last().ok_or(GraphError::Stack)?),
+                RpnOp::Drop => {
+                    stack.pop().ok_or(GraphError::Stack)?;
+                }
+                RpnOp::Swap => {
+                    let n = stack.len();
+                    if n < 2 {
+                        return Err(GraphError::Stack);
+                    }
+                    stack.swap(n - 1, n - 2);
+                }
+                RpnOp::StoreResult { slot } => {
+                    let offset = stack.pop().ok_or(GraphError::Stack)?;
+                    let value = stack.pop().ok_or(GraphError::Stack)?;
+                    if offset < 0.0
+                        || offset.fract() != 0.0
+                        || offset > u32::MAX as f64
+                        || offset as usize >= self.slot_size
+                    {
+                        return Err(GraphError::Reference);
+                    }
+                    buffer.write(slot, offset as u32, value);
+                }
+                _ => return Err(GraphError::SymbolicBasis),
+            }
+        }
+        stack.pop().ok_or(GraphError::Stack)
     }
 
     fn execute_context(

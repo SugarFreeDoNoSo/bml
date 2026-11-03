@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "base_commit": "1ef5f5d39a1d7ad6b3a0065f98164d1121044d4b",
+  "scope": "Opt-in bounded RMS numerical profile, preserving v1/v2; not completion of full symbolic inference",
+  "profile": "llama-symbolic-bml-bounded-rms-f64-f32kv-v3",
+  "implemented": [
+    "17 canonical configuration literals with external model weights",
+    "bounded RMS configuration and operand validation",
+    "finite-real checking of every RMS BML opcode and exact result offsets",
+    "shared persisted vector program and loading without reconstruction",
+    "explicit paired CLI RMS bound options"
+  ],
+  "source_manifest": "target/quality/bounded-rms-input-manifest.json",
+  "source_manifest_sha256": "7da4bd1675ea8f78f88e938c82dac31122e850ecc964c9d91612192f7498b804",
+  "source_hashes": {
+    "crates/cli/src/main.rs": "7c5b83d5af2cebf0a110432eadd565a1f659a528fd954d3051b3804a15f9e48c",
+    "crates/cli/tests/bounded_rms_cli.rs": "e16b80132c66351ed84552c4bdc3ae56499b07930f81b4372d4537b92e2aa94e",
+    "crates/compiler/examples/bounded_rms_diagnostic.rs": "4aef32e8ce885be547be7c12d81d2456bb85b23d8c41a2fc439be008dfdcf1c7",
+    "crates/compiler/src/symbolic_artifact.rs": "9015b1071b8fec59b130b3ed326406e24f2cba97b93eb1cd4fff4bc3368cbacd",
+    "crates/compiler/src/symbolic_kernels.rs": "b7c80399ebe21f848fca6f89d8162cb68a898b944718ce3bbfb52137a973f5e8",
+    "crates/compiler/tests/bounded_rms_artifact_contracts.rs": "893cb7612c959c8eee20fa793e330beddad30b83117e1be07309072f3ac886e8",
+    "crates/domain/src/transformer.rs": "762848fc002a663babe34c6fd88616b09c6b4630281afd06cde0baabb5bacc42",
+    "crates/domain/src/transformer/bounded.rs": "b298ba27ef328ce29fe03669ffb1e69139e580ba61323468e4c00edf05a20f89",
+    "crates/domain/tests/bounded_transformer_contracts.rs": "c6d28bca6774a4cd550b07526c1a1009cf9aaf11c9a00a84aa51924f847db165",
+    "crates/runtime/src/graph.rs": "b032064f62ac1b4520ad83947787bb20384ac856dced31937a5f73e9c89d1cef",
+    "crates/runtime/src/symbolic_causal.rs": "2814b07fa1dce1bc52064e002f9d23239be137a338408e8ad131bd08a4dcf7b7",
+    "crates/runtime/tests/checked_symbolic_execution.rs": "826835a5c8749dc91364313ce745eb6c9e277cb1831eb89c2d29e8537f8327ea",
+    "docs/INFERENCE_VALIDATION.md": "da6c5cc6ce0d91148bb2e51bab3bcd6dad3943ab4dfb7abbf5dfc8d4f3bc8b2e",
+    "openspec/changes/bml-1-0-release/tasks.md": "727aeec6dcd8dff052dd5e1d40f46a52965fb2d7b78bccd7253dc129ee4e12b7",
+    "openspec/changes/bml-exact-numbers-and-matrices/tasks.md": "4427596ed7181a05d2010858f8db2a666d4225d5dec7a29b096c4af6a3ea95c4",
+    "openspec/changes/bml-inference-pipeline/specs/gguf-compiler/spec.md": "3dff55eec2c718cd85cc9fd5798a47c0c8d2469842c002264f076016d9efe4a1",
+    "openspec/changes/bml-inference-pipeline/tasks.md": "010f7a9b44aa308dfca84a1154bc84ea02f43ed0f26c2c8364c3274184d6a2b2",
+    "openspec/changes/fix-placeholders/tasks.md": "e3fbf028dcc51c6a80f0bd60c25e79d81f1974935022e9e5e6cf32c51e4749e0",
+    "openspec/changes/gguf-to-bml-weights/tasks.md": "42fab55607903803979a3528410a84c232c0354d5d9741303d6d8a06daf72822",
+    "quality/contracts.feature": "f9d7c00da5eed60982b6b26bcf6390387a3d1defa4361ab469dcb00a4d86b749",
+    "quality/evidence/publication-spec-closure-2026-11-03.md": "38961955e451af6a8ee2501ad7bb0ee0592df345edd326fc6e5a4484225228ff",
+    "quality/traceability.json": "94618f084fa8892e7b3384b7370a13ab61b58c165b53b48d31dac3f44c714c72"
+  },
+  "gate_input_hashes_unchanged": true,
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "log": "target/quality/bounded-rms-worktree-gate.log",
+    "sha256": "2b3e9d91db181e8ac11d34db5bc04cdfb482ce79ca49701813db06038360a3d9",
+    "exit_code": 0,
+    "rust_tests_passed": 753,
+    "python_tests_passed": 82,
+    "traced_contracts": "78/78",
+    "historical_discrepancies": 0,
+    "new_clippy_diagnostics": 0
+  },
+  "focused_tests": {
+    "domain_bounded": 5,
+    "strict_runtime": 5,
+    "compiler_artifact": 5,
+    "cli": 2
+  },
+  "openspec": {
+    "command": "npx --yes --package @fission-ai/openspec@1.13.0 openspec validate --all --strict",
+    "log": "target/quality/bounded-rms-openspec.log",
+    "sha256": "c057d40ba75ba779a12f9596c1d64c0deb0b80ab7d41bfc6a8077c73b0fda44c",
+    "exit_code": 0,
+    "passed": 11
+  },
+  "real_model": {
+    "command": "cargo run -p bml-compiler --example bounded_rms_diagnostic --locked -- target/bml-1.0/stories15M.gguf",
+    "log": "target/quality/bounded-rms-real-model.json",
+    "sha256": "73724b716abbe6281e102b7b3a943088e650ab946b58945cb8f185a317c924c4",
+    "exit_code": 0,
+    "report": {
+      "cases": [
+        {
+          "case": "weight-four",
+          "dag_rpn_bitwise_equal": true,
+          "every_bml_intermediate_finite_real": true,
+          "max_abs_error": 3.3013591860253655e-12,
+          "max_bml_exponent": 71.99998557312198,
+          "nodes": 1370,
+          "rpn_steps": 4224,
+          "width": 1
+        },
+        {
+          "case": "zero",
+          "dag_rpn_bitwise_equal": true,
+          "every_bml_intermediate_finite_real": true,
+          "max_abs_error": 3.9117509231800796e-10,
+          "max_bml_exponent": 88.60964047443679,
+          "nodes": 1370,
+          "rpn_steps": 4224,
+          "width": 1
+        },
+        {
+          "case": "real-model-first-bos-rms",
+          "dag_rpn_bitwise_equal": true,
+          "every_bml_intermediate_finite_real": true,
+          "max_abs_error": 4.143263510059114e-11,
+          "max_bml_exponent": 576.0,
+          "nodes": 233266,
+          "rpn_steps": 723159,
+          "width": 288
+        }
+      ],
+      "executed_operation_families": [
+        "dot",
+        "rms_norm",
+        "rope"
+      ],
+      "full_first_token": {
+        "error": "rope: symbolic outputs missing or outside numerical domain/range",
+        "status": "rejected"
+      },
+      "full_first_token_seconds": 11.540474793,
+      "profile": "llama-symbolic-bml-bounded-rms-f64-f32kv-v3",
+      "source_sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a"
+    }
+  },
+  "negative_control": {
+    "report": {
+      "scope": "Isolated copy of production ValidatedGraph, using runtime public buffer/HotLoop; no production implementation edits",
+      "mutation": "Replace Basis::Bml.apply_real(left,right) with unchecked left.exp2()-right.log2() only inside execute_symbolic_with_constants",
+      "test": "checked_symbolic_rejects_invalid_intermediates_hidden_by_finite_legacy_results",
+      "baseline_exit": 0,
+      "mutated_exit": 101,
+      "caught": true,
+      "baseline_graph_sha256": "9904096c2bfab72cd5abd7d472d3ae7b4bf769cd909e0b1e011e65cd2c0365e9",
+      "mutated_graph_sha256": "f7a9f4242869ea2210a248da4a9a88010908ac3dca712187e05a365d86341303",
+      "test_sha256": "d0a772237eec1f6a6f9d3f3910cf7ac32cb8c9dcde084148a3fc88305044c5cf",
+      "baseline_log_sha256": "28cc0bb57597ce53ffb23356613840908eacc8c99ffb56ae1e14471e4c8f99f2",
+      "mutated_log_sha256": "f40efb6f65fe04228dec3a407315705e8c4feb6e7649719b38afbe2323435ecb",
+      "failure": "assertion left Ok(1.0), right Err(Numerical); discarded overflow no longer rejected",
+      "production_graph_sha256": "b032064f62ac1b4520ad83947787bb20384ac856dced31937a5f73e9c89d1cef",
+      "production_difference": "Only GraphError documentation changed concurrently; executable graph code identical to baseline snapshot."
+    },
+    "report_path": "target/quality/checked-symbolic-negative-control/report.json",
+    "sha256": "0b52fc93504425341c6b33facf5ead70022549f3ddb4b3024b4fd578e9349e23"
+  },
+  "execution_environment": {
+    "toolchain": "1.98.1",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "limits": [
+    "Only RMS uses the new checked arithmetic; other v3 operation families preserve their existing IEEE expansions.",
+    "The real first token still fails in RoPE. The original complete-transformer requirement remains open.",
+    "Zero input has a nonzero rounding residual; no uniform floating-point error bound or IEEE equivalence is claimed.",
+    "Bound declarations are enforced, but do not prove finite intermediates; execution checks every RMS BML operation.",
+    "This isolated negative control is not a full mutation campaign. Global mutation, ARM, PMU and external stress gates remain pending."
+  ]
+}

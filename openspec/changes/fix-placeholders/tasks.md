@@ -66,4 +66,4 @@
 
 - [x] 9.1 `openspec validate fix-placeholders --strict` pasa sin errores. Validación estructural; no acredita los pendientes TinyLlama ni corrige por sí sola afirmaciones históricas de exactitud.
 - [x] 9.2 `cargo test --workspace` (bml-domain, bml-parser, bml-compiler, bml-runtime) todos pasan.
-- [ ] 9.3 Commit y push.
+- [x] 9.3 Commit y push. Publicación autorizada y realizada en `ca8d030` y `1ef5f5d`; `origin/master` verificado en `1ef5f5d39a1d7ad6b3a0065f98164d1121044d4b` el 2026-11-03. Evidencia: `quality/evidence/publication-spec-closure-2026-11-03.md`. El archivo del cambio requiere su revisión final separada.

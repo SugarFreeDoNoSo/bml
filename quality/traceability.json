@@ -702,5 +702,46 @@
       "synthesis_enumerates_ordered_shapes_and_counts_invalid_numerical_candidates",
       "synthesis_rejects_invalid_requests_before_enumeration"
     ]
+  },
+  "C75": {
+    "package": "bml-domain",
+    "target": "bounded_transformer_contracts",
+    "tests": [
+      "bounded_rms_executes_weight_four_that_overflows_the_legacy_expansion",
+      "bounded_rms_matches_independent_oracle_across_signs_zeros_widths_and_epsilon",
+      "bounded_rms_uses_correlation_for_sparse_vectors_and_accepts_safe_extreme_bounds",
+      "bounded_rms_rejects_parameters_and_operand_declarations_before_execution",
+      "bounded_rms_validates_structure_without_mutation_and_has_affine_node_growth"
+    ]
+  },
+  "C78": {
+    "package": "bml-runtime",
+    "target": "checked_symbolic_execution",
+    "tests": [
+      "checked_symbolic_rejects_invalid_intermediates_hidden_by_finite_legacy_results",
+      "checked_symbolic_matches_finite_legacy_bits_across_fragments_and_output_stores",
+      "checked_symbolic_rejects_native_opcodes_before_earlier_output_writes",
+      "checked_symbolic_store_offsets_require_exact_in_range_nonnegative_integers",
+      "checked_symbolic_rejects_context_and_nonfinite_external_values_before_writes"
+    ]
+  },
+  "C76": {
+    "package": "bml-compiler",
+    "target": "bounded_rms_artifact_contracts",
+    "tests": [
+      "bounded_rms_persisted_kernels_use_checked_bml_and_match_rms_oracle",
+      "bounded_rms_v3_artifacts_match_causal_oracle_without_recompilation",
+      "bounded_rms_runtime_enforces_actual_operand_bounds_without_advancing_cache",
+      "bounded_rms_artifacts_reject_malformed_profiles_bounds_and_literals",
+      "bounded_rms_is_opt_in_and_legacy_v2_bytes_stay_unchanged"
+    ]
+  },
+  "C77": {
+    "package": "bml-cli",
+    "target": "bounded_rms_cli",
+    "tests": [
+      "bounded_rms_cli_persists_explicit_profile_and_runs_with_relocated_weights",
+      "bounded_rms_cli_rejects_unpaired_options_bad_bounds_and_actual_input_violations"
+    ]
   }
 }
