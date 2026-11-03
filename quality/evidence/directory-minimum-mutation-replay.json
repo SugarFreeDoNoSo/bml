@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "scope": "Inclusive minimum byte budget for structural graph-directory fragment records",
+  "base_commit": "7f86429",
+  "historical_mutant": "crates/compiler/src/graph_directory.rs:145:14: replace > with == in load_from_dir_with_limits",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/directory-minimum-mutant",
+  "mutation": "if count > bytes_left / 4 becomes if count == bytes_left / 4",
+  "test_file": "crates/compiler/tests/graph_directory_contracts.rs",
+  "test": "empty_fragment_records_fit_the_exact_minimum_byte_budget",
+  "contract": "Independent header/fragment bytes encode one or three zero-op fragments, each requiring a four-byte operation count. Exact total byte budget must decode the expected fragment count with empty operations/constants; one byte less must be rejected. Structural decoding is distinct from runtime execution admission.",
+  "method": "Archive HEAD; mutate only the recorded comparison in the isolated source; run existing suite; add contract; run mutant and restored source. Fresh dedicated build initially; same snapshot path rebuilt on edits. Worktree production source unchanged.",
+  "verification": [
+    {"source": "mutant, existing contracts", "exit_code": 0, "passed": 5, "log": "target/quality/directory-minimum-mutant-before.log", "sha256": "c303a9a0e3f65a93f6f0c7261806db19d44933d16dbe1b5cdfeadf37c9e7f5c3"},
+    {"source": "mutant, new contract", "exit_code": 101, "passed": 5, "failed": 1, "diagnostic": "exact minimum fragment-record budget must be inclusive", "log": "target/quality/directory-minimum-mutant-after.log", "sha256": "df9b92ef75a448923ec0c3ddc20d1bb6e321f8efd704a135f334f853005061fd"},
+    {"source": "restored implementation, new contract", "exit_code": 0, "passed": 6, "log": "target/quality/directory-minimum-baseline-after.log", "sha256": "c8ab18d168290362630c93b0e1ffab401dc471dcc26729473721ed511487b9d6"}
+  ],
+  "command": "cargo test -p bml-compiler --test graph_directory_contracts --locked",
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/directory-minimum-build; CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0; TMPDIR under target.",
+  "remaining": "Fourteen historical survivors now have local detecting-contract evidence; 33 still require disposition. Both historical timeouts have diagnosis and fast independent detection. Global report remains unchanged with end_time=null and is not approved."
+}

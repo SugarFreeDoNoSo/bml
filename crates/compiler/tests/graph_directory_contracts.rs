@@ -231,6 +231,42 @@ fn directory_budgets_are_inclusive_and_accumulate_across_fragments() {
 }
 
 #[test]
+fn empty_fragment_records_fit_the_exact_minimum_byte_budget() {
+    // This decoder admits structural records independently of execution
+    // preflight. A zero-op fragment still needs its four-byte count field.
+    for count in [1u32, 3] {
+        let dir = Directory::new();
+        let head = header(count, &[]);
+        dir.put("header.bmlgraph", &head);
+        for i in 0..count {
+            dir.put(&format!("fragment_{i}.bmlgraph"), &0u32.to_le_bytes());
+        }
+        let limits = GraphLoadLimits {
+            max_total_bytes: head.len() + 4 * count as usize,
+            max_fragments: count as usize,
+            max_operations: 0,
+            max_constants: 0,
+        };
+        let (graph, constants, _) = load_from_dir_with_limits(&dir.0, limits)
+            .expect("exact minimum fragment-record budget must be inclusive");
+        assert_eq!(graph.fragments.len(), count as usize);
+        assert!(graph
+            .fragments
+            .iter()
+            .all(|fragment| fragment.ops.is_empty()));
+        assert!(constants.is_empty());
+        assert!(load_from_dir_with_limits(
+            &dir.0,
+            GraphLoadLimits {
+                max_total_bytes: limits.max_total_bytes - 1,
+                ..limits
+            }
+        )
+        .is_err());
+    }
+}
+
+#[test]
 fn serializer_rejects_inconsistent_fragment_count_before_writing() {
     let dir = Directory::new();
     let result = CompilationResult {
