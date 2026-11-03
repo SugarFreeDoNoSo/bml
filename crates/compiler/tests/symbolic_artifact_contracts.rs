@@ -63,6 +63,31 @@ fn artifact(source: &symbolic_fixture::Fixture) -> Directory {
 }
 
 #[test]
+fn symbolic_kernel_table_limit_is_inclusive_before_plan_validation() {
+    let source = symbolic_fixture::fixture(0.25);
+    let dir = artifact(&source);
+    let original = dir.manifest();
+    assert_eq!(original.kernels[0].programs.len(), 1);
+    for count in [4096, 4097] {
+        let mut manifest = original.clone();
+        manifest.kernels = vec![original.kernels[0].clone(); count];
+        dir.save(&manifest);
+        assert!(std::fs::metadata(dir.0.join(MANIFEST)).unwrap().len() < 16 * 1024 * 1024);
+        let error = load_directory(&dir.0, None)
+            .err()
+            .expect("duplicated kernels do not match the source operation plan");
+        let expected = if count == 4096 {
+            "symbolic operation plan mismatch"
+        } else {
+            "unsupported symbolic artifact profile or size"
+        };
+        assert_eq!(error, expected, "kernel count={count}");
+    }
+    dir.save(&original);
+    assert!(load_directory(&dir.0, None).is_ok());
+}
+
+#[test]
 fn symbolic_aot_executes_saved_programs_without_lazy_compilation_or_weight_copies() {
     let source = symbolic_fixture::fixture(0.25);
     let dir = artifact(&source);

@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "scope": "Inclusive symbolic artifact kernel-table admission",
+  "base_commit": "cf9f2c9",
+  "historical_mutant": "crates/compiler/src/symbolic_artifact.rs:268:35: replace > with >= in load_directory",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/symbolic-table-mutant",
+  "mutation": "manifest.kernels.len() > MAX_PROGRAMS becomes manifest.kernels.len() >= MAX_PROGRAMS",
+  "test_file": "crates/compiler/tests/symbolic_artifact_contracts.rs",
+  "test": "symbolic_kernel_table_limit_is_inclusive_before_plan_validation",
+  "contract": "A duplicated table of 4096 single-program descriptors passes size admission and reaches source operation-plan validation. 4097 descriptors fail initial profile/size admission. Encoded manifest stays below its byte budget. Original manifest is restored and loads successfully.",
+  "interpretation": "Boundary fixture is deliberately invalid at operation-plan validation; this test checks the independent inclusive size contract, not execution of 4096 kernels. Single-program descriptors prevent the separate program-count limit from masking the exact boundary.",
+  "method": "Archive HEAD, mutate only recorded comparison, run existing tests, add contract and run mutant/restored source. Fresh build initially; same snapshot path rebuilt after edits. Main worktree production source untouched.",
+  "verification": [
+    {"source": "mutant, existing contracts", "exit_code": 0, "passed": 7, "log": "target/quality/symbolic-table-mutant-before.log", "sha256": "775289b215be27101df528a319684f165a3c1eb7ff085175948fac9cfb9f68ec"},
+    {"source": "mutant, new contract", "exit_code": 101, "passed": 7, "failed": 1, "diagnostic": "kernel count=4096", "log": "target/quality/symbolic-table-mutant-after.log", "sha256": "9f161dd7aad36ffb306a6e91dc5d854ea96143a51399ab95749db324420e2b32"},
+    {"source": "restored implementation, new contract", "exit_code": 0, "passed": 8, "log": "target/quality/symbolic-table-baseline-after.log", "sha256": "9d50e58e9070718caa67d520df1e3056933f2ada46ecf0248fba23bc46b1d68d"}
+  ],
+  "command": "cargo test -p bml-compiler --test symbolic_artifact_contracts --locked",
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/symbolic-table-build; CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0; TMPDIR under target.",
+  "remaining": "Eighteen historical survivors now have local detecting-contract evidence; 29 still require disposition. Both historical timeouts have diagnosis and fast independent detection. Global campaign retains end_time=null and is not approved."
+}
