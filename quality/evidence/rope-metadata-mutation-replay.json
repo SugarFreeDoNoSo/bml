@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "scope": "Nondefault GGUF rotary frequency preservation through causal artifact persistence",
+  "base_commit": "e487c9f",
+  "historical_mutant": "crates/compiler/src/gguf_compiler.rs:842:9: replace InferenceCompiler::rope_frequency_base -> f64 with -1.0",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/rope-metadata-mutant",
+  "test_file": "crates/compiler/tests/causal_artifact_contracts.rs",
+  "test": "artifact_preserves_nondefault_rope_frequency_from_gguf",
+  "contract": "Independent causal_fixture encoder declares llama.rope.freq_base as F32(16). Require 16 in compile result, persisted manifest, reloaded manifest and loaded compiler metadata. Expected value comes from source fixture rather than comparing two consumers of the same getter.",
+  "finding": "Existing artifact roundtrip tests can pass when producer and loader share the wrong getter. The new source-metadata oracle detects -1 instead of 16. It verifies numerical configuration preservation, not a general RoPE numerical accuracy claim.",
+  "method": "Archive HEAD; mutate only getter in isolated snapshot; run existing suite; add test; run mutated and restored implementation. Fresh dedicated build initially, followed by rebuilds at the same source path. Main worktree production source untouched.",
+  "verification": [
+    {"source": "mutant, existing contracts", "exit_code": 0, "passed": 8, "log": "target/quality/rope-metadata-mutant-before.log", "sha256": "656655748a1defdcba9bc29efcb5c7ae09f625ab30d26bfd28aad813670c704d"},
+    {"source": "mutant, new contract", "exit_code": 101, "passed": 8, "failed": 1, "diagnostic": "left: -1.0; right: 16.0", "log": "target/quality/rope-metadata-mutant-after.log", "sha256": "4376ceba9463e227d4386aac63674caef3f9358e62134c2608d948fe9f00431b"},
+    {"source": "restored implementation, new contract", "exit_code": 0, "passed": 9, "log": "target/quality/rope-metadata-baseline-after.log", "sha256": "52a2cf961a1a53638ab1891cbd0a0ebc00e2cef859b67f719cb754b0549854cd"}
+  ],
+  "command": "cargo test -p bml-compiler --test causal_artifact_contracts --locked",
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/rope-metadata-build; CARGO_INCREMENTAL=0; DEV/TEST DEBUG=0; TMPDIR under target.",
+  "remaining": "Five historical survivors now have detecting contracts. Remaining 42 survivors and two timeouts require disposition. Original global outcomes remain unchanged with end_time=null; no successful global mutation campaign claimed."
+}

@@ -265,6 +265,23 @@ fn artifact_table_budgets_are_independent_and_inclusive() {
 }
 
 #[test]
+fn artifact_preserves_nondefault_rope_frequency_from_gguf() {
+    use bml_compiler::causal_artifact::load_directory;
+
+    // The independent GGUF encoder declares llama.rope.freq_base = F32(16).
+    // Assert against that source contract, not another consumer of the getter.
+    let source = causal_fixture::fixture(false);
+    let dir = Directory::new();
+    let compiled = compile_directory(&source.0, &dir.0, 32768).unwrap();
+    assert_eq!(compiled.rope_frequency_base, 16.0);
+    let persisted = dir.manifest();
+    assert_eq!(persisted.rope_frequency_base, 16.0);
+    let loaded = load_directory(&dir.0, None).unwrap();
+    assert_eq!(loaded.manifest.rope_frequency_base, 16.0);
+    assert_eq!(loaded.compiler.rope_frequency_base(), 16.0);
+}
+
+#[test]
 fn runtime_preflight_rejects_bad_stacks_and_expanded_loop_budgets() {
     let source = causal_fixture::fixture(false);
     let dir = Directory::new();
