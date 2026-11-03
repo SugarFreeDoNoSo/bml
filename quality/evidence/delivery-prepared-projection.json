@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "scope": "Runtime exact symbolic projections over autonomous BMLGGUF weights",
+  "base_commit": "dffba3c",
+  "tested_staged_tree_before_evidence": "e4a4eb9765595644f3923d6c8193ccc96da081ac",
+  "selection": "PreparedProjection module, its export and model-weights dependency plus independent container/projection tests. Queue, scheduler and causal runtime changes are not selected.",
+  "contract": "Persisted BMLS trees materialize as bounded row-major symbolic matrices, reversing GGML dimensions without permuting flat values. Projection applies the exact matrix contracts without floating evaluation or synthesis on load.",
+  "verification": {
+    "command": "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/home/dev/Work/bml/target/delivery-projection-build cargo test -p bml-runtime --locked",
+    "working_directory": "target/delivery-snapshots/prepared-projection",
+    "build_directory": "New dedicated target directory; no shared snapshot artifacts",
+    "exit_code": 0,
+    "passed": 48,
+    "log": "target/quality/delivery-prepared-projection.log",
+    "sha256": "f8d221f387117825ef2aee608f936f4817f1d32a90f97bea853f9a1082cab55b"
+  },
+  "remaining": "Checked-F32 causal runtime and CLI integration still require separate commits; delivery task 5.3 remains open."
+}

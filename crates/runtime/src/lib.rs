@@ -17,6 +17,7 @@
 pub mod buffer;
 pub mod hot_loop;
 pub mod net;
+pub mod prepared_projection;
 pub mod queue;
 pub mod runtime;
 pub mod scheduler;

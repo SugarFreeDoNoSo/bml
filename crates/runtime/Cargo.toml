@@ -9,6 +9,7 @@ repository.workspace = true
 [dependencies]
 bml-domain = { path = "../domain" }
 bml-compiler = { path = "../compiler" }
+bml-model-weights = { path = "../model-weights" }
 crossbeam.workspace = true
 
 [dev-dependencies]
