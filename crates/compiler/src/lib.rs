@@ -16,6 +16,7 @@ pub mod distributed;
 pub mod eml;
 pub mod fragment;
 pub mod gguf_compiler;
+mod graph_directory;
 pub mod hardware;
 pub mod hash_cons;
 pub mod kv_cache;

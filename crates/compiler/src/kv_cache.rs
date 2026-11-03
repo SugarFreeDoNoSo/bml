@@ -1,6 +1,6 @@
 //! KV Cache con buffer plano f32 (estilo llama.cpp).
 //
-// Diseño equivalente a llama_kv_cache en llama.cpp:
+// Almacenamiento histórico; no acredita equivalencia con llama.cpp:
 // - Buffers planos contiguos por capa (k_l / v_l)
 // - Sin hash consing ni deduplicación
 // - Almacenamiento directo en f32 (equivalente al tipo de cómputo)
@@ -20,7 +20,7 @@
 /// Características:
 /// - Almacenamiento directo f32 (sin cuantización i8)
 /// - Sin hash consing (cada posición es independiente)
-/// - Ring buffer: pos % max_seq_len (como llama.cpp)
+/// - Métodos de almacenamiento heredados: pos % max_seq_len; la inferencia causal rechaza desbordamientos antes de escribir
 /// - Acceso O(1) directo a cualquier entrada
 pub struct HashConsedKV {
     /// Per-layer flat K buffers: k_buffers[layer][pos * stride + kv_head * head_dim + d]
@@ -41,8 +41,11 @@ pub struct HashConsedKV {
     n_total_v: usize,
 }
 
+/// Default KV payload ceiling for historical inference callers (512 MiB).
+pub const DEFAULT_MAX_KV_BYTES: usize = 512 * 1024 * 1024;
+
 impl HashConsedKV {
-    /// Crea un KV cache como llama.cpp: buffers planos f32 por capa.
+    /// Crea buffers planos F32 por capa; usar try_new para errores y presupuesto explícitos.
     ///
     /// Args:
     /// - n_layers: número de capas del modelo
@@ -50,13 +53,55 @@ impl HashConsedKV {
     /// - head_dim: dimensión de cada head
     /// - max_seq_len: tamaño máximo de secuencia (context window)
     pub fn new(n_layers: u32, n_kv_heads: u32, head_dim: u32, max_seq_len: u32) -> Self {
-        let stride = n_kv_heads as usize * head_dim as usize;
-        let buffer_size = stride * max_seq_len as usize;
+        Self::try_new(n_layers, n_kv_heads, head_dim, max_seq_len, usize::MAX)
+            .expect("invalid KV dimensions or allocation failure")
+    }
 
-        let k_buffers = vec![vec![0.0f32; buffer_size]; n_layers as usize];
-        let v_buffers = vec![vec![0.0f32; buffer_size]; n_layers as usize];
-
-        Self {
+    /// Allocate a cache after checked size arithmetic and an explicit KV payload byte budget.
+    pub fn try_new(
+        n_layers: u32,
+        n_kv_heads: u32,
+        head_dim: u32,
+        max_seq_len: u32,
+        max_bytes: usize,
+    ) -> Result<Self, String> {
+        if n_kv_heads == 0 || head_dim == 0 || max_seq_len == 0 {
+            return Err("zero KV cache dimension".into());
+        }
+        let stride = (n_kv_heads as usize)
+            .checked_mul(head_dim as usize)
+            .ok_or("KV size overflow")?;
+        let buffer_size = stride
+            .checked_mul(max_seq_len as usize)
+            .ok_or("KV size overflow")?;
+        let bytes = buffer_size
+            .checked_mul(n_layers as usize)
+            .and_then(|n| n.checked_mul(8))
+            .ok_or("KV size overflow")?;
+        if bytes > max_bytes {
+            return Err("KV cache exceeds byte budget".into());
+        }
+        let mut k_buffers = Vec::new();
+        let mut v_buffers = Vec::new();
+        k_buffers
+            .try_reserve_exact(n_layers as usize)
+            .map_err(|_| "KV layer allocation failed")?;
+        v_buffers
+            .try_reserve_exact(n_layers as usize)
+            .map_err(|_| "KV layer allocation failed")?;
+        for _ in 0..n_layers {
+            let allocate = || -> Result<Vec<f32>, String> {
+                let mut values = Vec::new();
+                values
+                    .try_reserve_exact(buffer_size)
+                    .map_err(|_| "KV buffer allocation failed")?;
+                values.resize(buffer_size, 0.0);
+                Ok(values)
+            };
+            k_buffers.push(allocate()?);
+            v_buffers.push(allocate()?);
+        }
+        Ok(Self {
             k_buffers,
             v_buffers,
             n_layers,
@@ -66,7 +111,7 @@ impl HashConsedKV {
             current_pos: 0,
             n_total_k: 0,
             n_total_v: 0,
-        }
+        })
     }
 
     // -----------------------------------------------------------------------
@@ -76,7 +121,7 @@ impl HashConsedKV {
     /// Almacena K[layer][pos][kv_head] en el buffer plano.
     ///
     /// Usa ring buffer: pos_idx = pos % max_seq_len.
-    /// Equivalente a escribir en `cache.k_l[layer]` en llama.cpp.
+    /// Los llamadores causales deben comprobar capacidad antes de escribir.
     pub fn store_k(&mut self, layer: u32, pos: u32, kv_head: u32, data: &[f32]) {
         let pos_idx = (pos % self.max_seq_len) as usize;
         let start = pos_idx * self.stride + kv_head as usize * self.head_dim as usize;
@@ -105,7 +150,7 @@ impl HashConsedKV {
     /// Carga K[layer][pos][kv_head] como Vec<f32> desde el buffer plano.
     ///
     /// Acceso directo, sin dequantizar (a diferencia de la versión i8 anterior).
-    /// Equivalente a leer de `cache.k_l[layer]` en llama.cpp.
+    /// No implica paridad numérica con una implementación externa.
     pub fn load_k(&self, layer: u32, pos: u32, kv_head: u32) -> Vec<f32> {
         let pos_idx = (pos % self.max_seq_len) as usize;
         let start = pos_idx * self.stride + kv_head as usize * self.head_dim as usize;
@@ -128,8 +173,7 @@ impl HashConsedKV {
     /// Dot product Q[layer][pos][kv_head] · K[layer][pos][kv_head].
     ///
     /// Producto punto directo en f32 sobre los valores almacenados.
-    /// Equivalente a la operación de attention en llama.cpp
-    /// (ggml_mul_mat entre Q y K cache).
+    /// La acumulación usa aritmética F32 nativa.
     pub fn dot_qk(&self, q: &[f32], layer: u32, pos: u32, kv_head: u32) -> f32 {
         let pos_idx = (pos % self.max_seq_len) as usize;
         let start = pos_idx * self.stride + kv_head as usize * self.head_dim as usize;
@@ -165,6 +209,18 @@ impl HashConsedKV {
     /// Posición actual (tokens procesados).
     pub fn current_pos(&self) -> u32 {
         self.current_pos
+    }
+
+    /// Physical position capacity; causal callers must reject overflow, not wrap.
+    pub fn capacity(&self) -> u32 {
+        self.max_seq_len
+    }
+
+    /// Check layer, KV-head and head-dimension compatibility before causal writes.
+    pub fn matches_layout(&self, layers: u32, heads: u32, dimension: u32) -> bool {
+        self.n_layers == layers
+            && self.head_dim == dimension
+            && (heads as usize).checked_mul(dimension as usize) == Some(self.stride)
     }
 
     /// Avanza la posición actual en 1 (después de procesar un token).

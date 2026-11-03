@@ -104,10 +104,7 @@ pub fn compile_distributed(
 
     let head_dim = config.n_embd / config.n_heads;
     let n_kv_heads = parser
-        .get_metadata(&format!(
-            "{}.attention.key_value_head_count",
-            config.architecture
-        ))
+        .get_metadata(&format!("{}.attention.head_count_kv", config.architecture))
         .and_then(|v| match v {
             bml_parser::GgufMetadataValue::U32(n) => Some(*n),
             bml_parser::GgufMetadataValue::I32(n) => Some(*n as u32),
@@ -845,10 +842,7 @@ pub fn compile_distributed_bml(
 
     let head_dim = config.n_embd / config.n_heads;
     let n_kv_heads = parser
-        .get_metadata(&format!(
-            "{}.attention.key_value_head_count",
-            config.architecture
-        ))
+        .get_metadata(&format!("{}.attention.head_count_kv", config.architecture))
         .and_then(|v| match v {
             bml_parser::GgufMetadataValue::U32(n) => Some(*n),
             bml_parser::GgufMetadataValue::I32(n) => Some(*n as u32),

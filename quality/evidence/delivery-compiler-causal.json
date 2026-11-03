@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "scope": "Causal compiler, checked autonomous weight loading, strict tokenizer and bounded directory reader",
+  "base_commit": "bec670b",
+  "tested_staged_tree_before_evidence": "ab0ffee05fcf2bde5f7668ac27e385f2ce7c1699",
+  "selection": "Compiler configuration/profile validation, prepared_model, KV admission and causal state, tokenizer, graph directory reader and corresponding fixtures/contracts. Distributed changes select only the two GGUF head_count_kv key corrections. Cargo manifests and lockfile select inference, model-weights and serde dependencies only.",
+  "verification": {
+    "command": "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/home/dev/Work/bml/target/delivery-compiler-build cargo test -p bml-compiler --locked",
+    "working_directory": "target/delivery-snapshots/compiler-causal-v4",
+    "exit_code": 0,
+    "passed": 145,
+    "log": "target/quality/delivery-compiler-causal-clean.log",
+    "sha256": "b01b1615eba4865506b63db46887a30bb6025e4782bd8559230454396260c5ab"
+  },
+  "verification_correction": "Initial snapshots exposed omitted serde and shared fixture dependencies. The shared Cargo target then reused stale artifacts across archived snapshot directories, retaining the old KV metadata-key behavior. The reported passing result uses a new dedicated build directory, compiling this selected snapshot from scratch.",
+  "remaining": "Symbolic runtime and CLI integration remain pending. Artifact transport and distributed loader rewrites remain separate uncommitted work. This is not a workspace quality or hardware closure."
+}

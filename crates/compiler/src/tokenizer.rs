@@ -7,8 +7,10 @@
 //! - `tokenizer.ggml.bos_token_id` → begin-of-sequence ID
 //! - `tokenizer.ggml.eos_token_id` → end-of-sequence ID
 
+use bml_inference::tokenizer::{Tokenizer, TokenizerSpec};
 use bml_parser::{GgufMetadataValue, GgufParser};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// Vocabulario del modelo.
 #[derive(Debug, Clone)]
@@ -23,11 +25,38 @@ pub struct Vocabulary {
     pub bos_token_id: u32,
     /// End-of-sequence token ID.
     pub eos_token_id: u32,
+    /// None only for projection-only, zero-layer numerical fixtures.
+    pub(crate) tokenizer: Option<Arc<Tokenizer>>,
 }
 
 impl Vocabulary {
     /// Carga el vocabulario desde un parser GGUF.
     pub fn from_gguf(parser: &GgufParser) -> Result<Self, String> {
+        Self::from_spec(TokenizerSpec::from_gguf(parser).map_err(|error| error.to_string())?)
+    }
+
+    /// Validate and own the complete SentencePiece BPE metadata.
+    pub fn from_spec(spec: TokenizerSpec) -> Result<Self, String> {
+        let tokenizer = Tokenizer::new(spec).map_err(|error| error.to_string())?;
+        let spec = tokenizer.spec();
+        Ok(Self {
+            id_to_token: spec.tokens.clone(),
+            token_to_id: spec
+                .tokens
+                .iter()
+                .enumerate()
+                .map(|(id, token)| (token.clone(), id as u32))
+                .collect(),
+            model_type: "llama".into(),
+            bos_token_id: spec.bos_id,
+            eos_token_id: spec.eos_id,
+            tokenizer: Some(Arc::new(tokenizer)),
+        })
+    }
+
+    // These historical zero-layer fixtures exercise matrix projection, not text
+    // generation. They intentionally cannot encode/decode through the BPE API.
+    pub(crate) fn from_projection_fixture(parser: &GgufParser) -> Result<Self, String> {
         let model_type = parser
             .get_metadata("tokenizer.ggml.model")
             .and_then(|v| match v {
@@ -63,10 +92,10 @@ impl Vocabulary {
         let id_to_token: Vec<String> = tokens
             .iter()
             .map(|t| match t {
-                GgufMetadataValue::String(s) => s.clone(),
-                _ => unreachable!(),
+                GgufMetadataValue::String(s) => Ok(s.clone()),
+                _ => Err("projection vocabulary contains a non-string token"),
             })
-            .collect();
+            .collect::<Result<_, _>>()?;
 
         let mut token_to_id = HashMap::new();
         for (i, token) in id_to_token.iter().enumerate() {
@@ -79,39 +108,31 @@ impl Vocabulary {
             model_type,
             bos_token_id,
             eos_token_id,
+            tokenizer: None,
         })
     }
 
-    /// Tokeniza texto: split por espacios → lookup en vocabulario.
-    /// Si un token no está en el vocabulario, se intenta con lowercase.
-    /// Si sigue sin estar, se retorna `bos_token_id` como fallback.
-    pub fn encode(&self, text: &str) -> Vec<u32> {
-        let mut ids = Vec::new();
-        for word in text.split_whitespace() {
-            let word = word.trim();
-            if word.is_empty() {
-                continue;
-            }
-            if let Some(&id) = self.token_to_id.get(word) {
-                ids.push(id);
-            } else if let Some(&id) = self.token_to_id.get(&word.to_lowercase()) {
-                ids.push(id);
-            } else {
-                let prefixed = format!("▁{}", word);
-                if let Some(&id) = self.token_to_id.get(&prefixed) {
-                    ids.push(id);
-                } else {
-                    ids.push(self.bos_token_id);
-                }
-            }
-        }
-        if ids.is_empty() {
-            ids.push(self.bos_token_id);
-        }
-        ids
+    /// Encode text with the validated GGUF policy, including configured BOS/EOS.
+    pub fn encode(&self, text: &str) -> Result<Vec<u32>, String> {
+        self.validated()?
+            .encode(text, true)
+            .map_err(|error| error.to_string())
     }
 
-    /// Detokeniza: token ID → string.
+    fn validated(&self) -> Result<&Tokenizer, String> {
+        self.tokenizer
+            .as_deref()
+            .ok_or_else(|| "projection-only vocabulary has no validated tokenizer".into())
+    }
+
+    /// Decode a generated piece as bytes, preserving spaces and partial UTF-8.
+    pub fn token_piece_bytes(&self, id: u32) -> Result<Vec<u8>, String> {
+        self.validated()?
+            .token_piece_bytes(id, true)
+            .map_err(|error| error.to_string())
+    }
+
+    /// Raw vocabulary spelling for inspection; use `token_piece_bytes` for output.
     pub fn decode_single(&self, id: u32) -> &str {
         self.id_to_token
             .get(id as usize)
@@ -119,15 +140,11 @@ impl Vocabulary {
             .unwrap_or("<unk>")
     }
 
-    /// Detokeniza una secuencia de IDs.
-    pub fn decode(&self, ids: &[u32]) -> String {
-        ids.iter()
-            .map(|&id| {
-                let s = self.decode_single(id);
-                s.strip_prefix('▁').unwrap_or(s)
-            })
-            .collect::<Vec<_>>()
-            .join("")
+    /// Decode complete text, skipping control tokens and validating UTF-8.
+    pub fn decode(&self, ids: &[u32]) -> Result<String, String> {
+        self.validated()?
+            .decode(ids, true)
+            .map_err(|error| error.to_string())
     }
 
     /// Largo del vocabulario.
@@ -171,10 +188,10 @@ mod tests {
         let vocab = Vocabulary::from_gguf(&parser).expect("cargar vocab");
 
         let text = "Hello";
-        let ids = vocab.encode(text);
+        let ids = vocab.encode(text).unwrap();
         assert!(!ids.is_empty());
         println!("'{}' → {:?}", text, ids);
-        let decoded = vocab.decode(&ids);
+        let decoded = vocab.decode(&ids).unwrap();
         println!("Decoded: '{}'", decoded);
     }
 
@@ -186,7 +203,7 @@ mod tests {
         let parser = GgufParser::open(path).expect("abrir gguf");
         let vocab = Vocabulary::from_gguf(&parser).expect("cargar vocab");
 
-        let ids = vocab.encode("");
+        let ids = vocab.encode("").unwrap();
         assert!(!ids.is_empty());
         assert_eq!(ids[0], vocab.bos_token_id);
     }

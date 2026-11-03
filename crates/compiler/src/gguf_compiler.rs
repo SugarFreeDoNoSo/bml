@@ -35,7 +35,8 @@ use std::io::Write as IoWrite;
 use std::path::Path;
 
 /// Configuración del modelo leída del GGUF.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ModelConfig {
     /// Arquitectura (ej. "llama").
     pub architecture: String,
@@ -122,23 +123,26 @@ pub(crate) fn read_model_config(parser: &GgufParser) -> Result<ModelConfig, Stri
     }
     let arch_clone = arch.clone();
 
-    let get_u32 = |key: &str| -> u32 {
-        match parser.get_metadata(&format!("{arch_clone}.{key}")) {
-            Some(GgufMetadataValue::U32(v)) => *v,
-            Some(GgufMetadataValue::U64(v)) => *v as u32,
-            Some(GgufMetadataValue::I32(v)) => *v as u32,
-            Some(GgufMetadataValue::I64(v)) => *v as u32,
-            _ => 0,
+    let get_u32 = |key: &str| -> Result<u32, String> {
+        let key = format!("{arch_clone}.{key}");
+        let invalid = || format!("invalid integer metadata: {key}");
+        match parser.get_metadata(&key) {
+            Some(GgufMetadataValue::U32(v)) => Ok(*v),
+            Some(GgufMetadataValue::U64(v)) => u32::try_from(*v).map_err(|_| invalid()),
+            Some(GgufMetadataValue::I32(v)) => u32::try_from(*v).map_err(|_| invalid()),
+            Some(GgufMetadataValue::I64(v)) => u32::try_from(*v).map_err(|_| invalid()),
+            None => Ok(0),
+            _ => Err(invalid()),
         }
     };
 
     Ok(ModelConfig {
         architecture: arch,
-        n_layers: get_u32("block_count"),
-        n_heads: get_u32("attention.head_count"),
-        n_embd: get_u32("embedding_length"),
-        context_length: get_u32("context_length"),
-        vocab_size: get_u32("vocab_size"),
+        n_layers: get_u32("block_count")?,
+        n_heads: get_u32("attention.head_count")?,
+        n_embd: get_u32("embedding_length")?,
+        context_length: get_u32("context_length")?,
+        vocab_size: get_u32("vocab_size")?,
     })
 }
 
@@ -306,7 +310,7 @@ fn build_transformer_dag(
         let gate = reg.bml(hidden, gate_weight_dag);
         let up = reg.bml(hidden, up_weight_dag);
 
-        // SwiGLU: gate * sigmoid(1.7 * gate) * up
+        // SwiGLU: gate * sigmoid(gate) * up
         // Simplificado: bml(gate, up)
         let mlp_act = reg.bml(gate, up);
         let mlp_out = reg.bml(mlp_act, down_weight_dag);
@@ -323,8 +327,11 @@ fn build_transformer_dag(
     hidden = reg.bml(hidden, final_norm_dag);
 
     // === Output projection (lm_head) ===
-    // TinyLlama usa tied embeddings: lm_head = token_embd.weight
-    let lm_head_name = "token_embd.weight";
+    let lm_head_name = if parser.find_tensor("output.weight").is_some() {
+        "output.weight"
+    } else {
+        "token_embd.weight"
+    };
     let lm_head_weights = read_tensor_f32(parser, lm_head_name)
         .ok_or(format!("tensor no encontrado: {lm_head_name}"))?;
     let lm_head_dag = build_weight_dag(reg, &lm_head_weights);
@@ -336,7 +343,7 @@ fn build_transformer_dag(
 /// Lee un tensor del GGUF y retorna sus valores como f32.
 ///
 /// Para tipos estándar (F32, F16), lee directamente.
-/// Para tipos cuantizados (Q4_0, Q8_0), dequantiza a f32.
+/// Para tipos cuantizados (Q4_0, Q8_0, Q6_K), dequantiza a f32.
 pub fn read_tensor_f32(parser: &GgufParser, name: &str) -> Option<Vec<f32>> {
     parser.read_tensor_f32(name).ok()
 }
@@ -374,6 +381,13 @@ pub fn compile_gguf_fast(
 /// - `header.bmlgraph`: magic, version, n_fragments, config, const_pool
 /// - `fragment_0.bmlgraph`, `fragment_1.bmlgraph`, ...: cada fragmento serializado
 pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result<(), String> {
+    if result.num_fragments != result.graph.fragments.len() {
+        return Err("fragment count does not match graph".into());
+    }
+    let fragment_count = u32::try_from(result.num_fragments).map_err(|_| "too many fragments")?;
+    for fragment in &result.graph.fragments {
+        u32::try_from(fragment.ops.len()).map_err(|_| "too many fragment operations")?;
+    }
     std::fs::create_dir_all(output_dir).map_err(|e| format!("crear dir: {e}"))?;
 
     // Header: magic, version, n_fragments, config, const_pool
@@ -387,7 +401,7 @@ pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result
         .map_err(|e| format!("write version: {e}"))?;
 
     // Número de fragmentos
-    f.write_all(&(result.num_fragments as u32).to_le_bytes())
+    f.write_all(&fragment_count.to_le_bytes())
         .map_err(|e| format!("write n_frag: {e}"))?;
 
     // Config del modelo
@@ -491,133 +505,19 @@ pub fn serialize_to_dir(result: &CompilationResult, output_dir: &Path) -> Result
 /// Carga un `.bmlgraph` desde un directorio.
 ///
 /// Lee el header (config + const_pool) y los fragmentos.
-pub fn load_from_dir(input_dir: &Path) -> Result<(BmlGraph, Vec<f64>, ModelConfig), String> {
-    let header_path = input_dir.join("header.bmlgraph");
-    let header_bytes = std::fs::read(&header_path).map_err(|e| format!("leer header: {e}"))?;
-    if header_bytes.len() < 12 {
-        return Err("header demasiado pequeño".into());
-    }
-    let magic = u32::from_le_bytes(header_bytes[0..4].try_into().unwrap());
-    if magic != BMLGRAPH_MAGIC {
-        return Err(format!("magic inválido: 0x{magic:08X}"));
-    }
-    let _version = u32::from_le_bytes(header_bytes[4..8].try_into().unwrap());
-    let n_fragments = u32::from_le_bytes(header_bytes[8..12].try_into().unwrap()) as usize;
-    let mut offset = 12;
-
-    // Config
-    let arch_len =
-        u64::from_le_bytes(header_bytes[offset..offset + 8].try_into().unwrap()) as usize;
-    offset += 8;
-    let architecture =
-        String::from_utf8_lossy(&header_bytes[offset..offset + arch_len]).to_string();
-    offset += arch_len;
-    let n_layers = u32::from_le_bytes(header_bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let n_heads = u32::from_le_bytes(header_bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let n_embd = u32::from_le_bytes(header_bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let context_length = u32::from_le_bytes(header_bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let vocab_size = u32::from_le_bytes(header_bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-
-    // Const pool
-    let pool_len =
-        u64::from_le_bytes(header_bytes[offset..offset + 8].try_into().unwrap()) as usize;
-    offset += 8;
-    let mut const_pool = Vec::with_capacity(pool_len);
-    for _ in 0..pool_len {
-        let val = f64::from_le_bytes(header_bytes[offset..offset + 8].try_into().unwrap());
-        offset += 8;
-        const_pool.push(val);
-    }
-
-    let config = ModelConfig {
-        architecture,
-        n_layers,
-        n_heads,
-        n_embd,
-        context_length,
-        vocab_size,
-    };
-
-    // Fragmentos
-    use crate::fragment::Fragment;
-    use crate::rpn::RpnOp;
-    let mut fragments = Vec::with_capacity(n_fragments);
-    for i in 0..n_fragments {
-        let frag_path = input_dir.join(format!("fragment_{i}.bmlgraph"));
-        let frag_bytes = std::fs::read(&frag_path).map_err(|e| format!("leer frag {i}: {e}"))?;
-        let n_ops = u32::from_le_bytes(frag_bytes[0..4].try_into().unwrap()) as usize;
-        let mut ops = Vec::with_capacity(n_ops);
-        let mut off = 4;
-        for _ in 0..n_ops {
-            let tag = frag_bytes[off];
-            off += 1;
-            let op = match tag {
-                0 => RpnOp::One,
-                6 => RpnOp::Zero,
-                1 => RpnOp::Bml,
-                2 => RpnOp::Dup,
-                3 => {
-                    let count = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
-                    off += 4;
-                    let body_len = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
-                    off += 4;
-                    RpnOp::Loop { count, body_len }
-                }
-                4 => {
-                    let id = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
-                    off += 4;
-                    RpnOp::Var(id)
-                }
-                5 => {
-                    let id = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
-                    off += 4;
-                    RpnOp::Const(id)
-                }
-                7 => {
-                    let base = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
-                    off += 4;
-                    RpnOp::VarIndexed { base }
-                }
-                8 => {
-                    let slot = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
-                    off += 4;
-                    RpnOp::StoreResult { slot }
-                }
-                9 => RpnOp::FAdd,
-                10 => RpnOp::FMul,
-                11 => {
-                    let depth = u32::from_le_bytes(frag_bytes[off..off + 4].try_into().unwrap());
-                    off += 4;
-                    RpnOp::Pick { depth }
-                }
-                12 => RpnOp::Drop,
-                13 => RpnOp::Swap,
-                _ => return Err(format!("tag desconocido: {tag}")),
-            };
-            ops.push(op);
-        }
-        fragments.push(Fragment { ops });
-    }
-
-    let graph = BmlGraph {
-        const_pool: Vec::new(),
-        fragments,
-        threshold: 0,
-    };
-    Ok((graph, const_pool, config))
-}
+pub use crate::graph_directory::{load_from_dir, load_from_dir_with_limits, GraphLoadLimits};
 
 /// Resultado de compilar un GGUF para inferencia real con fragmentos por capa.
+#[path = "prepared_model.rs"]
+pub mod prepared_model;
+
+/// Validated model configuration, tokenizer and execution weight storage.
 pub struct InferenceCompiler {
     config: ModelConfig,
     vocab: Vocabulary,
     /// Pool de pesos (f32, no f64 — ahorra la mitad de RAM).
     weight_pool: Vec<f32>,
+    mapped_weights: Option<GgufParser>,
     /// Offset en weight_pool de cada tensor clave (por capa y tipo).
     weight_offsets: HashMap<String, u32>,
     /// Dimensiones GGUF de cada tensor (nombre → (ne0, ne1)); ne0 es contiguo.
@@ -626,37 +526,161 @@ pub struct InferenceCompiler {
     head_dim: u32,
     /// Dimensión de KV heads (GQA).
     n_kv_heads: u32,
+    /// GGUF epsilon shared by attention, feed-forward and final RMSNorm.
+    rms_norm_eps: f64,
+    rope_freq_base: f64,
 }
 
 impl InferenceCompiler {
+    /// Load autonomous BML weights under an explicitly selected numeric policy.
+    /// No source GGUF or weight synthesis is used. The cap bounds total expanded
+    /// weights; evaluation may fail even for a structurally valid container.
+    pub fn from_bmlgguf(
+        reader: &mut bml_model_weights::WeightReader,
+        max_evaluated_weights: usize,
+        policy: prepared_model::WeightEvaluation,
+    ) -> Result<Self, String> {
+        prepared_model::load(reader, max_evaluated_weights, policy)
+    }
     /// Abre un GGUF y carga TODOS los pesos dequantizados como f32.
     ///
-    /// Para TinyLlama 1.1B (Q4_0, ~608MB en disco) los pesos dequantizados
-    /// ocupan ~3.5GB en f32. Es manejable pero grande.
+    /// The expanded pool needs four bytes per weight. Use [`Self::open_mapped`]
+    /// to retain encoded matrices and decode one row at a time.
     /// Rechaza arquitecturas distintas de `llama` antes de leer el vocabulario
     /// o expandir pesos. La ruta `llama` sigue siendo experimental.
     pub fn open<P: AsRef<Path>>(gguf_path: P) -> Result<Self, String> {
+        Self::open_storage(gguf_path, false)
+    }
+
+    /// Keep matrix weights encoded in the GGUF mapping and decode one row at a time.
+    /// Native F64 projection order and F32 KV arithmetic remain unchanged.
+    /// The mapped file must not be modified or truncated while this object exists.
+    pub fn open_mapped<P: AsRef<Path>>(gguf_path: P) -> Result<Self, String> {
+        Self::open_storage(gguf_path, true)
+    }
+
+    fn open_storage<P: AsRef<Path>>(gguf_path: P, mapped: bool) -> Result<Self, String> {
         let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
+        Self::from_parser_storage(parser, mapped)
+    }
+
+    pub(crate) fn from_mapped_parser(parser: GgufParser) -> Result<Self, String> {
+        Self::from_parser_storage(parser, true)
+    }
+
+    fn from_parser_storage(parser: GgufParser, mapped: bool) -> Result<Self, String> {
         let config = read_model_config(&parser)?;
-        let vocab = Vocabulary::from_gguf(&parser)?;
+        if config.n_heads == 0
+            || config.n_embd == 0
+            || config.context_length == 0
+            || !config.n_embd.is_multiple_of(config.n_heads)
+        {
+            return Err("invalid model dimensions or context".into());
+        }
+        if config.n_layers != 0 && parser.find_tensor("output_norm.weight").is_none() {
+            return Err("missing output_norm.weight".into());
+        }
+        let validated = if config.n_layers != 0 {
+            Some(
+                bml_inference::model::Model::from_gguf(&parser)
+                    .map_err(|error| format!("Llama profile: {error}"))?
+                    .config()
+                    .clone(),
+            )
+        } else {
+            None
+        };
+        let rope_freq_base = validated
+            .as_ref()
+            .map_or(10000.0, |c| f64::from(c.rope_freq_base));
+        let vocab =
+            if config.n_layers == 0 && parser.get_metadata("tokenizer.ggml.scores").is_none() {
+                Vocabulary::from_projection_fixture(&parser)?
+            } else {
+                Vocabulary::from_gguf(&parser)?
+            };
+
+        let rms_norm_eps = match parser.get_metadata("llama.attention.layer_norm_rms_epsilon") {
+            None => 1e-5,
+            Some(GgufMetadataValue::F32(value)) => f64::from(*value),
+            _ => return Err("invalid llama.attention.layer_norm_rms_epsilon type".into()),
+        };
+        if !rms_norm_eps.is_finite() || rms_norm_eps <= 0.0 {
+            return Err("invalid llama.attention.layer_norm_rms_epsilon value".into());
+        }
 
         let head_dim = config.n_embd / config.n_heads;
 
         let n_kv_heads = parser
-            .get_metadata(&format!(
-                "{}.attention.key_value_head_count",
-                config.architecture
-            ))
+            .get_metadata(&format!("{}.attention.head_count_kv", config.architecture))
             .and_then(|v| match v {
                 GgufMetadataValue::U32(n) => Some(*n),
                 GgufMetadataValue::I32(n) => Some(*n as u32),
                 _ => None,
             })
             .unwrap_or(config.n_heads);
+        if n_kv_heads == 0 || !config.n_heads.is_multiple_of(n_kv_heads) {
+            return Err("invalid grouped-query attention heads".into());
+        }
 
         let mut weight_pool: Vec<f32> = Vec::new();
         let mut weight_offsets = HashMap::new();
         let mut tensor_dims = HashMap::new();
+
+        if mapped {
+            for info in parser.tensor_infos() {
+                if info.dims.len() == 1 || info.dims.len() == 2 {
+                    let cols =
+                        usize::try_from(info.dims[0]).map_err(|_| "tensor dimension overflow")?;
+                    let rows = usize::try_from(*info.dims.get(1).unwrap_or(&1))
+                        .map_err(|_| "tensor dimension overflow")?;
+                    tensor_dims.insert(info.name.clone(), (cols, rows));
+                }
+                if info.name.ends_with("_norm.weight") {
+                    if info.dims != [u64::from(config.n_embd)] {
+                        return Err(format!("invalid {} dimensions", info.name));
+                    }
+                    let values = parser
+                        .read_tensor_f32(&info.name)
+                        .map_err(|e| e.to_string())?;
+                    if values.iter().any(|v| !v.is_finite()) {
+                        return Err(format!("non-finite {}", info.name));
+                    }
+                    let offset =
+                        u32::try_from(weight_pool.len()).map_err(|_| "weight offset overflow")?;
+                    weight_offsets.insert(info.name.clone(), offset);
+                    weight_pool.extend(values);
+                }
+            }
+            for name in ["token_embd.weight", "output.weight"] {
+                if name == "output.weight" && parser.find_tensor(name).is_none() {
+                    continue;
+                }
+                let info = parser
+                    .find_tensor(name)
+                    .ok_or_else(|| format!("missing {name}"))?;
+                if info.dims != [u64::from(config.n_embd), vocab.len() as u64] {
+                    return Err(format!("invalid {name} dimensions"));
+                }
+                parser
+                    .tensor_view(name)
+                    .map_err(|e| e.to_string())?
+                    .decode_row_f32(0)
+                    .map_err(|e| e.to_string())?;
+            }
+            return Ok(Self {
+                config,
+                vocab,
+                weight_pool,
+                mapped_weights: Some(parser),
+                weight_offsets,
+                tensor_dims,
+                head_dim,
+                n_kv_heads,
+                rms_norm_eps,
+                rope_freq_base,
+            });
+        }
 
         // Cargar embedding (token_embd.weight)
         if let Some(emb_vals) = read_tensor_f32(&parser, "token_embd.weight") {
@@ -735,23 +759,55 @@ impl InferenceCompiler {
             );
         }
 
-        // Final RMSNorm
-        load_tensor(
-            &parser,
-            &mut weight_pool,
-            &mut weight_offsets,
-            &mut tensor_dims,
-            "output_norm.weight",
-        );
+        // Zero-layer fixtures retain their historical projection-only contract.
+        // Real transformer layers require a valid final normalization tensor.
+        if let Some(info) = parser.find_tensor("output_norm.weight") {
+            if info.dims != [u64::from(config.n_embd)] {
+                return Err("invalid output_norm.weight dimensions".into());
+            }
+            let values = parser
+                .read_tensor_f32("output_norm.weight")
+                .map_err(|error| format!("output_norm.weight: {error}"))?;
+            if values.iter().any(|value| !value.is_finite()) {
+                return Err("non-finite output_norm.weight".into());
+            }
+            let offset =
+                u32::try_from(weight_pool.len()).map_err(|_| "weight pool exceeds u32 offsets")?;
+            weight_pool.extend(values);
+            weight_offsets.insert("output_norm.weight".into(), offset);
+            tensor_dims.insert("output_norm.weight".into(), (config.n_embd as usize, 1));
+        }
+
+        // Only models without an explicit head tie it to the embeddings.
+        // A present but malformed/unsupported head must not silently fall back.
+        if let Some(info) = parser.find_tensor("output.weight") {
+            if info.dims != [u64::from(config.n_embd), vocab.len() as u64] {
+                return Err("invalid output.weight dimensions".into());
+            }
+            let values = parser
+                .read_tensor_f32("output.weight")
+                .map_err(|error| format!("output.weight: {error}"))?;
+            let offset =
+                u32::try_from(weight_pool.len()).map_err(|_| "weight pool exceeds u32 offsets")?;
+            weight_pool.extend(values);
+            weight_offsets.insert("output.weight".into(), offset);
+            tensor_dims.insert(
+                "output.weight".into(),
+                (config.n_embd as usize, vocab.len()),
+            );
+        }
 
         Ok(Self {
             config,
             vocab,
             weight_pool,
+            mapped_weights: None,
             weight_offsets,
             tensor_dims,
             head_dim,
             n_kv_heads,
+            rms_norm_eps,
+            rope_freq_base,
         })
     }
 
@@ -765,14 +821,44 @@ impl InferenceCompiler {
         &self.vocab
     }
 
-    /// Retorna el pool de pesos completo.
+    /// Decoded weights; mapped mode keeps only normalization vectors here.
     pub fn weight_pool(&self) -> &[f32] {
         &self.weight_pool
     }
 
-    /// Retorna el mapa de offsets de pesos.
+    /// Encoded GGUF mapping bytes; zero for the fully expanded storage mode.
+    pub fn mapped_bytes(&self) -> usize {
+        self.mapped_weights
+            .as_ref()
+            .map_or(0, |parser| parser.len())
+    }
+
+    /// Offsets into the decoded pool; mapped matrices do not have pool offsets.
     pub fn weight_offsets(&self) -> &HashMap<String, u32> {
         &self.weight_offsets
+    }
+
+    /// Select the explicit vocabulary projection, falling back only when absent.
+    pub fn output_weight_name(&self) -> &'static str {
+        if self.tensor_dims.contains_key("output.weight") {
+            "output.weight"
+        } else {
+            "token_embd.weight"
+        }
+    }
+
+    pub(crate) fn use_artifact_vocabulary(&mut self, vocab: Vocabulary) {
+        self.vocab = vocab;
+    }
+
+    /// Validated rotary frequency base used by the causal execution profile.
+    pub fn rope_frequency_base(&self) -> f64 {
+        self.rope_freq_base
+    }
+
+    /// Validated RMSNorm epsilon read from the GGUF metadata.
+    pub fn rms_norm_epsilon(&self) -> f64 {
+        self.rms_norm_eps
     }
 
     /// Retorna el mapa de dimensiones de tensores.
@@ -790,28 +876,37 @@ impl InferenceCompiler {
         self.n_kv_heads
     }
 
-    /// Obtiene el embedding de un token como Vec<f64>.
-    pub fn get_embedding(&self, token_id: u32) -> Vec<f64> {
+    /// Decode a token embedding, rejecting an invalid ID or row decode failure.
+    pub fn get_embedding(&self, token_id: u32) -> Result<Vec<f64>, String> {
         self.get_embedding_f64(token_id)
     }
 
-    /// Forward pass completo con KV cache y softmax real.
-    ///
-    /// Reemplaza `forward()` para usar:
-    /// - KV cache (f16-equivalente, pero en i8 con hash consing)
-    /// - Softmax real en attention
-    /// - Cómputo en f32 (con conversión f64 solo en boundaries)
+    /// Causal attention with F32 KV storage and softmax, and native F64 projections.
+    /// The historical cache type name does not imply hashing or i8 storage.
     pub fn forward_cached(
         &self,
         input_ids: &[u32],
         kv_cache: &mut crate::kv_cache::HashConsedKV,
-    ) -> Vec<f64> {
-        let n_embd = self.config.n_embd as usize;
-        let vocab_size = self.vocab.len();
+    ) -> Result<Vec<f64>, String> {
+        self.forward_cached_with_projection(input_ids, kv_cache, &mut |x, name| {
+            self.matmul_f64(x, name)
+        })
+    }
 
-        if input_ids.is_empty() {
-            return vec![0.0; vocab_size];
+    /// Execute the same causal model using a caller-supplied matrix projection.
+    /// Each projection must return the declared GGUF output dimension and finite values.
+    /// Errors leave the committed cache position unchanged; uncommitted rows may be written.
+    pub fn forward_cached_with_projection(
+        &self,
+        input_ids: &[u32],
+        kv_cache: &mut crate::kv_cache::HashConsedKV,
+        project: &mut impl FnMut(&[f64], &str) -> Result<Vec<f64>, String>,
+    ) -> Result<Vec<f64>, String> {
+        let n_embd = self.config.n_embd as usize;
+        if !kv_cache.matches_layout(self.config.n_layers, self.n_kv_heads, self.head_dim) {
+            return Err("KV cache layout does not match the model".into());
         }
+        self.validate_causal_input(input_ids, kv_cache.current_pos(), kv_cache.capacity())?;
 
         // Posición inicial basada en el cache existente
         let start_pos = kv_cache.current_pos();
@@ -820,40 +915,61 @@ impl InferenceCompiler {
         // Procesar cada token secuencialmente a través de todas las capas
         for (offset, &token_id) in input_ids.iter().enumerate() {
             let pos = start_pos + offset as u32;
-            let emb = self.get_embedding_f64(token_id);
+            let emb = self.get_embedding_f64(token_id)?;
             for i in 0..n_embd.min(emb.len()) {
                 hidden[i] = emb[i];
             }
             for layer in 0..self.config.n_layers {
-                self.forward_layer_cached(&mut hidden, layer, pos, kv_cache);
+                self.forward_layer_cached(&mut hidden, layer, pos, kv_cache, project)?;
             }
         }
 
         // Avanzar la posición del cache
+        let logits = self.compute_logits(&hidden, project)?;
+        if logits.iter().any(|value| !value.is_finite()) {
+            return Err("non-finite logits".into());
+        }
         kv_cache.advance_by(input_ids.len() as u32);
+        Ok(logits)
+    }
 
-        // lm_head: hidden · token_embd^T → logits
-        self.compute_logits(&hidden)
+    fn validate_causal_input(&self, ids: &[u32], start: u32, capacity: u32) -> Result<(), String> {
+        if ids.is_empty() {
+            return Err("empty causal input".into());
+        }
+        if ids.iter().any(|&id| id as usize >= self.vocab.len()) {
+            return Err("token ID outside vocabulary".into());
+        }
+        let count = u32::try_from(ids.len()).map_err(|_| "input length overflow")?;
+        let end = start
+            .checked_add(count)
+            .ok_or("context position overflow")?;
+        if end > capacity.min(self.config.context_length) {
+            return Err("causal context exhausted".into());
+        }
+        Ok(())
     }
 
     /// Forward de una capa con KV cache y softmax real.
     fn forward_layer_cached(
         &self,
-        hidden: &mut Vec<f64>,
+        hidden: &mut [f64],
         layer: u32,
         pos: u32,
         kv_cache: &mut crate::kv_cache::HashConsedKV,
-    ) {
+        project: &mut impl FnMut(&[f64], &str) -> Result<Vec<f64>, String>,
+    ) -> Result<(), String> {
         let n_embd = self.config.n_embd as usize;
         let prefix = format!("blk.{layer}");
 
         // === RMSNorm de atención ===
-        self.rmsnorm_inplace(hidden, &format!("{}.attn_norm.weight", prefix));
+        let mut normalized = hidden.to_vec();
+        self.rmsnorm_inplace(&mut normalized, &format!("{}.attn_norm.weight", prefix));
 
         // === Q, K, V projections ===
-        let q = self.matmul_f64(hidden, &format!("{}.attn_q.weight", prefix));
-        let k = self.matmul_f64(hidden, &format!("{}.attn_k.weight", prefix));
-        let v = self.matmul_f64(hidden, &format!("{}.attn_v.weight", prefix));
+        let q = self.project_checked(&normalized, &format!("{}.attn_q.weight", prefix), project)?;
+        let k = self.project_checked(&normalized, &format!("{}.attn_k.weight", prefix), project)?;
+        let v = self.project_checked(&normalized, &format!("{}.attn_v.weight", prefix), project)?;
 
         // === RoPE a Q y K ===
         let head_dim = self.head_dim as usize;
@@ -862,7 +978,7 @@ impl InferenceCompiler {
         self.apply_rope_inplace(&mut q_rotated, pos as usize, head_dim);
         self.apply_rope_inplace(&mut k_rotated, pos as usize, head_dim);
 
-        // === Cachear K y V en i8 (con hash consing) ===
+        // === Almacenar K y V en F32 ===
         let n_kv_heads = self.n_kv_heads as usize;
         let actual_kv_heads = k_rotated.len() / head_dim;
         let kv_heads_to_use = n_kv_heads.min(actual_kv_heads);
@@ -876,6 +992,13 @@ impl InferenceCompiler {
                 .map(|&v| v as f32)
                 .collect();
             let v_slice: Vec<f32> = v[v_start..v_end].iter().map(|&v| v as f32).collect();
+            if k_slice
+                .iter()
+                .chain(&v_slice)
+                .any(|value| !value.is_finite())
+            {
+                return Err("non-finite KV projection".into());
+            }
             kv_cache.store_k(layer, pos, kv_h as u32, &k_slice);
             kv_cache.store_v(layer, pos, kv_h as u32, &v_slice);
         }
@@ -907,6 +1030,9 @@ impl InferenceCompiler {
                     .sum();
                 scores.push(dot as f64 * scale);
             }
+            if scores.iter().any(|value| !value.is_finite()) {
+                return Err("non-finite attention score".into());
+            }
 
             // Softmax real
             let attn =
@@ -925,7 +1051,8 @@ impl InferenceCompiler {
         }
 
         // === Output projection ===
-        let o_out = self.matmul_f64(&output, &format!("{}.attn_output.weight", prefix));
+        let o_out =
+            self.project_checked(&output, &format!("{}.attn_output.weight", prefix), project)?;
 
         // === Residual ===
         for i in 0..n_embd {
@@ -933,32 +1060,51 @@ impl InferenceCompiler {
         }
 
         // === MLP RMSNorm ===
-        self.rmsnorm_inplace(hidden, &format!("{}.ffn_norm.weight", prefix));
+        normalized.copy_from_slice(hidden);
+        self.rmsnorm_inplace(&mut normalized, &format!("{}.ffn_norm.weight", prefix));
 
         // === MLP: gate, up, down ===
-        let gate = self.matmul_f64(hidden, &format!("{}.ffn_gate.weight", prefix));
-        let up = self.matmul_f64(hidden, &format!("{}.ffn_up.weight", prefix));
+        let gate =
+            self.project_checked(&normalized, &format!("{}.ffn_gate.weight", prefix), project)?;
+        let up =
+            self.project_checked(&normalized, &format!("{}.ffn_up.weight", prefix), project)?;
 
-        // SwiGLU: gate * sigmoid(1.7 * gate) * up
+        // SwiGLU: gate * sigmoid(gate) * up
         let mut swiglu_out = vec![0.0_f64; gate.len().min(up.len())];
         for i in 0..swiglu_out.len() {
             let g = gate.get(i).copied().unwrap_or(0.0);
             let u = up.get(i).copied().unwrap_or(0.0);
-            swiglu_out[i] = g / (1.0 + (-1.7 * g).exp()) * u;
+            swiglu_out[i] = swiglu_scalar(g, u);
         }
 
-        let mlp_out = self.matmul_f64(&swiglu_out, &format!("{}.ffn_down.weight", prefix));
+        let mlp_out =
+            self.project_checked(&swiglu_out, &format!("{}.ffn_down.weight", prefix), project)?;
 
         // === Residual ===
         for i in 0..n_embd.min(mlp_out.len()) {
             hidden[i] += mlp_out[i];
         }
+        if hidden.iter().any(|value| !value.is_finite()) {
+            return Err("non-finite layer output".into());
+        }
+        Ok(())
     }
 
     /// Obtiene el embedding de un token.
     /// token_embd.weight tiene shape [n_embd, vocab_size].
     /// GGUF almacena n_embd valores contiguos para cada token (ne0 primero).
-    fn get_embedding_f64(&self, token_id: u32) -> Vec<f64> {
+    fn get_embedding_f64(&self, token_id: u32) -> Result<Vec<f64>, String> {
+        if token_id as usize >= self.vocab.len() {
+            return Err("token ID outside vocabulary".into());
+        }
+        if let Some(parser) = &self.mapped_weights {
+            let row = parser
+                .tensor_view("token_embd.weight")
+                .map_err(|e| e.to_string())?
+                .decode_row_f32(token_id as usize)
+                .map_err(|e| e.to_string())?;
+            return Ok(row.into_iter().map(f64::from).collect());
+        }
         let offset = self
             .weight_offsets
             .get("token_embd.weight")
@@ -977,125 +1123,35 @@ impl InferenceCompiler {
                 emb[i] = self.weight_pool[idx] as f64;
             }
         }
-        emb
+        Ok(emb)
     }
 
-    /// Corre inferencia completa: token → logits.
-    pub fn forward(&self, input_ids: &[u32]) -> Vec<f64> {
-        let n_embd = self.config.n_embd as usize;
-        let vocab_size = self.vocab.len();
-
-        if input_ids.is_empty() {
-            return vec![0.0; vocab_size];
-        }
-
-        // Embedding lookup: sumar embeddings de todos los tokens
-        let mut hidden: Vec<f64> = vec![0.0; n_embd];
-        for &token_id in input_ids {
-            let emb = self.get_embedding_f64(token_id);
-            for i in 0..emb.len().min(n_embd) {
-                hidden[i] += emb[i];
-            }
-        }
-
-        // Normalizar por número de tokens
-        let scale = 1.0 / (input_ids.len() as f64).sqrt();
-        for val in &mut hidden {
-            *val *= scale;
-        }
-
-        // Aplicar capas del transformer
-        for layer in 0..self.config.n_layers {
-            let pos = (input_ids.len() - 1) as u32;
-            self.forward_layer(&mut hidden, layer, pos);
-        }
-
-        // lm_head: hidden · token_embd^T → logits
-        self.compute_logits(&hidden)
+    /// Run a complete causal prefix using a fresh F32 KV cache.
+    pub fn forward(&self, input_ids: &[u32]) -> Result<Vec<f64>, String> {
+        self.forward_with_projection(input_ids, &mut |x, name| self.matmul_f64(x, name))
     }
 
-    /// Forward de una capa del transformer.
-    fn forward_layer(&self, hidden: &mut Vec<f64>, layer: u32, pos: u32) {
-        let n_embd = self.config.n_embd as usize;
-        let prefix = format!("blk.{layer}");
-
-        // === RMSNorm de atención ===
-        self.rmsnorm_inplace(hidden, &format!("{}.attn_norm.weight", prefix));
-
-        // === Q, K, V projections (matmul simple) ===
-        let mut q = self.matmul_f64(hidden, &format!("{}.attn_q.weight", prefix));
-        let mut k = self.matmul_f64(hidden, &format!("{}.attn_k.weight", prefix));
-        let v = self.matmul_f64(hidden, &format!("{}.attn_v.weight", prefix));
-
-        // === RoPE: aplicar a Q y K ===
-        let head_dim = self.head_dim as usize;
-        self.apply_rope_inplace(&mut q, pos as usize, head_dim);
-        self.apply_rope_inplace(&mut k, pos as usize, head_dim);
-
-        // === Attention: scaled dot-product ===
-        let n_heads = self.config.n_heads as usize;
-        let n_kv_heads = self.n_kv_heads as usize;
-        let scale = 1.0 / (head_dim as f64).sqrt();
-
-        // GQA: cada grupo de Q heads comparte un KV head
-        let q_heads_per_kv = n_heads / n_kv_heads;
-
-        let mut output = vec![0.0_f64; n_heads * head_dim];
-
-        for h in 0..n_heads {
-            let kv_h = h / q_heads_per_kv;
-            let q_start = h * head_dim;
-            let k_start = kv_h * head_dim;
-            let v_start = kv_h * head_dim;
-
-            let mut dot = 0.0_f64;
-            for d in 0..head_dim {
-                dot += q.get(q_start + d).copied().unwrap_or(0.0)
-                    * k.get(k_start + d).copied().unwrap_or(0.0);
-            }
-            let attn = (dot * scale).tanh().clamp(-10.0, 10.0); // soft-clip extreme values
-
-            let o_start = h * head_dim;
-            for d in 0..head_dim {
-                output[o_start + d] = attn * v.get(v_start + d).copied().unwrap_or(0.0);
-            }
-        }
-
-        // === Output projection ===
-        let o_out = self.matmul_f64(&output, &format!("{}.attn_output.weight", prefix));
-
-        // === Residual ===
-        for i in 0..n_embd {
-            hidden[i] = hidden[i] + o_out.get(i).copied().unwrap_or(0.0);
-        }
-
-        // === MLP RMSNorm ===
-        self.rmsnorm_inplace(hidden, &format!("{}.ffn_norm.weight", prefix));
-
-        // === MLP: gate, up, down ===
-        let gate = self.matmul_f64(hidden, &format!("{}.ffn_gate.weight", prefix));
-        let up = self.matmul_f64(hidden, &format!("{}.ffn_up.weight", prefix));
-
-        // SwiGLU: gate * sigmoid(1.7 * gate) * up
-        let mut swiglu_out = vec![0.0_f64; gate.len().min(up.len())];
-        for i in 0..swiglu_out.len() {
-            let g = gate.get(i).copied().unwrap_or(0.0);
-            let u = up.get(i).copied().unwrap_or(0.0);
-            swiglu_out[i] = g / (1.0 + (-1.7 * g).exp()) * u;
-        }
-
-        let mlp_out = self.matmul_f64(&swiglu_out, &format!("{}.ffn_down.weight", prefix));
-
-        // === Residual ===
-        for i in 0..n_embd.min(mlp_out.len()) {
-            hidden[i] = hidden[i] + mlp_out[i];
-        }
+    /// Run a complete causal prefix with checked, caller-supplied projections.
+    pub fn forward_with_projection(
+        &self,
+        input_ids: &[u32],
+        project: &mut impl FnMut(&[f64], &str) -> Result<Vec<f64>, String>,
+    ) -> Result<Vec<f64>, String> {
+        self.validate_causal_input(input_ids, 0, self.config.context_length)?;
+        let mut cache = crate::kv_cache::HashConsedKV::try_new(
+            self.config.n_layers,
+            self.n_kv_heads,
+            self.head_dim,
+            input_ids.len() as u32,
+            crate::kv_cache::DEFAULT_MAX_KV_BYTES,
+        )?;
+        self.forward_cached_with_projection(input_ids, &mut cache, project)
     }
 
     /// RMSNorm: hidden = hidden / sqrt(mean(hidden²) + eps) * weight
-    fn rmsnorm_inplace(&self, hidden: &mut Vec<f64>, weight_name: &str) {
+    fn rmsnorm_inplace(&self, hidden: &mut [f64], weight_name: &str) {
         let n_embd = self.config.n_embd as usize;
-        let eps = 1e-5_f64;
+        let eps = self.rms_norm_eps;
         let mean_sq: f64 = hidden.iter().map(|v| v * v).sum::<f64>() / n_embd as f64;
         let rms = (mean_sq + eps).sqrt();
 
@@ -1112,59 +1168,111 @@ impl InferenceCompiler {
 
     /// Proyección con dimensiones GGUF [n_in, n_out]:
     /// y[j] = suma_i x[i] * W[j * n_in + i], con ne0 contiguo.
-    fn matmul_f64(&self, x: &[f64], weight_name: &str) -> Vec<f64> {
-        let (n_in, n_out) = self.tensor_dims.get(weight_name).copied().unwrap_or((1, 1));
-        let offset = self.weight_offsets.get(weight_name).copied().unwrap_or(0);
-
-        let mut y = vec![0.0_f64; n_out];
-        for j in 0..n_out {
-            let mut dot = 0.0_f64;
-            for i in 0..x.len().min(n_in) {
-                let idx = offset as usize + j * n_in + i;
-                if idx < self.weight_pool.len() {
-                    dot += x[i] * self.weight_pool[idx] as f64;
-                }
-            }
-            y[j] = dot;
-        }
-        y
+    fn matmul_f64(&self, x: &[f64], name: &str) -> Result<Vec<f64>, String> {
+        self.project_rows(x, name, |input, row| {
+            Ok(input
+                .iter()
+                .zip(row)
+                .fold(0.0, |sum, (&x, &w)| sum + x * f64::from(w)))
+        })
     }
 
-    /// Computa logits con los embeddings compartidos: un producto escalar
-    /// por token sobre sus ne0 valores contiguos.
-    fn compute_logits(&self, hidden: &[f64]) -> Vec<f64> {
-        let n_embd = self.config.n_embd as usize;
-        let vocab_size = self.vocab.len();
-        let (emb_dim, vocab_sz) = self
+    /// Apply a row dot-product backend without expanding mapped matrix weights.
+    /// The callback sees exactly one GGML row; its returned scalar must be finite.
+    pub fn project_rows(
+        &self,
+        input: &[f64],
+        name: &str,
+        mut dot: impl FnMut(&[f64], &[f32]) -> Result<f64, String>,
+    ) -> Result<Vec<f64>, String> {
+        let &(columns, rows) = self
             .tensor_dims
-            .get("token_embd.weight")
-            .copied()
-            .unwrap_or((n_embd, vocab_size));
-        let offset = self
-            .weight_offsets
-            .get("token_embd.weight")
-            .copied()
-            .unwrap_or(0);
-
-        let mut logits = vec![0.0_f64; vocab_size];
-        for k in 0..vocab_size.min(vocab_sz) {
-            let mut dot = 0.0_f64;
-            for j in 0..n_embd.min(emb_dim) {
-                let idx = offset as usize + k * emb_dim + j;
-                if idx < self.weight_pool.len() {
-                    dot += hidden[j] * self.weight_pool[idx] as f64;
-                }
-            }
-            logits[k] = dot;
+            .get(name)
+            .ok_or("missing projection dimensions")?;
+        if input.len() != columns {
+            return Err("projection input dimension mismatch".into());
         }
-        logits
+        let mut output = Vec::new();
+        output
+            .try_reserve_exact(rows)
+            .map_err(|_| "projection allocation failed")?;
+        let mapped = self
+            .mapped_weights
+            .as_ref()
+            .map(|parser| parser.tensor_view(name))
+            .transpose()
+            .map_err(|e| e.to_string())?;
+        for row in 0..rows {
+            let decoded;
+            let weights = if let Some(view) = mapped {
+                decoded = view.decode_row_f32(row).map_err(|e| e.to_string())?;
+                decoded.as_slice()
+            } else {
+                let offset = *self
+                    .weight_offsets
+                    .get(name)
+                    .ok_or("missing projection weights")? as usize;
+                let start = row
+                    .checked_mul(columns)
+                    .and_then(|n| n.checked_add(offset))
+                    .ok_or("weight range overflow")?;
+                let end = start.checked_add(columns).ok_or("weight range overflow")?;
+                self.weight_pool
+                    .get(start..end)
+                    .ok_or("weight range outside pool")?
+            };
+            let value = dot(input, weights)?;
+            if !value.is_finite() {
+                return Err("non-finite projection output".into());
+            }
+            output.push(value);
+        }
+        Ok(output)
+    }
+
+    /// Project through the separate output head, or tied embeddings if absent.
+    /// Each vocabulary row contains ne0 contiguous values.
+    fn compute_logits(
+        &self,
+        hidden: &[f64],
+        project: &mut impl FnMut(&[f64], &str) -> Result<Vec<f64>, String>,
+    ) -> Result<Vec<f64>, String> {
+        let mut normalized;
+        let hidden = if self.weight_offsets.contains_key("output_norm.weight") {
+            normalized = hidden.to_vec();
+            self.rmsnorm_inplace(&mut normalized, "output_norm.weight");
+            normalized.as_slice()
+        } else {
+            hidden
+        };
+        self.project_checked(hidden, self.output_weight_name(), project)
+    }
+
+    fn project_checked(
+        &self,
+        input: &[f64],
+        name: &str,
+        project: &mut impl FnMut(&[f64], &str) -> Result<Vec<f64>, String>,
+    ) -> Result<Vec<f64>, String> {
+        let &(n_in, n_out) = self
+            .tensor_dims
+            .get(name)
+            .ok_or_else(|| format!("missing projection {name}"))?;
+        if input.len() != n_in || input.iter().any(|v| !v.is_finite()) {
+            return Err(format!("invalid projection input for {name}"));
+        }
+        let output = project(input, name)?;
+        if output.len() != n_out || output.iter().any(|v| !v.is_finite()) {
+            return Err(format!("invalid projection output for {name}"));
+        }
+        Ok(output)
     }
 
     /// Aplica RoPE a Q o K in-place.
     ///
     /// Para cada par de dimensiones (even, odd) en cada head,
     /// rota según el ángulo cos/sin precomputado para esa dimensión.
-    fn apply_rope_inplace(&self, x: &mut Vec<f64>, pos: usize, head_dim: usize) {
+    fn apply_rope_inplace(&self, x: &mut [f64], pos: usize, head_dim: usize) {
         let n_half = head_dim / 2;
         let n_heads = x.len() / head_dim;
         for h in 0..n_heads {
@@ -1175,7 +1283,7 @@ impl InferenceCompiler {
                 let x_odd = x.get(odd_idx).copied().unwrap_or(0.0);
 
                 // RoPE rotation: angle = pos / base^(2i / head_dim)
-                let freq = 1.0 / (10000.0_f64.powf(2.0 * i as f64 / head_dim as f64));
+                let freq = 1.0 / self.rope_freq_base.powf(2.0 * i as f64 / head_dim as f64);
                 let angle = pos as f64 * freq;
                 let c = angle.cos();
                 let s = angle.sin();
@@ -1192,6 +1300,12 @@ impl InferenceCompiler {
             }
         }
     }
+}
+
+/// Native IEEE SwiGLU scalar: SiLU(gate) times the independent up projection.
+/// This is a numerical activation, not a symbolic BML identity.
+pub fn swiglu_scalar(gate: f64, up: f64) -> f64 {
+    gate / (1.0 + (-gate).exp()) * up
 }
 
 fn load_tensor(
@@ -1277,14 +1391,21 @@ mod tests {
                     model_type: "llama".into(),
                     bos_token_id: 0,
                     eos_token_id: 0,
+                    tokenizer: None,
                 },
                 weight_pool,
+                mapped_weights: None,
                 weight_offsets: HashMap::from([("projection.weight".into(), 2)]),
                 tensor_dims: HashMap::from([("projection.weight".into(), (n_in, n_out))]),
                 head_dim: n_in as u32,
                 n_kv_heads: 1,
+                rms_norm_eps: 1e-5,
+                rope_freq_base: 10000.0,
             };
-            assert_eq!(compiler.matmul_f64(&input, "projection.weight"), expected);
+            assert_eq!(
+                compiler.matmul_f64(&input, "projection.weight").unwrap(),
+                expected
+            );
         }
     }
 
