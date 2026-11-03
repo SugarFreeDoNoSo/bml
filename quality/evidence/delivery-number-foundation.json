@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "scope": "First prerequisite commit for BMLGGUF delivery: exact-number modules and their domain tests only",
+  "base_head": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+  "tested_staged_tree_before_this_evidence_file": "326ab791e46c5d934302a801334eede29e1026ef",
+  "isolation": "git archive of git write-tree extracted to target/delivery-snapshots/number-foundation; contains HEAD plus only the 19 selected domain files. No unstaged transformer/runtime/compiler changes were copied.",
+  "review": [
+    "number/mod.rs only adds modules and exports; existing numerical APIs remain present.",
+    "New modules depend on existing domain internals and std, without Cargo dependency changes or unsafe code.",
+    "Scope covers rational input/arithmetic, exact certificates/replay, bounded recognition/search, symbolic matrices, stream encoding and checked/simplified operations.",
+    "Integration tests cover independent exact oracles, boundary errors, certificate corruption, ordering, depth and resource limits."
+  ],
+  "verification": {
+    "command": "CARGO_INCREMENTAL=0 cargo test -p bml-domain --locked",
+    "working_directory": "target/delivery-snapshots/number-foundation",
+    "exit_code": 0,
+    "passed_including_doctests": 158,
+    "log": "target/quality/delivery-number-foundation-tests.log",
+    "sha256": "f6382dfcf8270a0c1b12de2cd7900a3bd6aeea7d049a8f86e6fbf96f74e0fba4"
+  },
+  "limitations": "Does not close other numerical specs, ARM requirements or workspace mutation controls; this establishes an independently testable prerequisite commit."
+}

@@ -12,13 +12,32 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
+mod certified;
+mod checked;
 mod convert;
 mod encoding;
+mod evaluate;
+mod exact;
+mod matrix;
 mod operations;
+mod recognize;
+mod search;
+mod stream;
 
+pub use certified::{CertifiedBml, ExactDerivation, ExactError, ExactStep, ExactSynthesisOptions};
+pub use checked::ExactOperand;
 pub use convert::{ConversionError, SynthesisOptions};
 pub use encoding::{BuildError, EncodingError, DEFAULT_MAX_BITS};
+pub use evaluate::SimplifiedEvalError;
+pub use exact::{ExactInputError, ExactInputLimits, ExactRational, RationalFloatError};
+pub use matrix::{BmlMatrix, MatrixError, MatrixLimits, ReductionInit};
 pub use operations::Rules;
+pub use search::{
+    CandidateOutcome, CandidateRecord, DirectEvaluationMeasurement, ExactSearchOptions,
+    ExactSearchReport, ExactSearchResult, ExactSearcher, ExactStrategy, SearchTermination,
+    TreeCost,
+};
+pub use stream::{StreamError, StreamLimits};
 
 /// A closed BML term, represented by the words of its canonical integer.
 ///
