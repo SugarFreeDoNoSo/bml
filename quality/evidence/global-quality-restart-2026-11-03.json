@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Full frozen worktree, including preserved pending changes, before the replacement mutation campaign",
+  "head_commit": "6a3e6cca0912db36d30c5cc5099174583dd890bd",
+  "base_commit": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+  "snapshot": "target/delivery-snapshots/global-quality-restart-6a3e6cc",
+  "source_files": 532,
+  "source_snapshot_sha256": "e997a84452ee5599858c081c41b6bb21b24c44768e0a30c5459fe32484d498a4",
+  "source_snapshot_method": "Sorted existing nonignored worktree files except .serena; relative path NUL raw SHA-256 digest",
+  "source_manifest": "target/quality/global-restart-source-manifest.json",
+  "source_manifest_sha256": "d354c4a28908d05ff294da322c8c5f75bc1ef876da269a46c1ed8662cf25e670",
+  "source_hashes_verified_after_checks": true,
+  "verification_records": "target/quality/global-restart-verification.json",
+  "verification_records_sha256": "d48eef094e610e79f1f14d21549fb2fa556ac3fe8142d64e1438a376b69d4359",
+  "verification_started": "2026-11-03T14:27:35.164828+00:00",
+  "verification_finished": "2026-11-03T14:33:15.247643+00:00",
+  "environment": {
+    "toolchain": "rust-toolchain.toml: 1.98.1",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "$REPO/target/global-restart-build",
+    "CARGO_LLVM_COV_TARGET_DIR": "$REPO/target/global-restart-coverage-build",
+    "TMPDIR": "$REPO/target/tool-install-tmp"
+  },
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "exit_code": 0,
+    "rust_tests_passed": 726,
+    "python_tests_passed": 82,
+    "changed_rust_format": "passed",
+    "historical_discrepancies": 0,
+    "traceability": "71/71",
+    "clippy_current_diagnostics": 65,
+    "clippy_baseline_diagnostics": 192,
+    "clippy_new_diagnostics": 0,
+    "log": "target/quality/global-restart-canonical.log",
+    "log_sha256": "0a397966215bb97dfdb95b449840a11c8ecc05c6c849fac79ff3772d532e12fa"
+  },
+  "features": [
+    {
+      "command": "cargo test -p bml-gguf --no-default-features --locked",
+      "exit_code": 0,
+      "tests_passed": 50,
+      "log": "target/quality/global-restart-gguf-minimal.log",
+      "log_sha256": "95e5bc10b3165b2631d8c0bb262d0b8d4514ec1340d4adc3cf8ab333182bf4fc"
+    },
+    {
+      "command": "cargo test -p bml-gguf --all-features --locked",
+      "exit_code": 0,
+      "tests_passed": 57,
+      "log": "target/quality/global-restart-gguf-all.log",
+      "log_sha256": "41ccd0c97c1dc06fef82c3694036cfcd179dd8ce562c4a1d4ba79df4ec285002"
+    },
+    {
+      "command": "cargo test -p bml -p bml-runtime -p bml-kernels --all-features --locked",
+      "exit_code": 0,
+      "tests_passed": 93,
+      "log": "target/quality/global-restart-optional-features.log",
+      "log_sha256": "0ea64b79b5c2fc04d28c8a9f1d545814137a4c4534d200f3744ef4dd40272d91"
+    }
+  ],
+  "coverage": {
+    "command": "cargo llvm-cov --workspace --locked --json --output-path $REPO/target/quality/global-restart-coverage.json",
+    "exit_code": 0,
+    "gate_command": "python3 tools/quality.py coverage --report $REPO/target/quality/global-restart-coverage.json",
+    "gate_exit_code": 0,
+    "report": "target/quality/global-restart-coverage.json",
+    "report_sha256": "5371b04b1ab2a20e9c323cf5c4a2aef03f69f054a2341b88de5864ccb3fe124e",
+    "lines": {"covered": 18704, "count": 21459, "percent": 87.16156391257748},
+    "functions": {"covered": 1730, "count": 2163, "percent": 79.98150716597318},
+    "regions": {"covered": 31802, "count": 37547, "percent": 84.69917703145391},
+    "log": "target/quality/global-restart-coverage.log",
+    "log_sha256": "739168b7d3ac9b69ca28d4425a6c19f3f8832d6fc63d8bbfad79c0e57e855818",
+    "gate_log": "target/quality/global-restart-coverage-gate.log",
+    "gate_log_sha256": "ba3ba650bf0268cb55633c2ad865b5326cc686c2f88aeae3d817adbba7b737cd"
+  },
+  "mutation_restart": {
+    "status_at_recording": "launched_after_all_original_checks_passed",
+    "candidate_count": 3025,
+    "candidate_list": "target/quality/global-restart-candidates.json",
+    "candidate_list_sha256": "af48f5d6362069def2ed84d8abf7fdcfc54472735eb3458d0e76cb54c4d60d44",
+    "diff": "target/quality/global-restart-changes.diff",
+    "diff_sha256": "f8d5ac86d788136b242a8c94b0bd1973795bac1830b57c5c6ea142af0e18bbbb",
+    "command": "cargo mutants --workspace --cargo-arg=--locked --test-workspace true --jobs 2 --timeout 60 --build-timeout 300 --in-diff $REPO/target/quality/global-restart-changes.diff --output $REPO/target/spec-mutations-restart-6a3e6cc",
+    "working_directory": "target/delivery-snapshots/global-quality-restart-6a3e6cc",
+    "environment": "DEV/TEST DEBUG=0, CARGO_INCREMENTAL=0, TMPDIR=$REPO/target/mutation-restart-tmp; CARGO_TARGET_DIR and CARGO_LLVM_COV_TARGET_DIR unset so mutant workers own their build trees",
+    "execution_records": "target/quality/global-restart-mutation-execution.json",
+    "log": "target/quality/global-restart-mutations.log",
+    "report": "target/spec-mutations-restart-6a3e6cc/mutants.out/outcomes.json",
+    "equivalence_exclusions": "none",
+    "global_gate_approved": false
+  },
+  "limitations": "Verification applies to the identified frozen source tree. Mutation completion/approval, publication, ARM execution, PMU measurements and unresolved spec contracts remain separate pending requirements. No historical report or quality baseline was changed."
+}
