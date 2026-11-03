@@ -1,6 +1,6 @@
 ## 1. Matmul vectorial completo (acumulador de suma de productos)
 
-- [x] 1.1 Actualizar `compile_matmul_fragment()` para incluir acumulador. (Ya implementado en op_fragments.rs)
+- [ ] 1.1 Actualizar `compile_matmul_fragment()` para incluir acumulador. Reabierta por auditoría ejecutable: la API aún usa BML literal como producto/suma y devuelve 0 para el caso 1×1 esperado 2, y [0, NaN] para el caso 2×2 esperado [11, 17]. Las rutas causales modernas no corrigen esta API. Evidencia: `quality/evidence/fix-placeholders-closure-audit-2026-11-03.md`.
 - [x] 1.2 Actualizar `build_transformer_dag()` para usar todos los pesos. (InferenceCompiler implementado con matmul real.)
 - [x] 1.3 Asignar bases de pesos correctamente. (weight_offsets + tensor_dims en InferenceCompiler.)
 - [x] 1.4 Pruebas: matmul de una matriz 2x2. (InferenceCompiler::forward verificado con TinyLlama end-to-end.)
@@ -35,7 +35,7 @@
 ## 6. Sampling
 
 - [x] 6.1 `argmax(logits)` para greedy (temp=0).
-- [x] 6.2 `softmax(logits/temp)` + muestreo para temp>0.
+- [ ] 6.2 `softmax(logits/temp)` + muestreo para temp>0. Reabierta: `sample` sustituye cualquier temperatura positiva menor que 1e-9 por greedy. Con el mismo uniforme 0.1, logits [0,1]/temp 1 producen ID 0, pero logits [0,1e-12]/temp 1e-12 producen ID 1 aunque las probabilidades deben coincidir. Control determinista aislado y fuente en `quality/evidence/fix-placeholders-closure-audit-2026-11-03.md`.
 - [x] 6.3 Pruebas: greedy selecciona el max logit.
 
 ## 7. Generación de tokens real
