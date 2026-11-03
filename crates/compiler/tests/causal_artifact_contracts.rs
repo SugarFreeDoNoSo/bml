@@ -197,6 +197,33 @@ fn artifact_rejects_stale_sources_corrupt_programs_and_invalid_bindings() {
 }
 
 #[test]
+fn artifact_projection_dimensions_must_match_independently() {
+    use bml_compiler::causal_artifact::load_directory;
+
+    let source = causal_fixture::fixture(false);
+    let dir = Directory::new();
+    let original = compile_directory(&source.0, &dir.0, 32768).unwrap();
+    assert!(load_directory(&dir.0, None).is_ok());
+    for index in 0..original.projections.len() {
+        for dimension in ["columns", "rows"] {
+            let mut altered = original.clone();
+            if dimension == "columns" {
+                altered.projections[index].columns += 1;
+            } else {
+                altered.projections[index].rows += 1;
+            }
+            dir.save(&altered);
+            let error = load_directory(&dir.0, None).err().unwrap_or_else(|| {
+                panic!("projection {index}: isolated {dimension} mismatch was admitted")
+            });
+            assert_eq!(error, "artifact projection binding mismatch");
+        }
+    }
+    dir.save(&original);
+    assert!(load_directory(&dir.0, None).is_ok());
+}
+
+#[test]
 fn runtime_preflight_rejects_bad_stacks_and_expanded_loop_budgets() {
     let source = causal_fixture::fixture(false);
     let dir = Directory::new();

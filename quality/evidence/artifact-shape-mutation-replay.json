@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "scope": "Independent artifact projection shape validation; targeted survivor replay",
+  "base_commit": "d59d109",
+  "historical_mutant": "crates/compiler/src/causal_artifact.rs:287:13: replace || with && in load_directory",
+  "mutation": "|| *rows != binding.rows becomes && *rows != binding.rows, allowing isolated column or row mismatches",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/artifact-shape-mutant",
+  "test_file": "crates/compiler/tests/causal_artifact_contracts.rs",
+  "test": "artifact_projection_dimensions_must_match_independently",
+  "contract": "For each of eight fixture projections, changing only columns or only rows must fail with artifact projection binding mismatch. Source bytes, program contents and integrity hashes stay valid. Original manifest loads before and after the rejected cases.",
+  "method": "Archive HEAD, apply the recorded mutation only in the snapshot, run existing suite, then add the new contract and run mutated/restored variants. Fresh dedicated build initially; subsequent edits rebuild at the same snapshot path. Worktree production source is untouched.",
+  "verification": [
+    {"source": "mutant, existing contracts", "exit_code": 0, "passed": 6, "log": "target/quality/artifact-shape-mutant-before.log", "sha256": "3f1e18db38092f6a9c8c3c08eb6d0f91968be88d0e77e85e9de5239ab5d23514"},
+    {"source": "mutant, new contract", "exit_code": 101, "passed": 6, "failed": 1, "diagnostic": "projection 0: isolated columns mismatch was admitted", "log": "target/quality/artifact-shape-mutant-after.log", "sha256": "904eccc406e1ebfb34d615ec51dfc07f886cbc2efb079a39fd8ad63e45b899be"},
+    {"source": "restored implementation, new contract", "exit_code": 0, "passed": 7, "log": "target/quality/artifact-shape-baseline-after.log", "sha256": "ed79499e5a837cbd857007a949d0ec43a038d4e2e54bba3da22470c933565621"}
+  ],
+  "command": "cargo test -p bml-compiler --test causal_artifact_contracts --locked",
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/artifact-shape-build; CARGO_INCREMENTAL=0; DEV/TEST DEBUG=0; TMPDIR under target.",
+  "remaining": "Three historical survivors now have detecting contracts. Remaining 44 survivors and two timeouts require disposition. Original global report remains unchanged with end_time=null; targeted success is not global mutation approval."
+}
