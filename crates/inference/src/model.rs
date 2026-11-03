@@ -180,13 +180,32 @@ impl<'a> Model<'a> {
     /// Unknown tensor roles, scaling variants, non-finite weights, missing
     /// resources and shape mismatches are errors, never silent defaults.
     pub fn from_gguf(reader: &'a GgufReader) -> Result<Self> {
+        let (config, tokenizer) = Self::profile_metadata(reader)?;
+        let tensors = reader
+            .tensor_infos()
+            .iter()
+            .map(|info| {
+                let view = reader.tensor_view(&info.name)?;
+                Ok(Tensor {
+                    name: info.name.clone(),
+                    dims: view.ggml_dims().to_vec(),
+                    dtype: view.dtype(),
+                    data: view.bytes(),
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Self::from_tensors(config, tokenizer, tensors)
+    }
+
+    /// Validate architecture/configuration/tokenizer independently of weight storage.
+    pub fn profile_metadata(reader: &impl crate::ModelMetadata) -> Result<(Config, TokenizerSpec)> {
         if reader.architecture() != Some("llama") {
             return Err(Error(
                 "unsupported architecture: expected dense llama".into(),
             ));
         }
         reject_variants(reader)?;
-        let tokenizer = TokenizerSpec::from_gguf(reader)?;
+        let tokenizer = TokenizerSpec::from_metadata(reader)?;
         let embedding_length = required_usize(reader, "llama.embedding_length")?;
         let head_count = required_usize(reader, "llama.attention.head_count")?;
         if head_count == 0 {
@@ -215,20 +234,7 @@ impl<'a> Model<'a> {
                 return Err(Error(format!("unsupported {key}: expected {head_dim}")));
             }
         }
-        let tensors = reader
-            .tensor_infos()
-            .iter()
-            .map(|info| {
-                let view = reader.tensor_view(&info.name)?;
-                Ok(Tensor {
-                    name: info.name.clone(),
-                    dims: view.ggml_dims().to_vec(),
-                    dtype: view.dtype(),
-                    data: view.bytes(),
-                })
-            })
-            .collect::<Result<Vec<_>>>()?;
-        Self::from_tensors(config, tokenizer, tensors)
+        Ok((config, tokenizer))
     }
 
     /// Validate a normalized resource manifest and borrow its tensor payloads.
@@ -837,7 +843,7 @@ fn rope(values: &mut [f32], position: usize, config: &Config) {
     }
 }
 
-fn optional_usize(reader: &GgufReader, name: &str) -> Result<Option<usize>> {
+fn optional_usize(reader: &impl crate::ModelMetadata, name: &str) -> Result<Option<usize>> {
     let Some(value) = reader.get_metadata(name) else {
         return Ok(None);
     };
@@ -857,11 +863,11 @@ fn optional_usize(reader: &GgufReader, name: &str) -> Result<Option<usize>> {
     ))
 }
 
-fn required_usize(reader: &GgufReader, name: &str) -> Result<usize> {
+fn required_usize(reader: &impl crate::ModelMetadata, name: &str) -> Result<usize> {
     optional_usize(reader, name)?.ok_or_else(|| Error(format!("missing {name}")))
 }
 
-fn optional_float(reader: &GgufReader, name: &str) -> Result<Option<f32>> {
+fn optional_float(reader: &impl crate::ModelMetadata, name: &str) -> Result<Option<f32>> {
     let Some(value) = reader.get_metadata(name) else {
         return Ok(None);
     };
@@ -876,7 +882,7 @@ fn optional_float(reader: &GgufReader, name: &str) -> Result<Option<f32>> {
     Ok(Some(number))
 }
 
-fn reject_variants(reader: &GgufReader) -> Result<()> {
+fn reject_variants(reader: &impl crate::ModelMetadata) -> Result<()> {
     let supported = [
         "llama.embedding_length",
         "llama.block_count",

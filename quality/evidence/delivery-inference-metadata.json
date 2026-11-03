@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "scope": "Storage-independent causal profile and tokenizer metadata prerequisite",
+  "base_commit": "858d8fc",
+  "tested_staged_tree_before_evidence": "1c9f43f2079d2517b6ee4b36c8e384107535e77f",
+  "selection": "ModelMetadata trait and implementations, profile_metadata extraction, tokenizer from_metadata and typed metadata helpers. Existing from_gguf entry points delegate to the shared validation. Selected directly into the index without replacing worktree files.",
+  "isolation": "git archive of git write-tree; distributed execution, fingerprinting, remote module and other pending inference work are absent from this snapshot",
+  "verification": {
+    "command": "cargo test -p bml-inference --locked",
+    "working_directory": "target/delivery-snapshots/inference-metadata",
+    "exit_code": 0,
+    "passed": 54,
+    "log": "target/quality/delivery-inference-metadata.log",
+    "sha256": "6a323fd8a6a8a9c53395e96d6dd6d6b85550d7ba87015926e8e07189789c9605"
+  },
+  "remaining": "Causal compiler/runtime and CLI integration require further reviewed commits; this prerequisite does not close delivery task 5.3."
+}

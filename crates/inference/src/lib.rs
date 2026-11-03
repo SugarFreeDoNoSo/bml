@@ -11,6 +11,37 @@ pub mod model;
 pub mod resources;
 pub mod tokenizer;
 
+/// Typed model metadata shared by GGUF and autonomous weight containers.
+pub trait ModelMetadata {
+    /// Read a typed metadata value without converting its representation.
+    fn get_metadata(&self, key: &str) -> Option<&bml_gguf::GgufMetadataValue>;
+    /// Enumerate all metadata to reject unsupported architecture variants.
+    fn metadata(&self) -> &std::collections::HashMap<String, bml_gguf::GgufMetadataValue>;
+    /// Declared model architecture.
+    fn architecture(&self) -> Option<&str> {
+        match self.get_metadata("general.architecture") {
+            Some(bml_gguf::GgufMetadataValue::String(s)) => Some(s),
+            _ => None,
+        }
+    }
+}
+impl ModelMetadata for bml_gguf::GgufReader {
+    fn get_metadata(&self, key: &str) -> Option<&bml_gguf::GgufMetadataValue> {
+        self.get_metadata(key)
+    }
+    fn metadata(&self) -> &std::collections::HashMap<String, bml_gguf::GgufMetadataValue> {
+        self.metadata()
+    }
+}
+impl ModelMetadata for std::collections::HashMap<String, bml_gguf::GgufMetadataValue> {
+    fn get_metadata(&self, key: &str) -> Option<&bml_gguf::GgufMetadataValue> {
+        self.get(key)
+    }
+    fn metadata(&self) -> &Self {
+        self
+    }
+}
+
 /// An invalid model, unsupported profile, resource or execution request.
 #[derive(Debug)]
 pub struct Error(pub String);

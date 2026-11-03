@@ -51,6 +51,10 @@ impl TokenizerSpec {
     /// disabled, and a space prefix enabled. Other normalization profiles are
     /// rejected. Construction of a [`Tokenizer`] validates all vocabulary data.
     pub fn from_gguf(reader: &GgufReader) -> Result<Self> {
+        Self::from_metadata(reader)
+    }
+    /// Import the identical tokenizer profile from an autonomous metadata source.
+    pub fn from_metadata(reader: &impl crate::ModelMetadata) -> Result<Self> {
         if !matches!(reader.get_metadata("tokenizer.ggml.model"), Some(GgufMetadataValue::String(model)) if model == "llama")
         {
             return Err(Error("only tokenizer.ggml.model=llama is supported".into()));
@@ -169,7 +173,7 @@ impl TokenizerSpec {
 }
 
 fn array<'a>(
-    reader: &'a GgufReader,
+    reader: &'a impl crate::ModelMetadata,
     key: &str,
     kind: GgufDataType,
 ) -> Result<&'a [GgufMetadataValue]> {
@@ -181,7 +185,7 @@ fn array<'a>(
     }
 }
 
-fn required_id(reader: &GgufReader, key: &str) -> Result<u32> {
+fn required_id(reader: &impl crate::ModelMetadata, key: &str) -> Result<u32> {
     match reader.get_metadata(key) {
         Some(GgufMetadataValue::U32(id)) => Ok(*id),
         _ => Err(Error(format!(
@@ -190,7 +194,7 @@ fn required_id(reader: &GgufReader, key: &str) -> Result<u32> {
     }
 }
 
-fn optional_bool(reader: &GgufReader, key: &str, default: bool) -> Result<bool> {
+fn optional_bool(reader: &impl crate::ModelMetadata, key: &str, default: bool) -> Result<bool> {
     match reader.get_metadata(key) {
         Some(GgufMetadataValue::Bool(value)) => Ok(*value),
         None => Ok(default),
