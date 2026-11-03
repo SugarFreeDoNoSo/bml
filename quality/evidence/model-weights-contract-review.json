@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Contract-by-contract review of tasks 4.1 and 4.2; tests establish targeted behavior, not exhaustive input coverage or mutation adequacy",
+  "coverage": {
+    "4.1": {
+      "exact_weights_all_five_dtypes": {
+        "target": "crates/model-weights/tests/conversion.rs::independent_f32_f16_and_quantized_blocks_convert_and_reload_without_source",
+        "assertion": "All 330 decoded trees are recognized/certified; their rational targets equal exact rationals of independently expected decoded values. Includes F32/F16 signed-zero canonical-tree equality."
+      },
+      "signed_subnormal_success": {
+        "target": "crates/model-weights/tests/conversion.rs::signed_subnormal_ieee_targets_are_stored_exactly_without_float_evaluation",
+        "oracle": "F32: +/-2^-149 and +/-8388607*2^-149; F16: +/-2^-24 and +/-1023*2^-24",
+        "assertion": "Successful conversion under default budgets followed by exact rational target equality; no requirement that direct floating evaluation succeeds."
+      },
+      "subnormal_budget_failure": "crates/model-weights/tests/conversion.rs::subnormal_weights_exceeding_explicit_tree_budget_are_not_rounded_to_zero",
+      "f32_nonfinite": "crates/model-weights/tests/conversion.rs::nonfinite_and_synthesis_failures_are_localized_and_transactional",
+      "half_and_quantized_nonfinite": {
+        "target": "crates/model-weights/tests/conversion.rs::half_and_quantized_nonfinite_weights_reject_at_decoded_index",
+        "cases": "Half scales +inf, -inf, NaN across F16, Q4_0, Q8_0 and Q6_K: 12 cases reject at decoded index zero, preserving source without output."
+      }
+    },
+    "4.2": {
+      "distinct_rectangular_order": "crates/model-weights/tests/conversion.rs::distinct_rectangular_values_keep_flat_order_across_row_crossing_blocks",
+      "reader_order": "crates/model-weights/tests/reader.rs::independent_fixture_loads_blocks_in_ggml_order_and_verifies_all",
+      "row_major_projection": "crates/runtime/tests/prepared_projection.rs::prepared_blocks_preserve_trees_and_project_against_integer_oracle",
+      "all_fixture_truncations": "crates/model-weights/tests/reader.rs::every_truncation_and_trailing_byte_is_rejected",
+      "hash_corruption": "crates/model-weights/tests/reader.rs::hashes_are_checked_at_the_right_stage_and_on_every_block_read",
+      "rehashed_invalid_indices": "crates/model-weights/tests/reader.rs::correctly_rehashed_invalid_indices_are_rejected",
+      "bmls_grammar_and_padding": "crates/model-weights/tests/reader.rs::rehashed_bmls_padding_headers_and_tree_limits_are_checked",
+      "conversion_budgets": "crates/model-weights/tests/conversion.rs::global_steps_metadata_and_memory_budgets_do_not_leave_partial_models",
+      "inclusive_output_limit": "crates/model-weights/tests/writer.rs::output_budget_is_inclusive_and_short_budget_aborts",
+      "failure_after_completed_tensor": "crates/model-weights/tests/conversion.rs::failure_after_completed_tensor_removes_all_spooled_blocks",
+      "corrupt_spool": "crates/model-weights/tests/writer.rs::corrupt_spool_is_rejected_before_the_publication_point",
+      "destination_preservation": "crates/model-weights/tests/writer.rs::preexisting_destination_is_never_modified",
+      "publication_race": "crates/model-weights/tests/writer.rs::concurrent_publication_has_exactly_one_winner"
+    }
+  },
+  "verification": [
+    {"command": "cargo test -p bml-model-weights --all-features --locked", "exit_code": 0, "passed": 38, "conversion_tests": 11, "log": "target/quality/model-weights-contract-review-all.log", "sha256": "084102f0826b06d206d7e265f3458116945c15d536ae19d4ceb24af583538283"},
+    {"command": "cargo test -p bml-model-weights --no-default-features --locked", "exit_code": 0, "passed": 26, "log": "target/quality/model-weights-contract-review-minimal.log", "sha256": "2b06f340f1032e7048e69a8662300f0b34182664214fe77d4cc2a80850bd63e0"},
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 665, "historical_discrepancies": 0, "new_clippy_diagnostics": 0, "log": "target/quality/model-weights-contract-review-gate.log", "sha256": "bc8b24802433d8d25049090bfdef0897108a076c9d2fe74ffa5588a2978c53f0"}
+  ],
+  "limitations": "Does not close task 5.2 coverage/mutation controls or convert real-model failures into successes. Historical evidence remains scoped to its original snapshots."
+}

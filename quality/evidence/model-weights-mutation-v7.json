@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "scope": "Follow-up to 20 survivors in v6; full v7 campaign finished and failed",
+  "simplifications": [
+    "Removed Seed::visit_string override: serde Visitor's default implementation already delegates to visit_str, preserving bounded string handling.",
+    "Removed scalar tag-9 branch: typed handles array tags and rejects nested arrays before dispatching to scalar. Scalar calls from array decoding occur only inside scalar-tag match arms."
+  ],
+  "regressions": [
+    {
+      "test": "replay_memory_budget_accepts_exact_capacity_and_rejects_one_byte_less",
+      "contract": "Independent boundary calculation uses actual published catalog size and the specified default one-step replay reservation. Exact capacity succeeds; one byte less fails with the expected required bytes and no publication."
+    },
+    {
+      "test": "adapter_rejects_nested_and_mistyped_arrays_without_coercion",
+      "contract": "Metadata adapter is exercised independently of preflight: nested arrays return NestedArray and mismatched element types return InvalidType."
+    },
+    {
+      "test": "only_root_gguf_array_consumes_the_metadata_entry_budget",
+      "contract": "A non-gguf root array consumes the array-element budget, not metadata-entry budget, and reaches schema rejection if it fits."
+    }
+  ],
+  "exclusions_added": false,
+  "comparison_policy": "Removed candidates are not counted as caught; final comparison must account for changed production source and candidate count.",
+  "snapshot_sha256": {
+    "crates/model-weights/src/convert.rs": "526bddf46dfee83b9188af5fb4f7e275c7164d1c7c262dd959b73ae0c2c682bf",
+    "crates/model-weights/src/metadata.rs": "e5b68df2a0dbaf41f2102d50004e530b9882ffb3e7faa493fc7b600c4c48c2de",
+    "crates/model-weights/tests/reader.rs": "8d5a528921e08b23ae9ca4203bdf78f1e5a327c50b58d124acf5c5f2a594961b",
+    "crates/model-weights/tests/writer.rs": "a8c8a20c0fcfa7ac6e5eef8fdb9b5bddce29a55ee959e48f44e1ba880f1d4b8c"
+  },
+  "verification": [
+    {
+      "command": "cargo test -p bml-model-weights --all-features --locked",
+      "exit_code": 0,
+      "passed": 69,
+      "log": "target/quality/model-weights-v7-tests.log",
+      "sha256": "bcd18145824982b6108cd0dbfbc6366f792cc8df421fe4026e787f1685429170"
+    },
+    {
+      "command": "CARGO_INCREMENTAL=0 ./scripts/check.sh origin/master",
+      "exit_code": 0,
+      "rust_tests_passed": 696,
+      "new_clippy_diagnostics": 0,
+      "log": "target/quality/model-weights-v7-gate.log",
+      "sha256": "7c5c9aadd3b60392948e0c40784a2be15d964bf1a7092786ad29e18b7f82134b"
+    }
+  ],
+  "complete_campaign_v7": {
+    "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --output target/model-weights-mutations-v7",
+    "status": "Complete; mutation gate failed",
+    "exit_code": 2,
+    "total_mutants": 455,
+    "caught": 386,
+    "missed": 12,
+    "unviable": 57,
+    "timeout": 0,
+    "score_percent": 96.98492462311557,
+    "start_time": "2026-11-03T08:36:02.719833115Z",
+    "end_time": "2026-11-03T09:03:22.503678444Z",
+    "report_sha256": "23425333ff6824a34f896c6a5f9f1146b5ddcc87cc12c4ed9b111cd34c9b35ee",
+    "validator": "python3 tools/quality.py mutations --report target/model-weights-mutations-v7/mutants.out/outcomes.json",
+    "validator_exit_code": 1,
+    "report": "target/model-weights-mutations-v7/mutants.out/outcomes.json",
+    "log": "target/quality/model-weights-mutations-v7.log"
+  },
+  "closure_approved": false
+}

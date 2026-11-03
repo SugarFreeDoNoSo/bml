@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "BMLGGUF v1 catalog reader, strict typed metadata decoder, on-demand BMLS blocks and complete payload verification. No writer, CLI conversion or inference claims.",
+  "source_sha256": {
+    "crates/model-weights/src/reader.rs": "610a2f12c9052e3265e8f2a1e0dd198c6984741d70c2b7d3b8b4fb8bfb750756",
+    "crates/model-weights/src/metadata.rs": "041f7d618c4eed25a0a2df9a52a4a9ff3a5d4df28a640f0e57905f5b41e05016"
+  },
+  "fixture": {
+    "source": "crates/model-weights/tests/reader.rs",
+    "construction": "Independent byte-level header, tensor directory, block directory and BMLS payload construction; no production writer or BMLS encoder",
+    "ggml_shape": [3, 2],
+    "blocks": 2,
+    "expected_flat_codes": [0, 4, 0, 24, 88, 0],
+    "verified_payload_bytes": 51
+  },
+  "reader_tests": [
+    "independent_fixture_loads_blocks_in_ggml_order_and_verifies_all",
+    "every_truncation_and_trailing_byte_is_rejected",
+    "hashes_are_checked_at_the_right_stage_and_on_every_block_read",
+    "correctly_rehashed_invalid_indices_are_rejected",
+    "rehashed_bmls_padding_headers_and_tree_limits_are_checked",
+    "metadata_types_duplicates_and_resource_limits_are_enforced",
+    "every_metadata_scalar_and_empty_array_preserves_its_type",
+    "metadata_budget_precedes_parsing_an_excess_element",
+    "header_version_flags_and_reserved_bytes_are_not_ignored"
+  ],
+  "verification": [
+    {"command": "cargo test -p bml-model-weights --no-default-features --locked", "exit_code": 0, "passed": 15, "log": "target/quality/model-weights-reader-minimal.log", "sha256": "b27e719179fd10c0b03c2eacad54265b9d480ace47e41ea2330e243bd3c1f1d5"},
+    {"command": "cargo test -p bml-model-weights --all-features --locked", "exit_code": 0, "passed": 16, "log": "target/quality/model-weights-reader-all.log", "sha256": "5f1fc83f859c72eac164d3152a5464ffff520e28da809c1485df0567551661eb"},
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 628, "historical_discrepancies": 0, "traceability": "71/71", "new_clippy_diagnostics": 0, "log": "target/quality/model-weights-reader-gate.log", "sha256": "72091b386768f47eb94b75b9742ee3a57ca5ca61309b11a08f6907e9ad33b820"},
+    {"command": "cargo audit --deny warnings", "exit_code": 0, "log": "target/quality/model-weights-reader-audit.log", "sha256": "a7dec723417296d636c376adb6a60c2f1b5650f29a4834e9e1a660dfde8b46ec"}
+  ],
+  "gguf_no_features_tree": "bml-gguf -> memmap2 -> libc",
+  "limitations": [
+    "Opening validates structural metadata and catalog integrity, not model-specific architecture compatibility or mathematical weight equivalence.",
+    "Only read_block/verify_all verify the selected/all payload blocks. Keep the open file immutable.",
+    "The earlier full mutation campaign does not cover this new reader."
+  ]
+}

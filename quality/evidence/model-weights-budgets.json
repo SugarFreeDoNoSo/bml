@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Shared converter/writer conservative memory accounting and explicit independent synthesis/replay caps",
+  "implementation": ["crates/model-weights/src/memory.rs", "crates/model-weights/src/convert.rs", "crates/model-weights/src/writer.rs"],
+  "contracts": [
+    "Shared cap accepts external=60 plus writer=40 at cap=100, rejects writer=41, retains peak after release, rejects u64 overflow",
+    "Cached three-weight conversion emits one synthesis step but replays three: cap=2 fails at flat index 2 without publication, cap=3 succeeds",
+    "Creation, catalog growth, block replay and final verification include importer reservations",
+    "Importer cache and mapped reader are dropped before final verification; pending vectors release capacity on flush"
+  ],
+  "verification": [
+    {"command": "cargo test -p bml-model-weights --all-features --locked", "exit_code": 0, "passed": 34},
+    {"command": "cargo test -p bml-model-weights --no-default-features --locked", "exit_code": 0, "passed": 26},
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 639, "new_clippy_diagnostics": 0, "historical_discrepancies": 0, "log": "target/quality/model-weights-budget-gate.log", "sha256": "0bf53d68206bf8a5e7824757f973a265f8c5783293702c9761728ce227f6150a"}
+  ],
+  "limitations": [
+    "Memory is accounted owned working-set estimates, not process RSS; mapped pages and allocator overhead are excluded.",
+    "Synthesis and replay counters independently obey the declared cap; synthesis_steps reports synthesis only.",
+    "No CLI, real-model inference or full mutation-campaign completion is claimed."
+  ]
+}

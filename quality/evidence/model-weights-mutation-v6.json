@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "scope": "Follow-up to 30 survivors in v5; full v6 campaign finished and failed",
+  "production_change": {
+    "file": "crates/model-weights/src/convert.rs",
+    "change": "Remove unreachable early memory-triggered block flush",
+    "invariant": "When pending is nonempty, the prior iteration accepted base_memory + cache_bytes + 2*pending_memory + synthesis_memory + 65536, plus writer memory. No base, cache or scratch capacity changes between iterations. The removed condition used the same sum with only 1*pending_memory and compared to the same resident cap, so it could not be true. At tensor start pending is empty. Encoded-byte and term-count flushes remain; oversize retained memory still fails transactionally.",
+    "interpretation": "Removed dead control flow, not a mutation exclusion. Candidate totals may change; do not count removed mutants as caught."
+  },
+  "regressions": [
+    {
+      "test": "one_certificate_cache_budget_has_an_inclusive_owned_storage_boundary",
+      "contract": "One certificate for 1 requires a term word, two rational words, a proof step and owned/cache headers. Exact capacity reuses repeated weights; one byte less does not."
+    },
+    {
+      "test": "descriptor_only_preflight_accepts_exact_eof_and_accounts_catalog",
+      "extension": "The independent 14-byte metadata record is accepted at cap 14 and rejected at cap 13 with required=14."
+    },
+    {
+      "test": "tensor_rank_and_empty_name_are_rejected_before_reading_dimensions",
+      "contract": "Zero-length names and ranks zero/five independently return TensorShape under valid catalog hashes."
+    },
+    {
+      "test": "temporary_name_collision_is_retried_without_touching_existing_file",
+      "contract": "A separate test executable starts the temporary-name sequence deterministically; a preexisting first candidate is preserved and the writer retries, then cleans its own spool."
+    }
+  ],
+  "exclusions_added": false,
+  "snapshot_sha256": {
+    "crates/model-weights/src/convert.rs": "1f16081616d915eaeaf8a34a03d5c0c00174771ff552069501df81042464fac8",
+    "crates/model-weights/src/gguf_preflight.rs": "7928cef4ae71f2ebde64e640720f08e31f92394ece2bfe0c35bc4068e0a99451",
+    "crates/model-weights/tests/conversion.rs": "3ef6306b426249ebfb476bea1ed53097a6ef9e0f371104341743fdaac0a7cfbf",
+    "crates/model-weights/tests/reader.rs": "3145bd3be72972ffb628ea635dfe4df4b2f077dce8861af585437c71b18ea805",
+    "crates/model-weights/tests/writer_collision.rs": "1065acf4413c274a5f1b35e707b8a46af5e0a954ec3f0e61d388c84bee8562c5"
+  },
+  "verification": [
+    {
+      "command": "cargo test -p bml-model-weights --all-features --locked",
+      "exit_code": 0,
+      "passed": 66,
+      "log": "target/quality/model-weights-v6-tests.log",
+      "sha256": "017fbfa1d45fef240703a93f6d8dccf844a272970840a93d0fbd6ef6827239f4"
+    },
+    {
+      "command": "CARGO_INCREMENTAL=0 ./scripts/check.sh origin/master",
+      "exit_code": 0,
+      "rust_tests_passed": 693,
+      "new_clippy_diagnostics": 0,
+      "log": "target/quality/model-weights-v6-gate.log",
+      "sha256": "d3546f3cc85e6040e91b4b3dc4b9696ba875ce96b7b7d628055030f312f59a16"
+    }
+  ],
+  "crate_coverage": {
+    "command": "cargo llvm-cov -p bml-model-weights --all-features --locked --json --output-path target/quality/model-weights-v6-coverage.json",
+    "exit_code": 0,
+    "lines_percent": 88.50866075200676,
+    "functions_percent": 72.97297297297295,
+    "sha256": "fd148bc41fc832803d85549726e79484e1ed6e17b776c5428f0d759978c018de",
+    "scope": "Package coverage only; not a replacement for final workspace coverage."
+  },
+  "complete_campaign_v6": {
+    "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --output target/model-weights-mutations-v6",
+    "status": "Complete; mutation gate failed",
+    "exit_code": 2,
+    "total_mutants": 457,
+    "caught": 380,
+    "missed": 20,
+    "unviable": 57,
+    "timeout": 0,
+    "score_percent": 95.0,
+    "start_time": "2026-11-03T08:05:45.101106323Z",
+    "end_time": "2026-11-03T08:32:32.043374375Z",
+    "report_sha256": "c70a129841a35adaa01b03524f0efe572ab18f47c97e01ca038bd5bed235a2dc",
+    "validator": "python3 tools/quality.py mutations --report target/model-weights-mutations-v6/mutants.out/outcomes.json",
+    "validator_exit_code": 1,
+    "comparison_scope": "Candidate total changed from 464 to 457 after removal of unreachable control flow. The drop from 30 to 20 survivors is not claimed as ten newly caught mutants; removed candidates are not detections.",
+    "report": "target/model-weights-mutations-v6/mutants.out/outcomes.json",
+    "log": "target/quality/model-weights-mutations-v6.log"
+  },
+  "closure_approved": false
+}

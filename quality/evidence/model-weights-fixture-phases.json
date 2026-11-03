@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Successful independent fixture conversion, load and execution measurements; no real-model performance claim",
+  "reproduce": [
+    "cargo build -p bml-cli --release --locked",
+    "cargo build -p bml-runtime --example measure_prepared_fixture --release --locked",
+    "python3 tools/measure_prepared_fixture.py --directory target/quality/prepared-fixture-phases-NEW"
+  ],
+  "measurement_driver": "crates/runtime/examples/measure_prepared_fixture.rs",
+  "orchestrator": "tools/measure_prepared_fixture.py",
+  "toolchain": "1.98.1",
+  "binary_sha256": {
+    "target/release/bml-cli": "bd2bd95cdba32c44e73d0e5edb8af6577305a9b9831cb0ad23d78f1a904a18a4",
+    "target/release/examples/measure_prepared_fixture": "3b5d93a5e6c2cd0262608b27e623c480709b5f558682b63900cef009e680cbbf"
+  },
+  "fixture": {
+    "source": "crates/runtime/tests/support/symbolic_fixture.rs",
+    "profile": "one-layer Llama, width 4, GQA, RoPE and nonzero MLP, 260-token SentencePiece vocabulary",
+    "source_sha256": "60b0498ae693893d3122c64a618a48c573d7d27e9edecedec36747044e2c7145",
+    "source_bytes": 16000,
+    "output_sha256": "73fb23a1c4f16dd285c7c5bdc16bd58c964cca4a415b6520bd79032fd836e85f",
+    "output_bytes": 13029,
+    "tensors": 12,
+    "weights": 2188,
+    "source_unchanged_by_conversion": true,
+    "source_removed_before_load_and_execution": true,
+    "output_unchanged_after_execution": true,
+    "temporary_files_remaining": []
+  },
+  "budgets": {
+    "conversion": "ConversionOptions defaults except max_block_terms=1024, max_output_bytes=1073741824 and max_cache_bytes=1048576; full resolved options retained in conversion.stdout",
+    "evaluation": "CheckedExactF32, ReadLimits::default(), max_evaluated_weights=10000, SymbolicLimits::default()",
+    "generation": "prompt AB, greedy temperature 0, two sampled tokens, KV context 8"
+  },
+  "phases": {
+    "conversion": {
+      "exit_code": 0,
+      "wall_ns_including_process_startup": 10815426,
+      "read_decode_ns": 452688,
+      "synthesis_certification_ns": 234397,
+      "write_verify_ns": 6304528,
+      "user_seconds": 0.004518,
+      "system_seconds": 0.0,
+      "peak_process_rss_kib": 18892,
+      "peak_accounted_owned_bytes": 14367008,
+      "peak_cache_bytes": 1160,
+      "synthesis_steps": 13,
+      "weights_reused": 2184,
+      "stdout_sha256": "3c2a244768e81317dc8fa2d16f097acaeee72f5cb221b61c73b9f2475880be86"
+    },
+    "load_only_process": {
+      "exit_code": 0,
+      "wall_ns_including_process_startup": 27822800,
+      "load_ns": 26514908,
+      "user_seconds": 0.01624,
+      "system_seconds": 0.0,
+      "peak_process_rss_kib": 18892,
+      "stdout_sha256": "d6b533d963f76e5852568f711faa8a2e237dd5a05088baf4aef4fcf11b2f51aa"
+    },
+    "execution_process": {
+      "exit_code": 0,
+      "wall_ns_including_process_startup": 34868606,
+      "load_ns_excluded_from_execution": 15509673,
+      "tokenize_ns_excluded_from_execution": 2260,
+      "execution_ns": 17766572,
+      "execution_scope": "KV allocation, lazy symbolic-kernel compilation, prompt prefill, two greedy samples and one intermediate cached forward; no unused forward after last sample",
+      "user_seconds": 0.028348,
+      "system_seconds": 0.0,
+      "peak_process_rss_kib": 18892,
+      "rss_scope": "Full process lifetime including loading/setup, not isolated execution-only RSS",
+      "profile": "bmlgguf-checked-exact-f32-symbolic-causal-v1",
+      "prompt_ids": [1, 3, 69, 70],
+      "generated_ids": [1, 0],
+      "executed_operations": ["dot", "residual_add", "rms_norm", "rope", "scale", "softmax", "swiglu"],
+      "stdout_sha256": "446474985f5ed1f89a37f9afe74ac1d6ecdf275785f036b1b106a07c564d1346"
+    }
+  },
+  "measurement": {
+    "samples_per_phase": 1,
+    "wall": "Python time.monotonic_ns around each separate subprocess",
+    "phase_timers": "Rust Instant; excludes process startup and measured separately from loading/tokenization",
+    "memory": "Linux os.wait4 ru_maxrss in KiB for each child lifetime, including launch/exec overhead; identical high-water values do not establish identical phase working sets",
+    "build_excluded": true,
+    "cache_state": "Uncontrolled OS page cache; hashing and preceding phases can warm pages",
+    "timing_interpretation": "One observed sample; wall, CPU and internal phase timers have different scopes and are not interchangeable"
+  },
+  "raw_report": "target/quality/prepared-fixture-phases/report.json",
+  "raw_report_sha256": "13999faa1046246b63fdf78d24ca4a1e001a462ac3af119ced630860222223f7",
+  "verification": {
+    "campaign_exit_code": 0,
+    "report_and_six_log_hashes_checked": true,
+    "gate_command": "./scripts/check.sh origin/master",
+    "gate_exit_code": 0,
+    "rust_tests_passed": 661,
+    "new_clippy_diagnostics": 0,
+    "historical_discrepancies": 0,
+    "gate_log": "target/quality/prepared-fixture-phases-gate.log",
+    "gate_log_sha256": "7b6a27c4ecb6135a8a5ebb5efed52fe5cb758b406f296618c2a582b0b777ff01"
+  },
+  "limitations": [
+    "Fixture values are highly repetitive and simple; its output size ratio is not evidence of real-model compression.",
+    "No statistical throughput, cold-cache or steady-state performance claim.",
+    "RSS is process high-water memory, not a measured execution-only allocation peak or the converter's accounted memory budget.",
+    "Real-model attempts remain failures documented separately; this fixture does not supersede them."
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "scope": "Prepared review artifacts and active-checklist inventory; not a commit, publication or archive",
+  "base_head": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+  "plan": "openspec/changes/gguf-to-bml-weights/DELIVERY.md",
+  "manifest": "target/quality/model-weights-delivery/manifest.json",
+  "manifest_sha256": "8110c1aa93c3f8e64f6d4d1fd3405f3be3ae06439957592c25c35fce47df2dfb",
+  "exported_files": 69,
+  "patches": [
+    {
+      "path": "target/quality/model-weights-delivery/primary.patch",
+      "sha256": "260207f80f912850f674c052e9459e3d376b1b215f2e3c8a8bd5baeda8484886",
+      "bytes": 400033
+    },
+    {
+      "path": "target/quality/model-weights-delivery/integration-review.patch",
+      "sha256": "dfdb7a7a9c0fc40fd629449e737abdb910beb1a0afb3552df19f5f2a10c38b8f",
+      "bytes": 163198
+    }
+  ],
+  "verification": {
+    "reverse_apply_check": "git apply --reverse --check passed separately for both exports at creation",
+    "git_index_unchanged": true,
+    "openspec_command": "npx --yes @fission-ai/openspec validate --all --strict",
+    "openspec_exit_code": 0,
+    "openspec_passed": 9,
+    "openspec_log": "target/quality/model-weights-delivery/openspec-validation.log"
+  },
+  "limitations": [
+    "Integration patch includes prior shared work; it is not an isolated ready-to-apply commit against HEAD.",
+    "Uncommitted numerical, GGUF and causal prerequisites must be reviewed and integrated first.",
+    "No claim of final historical workspace mutation result or ARM/PMU/cloud evidence.",
+    "Delivery documents and subsequent checklist updates were created after the export; the exported source snapshot remains identified by its hashes."
+  ],
+  "commit_created": false,
+  "published": false,
+  "archived": false
+}

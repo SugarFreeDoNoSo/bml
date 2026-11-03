@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Autonomous converted Llama fixture with checked exact F32 weight evaluation and symbolic causal RPN execution",
+  "profile": "bmlgguf-checked-exact-f32-symbolic-causal-v1",
+  "implementation": ["crates/compiler/src/prepared_model.rs", "crates/runtime/src/symbolic_causal.rs"],
+  "fixture": {
+    "source": "crates/runtime/tests/support/symbolic_fixture.rs",
+    "construction": "Independent byte-level GGUF, one layer, embedding width 4, two query heads, one KV head, head dimension 2, nonzero signed MLP, 260-token SentencePiece vocabulary",
+    "source_deleted_before_model_open": true,
+    "tokenizer_prompt": "AB",
+    "expected_token_ids": [1, 3, 69, 70],
+    "decoded_text": " AB",
+    "greedy_generation_steps": 2
+  },
+  "oracle": {
+    "source": "crates/runtime/tests/symbolic_causal_contracts.rs::oracle",
+    "method": "Independent scalar normalization, projections, GQA attention, RoPE and SwiGLU; F32 KV casts are explicit; no production numeric kernel is called",
+    "max_absolute_logit_tolerance": 0.0000002,
+    "generation": "Production greedy sampler compared at each step against independently computed maximum-logit index"
+  },
+  "contracts": [
+    "No source GGUF or mapping is retained by autonomous model",
+    "Configuration, tokenizer and tensor roles use the same validators as GGUF",
+    "Every evaluated F32 weight must equal the recognized BML target as an exact rational",
+    "Exact decimal 0.1 is rejected rather than silently rounded to F32; 0.5 is accepted",
+    "Explicit model materialization cap rejects insufficient capacity",
+    "Full and cached forward execute dot, residual_add, rms_norm, rope, scale, softmax and swiglu"
+  ],
+  "verification": [
+    {"command": "cargo test -p bml-runtime --test symbolic_causal_contracts --locked", "exit_code": 0, "passed": 4},
+    {"command": "cargo test -p bml-compiler --lib --locked explicit_f32_boundary", "exit_code": 0, "passed": 1},
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 658, "new_clippy_diagnostics": 0, "historical_discrepancies": 0, "log": "target/quality/model-weights-causal-gate.log", "sha256": "ea601fcb071cefa0e9eb46bb755581d37e216d7867ffec56d4cd8f4fd23d0fa3"}
+  ],
+  "limitations": [
+    "The explicit checked-F32 boundary materializes weights. Activations and KV are numeric, not exact rational inference.",
+    "Closed BML terms can fail recognition or numerical evaluation; such failures are returned without fallback.",
+    "No real-model conversion/inference, CLI run integration or full mutation-campaign completion is claimed."
+  ]
+}

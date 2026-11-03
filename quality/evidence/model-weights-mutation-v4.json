@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "scope": "Eight additional regressions for the 73 survivors of campaign v3; complete campaign v4 finished and failed",
+  "review": [
+    {
+      "test": "packed_block_byte_limit_is_inclusive_across_decode_chunks",
+      "contract": "520 one-bit weights split into exactly 65 eight-term BMLS blocks at a 25-byte inclusive cap; report charges one 64-bit word per tree."
+    },
+    {
+      "test": "cache_accounting_cannot_fit_owned_certificates_in_a_single_byte",
+      "contract": "Cache caps of 64 and 65 bytes cannot retain a certificate plus the 64-byte entry allowance; all three repeated weights require synthesis."
+    },
+    {
+      "test": "invalid_source_rank_reports_the_rank_field_byte_offset",
+      "contract": "A zero-rank descriptor reports TensorShape at the rank field rather than an unrelated offset."
+    },
+    {
+      "test": "canonical_source_alias_is_reported_as_conflict",
+      "contract": "A Unix symlink destination resolving to the source returns SourceDestinationConflict, preserving source bytes."
+    },
+    {
+      "test": "abort_succeeds_when_spool_was_already_removed",
+      "contract": "Explicit abort accepts an already absent spool and leaves no published destination."
+    },
+    {
+      "test": "missing_destination_parent_preserves_original_create_error",
+      "contract": "A missing parent yields CreateTemporary/NotFound rather than exhausting name collisions or fabricating AlreadyExists."
+    },
+    {
+      "test": "bounded_json_depth_distinguishes_limit_from_unknown_fields",
+      "contract": "Object and array nesting at container depth eight is accepted by bounded parsing; excessive depth returns InvalidValue before schema validation."
+    },
+    {
+      "test": "descriptor_only_preflight_accepts_exact_eof_and_accounts_catalog",
+      "contract": "Preflight accepts descriptors ending exactly at EOF, accounts 47 catalog bytes plus three bookkeeping records as 1144 bytes, accepts that cap and rejects 1143. This does not assert that a payload-free GGUF is a complete valid model."
+    }
+  ],
+  "production_logic_changed": false,
+  "mutation_exclusions_added": false,
+  "snapshot_sha256": {
+    "crates/model-weights/src/gguf_preflight.rs": "8e3b27a9468f0926d7a162bb3e998879cb81cca62447327387f6c25a38c0d2b3",
+    "crates/model-weights/tests/conversion.rs": "221def97c2cfe6f7c0a621d60fd6e7639a7601cd53ce08c5b069c6d65df45832",
+    "crates/model-weights/tests/reader.rs": "d6e6ba3e3fa3a7169eee7bf822434a241c853c733ce7769c28b0ddb404748ee1",
+    "crates/model-weights/tests/writer.rs": "598dbd1bdf8c0de3d0c4c1c98be53483f53b237998fce346628b7cc3606821dc"
+  },
+  "verification": [
+    {
+      "command": "cargo test -p bml-model-weights --all-features --locked",
+      "exit_code": 0,
+      "passed": 57,
+      "log": "target/quality/model-weights-v4-tests.log",
+      "sha256": "aa617536321dbcec9eb3380a31b218c03699eb460e214fd0beb5ecb25d625d61"
+    },
+    {
+      "command": "CARGO_INCREMENTAL=0 ./scripts/check.sh origin/master",
+      "exit_code": 0,
+      "rust_tests_passed": 684,
+      "new_clippy_diagnostics": 0,
+      "log": "target/quality/model-weights-v4-gate.log",
+      "sha256": "c6f78912512eae4f5e1ba505028982cd9cf1d928029c7c8383cb5366f0b0c9f0"
+    }
+  ],
+  "complete_campaign_v4": {
+    "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --output target/model-weights-mutations-v4",
+    "status": "Complete; mutation gate failed",
+    "exit_code": 2,
+    "total_mutants": 464,
+    "caught": 358,
+    "missed": 48,
+    "unviable": 58,
+    "timeout": 0,
+    "score_percent": 88.17733990147784,
+    "start_time": "2026-11-03T07:08:25.927033177Z",
+    "end_time": "2026-11-03T07:34:04.601946238Z",
+    "report_sha256": "d3a38052c428f121023f6940c46543f46a074231c75f3e9a7ea5a826ab4dc4ac",
+    "validator": "python3 tools/quality.py mutations --report target/model-weights-mutations-v4/mutants.out/outcomes.json",
+    "validator_exit_code": 1,
+    "previously_missed_now_caught": 25,
+    "previously_caught_now_missed": 0,
+    "report": "target/model-weights-mutations-v4/mutants.out/outcomes.json",
+    "log": "target/quality/model-weights-mutations-v4.log"
+  },
+  "closure_approved": false
+}

@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "CLI run entry for autonomous BMLGGUF with explicit CheckedExactF32 and mandatory materialization budget",
+  "command": "bml-cli run -m modelo.bmlgguf -p AB -n 2 --temp 0 --weight-evaluation checked-exact-f32 --max-evaluated-weights 10000",
+  "implementation": ["crates/cli/src/main.rs", "crates/cli/src/weights.rs"],
+  "tests": "crates/cli/tests/prepared_token_output.rs",
+  "fixture": {
+    "construction": "Independent one-layer Llama GGUF binary from crates/runtime/tests/support/symbolic_fixture.rs",
+    "conversion": "Real convert-weights CLI subprocess",
+    "source_deleted_before_run": true,
+    "output_extension": ".prepared",
+    "prompt": "AB",
+    "prompt_tokens": 4,
+    "generated_tokens": 2
+  },
+  "contracts": [
+    "Explicit policy and budget load the converted model and generate through the symbolic causal profile",
+    "Container magic identifies BMLGGUF independently of extension; missing explicit policy returns an actionable error",
+    "Missing paired options, invalid policy, zero budget and conflicting --bml/--weights return argument errors",
+    "Insufficient materialization budget returns an error before generation and preserves the file",
+    "Corrupt payload is rejected without generation",
+    "Existing compiled-model generation uses the same shared loop and remains covered by the workspace gate"
+  ],
+  "verification": [
+    {"command": "cargo test -p bml-cli --test prepared_token_output --locked", "exit_code": 0, "passed": 3},
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 661, "new_clippy_diagnostics": 0, "historical_discrepancies": 0, "log": "target/quality/model-weights-run-gate.log", "sha256": "205f4777ba376d438261f98ece6406c762d177a615504b055da145c1ab717763"}
+  ],
+  "limitations": [
+    "Numeric activations and F32 KV follow the declared symbolic causal RPN profile, not exact rational inference.",
+    "The CLI uses default ReadLimits; max-evaluated-weights bounds weight expansion, not total process RSS.",
+    "No real-model conversion/inference or full mutation-campaign completion is claimed."
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Two real-model conversion attempts with localized bounded failure; no successful real-model conversion or inference",
+  "build": {
+    "command": "cargo build -p bml-cli --release --locked",
+    "exit_code": 0,
+    "toolchain": "1.98.1",
+    "binary": "target/release/bml-cli",
+    "binary_sha256": "bd2bd95cdba32c44e73d0e5edb8af6577305a9b9831cb0ad23d78f1a904a18a4",
+    "host": "Linux-6.12.113+deb13-amd64-x86_64-with-glibc2.41"
+  },
+  "measurement": {
+    "method": "Python subprocess.Popen for each CLI process, blocking os.wait4(pid, 0) for per-child resource usage, time.monotonic for elapsed time",
+    "rss_unit": "KiB (Linux ru_maxrss)",
+    "samples_per_model": 1,
+    "build_included_in_elapsed": false,
+    "source_hashing_included_in_elapsed": false,
+    "cache_state": "Source SHA-256 was computed immediately before each attempt; source file pages may be warm. No cold-cache or statistical performance claim.",
+    "tool_note": "/usr/bin/time was unavailable; its initial launch failed before starting a converter. Measurements use wait4 instead.",
+    "raw_report": "target/quality/real-weight-conversion/campaign.json"
+  },
+  "common_command": "target/release/bml-cli convert-weights -m <source> -o <destination> --max-synthesis-steps-per-weight 4096 --max-synthesis-steps-total 1000000 --max-weight-bits 1048576 --max-block-terms 1024 --max-block-bytes 8388608 --max-output-bytes 1073741824 --max-resident-bytes 268435456 --max-cache-bytes 1048576",
+  "budgets": {
+    "max_synthesis_steps_per_weight": 4096,
+    "max_synthesis_steps_total_per_counter": 1000000,
+    "max_weight_bits": 1048576,
+    "max_weight_depth": 4096,
+    "max_block_terms": 1024,
+    "max_block_bytes": 8388608,
+    "max_output_bytes": 1073741824,
+    "max_resident_bytes_accounted": 268435456,
+    "max_cache_bytes": 1048576,
+    "synthesis_max_total_bits": 16777216,
+    "synthesis_max_recursion": 128,
+    "rational_max_digits": 1024,
+    "rational_max_bits": 4096,
+    "rational_max_gcd_steps": 16384,
+    "other_read_limits": "ReadLimits::default(); full resolved options retained in each raw log"
+  },
+  "runs": [
+    {
+      "model": "Stories15M F32",
+      "source": "target/bml-1.0/stories15M.gguf",
+      "source_sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+      "source_bytes": 98357920,
+      "destination": "target/quality/real-weight-conversion/stories15M.bmlgguf",
+      "exit_code": 1,
+      "wall_seconds": 5.911816464009462,
+      "user_seconds": 5.475508,
+      "system_seconds": 0.072033,
+      "max_rss_kib": 112492,
+      "diagnostic": "Error: weight WeightLocation { tensor_id: TensorId(0), tensor_name: \"token_embd.weight\", flat_index: 32203 }: exact derivation resource limit exceeded",
+      "failure_phase": "exact synthesis/certification",
+      "failure_budget_detail": "ExactError::Limit does not distinguish which internal bound or remaining cumulative synthesis allowance was exhausted; no more specific claim is made.",
+      "output_exists": false,
+      "output_bytes": null,
+      "new_temporary_files": [],
+      "source_hash_unchanged": true,
+      "log": "target/quality/real-weight-conversion/stories15M.log",
+      "log_sha256": "9bd2257093d9bdf8407884960068adfe35b3ef698c83241695b96e19d5da1921"
+    },
+    {
+      "model": "Stories15M Q4_0 local quant-study artifact",
+      "source": "target/bml-1.0/quant-study/stories15M-q4.gguf",
+      "source_sha256": "da8239d4b6175eac7db338d794a6e35790e36647c76d1d4ef1d2d0112a220dc1",
+      "source_bytes": 14469344,
+      "destination": "target/quality/real-weight-conversion/stories15M-q4.bmlgguf",
+      "exit_code": 1,
+      "wall_seconds": 2.481916374003049,
+      "user_seconds": 2.248782,
+      "system_seconds": 0.027376,
+      "max_rss_kib": 30372,
+      "diagnostic": "Error: MaxSynthesisStepsTotal limit 1000000, required Some(1000006), weight Some(WeightLocation { tensor_id: TensorId(0), tensor_name: \"output.weight\", flat_index: 75234 })",
+      "failure_phase": "writer certificate replay",
+      "output_exists": false,
+      "output_bytes": null,
+      "new_temporary_files": [],
+      "source_hash_unchanged": true,
+      "log": "target/quality/real-weight-conversion/stories15M-q4.log",
+      "log_sha256": "58f23b5cab7f4615432e83dde0e76566095e6fa6b01118f78a3e3f8991874b3b"
+    }
+  ],
+  "unmeasured": {
+    "successful_output_size": "No destination was published; null is not a zero-byte model.",
+    "per_phase_partial_times": "CLI returns a diagnostic on failure, not a partial ConversionReport; only total attempt wall/CPU times measured.",
+    "load_time": "Not executed because conversion failed.",
+    "inference_time_and_parity": "Not executed because conversion failed.",
+    "peak_temporary_disk_bytes": "Not measured; temporary-file cleanup was checked after exit."
+  },
+  "interpretation": "These runs establish reproducible localized failures under the declared budgets, not compression, tokens/s, successful model conversion, or impossibility under other budgets. RSS includes mapped source pages and differs from accounted owned memory."
+}

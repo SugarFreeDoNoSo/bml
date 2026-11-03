@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-11-03
+goal: "Convertir GGUF a un contenedor autónomo de pesos BML y consumirlo en inferencia simbólica."

@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Public type, limit and error foundation. Reader, writer, metadata codec and conversion remain unimplemented.",
+  "crate": "crates/model-weights",
+  "contracts": [
+    "Inclusive limits accept equality and preserve overflow as required=None",
+    "Default format budgets and invalid configurations",
+    "Effective per-weight synthesis limits never exceed caller or container caps",
+    "GGML dtype mappings and lossless typed IEEE metadata",
+    "SHA-256 empty and abc published vectors",
+    "Typed scalar, stream and IO causes retain weight locations",
+    "Optional GGUF cause remains downcastable"
+  ],
+  "verification": [
+    {"command": "cargo test -p bml-model-weights --no-default-features --locked", "exit_code": 0, "tests_passed": 6},
+    {"command": "cargo test -p bml-model-weights --features gguf-import --locked", "exit_code": 0, "tests_passed": 7},
+    {"command": "cargo test -p bml-gguf --no-default-features --locked", "exit_code": 0, "tests_passed": 50, "log": "target/quality/model-weights-gguf-minimal.log", "log_sha256": "f943cbd8d5e23579507e35f0778a3475b8a7117402b972bb2a9a9807df913afd"},
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 619, "new_clippy_diagnostics": 0, "log": "target/quality/model-weights-foundation-gate.log", "log_sha256": "4dc6bda30dd9c2eafcdc5e2b8d918abf7ddbae5aba9be7e696b3a9d28067b1ce"},
+    {"command": "cargo audit --deny warnings", "tool": "cargo-audit 0.22.2", "exit_code": 0, "log": "target/quality/model-weights-audit.log", "log_sha256": "a7dec723417296d636c376adb6a60c2f1b5650f29a4834e9e1a660dfde8b46ec"}
+  ],
+  "dependency_boundary": {
+    "command": "cargo tree -p <package> --no-default-features --edges normal,build --locked",
+    "model_weights_direct_dependencies": ["bml-domain", "sha2"],
+    "model_weights_excludes": ["bml-gguf", "bml-compiler", "bml-runtime", "bml-inference"],
+    "gguf_tree": "bml-gguf -> memmap2 -> libc"
+  },
+  "limitations": "The earlier full mutation campaign does not cover this newly added crate. Existing release and conversion implementation tasks remain open."
+}

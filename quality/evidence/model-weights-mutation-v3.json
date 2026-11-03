@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "scope": "Follow-up to 86 survivors in complete campaign v2; complete campaign v3 finished and failed",
+  "previous_survivors_by_source": {
+    "convert.rs": 27,
+    "gguf_preflight.rs": 13,
+    "metadata.rs": 17,
+    "reader.rs": 16,
+    "writer.rs": 13
+  },
+  "review": [
+    {
+      "finding": "Default-only metadata fixtures did not distinguish parsed conversion limits from replacement with ConversionLimits::default().",
+      "regression": "declared_conversion_budgets_are_preserved_and_validated",
+      "contract": "Nine nondefault limits survive reading exactly; an invalid zero step budget is rejected."
+    },
+    {
+      "finding": "Compound name and hex checks need independent invalid operands; generic is_err assertions do not establish typed errors.",
+      "regressions": ["metadata_names_and_float_bits_require_canonical_encoding", "metadata_nested_arrays_and_json_floats_keep_typed_diagnostics"],
+      "contract": "Empty/NUL keys, short/long/uppercase float-bit hex, nested arrays and JSON floating values return their specified metadata reason."
+    },
+    {
+      "finding": "Later layout errors can mask skipped catalog checks; tests must isolate the intended validation.",
+      "regressions": ["empty_catalog_counts_and_nul_names_have_specific_format_errors", "unconsumed_tensor_index_bytes_are_rejected_even_with_valid_hashes"],
+      "contract": "Counts and NUL names return specific format errors. A tensor-index tail with consistently relocated sections, block payload offsets and recomputed hashes is rejected."
+    },
+    {
+      "finding": "A trivially tiny memory cap does not prove that synthesis scratch is charged.",
+      "regression": "resident_budget_includes_synthesis_scratch_even_for_one_simple_weight",
+      "contract": "A one-weight source exceeds a 1 MiB cap independently through configured step scratch and retained synthesis bits."
+    },
+    {
+      "finding": "Generic limit failure does not identify source preflight accounting versus later output accounting.",
+      "regression": "preflight_reports_source_metadata_and_descriptor_byte_requirements",
+      "contract": "Reported required bytes equal independently counted GGUF metadata and descriptor lengths before publication."
+    }
+  ],
+  "production_changes": false,
+  "exclusions_added": false,
+  "snapshot_sha256": {
+    "crates/model-weights/tests/reader.rs": "9d399d6378f7c57d6097f5b28b5c5ea0093d5eb58fa2da50977296abca506c47",
+    "crates/model-weights/tests/conversion.rs": "f7fcfc25462c01672c87e60609446c4dff18b2b60304e671ef447a7aebc2e35c"
+  },
+  "verification": [
+    {
+      "command": "cargo test -p bml-model-weights --all-features --locked",
+      "exit_code": 0,
+      "passed": 49,
+      "log": "target/quality/model-weights-v3-tests.log",
+      "sha256": "ae7c37a978ef8939c4773e4438b81e591edb80d149e1b7fec9bb9db399928ef5"
+    },
+    {
+      "command": "CARGO_INCREMENTAL=0 ./scripts/check.sh origin/master",
+      "exit_code": 0,
+      "rust_tests_passed": 676,
+      "historical_discrepancies": 0,
+      "new_clippy_diagnostics": 0,
+      "log": "target/quality/model-weights-v3-gate.log",
+      "sha256": "baa0fdd21a65b309430e83c4dce8962b5129fc4edb908a25fe1e065077a4d32c"
+    }
+  ],
+  "complete_campaign_v3": {
+    "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --output target/model-weights-mutations-v3",
+    "status": "Complete; mutation gate failed",
+    "exit_code": 2,
+    "total_mutants": 464,
+    "caught": 333,
+    "missed": 73,
+    "unviable": 58,
+    "timeout": 0,
+    "score_percent": 82.01970443349754,
+    "start_time": "2026-11-03T06:40:53.956894233Z",
+    "end_time": "2026-11-03T07:05:23.396423779Z",
+    "report_sha256": "b3d5a1f3990400092c9123b36847c7f4474bbae724a62b7b1d9966ec5768481f",
+    "validator": "python3 tools/quality.py mutations --report target/model-weights-mutations-v3/mutants.out/outcomes.json",
+    "validator_exit_code": 1,
+    "previously_missed_now_caught": 13,
+    "previously_caught_now_missed": 0,
+    "report": "target/model-weights-mutations-v3/mutants.out/outcomes.json",
+    "log": "target/quality/model-weights-mutations-v3.log"
+  },
+  "closure_approved": false
+}

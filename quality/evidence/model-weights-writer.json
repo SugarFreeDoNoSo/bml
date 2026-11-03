@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Transactional writer and typed metadata encoder; no GGUF importer or inference integration claim.",
+  "source_sha256": {
+    "crates/model-weights/src/writer.rs": "a28a537ef72f13d28d253271bf1a960bae4198a6438d94a14b87f9e03069beed",
+    "crates/model-weights/src/metadata_encode.rs": "97d0ce77f3adadf775a92e0436f334bb2054b6b261dfd5f5152df1d25f3d6f79",
+    "crates/model-weights/tests/writer.rs": "a0180fe418de4879dad1f30e50475cac925de455fc908a91798a2aafa7ce2ef7"
+  },
+  "contracts": [
+    "Rectangular GGML tensors, multiple blocks/tensors, typed metadata and generated-file hash roundtrip through WeightReader",
+    "Existing destination remains byte-for-byte intact",
+    "Two concurrent finish calls have exactly one winner and one DestinationExists failure",
+    "Invalid operation poisons writer; finish cannot publish and Drop/abort clean temporaries",
+    "Per-weight bits/depth/steps, block terms/bytes, resident accounting and output limits reject before publication",
+    "Inclusive output budget accepts exact size and rejects one byte less",
+    "All scalar and array metadata types preserve numeric ranges and IEEE bit patterns",
+    "Cumulative certificate replay budget crosses blocks and localizes the second weight",
+    "Corrupt spool fails payload integrity validation before publication",
+    "Duplicate metadata/tensor names are rejected without a partial destination"
+  ],
+  "verification": [
+    {"command": "cargo test -p bml-model-weights --no-default-features --locked", "exit_code": 0, "passed": 25, "log": "target/quality/model-weights-writer-minimal.log", "sha256": "3ec033ce92bba4ee11e9f0511914f834d680d20841d76a231ca73b56efa9c954"},
+    {"command": "cargo test -p bml-model-weights --all-features --locked", "exit_code": 0, "passed": 26, "log": "target/quality/model-weights-writer-all.log", "sha256": "32cfeb0b0bf7e490ff5821ca0653daaa02170e1c7f97a0e18055b3091ced5f4e"},
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 638, "historical_discrepancies": 0, "traceability": "71/71", "new_clippy_diagnostics": 0, "log": "target/quality/model-weights-writer-gate.log", "sha256": "ba7209b0e88025b35576536a1fbf7a96ddbe70864187e61d9ef109cbb2556076"}
+  ],
+  "publication": "Same-directory hard_link, no overwriting rename fallback; final file fully verified before linking; spool cleanup before commit; final temporary link cleanup best-effort after commit",
+  "limitations": [
+    "No power-loss durability guarantee or filesystem portability campaign; unsupported hard links return a typed IO error.",
+    "Memory accounting is conservative, not measured process RSS.",
+    "The earlier full mutation campaign does not cover this newly added writer."
+  ]
+}

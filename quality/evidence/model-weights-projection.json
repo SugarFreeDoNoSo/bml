@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Prepared BML weight blocks connected to reusable exact symbolic runtime matrix projections; not full model inference",
+  "implementation": "crates/runtime/src/prepared_projection.rs",
+  "fixture": {
+    "source": "crates/runtime/tests/prepared_projection.rs",
+    "construction": "Independent binary BMLGGUF/BMLS construction without synthesis or production writer",
+    "ggml_shape": [3, 2],
+    "flat_weights": [1, 2, 1, 2, 1, 2],
+    "block_split": 2,
+    "input": [1, 1, 2],
+    "exact_rational_oracle": [5, 7]
+  },
+  "contracts": [
+    "Load preserves every persisted tree with scalar.max_steps=0",
+    "Two repeated symbolic projections after dropping reader and deleting container match independent integer dot products as exact rationals",
+    "Matrix count and aggregate-bit budgets fail before reading corrupt payload; sufficient budgets expose integrity failure",
+    "Shape and cumulative operation budget failures preserve prepared weights and return no partial matrix",
+    "Structurally valid non-rational expression loads but projection returns localized scalar failure rather than floating fallback"
+  ],
+  "verification": [
+    {"command": "cargo test -p bml-runtime --test prepared_projection --locked", "exit_code": 0, "passed": 4},
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 656, "new_clippy_diagnostics": 0, "historical_discrepancies": 0, "log": "target/quality/model-weights-projection-gate.log", "sha256": "3799d3eb538130418e504ffb3d7f445d896384a642bc307b86da1de35f334d57"}
+  ],
+  "environment": "Initial gate exhausted disk during linking; generated target/debug/incremental cache removed and complete gate rerun successfully.",
+  "limitations": [
+    "Exact matrix operations may require expression recognition and can fail within their scalar/work budgets.",
+    "Full Llama forward, tokenizer, generation and real-model parity from BMLGGUF remain task 3.3 and later.",
+    "No new mutation-campaign completion is claimed."
+  ]
+}

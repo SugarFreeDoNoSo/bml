@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Specification consistency checks only; no container reader, writer, conversion or inference implementation is claimed.",
+  "document": "openspec/changes/gguf-to-bml-weights/format-v1.md",
+  "openspec": {
+    "command": "npx --yes @fission-ai/openspec validate gguf-to-bml-weights --strict",
+    "exit_code": 0
+  },
+  "layout_checks": {
+    "method": "Parse numeric offset/size rows from each Markdown layout table; assert each field begins at the preceding field end and the final byte count matches the specified size.",
+    "header_bytes": 256,
+    "tensor_record_prefix_bytes": 40,
+    "block_record_bytes": 80,
+    "bmls_header_bytes": 24,
+    "gaps_or_overlaps": 0
+  },
+  "bmls_example": {
+    "values": [1, 2, 1],
+    "count": 3,
+    "useful_bits": 5,
+    "code_bits": "01000",
+    "payload_hex": "40",
+    "block_bytes": 25,
+    "padding_zero": true
+  },
+  "header_hash_check": {
+    "method": "Build a 256-byte header buffer, compute SHA-256 with bytes [176,208) zero, insert digest, zero that field again and verify digest equality.",
+    "passed": true,
+    "limitation": "Checks hash-field mechanics, not validity of a complete model file."
+  }
+}

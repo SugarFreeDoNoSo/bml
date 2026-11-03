@@ -37,6 +37,206 @@ convierte cada peso en un término simbólico ni acredita una aceleración debid
 al operador BML. Véanse [el escalar](architecture/BML_NUMBER.md),
 [los tensores](architecture/TENSOR_LIBRARY.md) y [los controles](QUALITY.md).
 
+## Conversión GGUF → pesos BML
+
+La siguiente capacidad de conversión está definida en
+[`gguf-to-bml-weights`](../openspec/changes/gguf-to-bml-weights/proposal.md):
+
+`modelo.gguf → síntesis exacta acotada de pesos → modelo.bmlgguf → carga de matrices BML → inferencia simbólica`.
+
+`.bmlgguf` es el nombre provisional del nuevo contenedor autónomo; `.bmllm` se
+considera una alternativa de nombre. El contenedor guarda pesos como términos BML,
+formas y metadatos tipados (incluidos tokenizer/configuración presentes en la fuente).
+La biblioteca y los comandos `bml-cli convert-weights` e `inspect-weights` están
+implementados. La API de inferencia simbólica admite el perfil explícito de
+evaluación comprobada descrito abajo. Las
+[tareas y criterios de cierre](../openspec/changes/gguf-to-bml-weights/tasks.md)
+incluyen validación exacta por peso, presupuestos, carga sin el GGUF original y
+mediciones de conversión e inferencia.
+
+```sh
+cargo run -p bml-cli --locked -- convert-weights -m modelo.gguf -o modelo.bmlgguf \
+  --max-synthesis-steps-per-weight 4096 --max-synthesis-steps-total 1000000 \
+  --max-block-terms 1024 --max-output-bytes 68719476736 \
+  --max-resident-bytes 268435456 --max-cache-bytes 1048576
+cargo run -p bml-cli --locked -- inspect-weights -m modelo.bmlgguf
+cargo run -p bml-cli --locked -- inspect-weights -m modelo.bmlgguf --verify-all
+```
+
+`convert-weights --help` e `inspect-weights --help` muestran todos los límites y
+sus valores por defecto. Las opciones de lectura incluyen tamaño de archivo,
+metadatos, índices, cantidad de tensores/bloques/términos, bits y profundidad.
+Los comandos imprimen los límites solicitados; la conversión informa hashes,
+conteos, tiempos por fase y pico de memoria contabilizada (no RSS).
+El CLI termina con código 1 ante error operativo/de contrato y 2 ante argumentos
+inválidos. El destino debe ser nuevo; un error no publica un archivo parcial.
+
+Los dtypes admitidos son **F32, F16, Q4_0, Q8_0 y Q6_K**. La conversión conserva
+el valor IEEE exacto o el F32 del codec cuantizado, normaliza ambos ceros y rechaza
+NaN/inf. No implica que una arquitectura esté admitida por inferencia. La evidencia
+actual usa fixtures pequeños; no acredita conversión completa de un modelo real.
+Síntesis y replay tienen contadores independientes sujetos al límite global
+declarado; cachear un peso ahorra síntesis pero no su replay. Los límites internos
+del certificador también se aplican y pueden rechazar un peso antes del límite
+externo. Las opciones `--max-synthesis-total-bits` y `--max-synthesis-recursion`
+solo configuran la fase de síntesis.
+
+La inspección por defecto valida cabecera/catálogo e indica `payload: not-verified`.
+`--verify-all` recorre hashes y gramática de todos los bloques; solo entonces
+imprime `payload: verified-all`. Esto acredita integridad, no equivalencia
+matemática con una fuente GGUF arbitraria. Se puede inspeccionar sin la fuente.
+
+### Proyecciones simbólicas desde pesos preparados
+
+`bml_runtime::prepared_projection::PreparedProjection::load` toma un
+`WeightReader`, un `TensorId` y `MatrixLimits`. Carga un tensor de rango 2:
+GGML `[columnas, filas]` pasa a matriz row-major `[filas, columnas]` sin cambiar
+el orden plano. Valida cantidad y bits agregados antes de reservar la matriz;
+los hashes de cada bloque se comprueban antes de entregar sus términos.
+
+`apply(&activations, limits)` calcula `weights × activations`, donde las
+activaciones BML tienen forma `[columnas, batch]`. El resultado conserva términos
+BML; no hay evaluación de pesos a floats ni resíntesis de los pesos cargados.
+La ejecución usa reconocimiento/certificación de expresiones y operaciones
+matriciales exactas acotadas: puede fallar aunque el contenedor sea estructuralmente
+válido. `ProjectionError` conserva la causa de almacenamiento o el error matricial
+localizado, sin entregar salida parcial ni sustituirla por aritmética IEEE.
+
+La proyección posee los árboles y puede reutilizarse sin el archivo abierto.
+El fixture independiente verifica una matriz `[2,3]` con resultado exacto `[5,7]`,
+incluso cargando con cero pasos permitidos de síntesis. Esta API de proyección
+mantiene resultados como árboles BML.
+
+### Inferencia causal desde BMLGGUF: frontera numérica explícita
+
+`SymbolicCausalModel::open_bmlgguf(path, read_limits, max_evaluated_weights,
+WeightEvaluation::CheckedExactF32, symbolic_limits)` carga el tokenizer y la
+configuración del contenedor y valida el mismo perfil Llama que la entrada GGUF.
+El llamador debe seleccionar expresamente la política numérica: cada árbol se
+reconoce/certifica, se evalúa a F64 y se convierte a F32 **solo si el racional
+exacto de ese F32 coincide con el objetivo certificado del árbol**. Se rechazan
+errores de reconocimiento, dominio, rango o pérdida de exactitud con tensor/índice.
+No hay síntesis de pesos ni fallback. `max_evaluated_weights` limita la expansión
+del modelo; esta API materializa los pesos y no promete inferencia streaming.
+
+El perfil reportado es `bmlgguf-checked-exact-f32-symbolic-causal-v1`. Las
+activaciones se ejecutan mediante los kernels RPN BML del motor causal existente,
+con KV F32; sus logits son resultados numéricos, no racionales exactos. La carga
+de pesos exactos no acredita exactitud matemática de todas las activaciones.
+
+El fixture independiente de una capa con GQA, RoPE y MLP no nulo se convierte,
+se borra su GGUF y se abre desde BMLGGUF. La prueba contrasta los IDs del tokenizer,
+logits completos y dos pasos de generación greedy con un oráculo escalar externo
+a los kernels de producción (tolerancia absoluta `2e-7`). Se conserva el espacio
+inicial explícito al decodificar el token SentencePiece `▁`.
+La evidencia está en `quality/evidence/model-weights-causal.json`; todavía no
+acredita un modelo real.
+
+El CLI exige seleccionar esta frontera numérica y su límite de materialización:
+
+```sh
+cargo run -p bml-cli --locked -- run -m modelo.bmlgguf -p "AB" -n 2 --temp 0 \
+  --weight-evaluation checked-exact-f32 --max-evaluated-weights 10000
+```
+
+El número `10000` es un ejemplo para fixtures pequeños, no un presupuesto medido
+para modelos reales. La identificación del contenedor usa su magic, incluso si
+su extensión es distinta. Sin las dos opciones explícitas, un BMLGGUF se rechaza;
+no se cambia automáticamente de perfil. Las opciones son incompatibles con
+`--bml` y `--weights`, que seleccionan otras rutas. El comando imprime la política,
+el presupuesto solicitado y el perfil causal antes de generar.
+La carga conserva los límites predeterminados de `ReadLimits`; un fallo de
+materialización o integridad termina antes de generar y no modifica el modelo.
+La prueba CLI convierte un fixture, borra el GGUF y genera desde el contenedor.
+
+### Campaña de conversión con modelos reales (2026-11-03)
+
+Se ejecutó el CLI **release**, toolchain `1.98.1`, sobre dos archivos locales
+identificados por SHA-256. Cada fila es un intento, no una media estadística:
+
+| Fuente | Bytes de entrada | Tiempo de intento | RSS máximo (KiB) | Resultado localizado |
+|---|---:|---:|---:|---|
+| Stories15M F32 | 98.357.920 | 5,912 s | 112.492 | `token_embd.weight[32203]`: límite de derivación exacta |
+| Stories15M Q4_0 | 14.469.344 | 2,482 s | 30.372 | `output.weight[75234]`: replay requiere 1.000.006 pasos, límite 1.000.000 |
+
+Hashes de fuente:
+
+- F32: `61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a`.
+- Q4_0: `da8239d4b6175eac7db338d794a6e35790e36647c76d1d4ef1d2d0112a220dc1`.
+
+Comando por fuente, con un destino nuevo:
+
+```sh
+target/release/bml-cli convert-weights -m FUENTE.gguf -o DESTINO.bmlgguf \
+  --max-synthesis-steps-per-weight 4096 --max-synthesis-steps-total 1000000 \
+  --max-weight-bits 1048576 --max-block-terms 1024 --max-block-bytes 8388608 \
+  --max-output-bytes 1073741824 --max-resident-bytes 268435456 \
+  --max-cache-bytes 1048576
+```
+
+Se midieron tiempo de pared con `time.monotonic` y RSS/CPU por proceso hijo con
+`os.wait4` (Linux, `ru_maxrss` en KiB). La compilación y el hash de fuente quedan
+fuera del tiempo; el hash previo puede calentar la caché de archivos. RSS incluye
+páginas mapeadas y no equivale al presupuesto de memoria propia contabilizada.
+
+**Ambos intentos fallaron sin publicar destino**, sin temporales restantes y con
+hash de fuente intacto. No hay tamaño final de modelo ni mediciones de carga o
+inferencia: esas fases no se ejecutaron. El error F32 no identifica qué límite
+interno de derivación se agotó, por lo que no se atribuye a un campo concreto.
+Estos resultados documentan el alcance bajo esos presupuestos; no prueban
+imposibilidad con otros límites ni permiten afirmar compresión o rendimiento.
+Comandos, hash del binario, diagnósticos completos y hashes de logs están en
+[`model-weights-real-campaign.json`](../quality/evidence/model-weights-real-campaign.json).
+
+### Medición por fases de un fixture exitoso
+
+La campaña reproducible usa el fixture independiente Llama de una capa, 12
+tensores y 2.188 pesos. Su GGUF tiene 16.000 bytes (SHA-256
+`60b0498ae693893d3122c64a618a48c573d7d27e9edecedec36747044e2c7145`);
+el BMLGGUF publicado ocupa 13.029 bytes (SHA-256
+`73fb23a1c4f16dd285c7c5bdc16bd58c964cca4a415b6520bd79032fd836e85f`).
+La fuente se elimina antes de cargar y ejecutar.
+
+```sh
+cargo build -p bml-cli --release --locked
+cargo build -p bml-runtime --example measure_prepared_fixture --release --locked
+python3 tools/measure_prepared_fixture.py --directory target/quality/fixture-phases-NUEVO
+```
+
+El directorio debe ser nuevo; conserva modelo, logs y `report.json`. La compilación
+no forma parte de las mediciones. Resultado observado (una muestra por fase):
+
+| Proceso | Tiempo de pared total | Temporizador interno | RSS máximo del proceso |
+|---|---:|---:|---:|
+| Conversión | 10,815 ms | lectura/decoding 0,453 ms; síntesis 0,234 ms; escritura/verificación 6,305 ms | 18.892 KiB |
+| Carga sola | 27,823 ms | carga 26,515 ms | 18.892 KiB |
+| Ejecución | 34,869 ms | carga 15,510 ms; tokenización 0,002 ms; ejecución 17,767 ms | 18.892 KiB |
+
+La ejecución excluye carga y tokenización de su temporizador; incluye creación
+de KV, compilación perezosa de kernels, prefill y dos muestras greedy (IDs `[1,0]`)
+con el forward intermedio necesario. El perfil es
+`bmlgguf-checked-exact-f32-symbolic-causal-v1`, con 10.000 pesos como cap explícito.
+El convertidor contabilizó un pico propio de 14.367.008 bytes y 1.160 bytes de caché,
+distintos del RSS del proceso. Se reutilizaron 2.184 pesos y se emitieron 13 pasos
+de síntesis.
+
+RSS se obtiene con `os.wait4` para toda la vida de cada hijo, incluido arranque;
+en ejecución incluye también la carga previa. No es un pico aislado del kernel.
+La caché del sistema no se controla y los temporizadores wall/CPU/internos tienen
+alcances distintos. Los pesos simples y repetidos del fixture no acreditan
+compresión ni rendimiento de modelos reales; tampoco convierten en éxitos los
+fallos reales de la sección anterior. Evidencia y hashes de logs:
+[`model-weights-fixture-phases.json`](../quality/evidence/model-weights-fixture-phases.json).
+
+La revisión de contratos numéricos añade comparación racional certificada por
+cada uno de los 330 pesos del fixture de cinco dtypes, normalización estructural
+de ambos ceros y conversión exacta de subnormales mínimos/máximos con ambos signos
+en F32/F16. También comprueba rechazo de NaN/inf en F16 y codecs cuantizados.
+La exactitud de almacenamiento no exige que esos términos sean evaluables
+directamente como floats. Orden rectangular, corrupción/truncamientos, límites
+y limpieza transaccional están mapeados a pruebas ejecutadas en
+[`model-weights-contract-review.json`](../quality/evidence/model-weights-contract-review.json).
+
 ## Uso de `bml-model`
 
 Desde la raíz del repositorio, con el toolchain de `rust-toolchain.toml`:

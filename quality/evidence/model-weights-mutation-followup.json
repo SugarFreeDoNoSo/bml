@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "scope": "Regression tests for survivors of the first complete model-weights mutation campaign; second complete campaign finished and failed",
+  "review": [
+    {
+      "survivor": "WriteOptions::validate replaced with Ok(())",
+      "finding": "Existing tests exercised ReadLimits and ConversionLimits validation separately but did not assert that the public WriteOptions validator delegates to both.",
+      "regression": "write_options_validate_both_independent_budget_groups"
+    },
+    {
+      "survivor": "WeightWriter::abort replaced with Ok(())",
+      "finding": "Successful cleanup assertions alone cannot distinguish explicit abort from best-effort Drop. The public abort result must propagate a cleanup error.",
+      "regression": "abort_reports_cleanup_failure_instead_of_silently_succeeding",
+      "fault_injection": "Replace the open spool directory entry with a directory, then assert IoOperation::Cleanup and no published model."
+    },
+    {
+      "survivor": "WeightWriter::begin compound name/rank validation",
+      "finding": "Empty name, empty dimensions and rank above four require independent rejection cases.",
+      "regression": "tensor_name_and_rank_constraints_fail_independently"
+    }
+  ],
+  "production_changes": false,
+  "exclusions_added": false,
+  "test_snapshot_sha256": {
+    "crates/model-weights/tests/contracts.rs": "aadfc3f1fe250f8f560b3586976c3dd715b2df639c5df7489d5f65bfe26c8681",
+    "crates/model-weights/tests/writer.rs": "479bb8b831a654f5f94ea26576e858564f5accbb9eeed3171313e2f62d8bad94",
+    "crates/model-weights/tests/conversion.rs": "99fe7b24a6bdc940823fd07b6b4c0c23938533d10de39a0d751763c96c8efb45"
+  },
+  "verification": {
+    "crate_command": "cargo test -p bml-model-weights --all-features --locked",
+    "crate_passed": 42,
+    "gate_command": "CARGO_INCREMENTAL=0 ./scripts/check.sh origin/master",
+    "gate_exit_code": 0,
+    "rust_tests_passed": 669,
+    "new_clippy_diagnostics": 0,
+    "gate_log": "target/quality/model-weights-v2-gate.log",
+    "gate_sha256": "278a56e2445657bbd0bf2fd6a50211806f199fb32132c6a36f94d3806c3c59db"
+  },
+  "complete_campaign_v2": {
+    "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --output target/model-weights-mutations-v2",
+    "status": "Complete; mutation gate failed",
+    "exit_code": 2,
+    "total_mutants": 464,
+    "caught": 320,
+    "missed": 86,
+    "unviable": 58,
+    "timeout": 0,
+    "score_percent": 78.81773399014779,
+    "start_time": "2026-11-03T06:10:49.479710384Z",
+    "end_time": "2026-11-03T06:37:06.995820214Z",
+    "report_sha256": "85ac28975e7af2f45f915c9645c5e3fdf3cb034c3dba2ce649d08cd2ee07947f",
+    "validator": "python3 tools/quality.py mutations --report target/model-weights-mutations-v2/mutants.out/outcomes.json",
+    "validator_exit_code": 1,
+    "comparison": "19 previously missed mutants now caught, including metadata import/preflight, WriteOptions validation, tensor name/rank checks, abort and cleanup errors. Production sources unchanged; no exclusions added.",
+    "log": "target/quality/model-weights-mutations-v2.log",
+    "report": "target/model-weights-mutations-v2/mutants.out/outcomes.json"
+  },
+  "closure_approved": false
+}

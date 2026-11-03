@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "GGUF import library, exact bounded synthesis and transactional publication; CLI and inference integration remain pending.",
+  "fixture": {
+    "source": "crates/model-weights/tests/conversion.rs",
+    "construction": "Independent binary GGUF fixtures and explicit numerical codec oracles",
+    "weights": 330,
+    "dtypes": ["F32", "F16", "Q4_0", "Q8_0", "Q6_K"],
+    "source_removed_before_reload": true
+  },
+  "verification": [
+    {"command": "cargo test -p bml-model-weights --all-features --locked", "exit_code": 0, "passed": 32, "conversion_tests": 6},
+    {"command": "cargo test -p bml-model-weights --no-default-features --locked", "exit_code": 0, "passed": 25},
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 638, "new_clippy_diagnostics": 0, "historical_discrepancies": 0, "log": "target/quality/model-weights-conversion-gate.log", "sha256": "0a828387286c05f630f261b8f18fab8a94eab4493c0f7c82ff9b772b94571b7b"}
+  ],
+  "limitations": [
+    "The default workspace gate does not enable gguf-import; the separate all-features suite verifies conversion.",
+    "Subnormal tests establish localized bounded failure without rounding, not successful conversion of all subnormals.",
+    "Task 2.3 remains open for unified converter/writer working-set accounting and synthesis versus replay budget semantics; reported memory is not measured RSS.",
+    "No real-model conversion, inference or mutation campaign result is claimed."
+  ]
+}

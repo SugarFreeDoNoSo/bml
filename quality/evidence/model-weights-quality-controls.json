@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "Coverage and mutation control review; not specification closure",
+  "coverage": {
+    "workspace": {
+      "command": "cargo llvm-cov --workspace --locked --json --output-path target/quality/model-weights-workspace-coverage.json",
+      "exit_code": 0,
+      "validator": "python3 tools/quality.py coverage --report target/quality/model-weights-workspace-coverage.json",
+      "validator_exit_code": 0,
+      "lines": {"covered": 18441, "count": 21302, "percent": 86.56933621256219},
+      "functions": {"covered": 1705, "count": 2150, "percent": 79.30232558139534},
+      "floors": {"lines": 52.0, "functions": 60.0},
+      "sha256": "c78b85037f43b1f0a401bf2442702f5889a38b370997db58eb374d80f831ef72",
+      "snapshot": "Before the additional all-types GGUF metadata regression test; production sources unchanged afterward"
+    },
+    "crate_before_regression": {
+      "command": "cargo llvm-cov -p bml-model-weights --all-features --locked --json --output-path target/quality/model-weights-coverage.json",
+      "exit_code": 0,
+      "line_percent": 86.5484429065744,
+      "function_percent": 73.11320754716981,
+      "sha256": "ef09862f2bca810c99b42bd83fe17bb4eb19cc9e11164b817789c8878a83f822"
+    },
+    "crate_after_regression": {
+      "command": "cargo llvm-cov -p bml-model-weights --all-features --locked --json --output-path target/quality/model-weights-coverage-after-metadata.json",
+      "exit_code": 0,
+      "lines": {"covered": 2026, "count": 2312, "percent": 87.62975778546713},
+      "functions": {"covered": 157, "count": 212, "percent": 74.05660377358491},
+      "sha256": "7ea3d62c7041d544a16dcd354f5b56888537d5e13d240ae8741c872c6af93d25"
+    },
+    "limitations": "Stable line/function coverage only; not branch, doctest or exhaustive-input coverage. Package-only percentages are not substituted for the canonical workspace gate."
+  },
+  "mutation": {
+    "full_crate": {
+      "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --output target/model-weights-mutations",
+      "candidates_listed": 464,
+      "status": "Complete; mutation gate failed",
+      "exit_code": 2,
+      "total_mutants": 464,
+      "caught": 301,
+      "missed": 105,
+      "timeout": 0,
+      "unviable": 58,
+      "score_percent": 74.13793103448276,
+      "start_time": "2026-11-03T05:39:19.988081294Z",
+      "end_time": "2026-11-03T06:07:09.391629256Z",
+      "sha256": "cdbfa02e28da4761c9cd0a3aa073f740867f5da2434f6c6285a5dfb38f8b8db5",
+      "validator": "python3 tools/quality.py mutations --report target/model-weights-mutations/mutants.out/outcomes.json",
+      "validator_exit_code": 1,
+      "report": "target/model-weights-mutations/mutants.out/outcomes.json",
+      "log": "target/quality/model-weights-mutations.log",
+      "snapshot": "Before gguf_import_preserves_all_scalar_and_array_metadata_types was added",
+      "survivors_by_source": {
+        "convert.rs": 37,
+        "gguf_preflight.rs": 16,
+        "limits.rs": 1,
+        "metadata.rs": 17,
+        "reader.rs": 16,
+        "writer.rs": 18
+      },
+      "observed_findings": "Survivors include accounting, metadata import, chunk partitioning, preflight and container checks. The complete campaign fails the zero-survivor criterion; no equivalence exclusions or baseline changes have been applied."
+    },
+    "focused_metadata_replay": {
+      "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --re 'delete match arm D::(I8|U16|I16|U32|I32|U64|I64|F32|F64|Bool) in metadata_value' --output target/model-weights-mutations-metadata",
+      "exit_code": 0,
+      "candidates": 11,
+      "caught": 11,
+      "missed": 0,
+      "timeout": 0,
+      "unviable": 0,
+      "start_time": "2026-11-03T05:49:54.889027316Z",
+      "end_time": "2026-11-03T05:52:07.004335356Z",
+      "report": "target/model-weights-mutations-metadata/mutants.out/outcomes.json",
+      "sha256": "a32702c5753d776ef804b3c71a473451d5efa21bf29f62d6b750f398c8425a05",
+      "validator": "python3 tools/quality.py mutations --report target/model-weights-mutations-metadata/mutants.out/outcomes.json",
+      "validator_exit_code": 0,
+      "regression": "crates/model-weights/tests/conversion.rs::gguf_import_preserves_all_scalar_and_array_metadata_types",
+      "limitation": "This filtered later snapshot does not retroactively pass the complete campaign or cover its other survivors."
+    },
+    "historical_workspace": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json had end_time=null when reviewed; it predates bml-model-weights and cannot certify this crate."
+  },
+  "verification": [
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 666, "new_clippy_diagnostics": 0, "log": "target/quality/model-weights-quality-gate.log", "sha256": "c51e95e4c66e2577ea8faa542783e2709c23e1a64f84e4db1cd6be9a91e9d55d"},
+    {"command": "cargo test -p bml-gguf --no-default-features --locked", "exit_code": 0, "passed": 50, "log": "target/quality/model-weights-close-gguf-minimal.log", "sha256": "6ec15046f2e3e6b33abe85e68b6a301f34086ec136b4df125c42b6d62d4f4737"},
+    {"command": "cargo test -p bml-gguf --all-features --locked", "exit_code": 0, "passed": 57, "log": "target/quality/model-weights-close-gguf-all.log", "sha256": "c7360ab5297fb9c45f215685f6549a2c24f47351843ddc3f0b3b906d6e1dfad8"}
+  ],
+  "active_checklist_review": {
+    "gguf-to-bml-weights": "Quality closure and commit remain open; mutation criterion not met.",
+    "bml-1-0-release": "Quality/mutation closure and commit remain open.",
+    "bml-exact-numbers-and-matrices": "Actual ARM execution/campaign and commit remain open.",
+    "bml-implementation-plan": "L1/PMU, cloud stress and final milestone remain open.",
+    "bml-inference-pipeline": "Translation closure, work-stealing Loom verification, L1i counters and final closure remain open.",
+    "fix-placeholders": "Commit/push remains open.",
+    "tensor-library-foundation": "Deferred complex synthesis and final archive remain open."
+  },
+  "closure_approved": false
+}

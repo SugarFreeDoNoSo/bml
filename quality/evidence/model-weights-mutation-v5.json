@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "scope": "Six regressions for remaining survivors after v4; full v5 campaign finished and failed",
+  "review": [
+    {
+      "test": "mismatched_block_header_is_reported_before_stream_decoding",
+      "contract": "Independently corrupted BMLS magic, term count and bit count with recomputed hashes return BlockHeader rather than a later stream error."
+    },
+    {
+      "test": "short_header_is_distinguished_from_invalid_magic",
+      "contract": "Files below 256 bytes return HeaderLength; exactly 256 bytes with invalid magic return Magic."
+    },
+    {
+      "test": "section_layout_relations_are_checked_independently_before_catalog_hash",
+      "contract": "Seven independently violated section-layout relations return SectionLayout before catalog processing; header hashes are valid and downstream offsets are adjusted to isolate each relation."
+    },
+    {
+      "test": "reported_synthesis_scratch_tracks_bits_steps_and_rational_capacity",
+      "contract": "For a fixed single-weight model, eight extra retained synthesis bits add one accounted byte, an additional proof slot includes rational scratch, and two extra rational bits add one byte per proof slot."
+    },
+    {
+      "test": "destination_lookup_failure_is_not_treated_as_absence",
+      "contract": "Writer returns Open for a destination lookup failing through a symlink loop instead of proceeding to temporary creation."
+    },
+    {
+      "test": "conversion_destination_lookup_failure_precedes_source_preflight",
+      "contract": "Converter returns the destination Open error before inspecting an intentionally invalid source, preserving source data."
+    }
+  ],
+  "production_logic_changed": false,
+  "exclusions_added": false,
+  "snapshot_sha256": {
+    "crates/model-weights/tests/conversion.rs": "196e8692dcef085bf32002e7618c3edbe9308b757faa39bfbd2348b64fe60814",
+    "crates/model-weights/tests/reader.rs": "2c1e4c160aa162c1e7cfcd41419e993dfe231f089f6f3c8deb12fe4c0aa029f5",
+    "crates/model-weights/tests/writer.rs": "8b75ac19dd8530d7d7604309339e1e0d8ef578daa89e52b07aef0f1f11ceb103"
+  },
+  "verification": [
+    {
+      "command": "cargo test -p bml-model-weights --all-features --locked",
+      "exit_code": 0,
+      "passed": 63,
+      "log": "target/quality/model-weights-v5-tests.log",
+      "sha256": "fa8c0a5c40deb5eb72ab964952bd8618d4128a12f143457623d78c6ef91cda4e"
+    },
+    {
+      "command": "CARGO_INCREMENTAL=0 ./scripts/check.sh origin/master",
+      "exit_code": 0,
+      "rust_tests_passed": 690,
+      "historical_discrepancies": 0,
+      "new_clippy_diagnostics": 0,
+      "log": "target/quality/model-weights-v5-gate.log",
+      "sha256": "3721a9bf409e39713b498f4aac398b723278224beb4f27aaba7c36f2c520611c"
+    }
+  ],
+  "complete_campaign_v5": {
+    "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --output target/model-weights-mutations-v5",
+    "status": "Complete; mutation gate failed",
+    "exit_code": 2,
+    "total_mutants": 464,
+    "caught": 376,
+    "missed": 30,
+    "unviable": 58,
+    "timeout": 0,
+    "score_percent": 92.61083743842364,
+    "start_time": "2026-11-03T07:37:57.892225738Z",
+    "end_time": "2026-11-03T08:02:57.712514732Z",
+    "report_sha256": "a9dc1b74007e94b0dbf1b4134909b5d1bceb2ba49dcb740c9501d75df0df0ca8",
+    "validator": "python3 tools/quality.py mutations --report target/model-weights-mutations-v5/mutants.out/outcomes.json",
+    "validator_exit_code": 1,
+    "previously_missed_now_caught": 18,
+    "previously_caught_now_missed": 0,
+    "report": "target/model-weights-mutations-v5/mutants.out/outcomes.json",
+    "log": "target/quality/model-weights-mutations-v5.log"
+  },
+  "closure_approved": false
+}

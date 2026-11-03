@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "scope": "convert-weights and inspect-weights CLI commands with explicit budgets, diagnostics and transactional behavior",
+  "implementation": "crates/cli/src/weights.rs",
+  "tests": "crates/cli/tests/weights_cli.rs",
+  "fixture": "Independent GGUF v3 binary construction with one F32 tensor; subprocess invocation of the actual bml-cli binary",
+  "contracts": [
+    "Convert with explicit block/cache limits and inspect after deleting the source",
+    "Default inspection reports payload not verified; --verify-all verifies every block",
+    "Corrupt payload with intact catalog passes catalog inspection but fails --verify-all without printing verified-all",
+    "Nonfinite weight reports flat index and leaves source intact without output or temporaries",
+    "Existing output is preserved byte-for-byte",
+    "Cached weights still exhaust cumulative replay limits; zero limits and invalid CLI values fail",
+    "Help exposes resource limits and complete-verification option"
+  ],
+  "verification": [
+    {"command": "cargo test -p bml-cli --test weights_cli --locked", "exit_code": 0, "passed": 5},
+    {"command": "./scripts/check.sh origin/master", "exit_code": 0, "rust_tests_passed": 652, "new_clippy_diagnostics": 0, "historical_discrepancies": 0, "log": "target/quality/model-weights-cli-gate.log", "sha256": "f474053ab4e07dc5a46f3d73506cfa92415621171559b6b2dadce2bb30095533"}
+  ],
+  "documentation": "docs/BML_1_0.md",
+  "limitations": [
+    "CLI conversion does not establish inference architecture support or real-model conversion feasibility.",
+    "Inspection verifies structural integrity, not mathematical equivalence to an arbitrary source.",
+    "No full mutation campaign result is claimed."
+  ]
+}

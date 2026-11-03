@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "scope": "Follow-up to 12 survivors in v7; complete campaign v8 finished and failed",
+  "production_changes": [
+    "Explicit fixed codec geometry selects at most 256 decoded floats per chunk: F32 1024 bytes, F16 512, Q4_0 18, Q8_0 34, Q6_K 210. Replaces equivalent derived chunk arithmetic.",
+    "Elapsed phase addition is shared in accumulate_time and tested with deterministic durations instead of wall-clock timing assertions.",
+    "Raw negative JSON numbers now return InvalidType directly. Signed metadata integers remain canonical strings; valid input representation is unchanged."
+  ],
+  "regressions": [
+    "measured_phases_accumulate_instead_of_replacing_or_subtracting",
+    "importer_reservation_bounds_metadata_encoding_before_allocation",
+    "raw_negative_json_numbers_are_rejected_before_schema_validation",
+    "block_coverage_overruns_are_rejected_before_following_records",
+    "wrong_term_count_is_reported_before_depth_validation",
+    "unsupported_null_reports_the_bounded_json_expectation"
+  ],
+  "contracts": [
+    "Importer external reservation leaves exactly 62 encoder bytes; failure must occur in the encoder rather than after allocation.",
+    "Invalid first block coverage must be rejected before a later excessive record can change the diagnostic.",
+    "The wrong number of complete terms yields StreamError::Length before domain depth validation.",
+    "Unsupported null has a useful internal serde expectation and maps to public InvalidJson."
+  ],
+  "exclusions_added": false,
+  "comparison_policy": "Changed geometry and timing factoring can change candidate counts; removed candidates are not caught mutants.",
+  "verified_tree_sha256": {
+    "crates/model-weights/src/convert.rs": "2b0f299f2b0330eb4e6cd9bc189492c3db9dbeee48fe06eaa11763cd36ced000",
+    "crates/model-weights/src/metadata.rs": "115b3c338c9987974742d91adaca17e982f826fbff849874c6d22effc35b564b",
+    "crates/model-weights/src/writer.rs": "c225b2bd80fbc7e503dfbabfd7c0cb26ba69ad3dca718986541186387ca77168",
+    "crates/model-weights/tests/reader.rs": "770010e4c9fcfc68ccf9150c710a106242e9ad1a23731c51754906ac7a4bfb6e"
+  },
+  "snapshot_note": "After campaign launch, writer.rs header function was moved above its new test module to resolve items_after_test_module. No function body changed in this reorder. Gate hashes refer to the reordered tree; campaign line numbers may differ.",
+  "verification": [
+    {
+      "command": "cargo test -p bml-model-weights --all-features --locked",
+      "exit_code": 0,
+      "passed": 75,
+      "log": "target/quality/model-weights-v8-tests.log",
+      "sha256": "caf76e67f7d2a9e185b8d9a70cb40e38b156c4502aca5239735405b21cbea38f"
+    },
+    {
+      "command": "CARGO_INCREMENTAL=0 ./scripts/check.sh origin/master",
+      "exit_code": 0,
+      "rust_tests_passed": 702,
+      "new_clippy_diagnostics": 0,
+      "log": "target/quality/model-weights-v8-gate.log",
+      "sha256": "6798b0b5acc5af63ce49ea19b7e846c0a4a2b556ae04a57a8ccbf7f0b4d3895c"
+    }
+  ],
+  "complete_campaign_v8": {
+    "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --output target/model-weights-mutations-v8",
+    "status": "Complete; mutation gate failed",
+    "exit_code": 2,
+    "total_mutants": 443,
+    "caught": 390,
+    "missed": 1,
+    "unviable": 52,
+    "timeout": 0,
+    "score_percent": 99.74424552429667,
+    "start_time": "2026-11-03T09:08:12.459166706Z",
+    "end_time": "2026-11-03T09:38:56.018355804Z",
+    "report_sha256": "345e7c60a9e7974f23b00e1137910c120e670aba5c26bb6685b3682039cb05c2",
+    "validator": "python3 tools/quality.py mutations --report target/model-weights-mutations-v8/mutants.out/outcomes.json",
+    "validator_exit_code": 1,
+    "survivor": "crates/model-weights/src/convert.rs:330:73: replace - with + in from_gguf",
+    "report": "target/model-weights-mutations-v8/mutants.out/outcomes.json",
+    "log": "target/quality/model-weights-mutations-v8.log"
+  },
+  "closure_approved": false
+}
