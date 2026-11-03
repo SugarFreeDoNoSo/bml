@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "scope": "Two historical symbolic artifact fragment-admission survivors detected by current contracts",
+  "base_commit": "fcff9f3",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "historical_mutants": [
+    "crates/compiler/src/symbolic_artifact.rs:169:30: replace < with == in compile_directory",
+    "crates/compiler/src/symbolic_artifact.rs:269:9: replace || with && in load_directory"
+  ],
+  "snapshot": "target/delivery-snapshots/symbolic-admission-replay",
+  "contract": "artifact_loader_enforces_profile_sizes_and_rejects_native_opcodes_itself",
+  "test_file": "crates/compiler/tests/symbolic_artifact_contracts.rs",
+  "test_change": "None: existing test compiles with exactly one-opcode fragment capacity, checks loading, then tests invalid manifest fragment sizes including zero and opcode-size-minus-one.",
+  "method": "Archive HEAD; baseline suite; independently mutate compile minimum comparison and loader admission disjunction; restore and rerun. Fresh dedicated build initially, same snapshot path rebuilt on each edit. Production source/tests untouched.",
+  "verification": [
+    {"source": "original baseline", "exit_code": 0, "passed": 7, "log": "target/quality/symbolic-admission-baseline.log", "sha256": "f44615f15ead2f489d7252152ffe58371d4ff4b3c09bd9df481aac80e3ed8b9d"},
+    {"source": "compile minimum < changed to ==", "exit_code": 101, "passed": 6, "failed": 1, "diagnostic": "invalid symbolic fragment threshold", "log": "target/quality/symbolic-admission-compile.log", "sha256": "5e3615a717ab434a1b3fa565c2c0da25ad002d2318466430f305b065437201f4"},
+    {"source": "load minimum || changed to &&", "exit_code": 101, "passed": 6, "failed": 1, "diagnostic": "0: invalid symbolic fragment or native opcode", "log": "target/quality/symbolic-admission-load.log", "sha256": "f4fd19b9e3b6309daaa44c5b384f145a752b2ebef77f31f759dd6b613ee1d51a"},
+    {"source": "restored implementation", "exit_code": 0, "passed": 7, "log": "target/quality/symbolic-admission-restored.log", "sha256": "fbb2ce247112cf311def29b934f3a2d8cd6c4b894fa460929381b1d03318220a"}
+  ],
+  "command": "cargo test -p bml-compiler --test symbolic_artifact_contracts --locked",
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/symbolic-admission-build; CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0; TMPDIR under target.",
+  "interpretation": "Compile mutant rejects a valid inclusive minimum. Loader mutant still fails later on stored fragments, but skips the required initial profile/size admission; the contract detects the wrong rejection stage. Current detection does not explain historical survival or modify historical outcomes.",
+  "remaining": "Eleven historical survivors now have local detecting-contract evidence; 36 still require disposition. Both historical timeouts have diagnosis and independent fast detection. Global campaign remains unchanged with end_time=null and is not approved."
+}
