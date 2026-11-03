@@ -183,18 +183,15 @@ impl Runtime {
         }
     }
 
-    /// Ejecuta fragmentos en paralelo entre cores.
+    /// Execute independent fragments concurrently and preserve all buffer
+    /// dependencies in list order. Indexed reads are analyzed against the real
+    /// slot layout; descriptive metadata is not trusted for synchronization.
     ///
-    /// Cada core ejecuta un fragmento en su propio hilo.
-    /// Los fragmentos que dependen de outputs de otros deben esperar
-    /// a que el slot del buffer esté listo.
-    ///
-    /// # Sincronización
-    ///
-    /// Esta versión simplificada ejecuta todos los fragmentos en paralelo
-    /// sin sincronización. Los fragmentos independientes (Q, K, V) se
-    /// ejecutan simultáneamente. Los dependientes (attention) necesitan
-    /// que Q, K, V terminen primero.
+    /// The caller's mutex excludes other buffer users for the whole execution.
+    /// Workers borrow disjoint output slices and shared inputs without copying
+    /// tensors or holding the mutex individually. Planning and thread setup
+    /// allocate; sequential execution allocates nothing when the interpreter
+    /// stack has sufficient preallocated capacity.
     pub fn execute_fragments_parallel(
         &mut self,
         fragments: &[OperationFragment],
@@ -203,49 +200,14 @@ impl Runtime {
         buf: &std::sync::Arc<std::sync::Mutex<ResultBuffer>>,
         n_cores: usize,
     ) {
-        use std::sync::Arc;
-        use std::thread;
-
-        if n_cores <= 1 || fragments.len() <= 1 {
-            let ctx = bml_domain::EvalContext::new(inputs, weights);
-            let mut buf_guard = buf.lock().unwrap();
-            self.execute_fragments_sequential(fragments, &ctx, &mut buf_guard);
-            return;
-        }
-
-        let chunks: Vec<Vec<OperationFragment>> = fragments
-            .chunks((fragments.len() + n_cores - 1) / n_cores)
-            .map(|c| c.to_vec())
-            .collect();
-
-        let inputs = Arc::new(inputs.to_vec());
-        let weights = Arc::new(weights.to_vec());
-        let handles: Vec<_> = chunks
-            .into_iter()
-            .map(|chunk| {
-                let buf = Arc::clone(&buf);
-                let inputs = Arc::clone(&inputs);
-                let weights = Arc::clone(&weights);
-                thread::spawn(move || {
-                    let mut hot = HotLoop::with_capacity(8192);
-                    let ctx = bml_domain::EvalContext::new(&inputs, &weights);
-                    let mut buf_guard = buf.lock().unwrap();
-                    for frag in &chunk {
-                        hot.execute_fragment_full(&frag.fragment, &ctx, &mut buf_guard);
-                    }
-                })
-            })
-            .collect();
-
-        for h in handles {
-            h.join().unwrap();
-        }
+        let context = bml_domain::EvalContext::new(inputs, weights);
+        let mut buffer = buf.lock().unwrap();
+        self.execute_with_cores(fragments, &context, &mut buffer, n_cores);
     }
 
-    /// Ejecuta fragmentos decidiendo secuencial vs paralelo según cores.
-    ///
-    /// Si `n_cores >= n_fragments`, ejecuta en paralelo.
-    /// Si `n_cores < n_fragments`, ejecuta secuencialmente con cambio de hot loop.
+    /// Execute with at most `n_cores` workers, joining each independent wave
+    /// before its dependents. Zero/one core, shared interpreter stack, or
+    /// bytecode whose independence cannot be proved uses sequential execution.
     pub fn execute_with_cores(
         &mut self,
         fragments: &[OperationFragment],
@@ -253,20 +215,34 @@ impl Runtime {
         buf: &mut ResultBuffer,
         n_cores: usize,
     ) {
-        if n_cores >= fragments.len() && fragments.len() > 1 {
-            // Paralelo: cada core un fragmento
-            let buf_arc = std::sync::Arc::new(std::sync::Mutex::new(std::mem::replace(
-                buf,
-                ResultBuffer::new(0, 0),
-            )));
-            self.execute_fragments_parallel(fragments, ctx.inputs, ctx.weights, &buf_arc, n_cores);
-            *buf = std::sync::Arc::try_unwrap(buf_arc)
-                .unwrap()
-                .into_inner()
-                .unwrap();
-        } else {
-            // Secuencial con cambio de hot loop
+        if n_cores <= 1 || fragments.len() <= 1 || self.hot_loop.stack_depth() != 0 {
             self.execute_fragments_sequential(fragments, ctx, buf);
+            return;
+        }
+        let Some(accesses) = crate::operation_schedule::analyze(fragments, ctx, buf) else {
+            self.execute_fragments_sequential(fragments, ctx, buf);
+            return;
+        };
+        let mut start = 0;
+        while start < fragments.len() {
+            let count = crate::operation_schedule::wave_len(&accesses[start..], n_cores);
+            let end = start + count;
+            if count == 1 {
+                self.hot_loop
+                    .execute_fragment_full(&fragments[start].fragment, ctx, buf);
+            } else {
+                let accesses = &accesses[start..end];
+                crate::operation_schedule::run_wave(
+                    &fragments[start..end],
+                    accesses,
+                    buf,
+                    |worker, fragment, view| {
+                        let mut hot = HotLoop::with_capacity(accesses[worker].stack_capacity);
+                        hot.execute_fragment_store(&fragment.fragment, ctx, view);
+                    },
+                );
+            }
+            start = end;
         }
     }
 }

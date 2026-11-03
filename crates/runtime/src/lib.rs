@@ -21,6 +21,7 @@ pub mod graph;
 pub mod graph_rpc;
 pub mod hot_loop;
 pub mod net;
+mod operation_schedule;
 pub mod prepared_projection;
 pub mod queue;
 pub mod runtime;

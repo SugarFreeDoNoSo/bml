@@ -1,0 +1,154 @@
+{
+  "schema": 1,
+  "date_utc": "2026-11-03T22:26:19.802006+00:00",
+  "base_commit": "9338c429c4e4ed4319f022fdbb224d850540acce",
+  "scope": "Public operation matmul and SwiGLU, finite-temperature sampling, dependency-safe operation-fragment concurrency; broader specs remain open.",
+  "source_sha256": {
+    "crates/compiler/src/bml_ops.rs": "ef37c542823e46886470fa77184b7a5bd4fc0afe35edbcac0aacd2d68057fb5a",
+    "crates/compiler/src/op_fragments.rs": "eda1736bbb858162ed28f2b1ae68c25f7c81ffd4491fa11212d4b0cf3245a1a0",
+    "crates/compiler/src/sampler.rs": "f5f071a5448cf03baa742b71028a5251f4944dcad5a17988f3b821c74caf5b9b",
+    "crates/runtime/src/buffer.rs": "9736f41f2cc8a2321f048f88cbe75d09b3f93d8b9a86fa2ef76f8b219fa751a2",
+    "crates/runtime/src/hot_loop.rs": "a88d80e5eb682f76879b795c936be8b7d58271da96e22a9445afef0c333e1a04",
+    "crates/runtime/src/lib.rs": "8a4125e098adcd8a893219d04d762c48f62a9bf403a3b4bea825d596dc1e227a",
+    "crates/runtime/src/operation_schedule.rs": "0bb1eb3ce2622cb1b602833d2c1b34ff6448e5c7a810993dcd3a63b6b16e5016",
+    "crates/runtime/src/runtime.rs": "4e1d9738756b0fdb6ce1ad941b6181517462acf2fb6427e1130bae92b5cbd9d3",
+    "crates/runtime/tests/operation_matmul_contracts.rs": "1e3beeffe40db5df549adbd083067375279add7e1c403547f6e1a4ad7cf82ccc",
+    "crates/runtime/tests/operation_schedule_contracts.rs": "27138cacff08e46da275e2d3ed9edf19505b2e96abc7c098538b2bdd737ee221",
+    "crates/runtime/tests/operation_swiglu_contracts.rs": "91862e8a16638f21200a7b376aaa21cac0654a9aec7a1cb346aa4b2bf2d6d1f5",
+    "quality/contracts.feature": "cd832a2471efa308e7be9d605896cd73769c3ca0daeef3656d09e2a2524f42ee",
+    "quality/traceability.json": "6bea8aff4ee9b3fac5b541754a909993ac536d2c9243ce1dee2e1ad1f349e178",
+    "tools/audit_hot_loop_binary.py": "320c77505717d92a6fb3943243c99f65d9ab9b6b39903ac963e51b832239c518",
+    "tools/test_audit_hot_loop_binary.py": "1be9790464c0265d8eea4a949692f30d3cd4559a21726578141f2dd1b2c3ac9b",
+    "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1",
+    "Cargo.toml": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+    "Cargo.lock": "a76bdb0d79ca9fe1539694bf2549ff5a981b52a87c052c1bdb855063812cfc0f"
+  },
+  "verification": {
+    "canonical_gate": {
+      "command": [
+        "./scripts/check.sh",
+        "origin/master"
+      ],
+      "base_commit": "9338c429c4e4ed4319f022fdbb224d850540acce",
+      "exit_code": 0,
+      "rust_tests_passed": 808,
+      "python_tests_passed": 86,
+      "trace": "87/87",
+      "historical_contract_discrepancies": 0,
+      "clippy": {
+        "diagnostics": 61,
+        "baseline": 192,
+        "new": 0
+      }
+    },
+    "all_features": {
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "scope": "Compilation, not all-feature runtime tests"
+    },
+    "openspec": {
+      "command": [
+        "npx",
+        "--yes",
+        "--package",
+        "@fission-ai/openspec@1.13.0",
+        "openspec",
+        "validate",
+        "--all",
+        "--strict"
+      ],
+      "passed": 11,
+      "failed": 0
+    },
+    "concurrent_workers": "A shared condition-variable rendezvous with timeout requires both independent workers to enter before either returns; the same scoped wave launcher executes production fragments.",
+    "generated_program_oracle": {
+      "cases": 48,
+      "target": "operation_schedule_contracts",
+      "scope": "Small buffer programs with independently calculated sequential outputs, not general liveness or speedup"
+    },
+    "binary_audit": {
+      "path": "quality/evidence/operation-schedule-hot-loop.json",
+      "sha256": "fa6f70165a9a15f14e55cf081f3c9bd562b92a7976b0d2afe699b53ed169946f",
+      "dispatcher_bytes": 2309,
+      "scope": "Machine code and call/branch targets; no PMU or L1-residency claim"
+    }
+  },
+  "logs": {
+    "target/quality/operation-fragment-worktree-gate.log": {
+      "sha256": "d959387972b928a70049baa31e53044452c206d9fac9851d6cb15a1c3e2e90f5",
+      "passed_rust_tests": 808,
+      "exit_code": 0
+    },
+    "target/quality/operation-fragment-all-features.log": {
+      "sha256": "679708ce387ec3c6aaed56b75e6b9b99e1f03e306011d8e2c48c64036d3eb97d",
+      "passed_rust_tests": 0,
+      "exit_code": 0
+    },
+    "target/quality/operation-fragment-openspec-final.log": {
+      "sha256": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7",
+      "passed_rust_tests": 0,
+      "exit_code": 0
+    },
+    "target/quality/operation-matmul-contracts.log": {
+      "sha256": "06fabf791154027ddb5b51a220251a9442c63861e17ace068b06d4750de8da89",
+      "passed_rust_tests": 5
+    },
+    "target/quality/operation-matmul-compiler.log": {
+      "sha256": "ed85386745f6a445add917cd4dc28b9984c224d6e66bbd601bbc72fb60eb6284",
+      "passed_rust_tests": 6
+    },
+    "target/quality/operation-swiglu-final.log": {
+      "sha256": "276a00e28110647f71fdedae00bcdcdb4719d5c8a16c9d14b6c1645ea1798132",
+      "passed_rust_tests": 4
+    },
+    "target/quality/operation-swiglu-compiler-tests.log": {
+      "sha256": "3cf515370c2657d03e30d987eb1db7d31c8fb924d7bd8aea3d26f68bbf70a863",
+      "passed_rust_tests": 5
+    },
+    "target/quality/operation-schedule-unit.log": {
+      "sha256": "35ac54ae4f2470647d1a89fa9007eb5d1f3df48389b6a26086269183239d6025",
+      "passed_rust_tests": 3,
+      "exit_code": 0
+    },
+    "target/quality/operation-schedule-contracts.log": {
+      "sha256": "8020bc6762125c94194cde6479feebd2bcb843da29013938724246862317d839",
+      "passed_rust_tests": 8,
+      "exit_code": 0
+    },
+    "target/quality/sampler-regression-before.log": {
+      "sha256": "6d1f7b41056d6dcc765db379196a57cfda2e556bf59cc8532bcf4cd7081762d7",
+      "passed_rust_tests": 0
+    },
+    "target/quality/sampler-regression-after.log": {
+      "sha256": "2320b0e444404302eea975370d3ce2077fc78ff06c213bd7a9633ea9f79ffc98",
+      "passed_rust_tests": 15
+    },
+    "target/quality/sampler-greedy-consumer.log": {
+      "sha256": "cc1990cc776dc394bd79fcb52353a4bda989182cfc7dcb97f6bbe1953b739fd5",
+      "passed_rust_tests": 1
+    },
+    "target/quality/operation-schedule-hot-loop-audit.log": {
+      "sha256": "f72020b29831c54d25d271b9bc7d312f179b22c16fb88b35e4647f8f092b7222",
+      "passed_rust_tests": 0
+    }
+  },
+  "limits": [
+    "Legacy matmul and SwiGLU retain explicit partial BML numerical contracts. The configurable matmul validates each real BML operation; no all-f64 BLAS or universal evaluability claim.",
+    "The checked matmul preflight validates supplied values; callers must bind those values and owned constants to valid disjoint buffer storage.",
+    "Sampling preserves the ignored public seed; deterministic tests inject a draw into the production implementation.",
+    "Concurrent planning, view metadata and thread setup allocate; tensor/weight values are borrowed without copying. Sequential execution needs sufficient stack capacity to avoid growth.",
+    "The historical WaveScheduler mutex is unchanged. Binary panic/allocator slow paths are not transitively audited."
+  ],
+  "remaining_requirements": [
+    "fix-placeholders G1: public RMS and RoPE helpers, attention, MLP/down, complete layer layouts/residuals, complete historical distributed compiler/worker/CLI, final placeholder inventory audit.",
+    "bml-inference-pipeline 8.6: bounded RMS/softmax scalability, larger-model and additional-prompt validation.",
+    "ARM/NEON hardware execution; PMU/L1 measurements and cloud stress milestone.",
+    "Current global coverage/mutation release gate, with surviving mutants and incomplete campaign still unapproved."
+  ]
+}

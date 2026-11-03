@@ -17,7 +17,104 @@ pub struct ResultBuffer {
     n_slots: usize,
 }
 
+/// Storage operations used by the interpreter. A parallel view owns only its
+/// output slots and borrows the remaining input slots immutably.
+pub(crate) enum ResultStore<'a, 'data> {
+    Contiguous(&'a mut ResultBuffer),
+    Partitioned(&'a mut PartitionedBuffer<'data>),
+}
+
+impl ResultStore<'_, '_> {
+    #[inline]
+    pub(crate) fn read_indexed(&self, base: u32, offset: u32) -> f64 {
+        match self {
+            Self::Contiguous(buffer) => buffer.read_indexed(base, offset),
+            Self::Partitioned(buffer) => buffer.read_indexed(base, offset),
+        }
+    }
+
+    #[inline]
+    pub(crate) fn write(&mut self, slot: u32, offset: u32, value: f64) {
+        match self {
+            Self::Contiguous(buffer) => buffer.write(slot, offset, value),
+            Self::Partitioned(buffer) => buffer.write(slot, offset, value),
+        }
+    }
+}
+
+enum SlotAccess<'a> {
+    Read(&'a [f64]),
+    Write(&'a mut [f64]),
+    Unavailable,
+}
+
+pub(crate) struct PartitionedBuffer<'a> {
+    slots: Vec<SlotAccess<'a>>,
+    slot_size: usize,
+}
+
+impl PartitionedBuffer<'_> {
+    fn read_indexed(&self, base: u32, offset: u32) -> f64 {
+        let Some(index) = base.checked_add(offset).map(|v| v as usize) else {
+            return f64::NAN;
+        };
+        if self.slot_size == 0 {
+            return f64::NAN;
+        }
+        let values = match self.slots.get(index / self.slot_size) {
+            Some(SlotAccess::Read(values)) => *values,
+            Some(SlotAccess::Write(values)) => &**values,
+            _ => return f64::NAN,
+        };
+        values
+            .get(index % self.slot_size)
+            .copied()
+            .unwrap_or(f64::NAN)
+    }
+
+    fn write(&mut self, slot: u32, offset: u32, value: f64) {
+        if offset as usize >= self.slot_size || slot as usize >= self.slots.len() {
+            return;
+        }
+        match &mut self.slots[slot as usize] {
+            SlotAccess::Write(values) => values[offset as usize] = value,
+            _ => panic!("operation wrote a slot absent from its execution plan"),
+        }
+    }
+}
+
 impl ResultBuffer {
+    /// Partition a wave's output slots without moving or copying any values.
+    /// The scheduler proves that another worker never reads a writable slot.
+    pub(crate) fn partition(
+        &mut self,
+        owners: &[Option<usize>],
+        workers: usize,
+    ) -> Vec<PartitionedBuffer<'_>> {
+        assert_eq!(owners.len(), self.n_slots);
+        let mut views: Vec<_> = (0..workers)
+            .map(|_| PartitionedBuffer {
+                slots: Vec::with_capacity(self.n_slots),
+                slot_size: self.slot_size,
+            })
+            .collect();
+        if self.slot_size == 0 {
+            return views;
+        }
+        for (slot, &owner) in self.data.chunks_mut(self.slot_size).zip(owners) {
+            if let Some(owner) = owner {
+                for view in &mut views {
+                    view.slots.push(SlotAccess::Unavailable);
+                }
+                *views[owner].slots.last_mut().unwrap() = SlotAccess::Write(slot);
+            } else {
+                for view in &mut views {
+                    view.slots.push(SlotAccess::Read(slot));
+                }
+            }
+        }
+        views
+    }
     /// Adopt a complete slot buffer without copying or allocating.
     /// Mismatched or overflowing dimensions return the original values.
     pub fn from_vec(n_slots: usize, slot_size: usize, data: Vec<f64>) -> Result<Self, Vec<f64>> {

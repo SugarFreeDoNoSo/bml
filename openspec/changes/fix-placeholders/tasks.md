@@ -1,6 +1,6 @@
 ## 1. Matmul vectorial completo (acumulador de suma de productos)
 
-- [ ] 1.1 Actualizar `compile_matmul_fragment()` para incluir acumulador. Reabierta por auditoría ejecutable: la API aún usa BML literal como producto/suma y devuelve 0 para el caso 1×1 esperado 2, y [0, NaN] para el caso 2×2 esperado [11, 17]. Las rutas causales modernas no corrigen esta API. Evidencia: `quality/evidence/fix-placeholders-closure-audit-2026-11-03.md`.
+- [x] 1.1 Actualizar `compile_matmul_fragment()` para incluir acumulador. Corregida la API auditada: bucles con índices y acumulador propios, productos y sumas BML firmados, escrituras por fila y pila preservada. C85 contrasta ambas APIs públicas con matrices rectangulares hasta 4×64, bases absolutas no cero y dimensiones vacías. El constructor configurable añade constantes propias y preflight real de cada BML; el wrapper histórico declara su perfil y precondiciones. El dominio numérico es parcial, no BLAS para todos los f64. Evidencia: `quality/evidence/operation-fragment-repair-2026-11-03.md`.
 - [x] 1.2 Actualizar `build_transformer_dag()` para usar todos los pesos. (InferenceCompiler implementado con matmul real.)
 - [x] 1.3 Asignar bases de pesos correctamente. (weight_offsets + tensor_dims en InferenceCompiler.)
 - [x] 1.4 Pruebas: matmul de una matriz 2x2. (InferenceCompiler::forward verificado con TinyLlama end-to-end.)
@@ -35,7 +35,7 @@
 ## 6. Sampling
 
 - [x] 6.1 `argmax(logits)` para greedy (temp=0).
-- [ ] 6.2 `softmax(logits/temp)` + muestreo para temp>0. Reabierta: `sample` sustituye cualquier temperatura positiva menor que 1e-9 por greedy. Con el mismo uniforme 0.1, logits [0,1]/temp 1 producen ID 0, pero logits [0,1e-12]/temp 1e-12 producen ID 1 aunque las probabilidades deben coincidir. Control determinista aislado y fuente en `quality/evidence/fix-placeholders-closure-audit-2026-11-03.md`.
+- [x] 6.2 `softmax(logits/temp)` + muestreo para temp>0. Eliminado el umbral greedy: toda temperatura positiva finita conserva softmax, incluidas subnormales. Quince pruebas del sampler productivo verifican oráculos probabilísticos, CDF determinista, overflow, empates y extremos del uniforme; no dependen de frecuencia aleatoria. Solo temperatura cero usa greedy; parámetros no finitos o negativos se rechazan. La semilla pública conserva su contrato histórico (ignorada). Evidencia: `quality/evidence/operation-fragment-repair-2026-11-03.md`.
 - [x] 6.3 Pruebas: greedy selecciona el max logit.
 
 ## 7. Generación de tokens real
@@ -61,6 +61,23 @@
 - [x] 8.2 Ejecutar `bml-cli` y comparar outputs con `llama-cli` fijado. Ambos completan diez tokens: el histórico produce «Step 3: Add» y la referencia «Step 2: Create». Evidencia: `quality/evidence/tinyllama-legacy-mapped.json` y `tinyllama-llama-cli.json`; no se sustituye la CLI histórica por bml-model.
 - [x] 8.3 Registrar condiciones comunes de inferencia: mismo SHA-256, prompt Hello/BOS, diez tokens greedy, contexto 64, CPU y un hilo, KV F32. Se conservan comandos y prompt renderizado; se documentan las diferencias F64/decodificación por filas frente a kernels cuantizados GGML. Las ejecuciones concurrentes no acreditan igualdad de condiciones de benchmarking temporal.
 - [x] 8.4 Documentar diferencias sobre el mismo prefijo explícito de nueve IDs: argmax histórico 29941 frente a referencia 29906; máximo error absoluto 0,2150369823 y RMS 0,0479859801 en 32.000 logits. Histórico frente al motor moderno BML: máximo 1,80e-6. Evidencia y comando reproducible en `quality/evidence/tinyllama-legacy-mapped.json`; no se atribuye la causa a un kernel sin aislamiento.
+
+## 8.5 Inventario pendiente del objetivo G1
+
+La auditoría del objetivo «eliminar los 14 placeholders» encontró APIs públicas
+que no estaban enumeradas en las tareas iniciales. Las rutas causales modernas
+no sustituyen sus contratos. Este inventario conserva el alcance original y
+mantiene el cambio abierto aunque 1.1 y 6.2 vuelvan a estar acreditadas.
+
+- [ ] 8.5.1 Completar las normalizaciones públicas `op_fragments::compile_rmsnorm_fragment` y `bml_ops::bml_rmsnorm_program`: media de cuadrados, epsilon, raíz, pesos y todas las escrituras de salida, con pruebas numéricas y layout explícito.
+- [ ] 8.5.2 Completar `bml_ops::bml_rope_program` para escribir ambos componentes de cada par y todas las dimensiones; verificar posición cero, frecuencias y bases de buffer no nulas.
+- [ ] 8.5.3 Reemplazar `compile_attention_fragment` por atención real con dot, escala, softmax y suma ponderada; declarar el layout y el contexto que la API representa. El alcance histórico permite una cabeza; no acredita GQA ni contexto que la firma no expresa.
+- [ ] 8.5.4 Completar `compile_mlp_fragment` con proyecciones gate/up, SwiGLU estándar y proyección down usando sus pesos; declarar dimensiones de embedding/FFN y probar valores no triviales.
+- [ ] 8.5.5 Completar `compile_layer_fragments` con layouts correctos, residuales, RoPE, atención y MLP; corregir la confusión entre números de slot y direcciones absolutas y contrastar una capa completa con un oráculo independiente.
+- [x] 8.5.6 Corregir `bml_swiglu_program`: el helper público emite la activación BML completa por elemento, usa los bindings de constantes, escribe el slot de salida y descarta el factor histórico 1.7. Contrato C86; perfil acotado explícito, sin afirmar que esto completa el MLP.
+- [x] 8.5.7 Corregir la ejecución de `OperationFragment` con dependencias: C87 prueba orden RAW/WAR/WAW, índices absolutos y dinámicos, stack compartido, dimensiones vacías y oráculo de programas generados. Pruebas internas comprueban entrada concurrente de workers con timeout. Vistas disjuntas conservan el buffer; la planificación puede asignar memoria. No acredita speedup ni residencia L1.
+- [ ] 8.5.8 Reemplazar el pipeline distribuido histórico completo: compilador que emite `Var(0)`, worker que solo calcula RMS/Q y CLI que fabrica embeddings/trata hidden como logits. Se requieren instrucciones completas, pesos y cabeza reales, tokenización explícita, sesión/posición/KV y cobertura exacta de fragmentos con distinto número de nodos. La ruta nativa `RemotePipeline` existente no acredita por sí sola los fragmentos BML.
+- [ ] 8.5.9 Auditar de nuevo cada placeholder del objetivo G1 y su API consumidora antes de archivar, con resultados numéricos y evidencia actuales; no usar la ausencia de callers productivos como prueba de corrección.
 
 ## 9. Cierre
 

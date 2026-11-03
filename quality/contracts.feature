@@ -564,3 +564,28 @@ Then it rejects the request before expensive generation
     And relocated weights generate the expected UTF-8 bytes and EOS with either default or explicit large execution budgets
     And mixed numerical profiles, wrong budget modes and insufficient loop fragment sizes fail before publication
     And a large symbolic budget cannot silently select native GGUF or native artifact execution
+
+  @C85
+  Scenario: Public operation matmul executes signed BML products and accumulation
+    Given rectangular row-major matrices, absolute buffer input bases and distinct output slots
+    When historical and explicitly bounded constructors execute their stored loop fragments
+    Then every row matches an independent sum of products and preserves the surrounding buffer and stack
+    And configurable preflight checks dimensions, address overflow, declared bounds and every real BML intermediate
+    And empty dimensions are defined and stored bytecode size is independent of matrix dimensions
+
+  @C86
+  Scenario: Public SwiGLU bytecode writes the standard signed activation to the output buffer
+    Given separate gate and up vectors with explicit constant bindings
+    When the indexed BML fragment executes signed closed-form cases and zero values
+    Then each output equals gate times sigmoid of gate times up within the declared bounded profile
+    And exponent constants are used while the obsolete 1.7 factor does not change the result
+    And output writes preserve other cells and code storage stays independent of vector width
+
+  @C87
+  Scenario: Operation fragments preserve buffer dependencies across concurrent workers
+    Given absolute indexed reads, slot writes and metadata that does not describe all accesses
+    When fragments execute using zero, one or several workers
+    Then read-after-write, write-after-read and write-after-write dependencies preserve sequential results
+    And loop-carried, crossing-slot and unknown indices retain the legacy buffer conversion semantics
+    And independent fragments share input slices and write disjoint output slices without copying tensor data
+    And shared interpreter stacks fall back to sequential execution and an independent generated-program oracle agrees

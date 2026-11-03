@@ -6,7 +6,7 @@ El pipeline BML está implementado de extremo a extremo (GGUF → compilador →
 
 - **Matmul vectorial completo**: reemplazar el uso de "primer peso como representante" por matmul real donde cada peso W[i][j] se aplica a su dimensión correspondiente del hidden state.
 - **RoPE completo**: aplicar RoPE a todos los pares de dimensiones, no solo al primero.
-- **SwiGLU real**: implementar `gate * sigmoid(1.7 * gate) * up` en lugar de `bml(gate, up)` simplificado.
+- **SwiGLU real**: implementar `gate * sigmoid(gate) * up` en lugar de `bml(gate, up)` simplificado. La propuesta inicial incluía el factor 1.7; la spec y la tarea 3.1 lo corrigieron a SwiGLU estándar.
 - **Acumulador de matmul**: implementar la suma de productos (`sum_j(W[i][j] * x[j])`) en el loop del fragmento.
 - **Generación de tokens real**: reemplazar los tokens simulados ("B", "M", "L") por inferencia real del transformer.
 - **Sampling real**: implementar greedy + temperatura sobre los logits del modelo.

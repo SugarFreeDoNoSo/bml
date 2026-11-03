@@ -804,5 +804,40 @@
       "full_bounded_cli_runs_nonempty_causal_prompt_with_all_operation_families",
       "full_bounded_cli_rejects_mixed_profiles_wrong_budget_modes_and_short_fragments"
     ]
+  },
+  "C85": {
+    "package": "bml-runtime",
+    "target": "operation_matmul_contracts",
+    "tests": [
+      "legacy_public_matmul_computes_signed_rectangular_rows_and_preserves_stack",
+      "configurable_matmul_owns_constants_and_checks_actual_finite_real_recurrence",
+      "configurable_matmul_rejects_invalid_shapes_addresses_bounds_and_numerical_range",
+      "public_matmul_matches_independent_oracle_across_rectangular_dimensions",
+      "matmul_bytecode_size_is_independent_of_dimensions"
+    ]
+  },
+  "C86": {
+    "package": "bml-runtime",
+    "target": "operation_swiglu_contracts",
+    "tests": [
+      "swiglu_fragment_writes_standard_signed_values_and_preserves_other_cells",
+      "swiglu_fragment_uses_declared_exponent_and_ignores_obsolete_scale",
+      "swiglu_fragment_covers_signed_boundaries_and_small_inputs",
+      "swiglu_fragment_empty_and_compact_programs_use_only_bml_arithmetic"
+    ]
+  },
+  "C87": {
+    "package": "bml-runtime",
+    "target": "operation_schedule_contracts",
+    "tests": [
+      "dependent_fragments_preserve_read_write_and_overwrite_order",
+      "absolute_index_reads_cross_slots_and_keep_legacy_float_casts",
+      "loop_carried_indices_observe_writes_from_prior_fragments",
+      "own_output_can_be_read_and_updated_inside_an_independent_wave",
+      "shared_or_preexisting_stack_keeps_sequential_semantics",
+      "mutex_entrypoint_finishes_the_same_dependency_chain",
+      "empty_or_zero_sized_buffers_keep_sequential_behavior",
+      "scheduled_buffer_programs_match_an_independent_sequential_oracle"
+    ]
   }
 }

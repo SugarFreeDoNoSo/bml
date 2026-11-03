@@ -142,46 +142,191 @@ pub fn bml_rmsnorm_program(
 }
 
 // ===========================================================================
-// bml_swiglu: y = gate * sigmoid(1.7 * gate) * up
+// bml_swiglu: y = gate * sigmoid(gate) * up
 // ===========================================================================
 
-/// Programa RPN para SwiGLU simplificado.
+/// Standard SwiGLU, `y[i] = gate[i] * sigmoid(gate[i]) * up[i]`.
 ///
-/// Esta versión calcula el producto de gate y up sin sigmoid. Los parámetros
-/// de constantes y el slot de salida se reservan para la versión completa.
+/// `gate_base` and `up_base` are absolute indices into `ResultBuffer`, whereas
+/// `output_slot` identifies a slot. Each output is written at that slot's
+/// element index; no reduction or temporary value remains on the stack.
+/// Outputs must not overwrite gate/up values needed by a later iteration.
+/// The caller supplies `log2(e)` at `const_log2e` and `1.0` at `const_one` in
+/// its external constant context. The historical `const_1_7` argument is
+/// obsolete and deliberately unused: standard SwiGLU has no such scale.
+///
+/// The loop reuses the signed bounded SwiGLU identity with gate/up declarations
+/// of absolute value at most 16. Bytecode storage is independent of vector
+/// width. Every activation calculation and fixed literal construction uses
+/// BML; no additional external constants are required. As with the other BML
+/// builders, this is a partial numerical contract: callers must check input
+/// bounds and finite results, and it does not promise native IEEE range or
+/// signed-zero behavior. No activation is clamped or evaluated natively.
 pub fn bml_swiglu_program(
     gate_base: u32,
     up_base: u32,
     n_embd: u32,
     _const_1_7: u32,
-    _const_log2e: u32,
-    _const_one: u32,
-    _output_slot: u32,
+    const_log2e: u32,
+    const_one: u32,
+    output_slot: u32,
 ) -> RpnProgram {
+    let scalar = swiglu_scalar_with_external_constants(const_log2e, const_one);
+
+    // The loop's element index stays below the scalar evaluation stack. Each
+    // variable loads through a copy of that index; local Pick depths remain
+    // valid because all other stack effects match the scalar program exactly.
+    let mut body = Vec::with_capacity(scalar.ops.len() + 4);
+    let mut depth = 0;
+    for op in scalar.ops {
+        match op {
+            RpnOp::Var(id) => {
+                let base = match id {
+                    0 => gate_base,
+                    1 => up_base,
+                    _ => unreachable!("SwiGLU has two scalar inputs"),
+                };
+                body.push(RpnOp::Pick { depth });
+                body.push(RpnOp::VarIndexed { base });
+                depth += 1;
+            }
+            RpnOp::Const(_) => {
+                body.push(op);
+                depth += 1;
+            }
+            RpnOp::Bml => {
+                body.push(op);
+                depth -= 1;
+            }
+            RpnOp::Pick { .. } | RpnOp::Dup => {
+                body.push(op);
+                depth += 1;
+            }
+            RpnOp::Drop => {
+                body.push(op);
+                depth -= 1;
+            }
+            RpnOp::Swap => body.push(op),
+            _ => unreachable!("SwiGLU lowering uses only BML and stack operations"),
+        }
+    }
+    assert_eq!(depth, 1, "scalar lowering leaves exactly one result");
+    body.push(RpnOp::Swap);
+    body.push(RpnOp::StoreResult { slot: output_slot });
     let mut program = RpnProgram::new();
-
-    // Simplificado: y[i] = gate[i] * up[i] (sin sigmoid, demo del patrón)
-    // El sigmoid completo requiere exp que es Bml(x * log2(e), 1)
-    let body = vec![
-        RpnOp::Dup,
-        RpnOp::VarIndexed { base: gate_base }, // gate[i]
-        RpnOp::Swap,
-        RpnOp::VarIndexed { base: up_base }, // up[i]
-        RpnOp::FMul,                         // gate[i] * up[i]
-        RpnOp::FAdd,                         // acc + product
-    ];
-
-    let body_len = body.len() as u32;
-    program.push(RpnOp::Zero);
     program.push(RpnOp::Loop {
         count: n_embd,
-        body_len,
+        body_len: body.len() as u32,
     });
-    for op in body {
-        program.push(op);
-    }
-
+    program.ops.extend(body);
     program
+}
+
+// Rebind a bounded operation's configuration literals to existing BML terms.
+// This retains the domain implementation's arithmetic while preserving this
+// legacy API's external constant namespace (only log2(e) and one).
+fn append_swiglu_bounded_operation(
+    builder: &mut bml_domain::BMLTransformer,
+    inputs: [bml_domain::NodeId; 2],
+    config: bml_domain::transformer::BoundedOpConfig,
+    literals: &[(f64, bml_domain::NodeId)],
+) -> bml_domain::NodeId {
+    use bml_domain::{BMLTransformer, NodeKind};
+    let mut template = BMLTransformer::new();
+    let x = template.var(0);
+    let y = template.var(1);
+    let root = template
+        .operation_bounded(&[x, y], &[], &config)
+        .expect("fixed valid bounded operation")[0];
+    let soa = template.into_soa();
+    let literal = |value: f64| {
+        literals
+            .iter()
+            .find(|(candidate, _)| candidate.to_bits() == value.to_bits())
+            .expect("every configured literal has an explicit BML construction")
+            .1
+    };
+    let mut mapped = Vec::with_capacity(soa.len());
+    for (index, kind) in soa.kinds.iter().enumerate() {
+        let node = match kind {
+            NodeKind::One => literal(1.0),
+            NodeKind::Zero => literal(0.0),
+            NodeKind::Var(id) => inputs[*id as usize],
+            NodeKind::Const(id) => literal(soa.const_pool[*id as usize]),
+            NodeKind::Bml => builder.bml(
+                mapped[soa.lefts[index] as usize],
+                mapped[soa.rights[index] as usize],
+            ),
+        };
+        mapped.push(node);
+    }
+    mapped[root as usize]
+}
+
+fn swiglu_scalar_with_external_constants(const_log2e: u32, const_one: u32) -> RpnProgram {
+    use bml_domain::{transformer::BoundedOpConfig, BMLTransformer};
+    let mut builder = BMLTransformer::new();
+    let one = builder.external_constant(const_one);
+    let log2e = builder.external_constant(const_log2e);
+    let gate = builder.var(0);
+    let up = builder.var(1);
+
+    // Exact dyadic terms for the fixed bound 16. Every intermediate is finite.
+    let two = builder.bml(one, one);
+    let four = builder.bml(two, one);
+    let zero = builder.bml(one, four);
+    let three = builder.bml(two, two);
+    let eight = builder.bml(three, one);
+    let five = builder.bml(three, eight);
+    let six = builder.bml(three, four);
+    let seven = builder.bml(three, two);
+    let sixteen = builder.bml(four, one);
+    let thirty_two = builder.bml(five, one);
+    let sixty_four = builder.bml(six, one);
+    let one_twenty_eight = builder.bml(seven, one);
+    let two_fifty_six = builder.bml(eight, one);
+    let nine = builder.bml(four, one_twenty_eight);
+    let five_twelve = builder.bml(nine, one);
+    let minus_one = builder.bml(one, eight);
+    let half = builder.bml(minus_one, one);
+    let minus_four = builder.bml(one, sixty_four);
+    let one_sixteenth = builder.bml(minus_four, one);
+    let minus_five = builder.bml(one, one_twenty_eight);
+    let one_thirty_second = builder.bml(minus_five, one);
+    let two_to_32 = builder.bml(thirty_two, one);
+    let minus_sixteen = builder.bml(four, two_to_32);
+    let mut literals = vec![
+        (0.0, zero),
+        (1.0, one),
+        (2.0, two),
+        (4.0, four),
+        (16.0, sixteen),
+        (32.0, thirty_two),
+        (64.0, sixty_four),
+        (128.0, one_twenty_eight),
+        (256.0, two_fifty_six),
+        (512.0, five_twelve),
+        (0.5, half),
+        (1.0 / 16.0, one_sixteenth),
+        (1.0 / 32.0, one_thirty_second),
+        (-16.0, minus_sixteen),
+        (std::f64::consts::LOG2_E, log2e),
+    ];
+    let exponent = append_swiglu_bounded_operation(
+        &mut builder,
+        [minus_sixteen, log2e],
+        BoundedOpConfig::product(16.0, 2.0).expect("fixed product bounds"),
+        &literals,
+    );
+    let minimum_exp = builder.bml(exponent, one);
+    literals.push(((-16.0_f64).exp(), minimum_exp));
+    let root = append_swiglu_bounded_operation(
+        &mut builder,
+        [gate, up],
+        BoundedOpConfig::swiglu(16.0, 16.0).expect("fixed SwiGLU bounds"),
+        &literals,
+    );
+    crate::linearize(&builder.into_soa(), root)
 }
 
 // ===========================================================================

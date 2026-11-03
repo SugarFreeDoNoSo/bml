@@ -73,7 +73,12 @@ impl HotLoop {
         buf: &mut crate::buffer::ResultBuffer,
     ) -> f64 {
         self.stack.clear();
-        dispatch_ops(&mut self.stack, &program.ops, ctx, buf);
+        dispatch_ops(
+            &mut self.stack,
+            &program.ops,
+            ctx,
+            &mut crate::buffer::ResultStore::Contiguous(buf),
+        );
         self.stack.pop().unwrap_or(f64::NAN)
     }
 
@@ -104,7 +109,26 @@ impl HotLoop {
         ctx: &bml_domain::EvalContext,
         buf: &mut crate::buffer::ResultBuffer,
     ) {
-        dispatch_ops(&mut self.stack, &fragment.ops, ctx, buf);
+        dispatch_ops(
+            &mut self.stack,
+            &fragment.ops,
+            ctx,
+            &mut crate::buffer::ResultStore::Contiguous(buf),
+        );
+    }
+
+    pub(crate) fn execute_fragment_store(
+        &mut self,
+        fragment: &Fragment,
+        ctx: &bml_domain::EvalContext,
+        buf: &mut crate::buffer::PartitionedBuffer<'_>,
+    ) {
+        dispatch_ops(
+            &mut self.stack,
+            &fragment.ops,
+            ctx,
+            &mut crate::buffer::ResultStore::Partitioned(buf),
+        );
     }
 
     /// Ejecuta una lista de fragmentos en orden.
@@ -136,7 +160,12 @@ impl HotLoop {
     ) -> f64 {
         self.stack.clear();
         for fragment in fragments {
-            dispatch_ops(&mut self.stack, &fragment.ops, ctx, buf);
+            dispatch_ops(
+                &mut self.stack,
+                &fragment.ops,
+                ctx,
+                &mut crate::buffer::ResultStore::Contiguous(buf),
+            );
         }
         self.stack.pop().unwrap_or(f64::NAN)
     }
@@ -179,7 +208,7 @@ fn dispatch_ops(
     stack: &mut Vec<f64>,
     ops: &[RpnOp],
     ctx: &bml_domain::EvalContext,
-    buf: &mut crate::buffer::ResultBuffer,
+    buf: &mut crate::buffer::ResultStore<'_, '_>,
 ) {
     let mut i = 0;
     while i < ops.len() {

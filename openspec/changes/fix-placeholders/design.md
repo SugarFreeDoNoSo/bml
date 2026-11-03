@@ -28,7 +28,7 @@ El pipeline BML está completo de extremo a extremo pero con 14 placeholders. El
 - **D3 — SwiGLU como 3 operaciones BML.** `sigmoid(gate) = 1/(1+exp(-gate))` via `exp2`/`add`/`div`, luego `mul(gate, sigmoid)`, luego `mul(result, up)`.
 - **D4 — Tokenización desde GGUF.** Leer `tokenizer.ggml.tokens` (array de strings) y `tokenizer.ggml.scores` (array de f32) del GGUF. Implementar tokenización BPE básica.
 - **D5 — Sampling greedy.** `argmax(logits)` para temp=0. Para temp>0, `softmax(logits/temp)` + muestreo aleatorio.
-- **D6 — VarIndexed sin buffer.** En `evaluate_with_ctx` (sin buffer), `VarIndexed` retorna `0.0` en lugar de placeholder. En `execute_full` (con buffer), lee del buffer.
+- **D6 — VarIndexed sin buffer (decisión corregida).** El diseño inicial proponía cero; las tareas 4.1–4.3 y C44 lo sustituyen por `NaN` explícito. En `execute_full` (con buffer), lee la dirección absoluta del buffer. No se restaura el cero que ocultaba una lectura sin almacenamiento.
 
 ## Risks / Trade-offs
 
