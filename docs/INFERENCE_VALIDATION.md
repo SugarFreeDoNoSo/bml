@@ -92,11 +92,25 @@ implementación separada y compara contra fórmulas nativas independientes;
 no sustituye la prueba del artefacto Rust. La selección del máximo de softmax,
 la conversión F32 del KV y las constantes de posición están explícitas.
 
-La reducción de código del dot no acredita mejoras de tokens/segundo: cada
-peso aún exige muchas operaciones BML. RMS conserva su programa vectorial
-lineal y el plan AOT de softmax conserva un programa por longitud de prefijo.
-Su escalabilidad, modelos mayores y prompts adicionales requieren campañas
-independientes. Las pruebas ordinarias siguen sin necesitar modelos descargados.
+La revisión compacta conserva las mismas identidades y orden de cálculo, con
+stages de tamaño constante y loops para RMS/softmax. Para anchos 1/288/2048,
+RMS usa 1934 instrucciones y peak de pila 271; softmax usa 1797 instrucciones
+y peak 33/34. Sus pasos crecen linealmente y siguen sujetos a los presupuestos.
+El layout explícito `indexed_buffer` guarda solo 17/10 constantes de
+configuración, sin un array de offsets por salida. Los artefactos v4 históricos
+`buffer` siguen cargando; v1–v3 conservan sus representaciones y rechazan la nueva.
+
+El plan mantiene un programa por operación y longitud requerida, incluidos todos
+los prefijos. En el fixture de una capa, contextos 2/4/8/16 usan
+60.582/78.062/113.022/182.942 bytes de programas y 123/163/243/403 literales.
+El límite global de 4096 programas permanece independiente de esta mejora;
+no se promete contexto 2048 con los presupuestos actuales. Evidencia y límites:
+`quality/evidence/compact-bounded-2026-11-03.md`.
+
+Esta reducción de almacenamiento no acredita mejoras de tokens/segundo: cada
+peso aún exige muchas operaciones BML. Modelos mayores y prompts adicionales
+requieren campañas independientes. Las pruebas ordinarias siguen sin necesitar
+modelos descargados.
 
 El perfil optativo `llama-symbolic-bml-bounded-rms-f64-f32kv-v3` reemplaza
 exclusivamente la expansión RMSNorm y comprueba cada operación BML de esa

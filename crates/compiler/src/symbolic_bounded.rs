@@ -11,6 +11,12 @@ use crate::{
 use bml_domain::{transformer::BoundedOpConfig, BMLTransformer, NodeKind};
 use serde::{Deserialize, Serialize};
 
+#[path = "symbolic_bounded_rms.rs"]
+mod rms;
+pub(crate) use rms::compile_rms_program;
+#[path = "symbolic_bounded_softmax.rs"]
+mod softmax;
+
 /// Operand declarations for the opt-in complete bounded arithmetic profile.
 /// These limits reject unsupported contexts; they do not promise evaluability
 /// or uniform accuracy. Every arithmetic instruction is checked at execution.
@@ -61,6 +67,14 @@ impl Default for BoundedProfile {
     }
 }
 impl BoundedProfile {
+    /// New complete-profile vector kernels index their outputs directly.
+    /// Historical Buffer signatures remain accepted when loading old v4 data.
+    pub fn output_layout(op: Operation) -> OutputLayout {
+        match op {
+            Operation::Norm | Operation::Softmax => OutputLayout::IndexedBuffer,
+            _ => OutputLayout::for_operation(op),
+        }
+    }
     /// Validate all declared families and model-dependent RMS parameters.
     pub fn validate(self, model_width: usize, epsilon: f64) -> Result<(), String> {
         self.rms.config(model_width, epsilon)?;
@@ -171,7 +185,12 @@ impl BoundedProfile {
         epsilon: f64,
         layout: OutputLayout,
     ) -> Result<KernelSignature, String> {
-        if width == 0 || width > u32::MAX as usize || layout != OutputLayout::for_operation(op) {
+        let historical_buffer =
+            layout == OutputLayout::Buffer && matches!(op, Operation::Norm | Operation::Softmax);
+        if width == 0
+            || width > u32::MAX as usize
+            || (layout != Self::output_layout(op) && !historical_buffer)
+        {
             return Err("invalid bounded symbolic shape/layout".into());
         }
         let mut signature = self.base_signature(op, width, epsilon)?;
@@ -237,39 +256,44 @@ pub fn compile_operation(
     limits: KernelLimits,
 ) -> Result<CompiledKernel, String> {
     if op == Operation::Norm {
-        return crate::symbolic_kernels::compile_operation_with_rms_bounds(
+        let config = profile.rms.config(width, epsilon)?;
+        let external_base = u32::try_from(config.fixed_literals().len())
+            .map_err(|_| "bounded RMS constant index overflow")?;
+        let program = compile_rms_program(&config, external_base, 0, limits)?;
+        let signature = profile.signature(op, width, epsilon, OutputLayout::IndexedBuffer)?;
+        return finish_with_basis(
             op,
             width,
-            epsilon,
-            OutputLayout::Buffer,
-            Some(profile.rms),
+            OutputLayout::IndexedBuffer,
+            vec![program],
+            signature,
             limits,
+            true,
+        );
+    }
+    if op == Operation::Softmax {
+        let config = profile.config(op, width)?;
+        let program = softmax::compile_softmax_program(&config, 0, limits)?;
+        let signature = profile.signature(op, width, epsilon, OutputLayout::IndexedBuffer)?;
+        return finish_with_basis(
+            op,
+            width,
+            OutputLayout::IndexedBuffer,
+            vec![program],
+            signature,
+            limits,
+            true,
         );
     }
     if limits.max_programs == 0 || limits.fragment_bytes < std::mem::size_of::<RpnOp>() {
         return Err("bounded symbolic program/fragment budget exceeded".into());
     }
     let config = profile.config(op, width)?;
-    let nodes = if op == Operation::Softmax {
-        let first = dag(&profile.config(op, 1)?, 0)?.0.len();
-        let second = dag(&profile.config(op, 2)?, 0)?.0.len();
-        let third = dag(&profile.config(op, 3)?, 0)?.0.len();
-        let increment = second.checked_sub(first).ok_or("bounded node count")?;
-        if third.checked_sub(second) != Some(increment) {
-            return Err("non-affine bounded node count".into());
-        }
-        width
-            .checked_sub(1)
-            .and_then(|n| n.checked_mul(increment))
-            .and_then(|n| n.checked_add(first))
-            .ok_or("bounded node size overflow")?
-    } else {
-        dag(&config, 0)?.0.len()
-    };
+    let nodes = dag(&config, 0)?.0.len();
     if nodes > limits.max_nodes || nodes > u32::MAX as usize {
         return Err("symbolic node budget exceeded".into());
     }
-    let layout = OutputLayout::for_operation(op);
+    let layout = BoundedProfile::output_layout(op);
     let signature = profile.signature(op, width, epsilon, layout)?;
     let (mut soa, roots, external) = dag(&config, nodes)?;
     if soa.len() != nodes || soa.const_pool != config.fixed_literals() {

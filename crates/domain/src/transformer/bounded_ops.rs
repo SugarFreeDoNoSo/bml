@@ -254,6 +254,119 @@ impl BMLTransformer {
         self.bounded_product_from_normalized(unit_x, unit_y, p[4], p[5], common[1], common[0])
     }
 
+    fn bounded_softmax_stage_literals(
+        &mut self,
+        inputs: &[NodeId],
+        arity: usize,
+        config: &BoundedOpConfig,
+    ) -> Result<[NodeId; 10], BoundedBuildError> {
+        if config.kind != Kind::Softmax {
+            return Err(BoundedBuildError::Parameter("softmax_stage"));
+        }
+        if inputs.len() != arity {
+            return Err(BoundedBuildError::Shape);
+        }
+        for &node in inputs {
+            if node as usize >= self.soa.len() {
+                return Err(BoundedBuildError::InvalidNode(node));
+            }
+        }
+        if self
+            .soa
+            .len()
+            .checked_add(16384)
+            .is_none_or(|size| size > u32::MAX as usize)
+            || self.soa.const_pool.len() > u32::MAX as usize - 10
+        {
+            return Err(BoundedBuildError::SizeOverflow);
+        }
+        let mut literals = [0; 10];
+        for (node, value) in literals.iter_mut().zip(config.fixed_literals()) {
+            *node = self.constant(value);
+        }
+        Ok(literals)
+    }
+
+    fn bounded_softmax_exp_with_literals(
+        &mut self,
+        score: NodeId,
+        maximum: NodeId,
+        c: &[NodeId; 10],
+    ) -> NodeId {
+        let negative_maximum = self.bounded_neg(maximum, c[2]);
+        let shifted = self.bounded_add(score, negative_maximum, c[2]);
+        let exponent = self.product_with_literals(shifted, c[3], &c[..2], &c[4..10]);
+        self.exp2(exponent)
+    }
+
+    /// Build the bounded softmax exponential from `[score, maximum]`.
+    ///
+    /// Initialize the running sum with this result for the first score. The
+    /// maximum is copied from the complete input vector and must be validated
+    /// by [`BoundedOpConfig::validate_values`] before any stage executes. This
+    /// is exactly the exponential formula of [`Self::operation_bounded`].
+    ///
+    /// Every stage adds the same ten fixed literals, has width-independent node
+    /// count, and checks configuration kind, shape, nodes and capacity before
+    /// mutation. Finite-real evaluation checks remain required for every BML.
+    pub fn softmax_bounded_exp(
+        &mut self,
+        inputs: &[NodeId],
+        config: &BoundedOpConfig,
+    ) -> Result<NodeId, BoundedBuildError> {
+        let c = self.bounded_softmax_stage_literals(inputs, 2, config)?;
+        Ok(self.bounded_softmax_exp_with_literals(inputs[0], inputs[1], &c))
+    }
+
+    /// Build one ordered bounded softmax reduction from `[total, score, maximum]`.
+    ///
+    /// Start with [`Self::softmax_bounded_exp`] of the first score, then apply
+    /// this stage to scores `1..width` in order. Starting at zero, regrouping
+    /// sums or replacing the selected maximum changes the represented formula.
+    /// Configuration, graph and execution requirements match the first stage.
+    pub fn softmax_bounded_reduce(
+        &mut self,
+        inputs: &[NodeId],
+        config: &BoundedOpConfig,
+    ) -> Result<NodeId, BoundedBuildError> {
+        let c = self.bounded_softmax_stage_literals(inputs, 3, config)?;
+        let value = self.bounded_softmax_exp_with_literals(inputs[1], inputs[2], &c);
+        Ok(self.bounded_positive_add(inputs[0], value, c[1]))
+    }
+
+    /// Build the shared bounded softmax reciprocal from `[total]`.
+    ///
+    /// The positive total must come from the ordered exponential reduction.
+    /// This stage preserves the original log2, bounded negation and exp2
+    /// sequence. Its output is shared by [`Self::softmax_bounded_output`].
+    /// Configuration, graph and execution requirements match the first stage.
+    pub fn softmax_bounded_inverse(
+        &mut self,
+        inputs: &[NodeId],
+        config: &BoundedOpConfig,
+    ) -> Result<NodeId, BoundedBuildError> {
+        let c = self.bounded_softmax_stage_literals(inputs, 1, config)?;
+        let log_total = self.log2(inputs[0]);
+        let negative_log = self.bounded_neg(log_total, c[0]);
+        Ok(self.exp2(negative_log))
+    }
+
+    /// Build one bounded softmax probability from `[score, maximum, inverse]`.
+    ///
+    /// `inverse` comes from [`Self::softmax_bounded_inverse`]. Recomputing the
+    /// exponential uses exactly the original operands and BML sequence, so no
+    /// width-sized cache of exponentials is required. Configuration, graph and
+    /// execution requirements match the first stage.
+    pub fn softmax_bounded_output(
+        &mut self,
+        inputs: &[NodeId],
+        config: &BoundedOpConfig,
+    ) -> Result<NodeId, BoundedBuildError> {
+        let c = self.bounded_softmax_stage_literals(inputs, 3, config)?;
+        let value = self.bounded_softmax_exp_with_literals(inputs[0], inputs[1], &c);
+        Ok(self.bounded_positive_mul(value, inputs[2], c[0]))
+    }
+
     /// Build the configured operation from existing input/external node IDs.
     ///
     /// The caller supplies the declared runtime inputs and enforces

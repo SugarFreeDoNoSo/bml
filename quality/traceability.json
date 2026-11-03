@@ -837,7 +837,85 @@
       "shared_or_preexisting_stack_keeps_sequential_semantics",
       "mutex_entrypoint_finishes_the_same_dependency_chain",
       "empty_or_zero_sized_buffers_keep_sequential_behavior",
-      "scheduled_buffer_programs_match_an_independent_sequential_oracle"
+      "scheduled_buffer_programs_match_an_independent_sequential_oracle",
+      "per_operation_constant_pools_bind_in_sequential_and_parallel_execution"
+    ]
+  },
+  "C88": {
+    "package": "bml-domain",
+    "target": "bounded_rms_stage_contracts",
+    "tests": [
+      "bounded_rms_stages_match_original_bits_and_independent_oracle",
+      "bounded_rms_stages_cover_sparse_inputs_and_extreme_valid_bounds",
+      "bounded_rms_stages_have_constant_size_and_exact_literal_prefix",
+      "bounded_rms_stage_errors_do_not_mutate_existing_nodes_or_literals"
+    ]
+  },
+  "C89": {
+    "package": "bml-domain",
+    "target": "bounded_softmax_stage_contracts",
+    "tests": [
+      "bounded_softmax_stages_preserve_bits_for_negative_extremes_and_permutations",
+      "bounded_softmax_stages_match_oracle_across_widths_and_valid_score_bounds",
+      "bounded_softmax_stages_keep_ten_literals_and_constant_node_counts",
+      "bounded_softmax_stage_configuration_and_structure_errors_do_not_mutate",
+      "bounded_softmax_stages_retain_the_complete_vector_maximum_contract"
+    ]
+  },
+  "C90": {
+    "package": "bml-compiler",
+    "target": "compact_bounded_rms_contracts",
+    "tests": [
+      "compact_rms_preserves_v3_bits_and_independent_oracle_at_model_widths",
+      "compact_rms_storage_and_peak_stack_are_constant_with_exact_linear_step_budgets",
+      "compact_rms_compilation_preserves_node_opcode_program_and_atomic_loop_limits",
+      "compact_rms_keeps_checked_failure_and_dynamic_context_semantics"
+    ]
+  },
+  "C91": {
+    "package": "bml-compiler",
+    "target": "compact_bounded_softmax_contracts",
+    "tests": [
+      "compact_softmax_matches_historical_bits_and_independent_stable_oracle",
+      "compact_softmax_has_constant_code_literals_stack_and_linear_execution_work",
+      "compact_softmax_rejects_budget_exhaustion_and_invalid_checked_contexts"
+    ]
+  },
+  "C92": {
+    "package": "bml-runtime",
+    "target": "operation_rms_contracts",
+    "tests": [
+      "complete_rms_fragments_match_independent_normalization_and_preserve_storage",
+      "complete_rms_supports_large_widths_with_constant_code_and_stack",
+      "complete_rms_rejects_bad_declarations_shapes_and_addresses",
+      "default_rms_runtime_binds_owned_constants_and_zero_width_is_noop",
+      "independent_rms_fragments_use_distinct_owned_epsilon_on_parallel_workers"
+    ]
+  },
+  "C93": {
+    "package": "bml-runtime",
+    "target": "operation_norm_rope_contracts",
+    "tests": [
+      "legacy_rms_scale_writes_each_signed_output_using_precomputed_factor",
+      "legacy_rms_scale_retains_native_ieee_range_and_signed_zero",
+      "configured_rms_scale_supports_inverse_above_one_and_checks_operands",
+      "complete_rms_program_uses_shared_mean_epsilon_root_and_nonunit_weights",
+      "legacy_rope_reads_context_coordinates_and_writes_both_signed_components",
+      "vector_rope_uses_distinct_frequencies_and_restarts_them_for_each_head",
+      "vector_rope_position_zero_covers_all_1024_pairs_with_constant_bytecode",
+      "vector_rope_rejects_bad_shapes_addresses_and_nonfinite_or_excessive_inputs"
+    ]
+  },
+  "C94": {
+    "package": "bml-compiler",
+    "target": "indexed_buffer_artifact_contracts",
+    "tests": [
+      "indexed_v4_fixed_prefixes_omit_output_offsets_and_load_without_construction",
+      "historical_v4_dense_and_indexed_artifacts_both_execute_their_stored_programs",
+      "indexed_layout_is_rejected_by_v1_v2_v3_and_unrelated_v4_families",
+      "indexed_literal_counts_values_and_complete_prefix_plan_are_enforced",
+      "indexed_missing_outputs_never_commit_cache_and_valid_replacement_is_executed",
+      "indexed_prefix_plan_storage_grows_linearly_without_omitting_any_prefix"
     ]
   }
 }

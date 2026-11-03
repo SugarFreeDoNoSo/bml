@@ -132,6 +132,9 @@ impl Operation {
         layout: OutputLayout,
         bounds: Option<RmsBounds>,
     ) -> Result<KernelSignature, String> {
+        if layout == OutputLayout::IndexedBuffer {
+            return Err("indexed buffer layout requires the complete bounded profile".into());
+        }
         let mut signature = self.signature_with_rms_bounds(width, epsilon, bounds)?;
         if layout == OutputLayout::Buffer {
             if OutputLayout::for_operation(self) != OutputLayout::Buffer {
@@ -166,8 +169,16 @@ pub enum OutputLayout {
     Scalars,
     /// One graph writes all logical outputs to result-buffer slot zero.
     Buffer,
+    /// One indexed graph writes all outputs using loop counters. Only the
+    /// complete bounded profile supports this representation; fixed literals
+    /// contain configuration, without a width-sized array of output offsets.
+    IndexedBuffer,
 }
 impl OutputLayout {
+    /// Whether execution gathers outputs from result-buffer slot zero.
+    pub fn uses_buffer(self) -> bool {
+        matches!(self, Self::Buffer | Self::IndexedBuffer)
+    }
     /// Default representation used for newly compiled operation programs.
     pub fn for_operation(operation: Operation) -> Self {
         match operation {
@@ -284,6 +295,9 @@ pub fn compile_operation_with_rms_bounds(
     let program_count = match layout {
         OutputLayout::Scalars => base_signature.outputs,
         OutputLayout::Buffer => 1,
+        OutputLayout::IndexedBuffer => {
+            return Err("indexed buffer layout requires the complete bounded profile".into());
+        }
     };
     if program_count > limits.max_programs {
         return Err("symbolic program budget exceeded".into());
@@ -349,6 +363,9 @@ pub fn compile_operation_with_rms_bounds(
                 program.const_pool.clear();
                 programs.push(program);
             }
+        }
+        OutputLayout::IndexedBuffer => {
+            return Err("indexed buffer layout requires the complete bounded profile".into());
         }
     }
     finish(op, width, layout, programs, signature, limits)
@@ -460,9 +477,14 @@ pub(super) fn finish_with_basis(
     limits: KernelLimits,
     indexed: bool,
 ) -> Result<CompiledKernel, String> {
+    if layout == OutputLayout::IndexedBuffer
+        && (!indexed || !matches!(operation, Operation::Norm | Operation::Softmax))
+    {
+        return Err("indexed buffer layout requires bounded RMS or softmax".into());
+    }
     let expected = match layout {
         OutputLayout::Scalars => signature.outputs,
-        OutputLayout::Buffer => 1,
+        OutputLayout::Buffer | OutputLayout::IndexedBuffer => 1,
     };
     if programs.len() != expected || programs.len() > limits.max_programs {
         return Err("symbolic program budget exceeded".into());

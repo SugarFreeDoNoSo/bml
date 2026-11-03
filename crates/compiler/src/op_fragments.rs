@@ -7,6 +7,10 @@
 use crate::fragment::Fragment;
 use crate::rpn::RpnOp;
 
+#[path = "operation_rms.rs"]
+mod rms;
+pub use rms::{compile_rmsnorm_fragment, compile_rmsnorm_fragment_checked, CheckedRmsFragment};
+
 /// Metadatos de un fragmento: qué slots lee y escribe.
 #[derive(Debug, Clone)]
 pub struct FragmentMeta {
@@ -32,6 +36,25 @@ pub struct OperationFragment {
     pub fragment: Fragment,
     /// Slots, dimensiones y pesos asociados al fragmento.
     pub meta: FragmentMeta,
+    /// Complete owned configuration pool, when this operation has one.
+    /// `None` retains the caller's shared constant context. Model weights used
+    /// by these helpers remain in `ResultBuffer`, not in this configuration.
+    pub const_pool: Option<Vec<f64>>,
+}
+
+impl OperationFragment {
+    /// Bind this operation's configuration without copying inputs or literals.
+    /// Callers executing the raw `fragment` directly must use this context;
+    /// `Runtime` operation-fragment entrypoints bind it automatically.
+    pub fn context<'a>(
+        &'a self,
+        parent: &bml_domain::EvalContext<'a>,
+    ) -> bml_domain::EvalContext<'a> {
+        bml_domain::EvalContext::new(
+            parent.inputs,
+            self.const_pool.as_deref().unwrap_or(parent.weights),
+        )
+    }
 }
 
 /// Explicit operand declarations for a signed BML matrix-vector product.
@@ -71,7 +94,6 @@ impl Default for MatmulBounds {
 #[derive(Debug, Clone)]
 pub struct CheckedMatmulFragment {
     operation: OperationFragment,
-    constants: Vec<f64>,
     bounds: MatmulBounds,
     config: bml_domain::transformer::BoundedOpConfig,
     validation_dag: bml_domain::NodeSoA,
@@ -86,7 +108,10 @@ impl CheckedMatmulFragment {
 
     /// Required constant pool for this compiled fragment, including its row stride.
     pub fn constants(&self) -> &[f64] {
-        &self.constants
+        self.operation
+            .const_pool
+            .as_deref()
+            .expect("checked matmul owns its constants")
     }
 
     /// Configured signed operand bounds.
@@ -195,7 +220,7 @@ pub fn compile_matmul_fragment_checked(
     let step = crate::linearize(&dag, root);
     let mut constants = vec![f64::from(n_cols)];
     constants.extend_from_slice(&dag.const_pool);
-    let operation = emit_matmul(
+    let mut operation = emit_matmul(
         name,
         input_base,
         output_slot,
@@ -206,9 +231,9 @@ pub fn compile_matmul_fragment_checked(
         &step.ops,
         |id| vec![RpnOp::Const(id + 1)],
     );
+    operation.const_pool = Some(constants);
     Ok(CheckedMatmulFragment {
         operation,
-        constants,
         bounds,
         config,
         validation_dag: dag,
@@ -364,6 +389,7 @@ fn emit_matmul(
     }];
     ops.extend(outer);
     OperationFragment {
+        const_pool: None,
         fragment: Fragment { ops },
         meta: FragmentMeta {
             name: name.to_string(),
@@ -372,50 +398,6 @@ fn emit_matmul(
             weight_base,
             n_rows,
             n_cols,
-        },
-    }
-}
-
-/// Compila un fragmento de RMSNorm: y = x / sqrt(mean(x²) + eps)
-///
-/// Versión simplificada: para cada elemento i,
-/// y[i] = bml(x[i], const(rms_scale))
-pub fn compile_rmsnorm_fragment(
-    name: &str,
-    input_slot: u32,
-    output_slot: u32,
-    weight_base: u32,
-    n_elems: u32,
-) -> OperationFragment {
-    // Cuerpo: leer x[i], multiplicar por peso de norma, almacenar
-    let body_len = 4; // VarIndexed, VarIndexed, Bml, StoreResult
-    let body: Vec<RpnOp> = vec![
-        RpnOp::VarIndexed { base: input_slot },   // x[i]
-        RpnOp::VarIndexed { base: weight_base },  // norm_weight[i]
-        RpnOp::Bml,                               // mul
-        RpnOp::StoreResult { slot: output_slot }, // y[i]
-    ];
-
-    let ops = vec![
-        RpnOp::Loop {
-            count: n_elems,
-            body_len,
-        },
-        body[0],
-        body[1],
-        body[2],
-        body[3],
-    ];
-
-    OperationFragment {
-        fragment: Fragment { ops },
-        meta: FragmentMeta {
-            name: name.to_string(),
-            input_slot,
-            output_slot,
-            weight_base,
-            n_rows: n_elems,
-            n_cols: 1,
         },
     }
 }
@@ -456,6 +438,7 @@ pub fn compile_attention_fragment(
     ];
 
     OperationFragment {
+        const_pool: None,
         fragment: Fragment { ops },
         meta: FragmentMeta {
             name: name.to_string(),
@@ -507,6 +490,7 @@ pub fn compile_mlp_fragment(
     ];
 
     OperationFragment {
+        const_pool: None,
         fragment: Fragment { ops },
         meta: FragmentMeta {
             name: name.to_string(),
@@ -521,7 +505,7 @@ pub fn compile_mlp_fragment(
 
 /// Compila todos los fragmentos de una capa del transformer.
 ///
-/// Historical structural helper: RMSNorm/attention/MLP remain simplified and
+/// Historical structural helper: attention/MLP remain simplified and
 /// its slot numbers are not converted to absolute buffer bases. This is not an
 /// executable full-layer contract; use explicit per-operation layouts instead.
 ///
@@ -671,7 +655,15 @@ mod tests {
         let frag = compile_rmsnorm_fragment("test_norm", 0, 1, 50, 8);
         assert_eq!(frag.meta.name, "test_norm");
         assert_eq!(frag.meta.n_rows, 8);
-        assert!(matches!(frag.fragment.ops[0], RpnOp::Loop { count: 8, .. }));
+        assert!(
+            frag.const_pool.is_some(),
+            "complete RMS owns its configuration"
+        );
+        assert!(frag
+            .fragment
+            .ops
+            .iter()
+            .any(|op| matches!(op, RpnOp::Loop { count: 8, .. })));
     }
 
     #[test]

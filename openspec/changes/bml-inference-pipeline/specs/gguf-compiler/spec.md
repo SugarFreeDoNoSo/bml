@@ -118,3 +118,14 @@ perfiles anteriores SHALL conservar su representación y comportamiento.
 #### Scenario: Bucle finito y verificable
 - **WHEN** se ejecuta un programa con índices de contexto y bucles
 - **THEN** cada índice debe ser entero, finito, no negativo y estar dentro del contexto, el presupuesto incluye todas las iteraciones y cada BML rechaza intermedios fuera de dominio/rango
+
+#### Scenario: RMS y softmax compactos con presupuesto de trabajo real
+- **WHEN** se compilan RMS y softmax bajo v4 para anchos crecientes
+- **THEN** los stages BML y el código de sus loops tienen tamaño independiente del ancho y conservan los bits y el orden de reducción de las expansiones anteriores
+- **AND** los límites de pasos y valores se comprueban para todo el trabajo ejecutado, aunque el bytecode sea pequeño
+
+#### Scenario: Salidas indexadas y planes de prefijos completos
+- **WHEN** v4 persiste RMS o softmax con layout `indexed_buffer`
+- **THEN** las salidas usan contadores de bucle y los prefijos fijos contienen solo 17 o 10 literales de configuración, respectivamente
+- **AND** el plan conserva todos los prefijos requeridos y su cantidad de instrucciones y literales crece linealmente con el contexto dentro de los presupuestos declarados
+- **AND** el cargador acepta también `buffer` histórico v4, mientras v1–v3 y otras familias rechazan el layout nuevo

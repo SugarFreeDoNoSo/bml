@@ -186,8 +186,9 @@ pub(crate) fn analyze(
     fragments
         .iter()
         .map(|fragment| {
+            let context = fragment.context(context);
             let mut analyzer = Analyzer {
-                context,
+                context: &context,
                 buffer,
                 access: Access {
                     reads: vec![false; buffer.n_slots()],
@@ -265,6 +266,7 @@ mod tests {
 
     fn operation(base: u32, output: u32) -> OperationFragment {
         OperationFragment {
+            const_pool: None,
             fragment: Fragment {
                 ops: vec![
                     RpnOp::Zero,
@@ -332,6 +334,18 @@ mod tests {
             let accesses = analyze(&fragments, &context, &buffer).unwrap();
             assert_eq!(wave_len(&accesses, 2), 1);
         }
+    }
+
+    #[test]
+    fn dependency_analysis_uses_each_operations_actual_constant_context() {
+        let context = EvalContext::new(&[], &[0.0]);
+        let buffer = ResultBuffer::new(4, 2);
+        let first = operation(0, 2);
+        let mut next = operation(0, 3);
+        next.fragment.ops[0] = RpnOp::Const(0);
+        next.const_pool = Some(vec![4.0]); // Actual read is slot 2, not slot 0.
+        let accesses = analyze(&[first, next], &context, &buffer).unwrap();
+        assert_eq!(wave_len(&accesses, 2), 1);
     }
 
     #[test]

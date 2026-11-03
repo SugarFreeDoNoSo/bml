@@ -1,0 +1,757 @@
+{
+  "schema": 1,
+  "date_utc": "2026-11-03T22:51:41.910083+00:00",
+  "scope": "Real Stories15M two-token execution from a persisted compact v4 artifact, loaded with zero construction-node budget; compares numerical summaries and artifact storage with the preserved prior v4 run.",
+  "base_commit": "c05df2e9dcbf7df559dd5edec9b607160351bd6e",
+  "worktree_build": true,
+  "model": {
+    "path": "target/bml-1.0/stories15M.gguf",
+    "bytes": 98357920,
+    "sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a"
+  },
+  "execution": {
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "-p",
+      "bml-compiler",
+      "--example",
+      "bounded_inference_diagnostic",
+      "--locked",
+      "--",
+      "target/bml-1.0/stories15M.gguf",
+      "target/compact-bounded-stories-v4",
+      "2"
+    ],
+    "working_directory": "/home/dev/Work/bml",
+    "environment": {
+      "PATH": "/tmp/bml-cargo/bin:/home/dev/.local/bin:/home/dev/.codex/packages/app-server-daemon/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/dev/.opencode/bin:/home/dev/.local/share/mise/installs/node/24.22.2/bin:/home/dev/.local/share/mise/installs/uv/0.13.6/.mise-bins:/home/dev/.local/share/mise/shims:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.cargo/bin:/home/dev/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/games:/home/dev/.codex/tmp/arg0-linux/codex-arg0P1bq8w:/home/dev/.codex/packages/app-server-daemon/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/dev/.codex/tmp/arg0-linux/codex-arg0OuC8CM:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin",
+      "CARGO_HOME": "/tmp/bml-cargo",
+      "RUSTUP_HOME": "/tmp/bml-rustup",
+      "CARGO_TARGET_DIR": "/home/dev/Work/bml/target/global-restart-build",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_INCREMENTAL": "0",
+      "TMPDIR": "/home/dev/Work/bml/target/tool-install-tmp",
+      "RUSTFLAGS": null,
+      "CARGO_ENCODED_RUSTFLAGS": null
+    },
+    "compiler": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+    "started_utc": "2026-11-03T22:45:05.883059+00:00",
+    "completed_utc": "2026-11-03T22:50:17.030764+00:00",
+    "elapsed_seconds_including_cargo": 311.1443290510215,
+    "exit_code": 0,
+    "binary": {
+      "path": "target/global-restart-build/release/examples/bounded_inference_diagnostic",
+      "bytes": 886416,
+      "sha256": "8ebfa3a39cbde2e3ae909cb2e062d4c1d5d78a40d216248320f9397a0dfbefee"
+    },
+    "records": [
+      {
+        "artifact": "target/compact-bounded-stories-v4",
+        "bounds": {
+          "attention": 16.0,
+          "gate": 16.0,
+          "projection_input": 128.0,
+          "projection_weight": 2.0,
+          "residual": 32.0,
+          "rms": {
+            "input": 16.0,
+            "weight": 16.0
+          },
+          "rope": 16.0,
+          "scale_input": 256.0,
+          "score": 16.0,
+          "up": 16.0,
+          "value": 16.0
+        },
+        "compile_seconds": 0.874704252,
+        "construction_budget_on_load": 0,
+        "context": 2,
+        "kernels": 12,
+        "profile": "llama-symbolic-bml-bounded-f64-f32kv-v4",
+        "source_sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+        "stage": "compiled_and_loaded"
+      },
+      {
+        "cache_position": 1,
+        "executed_families": [
+          "attention_dot",
+          "dot",
+          "residual_add",
+          "rms_norm",
+          "rope",
+          "scale",
+          "softmax",
+          "swiglu",
+          "weighted_sum"
+        ],
+        "input": 1,
+        "logits": 32000,
+        "max_abs_error": 1.6198153041102614e-08,
+        "native_argmax": 9038,
+        "position": 0,
+        "rms_error": 2.2718347465181055e-09,
+        "seconds": 136.368747531,
+        "stage": "token",
+        "symbolic_argmax": 9038
+      },
+      {
+        "cache_position": 2,
+        "executed_families": [
+          "attention_dot",
+          "dot",
+          "residual_add",
+          "rms_norm",
+          "rope",
+          "scale",
+          "softmax",
+          "swiglu",
+          "weighted_sum"
+        ],
+        "input": 9038,
+        "logits": 32000,
+        "max_abs_error": 2.9445231559677154e-06,
+        "native_argmax": 2501,
+        "position": 1,
+        "rms_error": 4.79904362208755e-07,
+        "seconds": 137.041649277,
+        "stage": "token",
+        "symbolic_argmax": 2501
+      },
+      {
+        "records": [
+          {
+            "cache_position": 1,
+            "executed_families": [
+              "attention_dot",
+              "dot",
+              "residual_add",
+              "rms_norm",
+              "rope",
+              "scale",
+              "softmax",
+              "swiglu",
+              "weighted_sum"
+            ],
+            "input": 1,
+            "logits": 32000,
+            "max_abs_error": 1.6198153041102614e-08,
+            "native_argmax": 9038,
+            "position": 0,
+            "rms_error": 2.2718347465181055e-09,
+            "seconds": 136.368747531,
+            "stage": "token",
+            "symbolic_argmax": 9038
+          },
+          {
+            "cache_position": 2,
+            "executed_families": [
+              "attention_dot",
+              "dot",
+              "residual_add",
+              "rms_norm",
+              "rope",
+              "scale",
+              "softmax",
+              "swiglu",
+              "weighted_sum"
+            ],
+            "input": 9038,
+            "logits": 32000,
+            "max_abs_error": 2.9445231559677154e-06,
+            "native_argmax": 2501,
+            "position": 1,
+            "rms_error": 4.79904362208755e-07,
+            "seconds": 137.041649277,
+            "stage": "token",
+            "symbolic_argmax": 2501
+          }
+        ],
+        "scope": "Persisted Rust bounded BML execution versus native causal path on the same local GGUF; not a llama.cpp equivalence claim",
+        "stage": "completed",
+        "tokens": 2
+      }
+    ],
+    "absolute_error_limit": 0.0001,
+    "argmax_match_required": true,
+    "all_logits_finite": true,
+    "construction_budget_on_load": 0,
+    "executed_families": [
+      "attention_dot",
+      "dot",
+      "residual_add",
+      "rms_norm",
+      "rope",
+      "scale",
+      "softmax",
+      "swiglu",
+      "weighted_sum"
+    ],
+    "logs": {
+      ".log": {
+        "path": "target/quality/compact-bounded-stories-rust.log",
+        "sha256": "5b741c10ac3e6e908301983d560314f0f59a9b1084ac6f2dc4063e25ebc574d0"
+      },
+      ".jsonl": {
+        "path": "target/quality/compact-bounded-stories-rust.jsonl",
+        "sha256": "3a26bb0dbf7fcc8ff3298d2c6aff0c2c57d2a069006a36faec05fbf3d21c5bd0"
+      },
+      ".exit": {
+        "path": "target/quality/compact-bounded-stories-rust.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      },
+      ".provenance.json": {
+        "path": "target/quality/compact-bounded-stories-rust.provenance.json",
+        "sha256": "de21708e137e4a73fc84baaa8f61ad05b742a360526f5a5afb9fc5d540738755"
+      }
+    }
+  },
+  "source_hashes_at_build_and_execution": {
+    "Cargo.lock": "a76bdb0d79ca9fe1539694bf2549ff5a981b52a87c052c1bdb855063812cfc0f",
+    "Cargo.toml": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+    "crates/compiler/Cargo.toml": "f263a79fb0a7f211561d61065356f55d3a7e551279aee026f3e03ae16fca728d",
+    "crates/compiler/examples/bounded_inference_diagnostic.rs": "d76da41ec1c8fdc773f2d59389942e6039497ac11ce187ac9211ace9e0324a26",
+    "crates/compiler/src/bml_ops.rs": "95926be5da51e6f4507f525a35577b462acc3e1d1846563fcdd7a9131c943b0b",
+    "crates/compiler/src/causal_artifact.rs": "e233e88cff1f92d29d53e0aae1e2baf9a5d5dd89e7abfe9390e7da2075ce014d",
+    "crates/compiler/src/dag.rs": "6c9fb73586c8d8a0f9d594bdc0816fdc20f4af9f340122ace288546101ef4290",
+    "crates/compiler/src/distributed.rs": "91bcd60bad9f2c3bee3b8b80b1314a73f1d35e1fa7d7df63fed227880ade3e21",
+    "crates/compiler/src/eml.rs": "0b5cda62a2b47affbfb6a9c9052067de929bec23397ba92291298fae6130ff53",
+    "crates/compiler/src/fragment.rs": "6906e818307c329e6618eb343e58d0fa8600c4b3e6a199e796083e5ed6300fee",
+    "crates/compiler/src/gguf_compiler.rs": "5b6e9e4b321736238cdb090a84ca56b98d6ba628728c403eb326b35618b8d0a4",
+    "crates/compiler/src/graph_directory.rs": "78299a7a355f423b38980fae81b334457195bb9dac73eccf9d41928b84cf8437",
+    "crates/compiler/src/hardware.rs": "ed4722e6cb6aab19ca44d0d6917e3e18f1f4049e101c17694e7665618769a524",
+    "crates/compiler/src/hash_cons.rs": "e0c0fad24415eace98d8dc44168994dace30d6bebca65471d33e7869d4ec41e5",
+    "crates/compiler/src/kv_cache.rs": "4db0cf221d682e9bb72503e59b77486a63bc48e37c430d7586a22ce45304936e",
+    "crates/compiler/src/lib.rs": "f47abfaf96dd1a5552269c894dbbd80ff4955cf8e96ee7acadce268fe3a70788",
+    "crates/compiler/src/op_fragments.rs": "3da2d40863dbd0ed6d2485813295daed1c7a58ccf30df94f6f81bc9bae370235",
+    "crates/compiler/src/operation_rms.rs": "4a1c8d90fff0b64f3b106c1ee22cae0c6e7c2b9ec924104b494bed91e48a304a",
+    "crates/compiler/src/prepared_model.rs": "e92c2092ae03a35bfe108a00ce35c320206feae3fe8f071e20e8d71474856e12",
+    "crates/compiler/src/rpn.rs": "946649559d8b9140351cdfd346c11380406f3c4c04c9282eab891f6db492a6a3",
+    "crates/compiler/src/sampler.rs": "f5f071a5448cf03baa742b71028a5251f4944dcad5a17988f3b821c74caf5b9b",
+    "crates/compiler/src/symbolic_artifact.rs": "4cc67d2dbaf4ae97b59c3a160c06cd95982194799e35b28ce1f0b56754235d46",
+    "crates/compiler/src/symbolic_bounded.rs": "5bbbc11785b282ac0cd6de9e12daeb469fe5cc303ef32a424f89614b4578b8b3",
+    "crates/compiler/src/symbolic_bounded_rms.rs": "77e589d7250aa23f81642ec756531918094a5fa72b0c975ea510984304a265f4",
+    "crates/compiler/src/symbolic_bounded_softmax.rs": "fb454b6941573255fd89bba8f4da191318d328179d49e571a22ebec52f8eb44e",
+    "crates/compiler/src/symbolic_kernels.rs": "5d96bccb18e2f3b011a8a7f030bc43d4df169f8d722ba1e8898f3fa13871195b",
+    "crates/compiler/src/symbolic_projection.rs": "b04b6fced0e52faf828efc72623d138a340e4fb4202eee9de37ba92f0c7b0210",
+    "crates/compiler/src/tokenizer.rs": "9101da35c238ccc6edc88a12116d993f42061cf4e82792cc234c98d8ca96b954",
+    "crates/domain/Cargo.toml": "ab5553ea1a83d4cb7fa5705c43d91c5c4e57495bb6a969acd54b5667bdfecd34",
+    "crates/domain/src/ast.rs": "fb1a1c1b7d8b86ad35ea02fc8305d7516f24dfec4b995a8b34ca4733c7a70077",
+    "crates/domain/src/encoder.rs": "2a8cbef780696ee59d0d0dc0726f79e4e7a9542cd2f2bed42ff867cb3a01d103",
+    "crates/domain/src/lib.rs": "a99c729e691dfeedb28366d7742e47f3fa5eb0d88332ac942caaaf2e04d40695",
+    "crates/domain/src/number/certified.rs": "b3122ee556cd1e7e8316ce6542e994b721e750b9a9e1f1c64e7517aedb42d77c",
+    "crates/domain/src/number/checked.rs": "11972ce60a80d679a9ab3b1c5f3cc50f5147180727908fea286b46f9732ef561",
+    "crates/domain/src/number/convert.rs": "d7abdf97b181f0a78b2d641e98c80faac933797690131344f2f6a1a793a6f641",
+    "crates/domain/src/number/encoding.rs": "e914642dfab9dad767752ff5cfb2bc4e6faa55b37e0d83517918ead86a2139fb",
+    "crates/domain/src/number/evaluate.rs": "e4602f91da384c89ae2a9eda0223827ba2c24cbaf21124ae366eca73ea49e94d",
+    "crates/domain/src/number/exact.rs": "da29637bbc49161ca1e684f87bd0e1f971af89e9ed9ff8eda3f2d7af024a73bf",
+    "crates/domain/src/number/matrix.rs": "f742872b25fb7929e289741248d572e108f7aadbea8497c193bccbba02499d77",
+    "crates/domain/src/number/mod.rs": "6447938efe5ebf55093c50c6d727210677d202c6a7a58f5dbeb6f6bb6100880b",
+    "crates/domain/src/number/operations.rs": "0d11bb78e9d3cca51008aa86f064a4a806f6f5422f407b9a0407dfb1d7c57131",
+    "crates/domain/src/number/recognize.rs": "645905e3daf4bdb551a397019e8de4d8b9198086a43fddaef7d75284690e5e28",
+    "crates/domain/src/number/search.rs": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+    "crates/domain/src/number/stream.rs": "230aee44dd7f6fc448d6dda2f1f0771f419f60b400e369b391a62d19e1573057",
+    "crates/domain/src/operator.rs": "9ce9a0726d87398a49613873ea19be6aedfdb715619a28ff9358ea527fcd146f",
+    "crates/domain/src/soa.rs": "3491916a398985b335614736f956aa78275514de4ca32ade225518b991bfe44c",
+    "crates/domain/src/symbolic/complex.rs": "5449232ce60f82fbf5a1c874b5796d125365fc892e90468fceb3109ee6a42afc",
+    "crates/domain/src/symbolic/synthesis.rs": "690f2e051cc8c8195a34ea7038fdbc7ebe2c888b13492b207b27a96bd1daed54",
+    "crates/domain/src/symbolic.rs": "da18949682b8fc4abbef3a58b52f7139fdfc562923720eee5cb287f09b41b947",
+    "crates/domain/src/tensor/error.rs": "c6ff71fefbde02f6ae693af30fdb695350bdedd9916be345de02c953a9d7c246",
+    "crates/domain/src/tensor/kernels.rs": "0442b16e928df5bb473311db2d8cf06dd4e4d6451a545aef3bd9bb3de2f28bb7",
+    "crates/domain/src/tensor/mod.rs": "d8167810b60316933616b4f72e35fed42e51283092d5948ac67996f5ebd0a4dd",
+    "crates/domain/src/tensor/shape.rs": "7c24a9b78825f4fcdebe283f79c7486d803abe05b7caa5c9b3ea746589310517",
+    "crates/domain/src/transformer/bounded.rs": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+    "crates/domain/src/transformer/bounded_ops.rs": "f153b7835cabd71e6a1f8bd01f1b29335f0ac01cdfd17733a59c79e93cbcbef8",
+    "crates/domain/src/transformer/operations.rs": "d5789f282379d04bba9aacb47051a662d1fbff004712707a9ff16442f069f777",
+    "crates/domain/src/transformer.rs": "0b0900a28a10f6c274e9617c8eac7c6a19955188c84abf3095d3b46abc9ddd10",
+    "crates/runtime/Cargo.toml": "33f2dedb86b34ad4d348da26103c0d2fc2ba3f3a9152b46530d3dab44d8d7aec",
+    "crates/runtime/src/append_only.rs": "ee575fcf217232c15b2172d7a720ea250c579246715ded4d2e9560b0f0463431",
+    "crates/runtime/src/buffer.rs": "9736f41f2cc8a2321f048f88cbe75d09b3f93d8b9a86fa2ef76f8b219fa751a2",
+    "crates/runtime/src/causal_artifact.rs": "237832a194bf973793d44df5871435d4c1fc396ec12ba626352a82571a2deb09",
+    "crates/runtime/src/graph.rs": "10c2818a9e6a927dab7c213d04faf273dc0dde4d043c96bdcf7ebd82bc6f048b",
+    "crates/runtime/src/graph_rpc.rs": "6218ee9369072d3b39d2159eefd608442d4ae9f94b9c5f4c4ea3fabd9aee0a7e",
+    "crates/runtime/src/hot_loop.rs": "a88d80e5eb682f76879b795c936be8b7d58271da96e22a9445afef0c333e1a04",
+    "crates/runtime/src/lib.rs": "8a4125e098adcd8a893219d04d762c48f62a9bf403a3b4bea825d596dc1e227a",
+    "crates/runtime/src/net.rs": "f6ae4a3474c8d7722eecf6c950e39ae55943eba5c5151b2ca284309e56ba3fce",
+    "crates/runtime/src/operation_schedule.rs": "dbac53a858a7d38f6089589f4320b44a6db55227bf7ae71441dea42dd7017abd",
+    "crates/runtime/src/prepared_projection.rs": "85c5a83d58ee55bfad06e49202dd397dc5c4465c0075e7b2e2b29c269e6db2b7",
+    "crates/runtime/src/queue.rs": "57d522754fe8c814afbcd6d271aeb7ebd0c3f69012be2e80ff2b842b664aa3a9",
+    "crates/runtime/src/runtime.rs": "404d8868f7e25e6e11eca474f7d89bdaaf5a88c845f0a9e86438d9f202c3c9aa",
+    "crates/runtime/src/scheduler/requests.rs": "5f7054ac647492f4ad52f345e53dea149c879fbae1af5d4e6fbc340cdca25807",
+    "crates/runtime/src/scheduler.rs": "02ef648e174bf508142ccb9a73de5a58ed1f718e7bed3791f7bd85f607573b6c",
+    "crates/runtime/src/shm.rs": "f7d06d667ac540c503000a116be4b1d27f4c8af3eaa2dbe65855c387334d1593",
+    "crates/runtime/src/symbolic_causal.rs": "467f5de3786343666f4f801a31c52b416b0587564d3be856bed40be3b47e232b",
+    "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1"
+  },
+  "source_snapshots_identical_before_and_after_execution": true,
+  "artifact_inventory": {
+    "previous": {
+      "directory": "target/full-bounded-stories-v4-roundtrip",
+      "profile": "llama-symbolic-bml-bounded-f64-f32kv-v4",
+      "context": 2,
+      "model_sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+      "manifest": {
+        "path": "target/full-bounded-stories-v4-roundtrip/symbolic.bmlgraph.json",
+        "bytes": 1328911,
+        "sha256": "2bc9a202dc7f39ffba088ac37215ce140d45627fa0887fbb41a02bc9d7de0416"
+      },
+      "kernel_count": 12,
+      "program_count": 12,
+      "fixed_literal_count": 424,
+      "program_bytes": 1815059,
+      "total_artifact_bytes": 3143970,
+      "kernels": [
+        {
+          "operation": "dot",
+          "width": 288,
+          "layout": "scalars",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 3999,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_0_0.bmlgraph",
+              "bytes": 3999,
+              "sha256": "85ac182dd860d68b6f518e4cc7bbda7c721e8c311f43848ef432e59e30a1dea9"
+            }
+          ]
+        },
+        {
+          "operation": "dot",
+          "width": 768,
+          "layout": "scalars",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 3999,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_1_0.bmlgraph",
+              "bytes": 3999,
+              "sha256": "c0b57094650293ed20aecd49280d7e83d2b29cf0cef001509075242f4bc6b6ca"
+            }
+          ]
+        },
+        {
+          "operation": "attention_dot",
+          "width": 48,
+          "layout": "scalars",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 3999,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_2_0.bmlgraph",
+              "bytes": 3999,
+              "sha256": "3b0f8804a45f83b241406b4dfacb20d81b7a4c7e4a4deadfa199b32b3e6694b7"
+            }
+          ]
+        },
+        {
+          "operation": "weighted_sum",
+          "width": 1,
+          "layout": "scalars",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 3999,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_3_0.bmlgraph",
+              "bytes": 3999,
+              "sha256": "b1d0f80ab59cef487dc05ad3862d8654a4e4342ffb7cecc9dd1ea920b8f19502"
+            }
+          ]
+        },
+        {
+          "operation": "weighted_sum",
+          "width": 2,
+          "layout": "scalars",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 3999,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_4_0.bmlgraph",
+              "bytes": 3999,
+              "sha256": "df9807c0eb31ebcb5a99f10d8b840e05d7ef1f8f7c507904fdef29da74267bc9"
+            }
+          ]
+        },
+        {
+          "operation": "norm",
+          "width": 288,
+          "layout": "buffer",
+          "fixed_literals": 305,
+          "programs": 1,
+          "program_bytes": 1753115,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_5_0.bmlgraph",
+              "bytes": 1753115,
+              "sha256": "aef9ed2823c901e72f6139c7ac68638df11f714f9ce4f2cd699c0c4fef7cb133"
+            }
+          ]
+        },
+        {
+          "operation": "rope",
+          "width": 2,
+          "layout": "buffer",
+          "fixed_literals": 11,
+          "programs": 1,
+          "program_bytes": 13509,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_6_0.bmlgraph",
+              "bytes": 13509,
+              "sha256": "0ea01dde5e0d6e1caf51aa1872011d6ec0cd32c8f09e31dff7cf38182f518763"
+            }
+          ]
+        },
+        {
+          "operation": "softmax",
+          "width": 1,
+          "layout": "buffer",
+          "fixed_literals": 11,
+          "programs": 1,
+          "program_bytes": 4166,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_7_0.bmlgraph",
+              "bytes": 4166,
+              "sha256": "c7b8a637434b2aef0c0ed58604e2dc65759957ac816d53be7faf335ab426eaa0"
+            }
+          ]
+        },
+        {
+          "operation": "softmax",
+          "width": 2,
+          "layout": "buffer",
+          "fixed_literals": 12,
+          "programs": 1,
+          "program_bytes": 8121,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_8_0.bmlgraph",
+              "bytes": 8121,
+              "sha256": "6e3b4ed7b29d18ab8085248a9933b7fe6e61d43f865657a10b4929a6a9ce6370"
+            }
+          ]
+        },
+        {
+          "operation": "swiglu",
+          "width": 1,
+          "layout": "scalars",
+          "fixed_literals": 24,
+          "programs": 1,
+          "program_bytes": 12153,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_9_0.bmlgraph",
+              "bytes": 12153,
+              "sha256": "e40ae6468f778748c04b7472cec9bcb34bdd9bd3c35ec3d57154e4f0e8d2aff5"
+            }
+          ]
+        },
+        {
+          "operation": "add",
+          "width": 1,
+          "layout": "scalars",
+          "fixed_literals": 3,
+          "programs": 1,
+          "program_bytes": 274,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_10_0.bmlgraph",
+              "bytes": 274,
+              "sha256": "fda06a88e3ed98f883d46784ddced30db761b9967e1d28baef8b3599c11fc947"
+            }
+          ]
+        },
+        {
+          "operation": "scale",
+          "width": 1,
+          "layout": "scalars",
+          "fixed_literals": 8,
+          "programs": 1,
+          "program_bytes": 3726,
+          "files": [
+            {
+              "path": "target/full-bounded-stories-v4-roundtrip/kernel_11_0.bmlgraph",
+              "bytes": 3726,
+              "sha256": "25703baee8d38c660fa1eb3e4470fccf6c6c421f606410fe2a131fd1c9f8ec41"
+            }
+          ]
+        }
+      ]
+    },
+    "compact": {
+      "directory": "target/compact-bounded-stories-v4",
+      "profile": "llama-symbolic-bml-bounded-f64-f32kv-v4",
+      "context": 2,
+      "model_sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+      "manifest": {
+        "path": "target/compact-bounded-stories-v4/symbolic.bmlgraph.json",
+        "bytes": 1324686,
+        "sha256": "657b9767ac2c8a13bfd2afc20c2034fa0a92f4c9063763ad0cb7c617746f944d"
+      },
+      "kernel_count": 12,
+      "program_count": 12,
+      "fixed_literal_count": 133,
+      "program_bytes": 64581,
+      "total_artifact_bytes": 1389267,
+      "kernels": [
+        {
+          "operation": "dot",
+          "width": 288,
+          "layout": "scalars",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 3999,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_0_0.bmlgraph",
+              "bytes": 3999,
+              "sha256": "85ac182dd860d68b6f518e4cc7bbda7c721e8c311f43848ef432e59e30a1dea9"
+            }
+          ]
+        },
+        {
+          "operation": "dot",
+          "width": 768,
+          "layout": "scalars",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 3999,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_1_0.bmlgraph",
+              "bytes": 3999,
+              "sha256": "c0b57094650293ed20aecd49280d7e83d2b29cf0cef001509075242f4bc6b6ca"
+            }
+          ]
+        },
+        {
+          "operation": "attention_dot",
+          "width": 48,
+          "layout": "scalars",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 3999,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_2_0.bmlgraph",
+              "bytes": 3999,
+              "sha256": "3b0f8804a45f83b241406b4dfacb20d81b7a4c7e4a4deadfa199b32b3e6694b7"
+            }
+          ]
+        },
+        {
+          "operation": "weighted_sum",
+          "width": 1,
+          "layout": "scalars",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 3999,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_3_0.bmlgraph",
+              "bytes": 3999,
+              "sha256": "b1d0f80ab59cef487dc05ad3862d8654a4e4342ffb7cecc9dd1ea920b8f19502"
+            }
+          ]
+        },
+        {
+          "operation": "weighted_sum",
+          "width": 2,
+          "layout": "scalars",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 3999,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_4_0.bmlgraph",
+              "bytes": 3999,
+              "sha256": "df9807c0eb31ebcb5a99f10d8b840e05d7ef1f8f7c507904fdef29da74267bc9"
+            }
+          ]
+        },
+        {
+          "operation": "norm",
+          "width": 288,
+          "layout": "indexed_buffer",
+          "fixed_literals": 17,
+          "programs": 1,
+          "program_bytes": 5442,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_5_0.bmlgraph",
+              "bytes": 5442,
+              "sha256": "ac45e6eb6fee60258ba2408952c26015aa2ad146457ff036c6374e65d3ec2b94"
+            }
+          ]
+        },
+        {
+          "operation": "rope",
+          "width": 2,
+          "layout": "buffer",
+          "fixed_literals": 11,
+          "programs": 1,
+          "program_bytes": 13509,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_6_0.bmlgraph",
+              "bytes": 13509,
+              "sha256": "0ea01dde5e0d6e1caf51aa1872011d6ec0cd32c8f09e31dff7cf38182f518763"
+            }
+          ]
+        },
+        {
+          "operation": "softmax",
+          "width": 1,
+          "layout": "indexed_buffer",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 4741,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_7_0.bmlgraph",
+              "bytes": 4741,
+              "sha256": "5567b8a8cb312a0dedd951d6a1b6a5885ce53c16d4f1a5968d801be6aceaf809"
+            }
+          ]
+        },
+        {
+          "operation": "softmax",
+          "width": 2,
+          "layout": "indexed_buffer",
+          "fixed_literals": 10,
+          "programs": 1,
+          "program_bytes": 4741,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_8_0.bmlgraph",
+              "bytes": 4741,
+              "sha256": "066b1892452faee72e3e2bacb4cd3822d946f93746e93854411c1b1a886ccda0"
+            }
+          ]
+        },
+        {
+          "operation": "swiglu",
+          "width": 1,
+          "layout": "scalars",
+          "fixed_literals": 24,
+          "programs": 1,
+          "program_bytes": 12153,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_9_0.bmlgraph",
+              "bytes": 12153,
+              "sha256": "e40ae6468f778748c04b7472cec9bcb34bdd9bd3c35ec3d57154e4f0e8d2aff5"
+            }
+          ]
+        },
+        {
+          "operation": "add",
+          "width": 1,
+          "layout": "scalars",
+          "fixed_literals": 3,
+          "programs": 1,
+          "program_bytes": 274,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_10_0.bmlgraph",
+              "bytes": 274,
+              "sha256": "fda06a88e3ed98f883d46784ddced30db761b9967e1d28baef8b3599c11fc947"
+            }
+          ]
+        },
+        {
+          "operation": "scale",
+          "width": 1,
+          "layout": "scalars",
+          "fixed_literals": 8,
+          "programs": 1,
+          "program_bytes": 3726,
+          "files": [
+            {
+              "path": "target/compact-bounded-stories-v4/kernel_11_0.bmlgraph",
+              "bytes": 3726,
+              "sha256": "25703baee8d38c660fa1eb3e4470fccf6c6c421f606410fe2a131fd1c9f8ec41"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "comparison": {
+    "same_model_profile_context_and_complete_kernel_plan": true,
+    "program_count_before_after": [
+      12,
+      12
+    ],
+    "program_bytes_before_after": [
+      1815059,
+      64581
+    ],
+    "fixed_literal_count_before_after": [
+      424,
+      133
+    ],
+    "manifest_bytes_before_after": [
+      1328911,
+      1324686
+    ],
+    "previous_jsonl": {
+      "path": "target/quality/full-bounded-stories-rust-roundtrip.jsonl",
+      "sha256": "609ded9718aa22bf17e58d36f04e4b87ed8744b174965e8ddfd08559b63ca81e"
+    },
+    "numerical_summaries_equal_to_previous_run": true,
+    "summary_fields_compared": [
+      "position",
+      "input",
+      "logits",
+      "symbolic_argmax",
+      "native_argmax",
+      "max_abs_error",
+      "rms_error",
+      "cache_position",
+      "executed_families"
+    ]
+  },
+  "limitations": [
+    "This validates BOS and one generated continuation only, with context length two; it does not establish larger-context or larger-model coverage.",
+    "The native reference is the repository causal implementation on the same GGUF, not llama.cpp.",
+    "Matching summary metrics do not establish bitwise equality of every complete logit vector.",
+    "Reported elapsed times are single-run observations, not a controlled performance comparison or throughput guarantee.",
+    "Finite execution for these operands does not imply universal evaluability of the bounded profile."
+  ],
+  "post_execution_changes": {
+    "recorded_utc": "2026-11-03T22:59:48.699716+00:00",
+    "measured_source_snapshot_preserved": true,
+    "model_run_repeated_after_these_changes": false,
+    "validation_scope": "The model result applies to the recorded before/after execution snapshot. The parent agent runs the final workspace gate against the subsequent worktree; that gate is separate from this model measurement.",
+    "files": [
+      {
+        "path": "crates/compiler/src/bml_ops.rs",
+        "measured_sha256": "95926be5da51e6f4507f525a35577b462acc3e1d1846563fcdd7a9131c943b0b",
+        "post_execution_sha256": "57fb806c13085b36cf2a656753bb6725b102e3957b8e6f418b69e4a1dba4eea4",
+        "description": "After execution, RoPE preflight iteration changed from chunks_exact(2) to as_chunks::<2>().0.iter() to satisfy the Clippy ratchet. Root reports equivalent iteration; this helper is outside the measured causal diagnostic path."
+      },
+      {
+        "path": "crates/compiler/src/op_fragments.rs",
+        "measured_sha256": "3da2d40863dbd0ed6d2485813295daed1c7a58ccf30df94f6f81bc9bae370235",
+        "post_execution_sha256": "b31feacc8de07f42357815756164901078be96704006a2a5528a594f1191845e",
+        "description": "After model execution, a stale comment was corrected to stop listing RMSNorm among simplified helpers. The cfg(test) rmsnorm_fragment_structure assertion was then corrected to require the owned configuration and Loop(count=8) anywhere in the program, since compact RMS initializes epsilon before its loop. Production arithmetic is unchanged; the final canonical workspace gate validates the resulting source."
+      }
+    ]
+  },
+  "post_execution_binary_audit": {
+    "report": "quality/evidence/compact-bounded-hot-loop-2026-11-03.json",
+    "sha256": "1a1e13623b4c26e4ed139be1289611afd32f864201f2cf1f28d265a34635bd1e",
+    "log": "target/quality/compact-bounded-hot-loop.log",
+    "log_sha256": "d734d76bfcf8fef8acbdd6ba725243d4c7656134742681c647f7630ceb844f55",
+    "exit_code": 0,
+    "scope": "Separate audit of the current worker release after the documented post-execution source adjustments; it does not replace the measured model binary or source snapshot."
+  }
+}

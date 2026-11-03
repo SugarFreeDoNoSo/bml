@@ -105,39 +105,286 @@ pub fn bml_matmul_program(
 // bml_rmsnorm: y[i] = x[i] * (1/rms) * w[i] como fold
 // ===========================================================================
 
-/// Programa RPN para RMSNorm.
+/// Apply a precomputed inverse RMS with native IEEE multiplication.
 ///
-/// `recip_rms_const` es el ConstId del valor 1/rms precomputado.
+/// `y[i] = (x[i] * reciprocal_rms) * weight[i]`. `x_base` and `w_base`
+/// are absolute `ResultBuffer` element bases; outputs go to `output_slot[i]`.
+/// `recip_rms_const` retains its original meaning as an external constant index
+/// for a precomputed `1/rms`; it is not an epsilon. This historical RPN helper,
+/// like the neighboring dot-product helper, keeps its explicit native IEEE
+/// arithmetic contract (including its nonfinite and signed-zero behavior).
+/// It does not compute mean squares, epsilon or the root, and does not claim
+/// a BML identity. [`bml_rmsnorm_full_program`] provides complete BML RMSNorm;
+/// [`bml_rmsnorm_scale_program_checked`] provides explicit bounded BML scaling.
+/// Outputs must not overwrite inputs or weights needed by a later iteration.
 pub fn bml_rmsnorm_program(
     x_base: u32,
     w_base: u32,
     n_embd: u32,
     recip_rms_const: u32,
-    _output_slot: u32,
+    output_slot: u32,
 ) -> RpnProgram {
-    let mut program = RpnProgram::new();
-
     let body = vec![
         RpnOp::Dup,
-        RpnOp::VarIndexed { base: x_base }, // x[i]
-        RpnOp::Const(recip_rms_const),      // 1/rms
-        RpnOp::FMul,                        // x[i] * (1/rms)
-        RpnOp::Swap,                        // contador al tope
-        RpnOp::VarIndexed { base: w_base }, // w[i]
-        RpnOp::FMul,                        // x[i] * (1/rms) * w[i]
-        RpnOp::FAdd,                        // acc + product
+        RpnOp::VarIndexed { base: x_base },
+        RpnOp::Const(recip_rms_const),
+        RpnOp::FMul,
+        RpnOp::Pick { depth: 1 },
+        RpnOp::VarIndexed { base: w_base },
+        RpnOp::FMul,
+        RpnOp::Swap,
+        RpnOp::StoreResult { slot: output_slot },
     ];
-
-    let body_len = body.len() as u32;
-    program.push(RpnOp::Zero);
-    program.push(RpnOp::Loop {
+    let mut program = RpnProgram::new();
+    program.ops.push(RpnOp::Loop {
         count: n_embd,
-        body_len,
+        body_len: body.len() as u32,
     });
-    for op in body {
-        program.push(op);
+    program.ops.extend(body);
+    program
+}
+
+/// Absolute operand declarations for applying a precomputed inverse RMS.
+#[derive(Clone, Copy, Debug)]
+pub struct RmsScaleBounds {
+    /// Bound on each input element.
+    pub input: f64,
+    /// Positive upper bound on the precomputed inverse RMS.
+    pub reciprocal: f64,
+    /// Bound on each learned weight.
+    pub weight: f64,
+}
+
+impl Default for RmsScaleBounds {
+    fn default() -> Self {
+        Self {
+            input: 16.0,
+            reciprocal: 1.0,
+            weight: 16.0,
+        }
+    }
+}
+
+/// Explicit bounded application of a precomputed inverse RMS.
+///
+/// Bind `program().const_pool` as the execution context's constants after
+/// checking the same inputs/weights with [`Self::validate_values`]. Buffer
+/// capacity and disjoint output storage remain caller responsibilities.
+#[derive(Clone, Debug)]
+pub struct CheckedRmsScaleProgram {
+    program: RpnProgram,
+    bounds: RmsScaleBounds,
+    width: usize,
+    dag: bml_domain::NodeSoA,
+    root: bml_domain::NodeId,
+}
+
+impl CheckedRmsScaleProgram {
+    /// Bytecode and the complete owned constant context.
+    pub fn program(&self) -> &RpnProgram {
+        &self.program
     }
 
+    /// Check shapes, declared ranges and every BML intermediate before writes.
+    pub fn validate_values(&self, input: &[f64], weight: &[f64]) -> Result<(), String> {
+        if input.len() != self.width || weight.len() != self.width {
+            return Err("RMS scale operand shape mismatch".into());
+        }
+        for (index, (&x, &w)) in input.iter().zip(weight).enumerate() {
+            if !x.is_finite()
+                || x.abs() > self.bounds.input
+                || !w.is_finite()
+                || w.abs() > self.bounds.weight
+            {
+                return Err(format!("RMS scale operand bound at index {index}"));
+            }
+            validate_vector_dag(&self.dag, &[self.root], &[x, w])
+                .map_err(|e| format!("RMS scale index {index}: {e}"))?;
+        }
+        Ok(())
+    }
+}
+
+/// Compile a configurable application of a positive precomputed inverse RMS.
+///
+/// Both successive signed products must satisfy `BoundedOpConfig::product`;
+/// accepted operand bounds alone do not guarantee finite intermediate results.
+/// The reciprocal is stored as a fixed constant; no reduction is performed.
+pub fn bml_rmsnorm_scale_program_checked(
+    x_base: u32,
+    w_base: u32,
+    n_embd: u32,
+    reciprocal_rms: f64,
+    output_slot: u32,
+    bounds: RmsScaleBounds,
+) -> Result<CheckedRmsScaleProgram, String> {
+    use bml_domain::{transformer::BoundedOpConfig, BMLTransformer};
+    check_vector_read(x_base, n_embd)?;
+    check_vector_read(w_base, n_embd)?;
+    if !reciprocal_rms.is_finite() || reciprocal_rms <= 0.0 || reciprocal_rms > bounds.reciprocal {
+        return Err("invalid precomputed inverse RMS".into());
+    }
+    let scale =
+        BoundedOpConfig::product(bounds.input, bounds.reciprocal).map_err(|e| e.to_string())?;
+    let learned = BoundedOpConfig::product(bounds.input * bounds.reciprocal, bounds.weight)
+        .map_err(|e| e.to_string())?;
+    let mut builder = BMLTransformer::new();
+    let x = builder.var(0);
+    let w = builder.var(1);
+    let reciprocal = builder.constant(reciprocal_rms);
+    let scaled = builder
+        .operation_bounded(&[x, reciprocal], &[], &scale)
+        .map_err(|e| e.to_string())?[0];
+    let root = builder
+        .operation_bounded(&[scaled, w], &[], &learned)
+        .map_err(|e| e.to_string())?[0];
+    let dag = builder.into_soa();
+    let scalar = crate::linearize(&dag, root);
+    let program = vector_output_program(&scalar, [x_base, w_base], n_embd, output_slot);
+    Ok(CheckedRmsScaleProgram {
+        program,
+        bounds,
+        width: n_embd as usize,
+        dag,
+        root,
+    })
+}
+
+fn check_vector_read(base: u32, count: u32) -> Result<(), String> {
+    if count > 0 {
+        base.checked_add(count - 1)
+            .ok_or("buffer address overflow")?;
+    }
+    Ok(())
+}
+
+/// Complete RMSNorm program with shared compiler implementation and preflight.
+#[derive(Clone, Debug)]
+pub struct CheckedRmsProgram {
+    program: RpnProgram,
+    compiled: crate::op_fragments::CheckedRmsFragment,
+}
+
+impl CheckedRmsProgram {
+    /// Bytecode and complete owned constant context.
+    pub fn program(&self) -> &RpnProgram {
+        &self.program
+    }
+
+    /// Check actual inputs, learned weights and every BML intermediate.
+    pub fn validate_values(&self, input: &[f64], weights: &[f64]) -> Result<(), String> {
+        self.compiled.validate_values(input, weights)
+    }
+}
+
+/// Compile complete RMSNorm, including mean squares, epsilon, root and weights.
+///
+/// This explicit API differs from [`bml_rmsnorm_program`], which applies an
+/// already computed inverse RMS. It delegates to the shared compact RMS
+/// compiler; no separate formula or native normalization is introduced.
+/// Bind `program().const_pool` after preflighting the same values. Input and
+/// weight bases are absolute buffer addresses; the output is a slot number.
+pub fn bml_rmsnorm_full_program(
+    input_base: u32,
+    weight_base: u32,
+    width: u32,
+    epsilon: f64,
+    output_slot: u32,
+    bounds: crate::symbolic_kernels::RmsBounds,
+) -> Result<CheckedRmsProgram, String> {
+    let compiled = crate::op_fragments::compile_rmsnorm_fragment_checked(
+        "rmsnorm",
+        input_base,
+        output_slot,
+        weight_base,
+        width,
+        epsilon,
+        bounds,
+    )?;
+    let program = RpnProgram {
+        ops: compiled.operation().fragment.ops.clone(),
+        const_pool: compiled.constants().to_vec(),
+    };
+    Ok(CheckedRmsProgram { program, compiled })
+}
+
+fn validate_vector_dag(
+    dag: &bml_domain::NodeSoA,
+    roots: &[u32],
+    inputs: &[f64],
+) -> Result<(), String> {
+    use bml_domain::{symbolic::Basis, NodeKind};
+    let mut values = vec![0.0; dag.len()];
+    for (index, kind) in dag.kinds.iter().enumerate() {
+        values[index] = match *kind {
+            NodeKind::One => 1.0,
+            NodeKind::Zero => 0.0,
+            NodeKind::Var(id) => inputs[id as usize],
+            NodeKind::Const(id) => dag.const_pool[id as usize],
+            NodeKind::Bml => Basis::Bml
+                .apply_real(
+                    values[dag.lefts[index] as usize],
+                    values[dag.rights[index] as usize],
+                )
+                .map_err(|e| format!("BML node {index}: {e}"))?,
+        };
+    }
+    if roots.iter().any(|&root| !values[root as usize].is_finite()) {
+        return Err("nonfinite vector output".into());
+    }
+    Ok(())
+}
+
+fn indexed_scalar_body(
+    scalar: &RpnProgram,
+    mut variable: impl FnMut(u32, u32) -> Vec<RpnOp>,
+) -> Vec<RpnOp> {
+    let mut body = Vec::with_capacity(scalar.ops.len() + 8);
+    let mut depth = 0;
+    for &op in &scalar.ops {
+        match op {
+            RpnOp::Var(id) => {
+                body.extend(variable(id, depth));
+                depth += 1;
+            }
+            RpnOp::One | RpnOp::Zero | RpnOp::Const(_) | RpnOp::Pick { .. } | RpnOp::Dup => {
+                body.push(op);
+                depth += 1;
+            }
+            RpnOp::Bml | RpnOp::Drop => {
+                body.push(op);
+                depth -= 1;
+            }
+            RpnOp::Swap => body.push(op),
+            _ => unreachable!("scalar BML DAG only"),
+        }
+    }
+    assert_eq!(depth, 1);
+    body
+}
+
+fn vector_output_program(
+    scalar: &RpnProgram,
+    bases: [u32; 2],
+    count: u32,
+    slot: u32,
+) -> RpnProgram {
+    let mut body = indexed_scalar_body(scalar, |id, depth| {
+        vec![
+            RpnOp::Pick { depth },
+            RpnOp::VarIndexed {
+                base: bases[id as usize],
+            },
+        ]
+    });
+    body.extend([RpnOp::Swap, RpnOp::StoreResult { slot }]);
+    let mut program = RpnProgram::new();
+    program.const_pool = scalar.const_pool.clone();
+    program.ops.push(RpnOp::Loop {
+        count,
+        body_len: body.len() as u32,
+    });
+    program.ops.extend(body);
     program
 }
 
@@ -263,14 +510,10 @@ fn append_swiglu_bounded_operation(
     mapped[root as usize]
 }
 
-fn swiglu_scalar_with_external_constants(const_log2e: u32, const_one: u32) -> RpnProgram {
-    use bml_domain::{transformer::BoundedOpConfig, BMLTransformer};
-    let mut builder = BMLTransformer::new();
-    let one = builder.external_constant(const_one);
-    let log2e = builder.external_constant(const_log2e);
-    let gate = builder.var(0);
-    let up = builder.var(1);
-
+fn dyadic_literals(
+    builder: &mut bml_domain::BMLTransformer,
+    one: bml_domain::NodeId,
+) -> Vec<(f64, bml_domain::NodeId)> {
     // Exact dyadic terms for the fixed bound 16. Every intermediate is finite.
     let two = builder.bml(one, one);
     let four = builder.bml(two, one);
@@ -295,7 +538,7 @@ fn swiglu_scalar_with_external_constants(const_log2e: u32, const_one: u32) -> Rp
     let one_thirty_second = builder.bml(minus_five, one);
     let two_to_32 = builder.bml(thirty_two, one);
     let minus_sixteen = builder.bml(four, two_to_32);
-    let mut literals = vec![
+    vec![
         (0.0, zero),
         (1.0, one),
         (2.0, two),
@@ -310,8 +553,24 @@ fn swiglu_scalar_with_external_constants(const_log2e: u32, const_one: u32) -> Rp
         (1.0 / 16.0, one_sixteenth),
         (1.0 / 32.0, one_thirty_second),
         (-16.0, minus_sixteen),
-        (std::f64::consts::LOG2_E, log2e),
-    ];
+    ]
+}
+
+fn swiglu_scalar_with_external_constants(const_log2e: u32, const_one: u32) -> RpnProgram {
+    use bml_domain::{transformer::BoundedOpConfig, BMLTransformer};
+    let mut builder = BMLTransformer::new();
+    let one = builder.external_constant(const_one);
+    let log2e = builder.external_constant(const_log2e);
+    let gate = builder.var(0);
+    let up = builder.var(1);
+
+    let mut literals = dyadic_literals(&mut builder, one);
+    let minus_sixteen = literals
+        .iter()
+        .find(|(value, _)| *value == -16.0)
+        .unwrap()
+        .1;
+    literals.push((std::f64::consts::LOG2_E, log2e));
     let exponent = append_swiglu_bounded_operation(
         &mut builder,
         [minus_sixteen, log2e],
@@ -333,57 +592,241 @@ fn swiglu_scalar_with_external_constants(const_log2e: u32, const_one: u32) -> Rp
 // bml_rope: rotación de un par (even, odd) con cos/sin precomputados
 // ===========================================================================
 
-/// Programa RPN para RoPE usando BML puro para la negación.
+/// Rotate one adjacent coordinate pair and write both components to a slot.
 ///
-/// x_even' = x_even * cos - x_odd * sin
-///
-/// La negación de x_odd*sin se hace con BML puro:
-/// neg(y) = bml(log2(0), exp2(y)) = 0 - y
+/// This legacy API retains its original coordinate namespace: `x_even_base`
+/// and `x_odd_base` are **EvalContext input IDs**, not buffer offsets. `cos_const`
+/// and `sin_const` refer to external constants. The result is written to
+/// `output_slot[0..2]` and leaves the existing stack unchanged.
+/// The signed finite-real BML profile declares `|x|,|y| <= 16` and
+/// `|cosine|,|sine| <= 1`; no logarithm of zero or infinite negation is emitted.
+/// Use [`bml_rope_vector_program`] for all pairs, configurable bounds, explicit
+/// frequencies/position and absolute input addresses in the result buffer.
 pub fn bml_rope_program(
     x_even_base: u32,
     x_odd_base: u32,
     cos_const: u32,
     sin_const: u32,
-    _output_slot: u32,
+    output_slot: u32,
 ) -> RpnProgram {
+    use bml_domain::{BMLTransformer, NodeKind};
+    let (dag, roots) = rope_pair_dag(16.0).expect("fixed RoPE bounds");
+    let mut builder = BMLTransformer::new();
+    let values = [
+        builder.var(x_even_base),
+        builder.var(x_odd_base),
+        builder.external_constant(cos_const),
+        builder.external_constant(sin_const),
+    ];
+    let one = builder.one();
+    let literals = dyadic_literals(&mut builder, one);
+    let mut mapped = Vec::with_capacity(dag.len());
+    for (index, kind) in dag.kinds.iter().enumerate() {
+        let literal = |value: f64| {
+            literals
+                .iter()
+                .find(|(v, _)| v.to_bits() == value.to_bits())
+                .expect("fixed RoPE literal")
+                .1
+        };
+        mapped.push(match *kind {
+            NodeKind::One => one,
+            NodeKind::Zero => literal(0.0),
+            NodeKind::Var(id) => values[id as usize],
+            NodeKind::Const(id) => literal(dag.const_pool[id as usize]),
+            NodeKind::Bml => builder.bml(
+                mapped[dag.lefts[index] as usize],
+                mapped[dag.rights[index] as usize],
+            ),
+        });
+    }
+    let converted = builder.into_soa();
     let mut program = RpnProgram::new();
-
-    // x_even * cos
-    program.push(RpnOp::Var(x_even_base));
-    program.push(RpnOp::Const(cos_const));
-    program.push(RpnOp::FMul);
-
-    // x_odd * sin
-    program.push(RpnOp::Var(x_odd_base));
-    program.push(RpnOp::Const(sin_const));
-    program.push(RpnOp::FMul);
-
-    // neg(x_odd*sin) via BML puro:
-    // exp2(x_odd*sin) = bml(x_odd*sin, 1)
-    program.push(RpnOp::One);
-    program.push(RpnOp::Bml);
-
-    // log2(0) = -inf:
-    // bml(1, 0) = inf
-    program.push(RpnOp::One);
-    program.push(RpnOp::Zero);
-    program.push(RpnOp::Bml);
-    // bml(inf, 1) = inf
-    program.push(RpnOp::One);
-    program.push(RpnOp::Bml);
-    // bml(1, inf) = -inf
-    program.push(RpnOp::One);
-    program.push(RpnOp::Swap);
-    program.push(RpnOp::Bml);
-
-    // bml(-inf, exp2(x_odd*sin)) = 0 - x_odd*sin = -x_odd*sin
-    program.push(RpnOp::Swap);
-    program.push(RpnOp::Bml);
-
-    // x_even*cos + (-x_odd*sin) = x_even*cos - x_odd*sin
-    program.push(RpnOp::FAdd);
-
+    for (component, root) in roots.into_iter().enumerate() {
+        program
+            .ops
+            .extend(crate::linearize(&converted, mapped[root as usize]).ops);
+        program.ops.push(if component == 0 {
+            RpnOp::Zero
+        } else {
+            RpnOp::One
+        });
+        program.ops.push(RpnOp::StoreResult { slot: output_slot });
+    }
     program
+}
+
+/// Layout, position and numerical declaration for adjacent-pair RoPE.
+#[derive(Clone, Copy, Debug)]
+pub struct RopeVectorConfig {
+    /// Number of independently rotated heads.
+    pub heads: u32,
+    /// Even coordinates per head; frequencies restart at each head.
+    pub head_dim: u32,
+    /// Absolute token position used to precompute coefficients.
+    pub position: u32,
+    /// Positive finite frequency base (typically 10,000).
+    pub frequency_base: f64,
+    /// Inclusive absolute input bound accepted by `BoundedOpConfig::rope`.
+    pub input_bound: f64,
+}
+
+/// Complete vector RoPE with owned coefficients and finite-real preflight.
+///
+/// Each head is contiguous and its pairs are `(0,1), (2,3), ...`. The program
+/// reads absolute `ResultBuffer` input addresses and writes all components to
+/// the output slot. Bind its complete owned constants after checking the same
+/// input values. Output storage must not overwrite inputs needed by later pairs.
+#[derive(Clone, Debug)]
+pub struct CheckedRopeProgram {
+    program: RpnProgram,
+    config: RopeVectorConfig,
+    coefficients: Vec<[f64; 2]>,
+    dag: bml_domain::NodeSoA,
+    roots: [u32; 2],
+}
+
+impl CheckedRopeProgram {
+    /// Bytecode and complete constant pool (including precomputed coefficients).
+    pub fn program(&self) -> &RpnProgram {
+        &self.program
+    }
+    /// Layout and numerical configuration used at compilation.
+    pub fn config(&self) -> RopeVectorConfig {
+        self.config
+    }
+    /// Preflight all components, coefficients and BML intermediates.
+    pub fn validate_values(&self, input: &[f64]) -> Result<(), String> {
+        if input.len() != 2 * self.coefficients.len() {
+            return Err("RoPE input shape mismatch".into());
+        }
+        for (pair, (values, coefficients)) in input
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .zip(&self.coefficients)
+            .enumerate()
+        {
+            if values
+                .iter()
+                .any(|v| !v.is_finite() || v.abs() > self.config.input_bound)
+            {
+                return Err(format!("RoPE input bound at pair {pair}"));
+            }
+            validate_vector_dag(
+                &self.dag,
+                &self.roots,
+                &[values[0], values[1], coefficients[0], coefficients[1]],
+            )
+            .map_err(|e| format!("RoPE pair {pair}: {e}"))?;
+        }
+        Ok(())
+    }
+}
+
+fn rope_pair_dag(bound: f64) -> Result<(bml_domain::NodeSoA, [u32; 2]), String> {
+    use bml_domain::{transformer::BoundedOpConfig, BMLTransformer};
+    let config = BoundedOpConfig::rope(bound).map_err(|e| e.to_string())?;
+    let mut builder = BMLTransformer::new();
+    let inputs = [builder.var(0), builder.var(1)];
+    let coefficients = [builder.var(2), builder.var(3)];
+    let output = builder
+        .operation_bounded(&inputs, &coefficients, &config)
+        .map_err(|e| e.to_string())?;
+    Ok((builder.into_soa(), [output[0], output[1]]))
+}
+
+/// Compile all adjacent RoPE pairs with O(1) bytecode and O(width) coefficients.
+///
+/// Coefficients are precomputed from `angle = position * base^(-2*pair/head_dim)`;
+/// all arithmetic on model activations uses BML. Width is explicitly capped at
+/// 65,536 coordinates, dimensions must be positive/even, and all read addresses
+/// must fit u32. Accepted bounds still require actual-value finite-real preflight.
+pub fn bml_rope_vector_program(
+    input_base: u32,
+    output_slot: u32,
+    config: RopeVectorConfig,
+) -> Result<CheckedRopeProgram, String> {
+    let width = config
+        .heads
+        .checked_mul(config.head_dim)
+        .ok_or("RoPE dimensions overflow")?;
+    if config.heads == 0
+        || config.head_dim == 0
+        || !config.head_dim.is_multiple_of(2)
+        || width > 65536
+    {
+        return Err(
+            "RoPE needs positive even head dimensions and at most 65536 coordinates".into(),
+        );
+    }
+    if !config.frequency_base.is_finite() || config.frequency_base <= 0.0 {
+        return Err("invalid RoPE frequency base".into());
+    }
+    check_vector_read(input_base, width)?;
+    let (dag, roots) = rope_pair_dag(config.input_bound)?;
+    let mut coefficients = Vec::with_capacity(width as usize / 2);
+    for _ in 0..config.heads {
+        for pair in 0..config.head_dim / 2 {
+            let angle = if config.position == 0 {
+                0.0
+            } else {
+                f64::from(config.position)
+                    * config
+                        .frequency_base
+                        .powf(-2.0 * f64::from(pair) / f64::from(config.head_dim))
+            };
+            let (sin, cos) = angle.sin_cos();
+            if !sin.is_finite() || !cos.is_finite() {
+                return Err("nonfinite RoPE coefficient".into());
+            }
+            coefficients.push([cos, sin]);
+        }
+    }
+    let two_id = dag.const_pool.len() as u32;
+    let coefficient_base = two_id + 1;
+    let mut program = RpnProgram::new();
+    program.const_pool = dag.const_pool.clone();
+    program.const_pool.push(2.0);
+    program
+        .const_pool
+        .extend(coefficients.iter().flatten().copied());
+    let mut body = Vec::new();
+    for (component, &root) in roots.iter().enumerate() {
+        let scalar = crate::linearize(&dag, root);
+        body.extend(indexed_scalar_body(&scalar, |id, depth| {
+            let mut load = vec![RpnOp::Pick { depth }, RpnOp::Const(two_id), RpnOp::FMul];
+            if !id.is_multiple_of(2) {
+                load.extend([RpnOp::One, RpnOp::FAdd]);
+            }
+            load.push(if id < 2 {
+                RpnOp::VarIndexed { base: input_base }
+            } else {
+                RpnOp::ContextConstIndexed {
+                    base: coefficient_base,
+                }
+            });
+            load
+        }));
+        body.extend([RpnOp::Pick { depth: 1 }, RpnOp::Const(two_id), RpnOp::FMul]);
+        if component == 1 {
+            body.extend([RpnOp::One, RpnOp::FAdd]);
+        }
+        body.push(RpnOp::StoreResult { slot: output_slot });
+    }
+    body.push(RpnOp::Drop);
+    program.ops.push(RpnOp::Loop {
+        count: width / 2,
+        body_len: body.len() as u32,
+    });
+    program.ops.extend(body);
+    Ok(CheckedRopeProgram {
+        program,
+        config,
+        coefficients,
+        dag,
+        roots,
+    })
 }
 
 // ===========================================================================
@@ -478,6 +921,13 @@ mod tests {
             .iter()
             .filter(|op| matches!(op, RpnOp::FMul))
             .count();
-        assert_eq!(n_fmul, 2);
+        assert_eq!(n_fmul, 0);
+        assert_eq!(
+            prog.ops
+                .iter()
+                .filter(|op| matches!(op, RpnOp::StoreResult { .. }))
+                .count(),
+            2
+        );
     }
 }

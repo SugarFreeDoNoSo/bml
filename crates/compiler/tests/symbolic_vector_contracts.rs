@@ -18,7 +18,7 @@ fn evaluate(kernel: CompiledKernel, inputs: &[f64], weights: &[f64]) -> Vec<f64>
     constants.extend_from_slice(weights);
     let (slots, size) = match kernel.layout {
         OutputLayout::Scalars => (0, 0),
-        OutputLayout::Buffer => (1, kernel.signature.outputs),
+        OutputLayout::Buffer | OutputLayout::IndexedBuffer => (1, kernel.signature.outputs),
     };
     let mut buffer = ResultBuffer::new(slots, size);
     if slots != 0 {
@@ -46,7 +46,7 @@ fn evaluate(kernel: CompiledKernel, inputs: &[f64], weights: &[f64]) -> Vec<f64>
     }
     match kernel.layout {
         OutputLayout::Scalars => scalars,
-        OutputLayout::Buffer => buffer.into_vec(),
+        OutputLayout::Buffer | OutputLayout::IndexedBuffer => buffer.into_vec(),
     }
 }
 

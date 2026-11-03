@@ -366,9 +366,12 @@ fn compile_context_with_rms_bounds(
                 rms_bounds,
             )?
         };
-        if compiled.layout != OutputLayout::for_operation(operation)
-            || compiled.signature != signature
-        {
+        let expected_layout = if bounded_profile.is_some() {
+            BoundedProfile::output_layout(operation)
+        } else {
+            OutputLayout::for_operation(operation)
+        };
+        if compiled.layout != expected_layout || compiled.signature != signature {
             return Err("compiler symbolic signature mismatch".into());
         }
         remaining.max_programs -= compiled.graphs.len();
@@ -521,7 +524,12 @@ pub fn load_directory(
     for (index, (&(operation, width), descriptor)) in
         required.iter().zip(&manifest.kernels).enumerate()
     {
-        let layout = if shared_outputs {
+        let layout = if manifest.bounded_profile.is_some()
+            && matches!(operation, Operation::Norm | Operation::Softmax)
+            && descriptor.layout == OutputLayout::IndexedBuffer
+        {
+            OutputLayout::IndexedBuffer
+        } else if shared_outputs {
             OutputLayout::for_operation(operation)
         } else {
             OutputLayout::Scalars
@@ -559,7 +567,7 @@ pub fn load_directory(
                 manifest.rms_bounds,
             )?
         };
-        let programs = if layout == OutputLayout::Buffer {
+        let programs = if layout.uses_buffer() {
             1
         } else {
             signature.outputs

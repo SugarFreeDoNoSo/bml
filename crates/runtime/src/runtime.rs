@@ -178,8 +178,9 @@ impl Runtime {
         buf: &mut ResultBuffer,
     ) {
         for frag in fragments {
+            let context = frag.context(ctx);
             self.hot_loop
-                .execute_fragment_full(&frag.fragment, ctx, buf);
+                .execute_fragment_full(&frag.fragment, &context, buf);
         }
     }
 
@@ -228,8 +229,9 @@ impl Runtime {
             let count = crate::operation_schedule::wave_len(&accesses[start..], n_cores);
             let end = start + count;
             if count == 1 {
+                let context = fragments[start].context(ctx);
                 self.hot_loop
-                    .execute_fragment_full(&fragments[start].fragment, ctx, buf);
+                    .execute_fragment_full(&fragments[start].fragment, &context, buf);
             } else {
                 let accesses = &accesses[start..end];
                 crate::operation_schedule::run_wave(
@@ -238,7 +240,8 @@ impl Runtime {
                     buf,
                     |worker, fragment, view| {
                         let mut hot = HotLoop::with_capacity(accesses[worker].stack_capacity);
-                        hot.execute_fragment_store(&fragment.fragment, ctx, view);
+                        let context = fragment.context(ctx);
+                        hot.execute_fragment_store(&fragment.fragment, &context, view);
                     },
                 );
             }
@@ -328,77 +331,74 @@ mod tests {
     // Tests de ejecucion secuencial y paralela con OperationFragment
     // =====================================================================
 
+    fn rms_chain(count: usize) -> (Vec<OperationFragment>, ResultBuffer, Vec<f64>) {
+        use bml_compiler::op_fragments::compile_rmsnorm_fragment;
+        let mut buffer = ResultBuffer::new(count + 2, 4);
+        let mut expected = vec![3.0, -4.0, 0.0, 1.0];
+        let weights = [1.5, 0.5, -0.25, 2.0];
+        buffer.slot_mut(0).copy_from_slice(&expected);
+        buffer.slot_mut(count + 1).copy_from_slice(&weights);
+        let fragments = (0..count)
+            .map(|i| {
+                let rms = (expected.iter().map(|x| x * x).sum::<f64>() / 4.0 + 1e-5).sqrt();
+                for (value, weight) in expected.iter_mut().zip(weights) {
+                    *value = *value * weight / rms;
+                }
+                compile_rmsnorm_fragment(
+                    "norm",
+                    (i * 4) as u32,
+                    (i + 1) as u32,
+                    ((count + 1) * 4) as u32,
+                    4,
+                )
+            })
+            .collect();
+        (fragments, buffer, expected)
+    }
+
+    fn assert_normalization(buffer: &ResultBuffer, slot: usize, expected: &[f64]) {
+        for (&actual, &expected) in buffer.slot(slot).iter().zip(expected) {
+            assert!(
+                actual.is_finite() && (actual - expected).abs() < 2e-7,
+                "actual={actual}, expected={expected}"
+            );
+        }
+    }
+
     #[test]
     fn execute_fragments_sequential_basic() {
-        use bml_compiler::op_fragments::compile_rmsnorm_fragment;
-
-        let frag = compile_rmsnorm_fragment("test", 0, 1, 0, 4);
-        let mut runtime = Runtime::new(256, 16);
-        let mut buf = ResultBuffer::new(4, 8);
-
-        // Llenar slot 0 con valores
-        for i in 0..8 {
-            buf.write(0, i, (i as f64) + 1.0);
-        }
-
-        let ctx = bml_domain::EvalContext::new(&[], &[]);
-        // El test verifica que no pániquea. Los valores pueden ser NaN
-        // porque el patron del fragmento necesita ajustes en el diseno
-        // del Loop (empuje de contador + Dup para reutilizarlo).
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            runtime.execute_fragments_sequential(&[frag], &ctx, &mut buf);
-        }));
-        assert!(result.is_ok(), "no debe pániquear");
+        let (fragments, mut buffer, expected) = rms_chain(1);
+        let mut runtime = Runtime::new(2048, 16);
+        let context = bml_domain::EvalContext::new(&[], &[]);
+        runtime.execute_fragments_sequential(&fragments, &context, &mut buffer);
+        assert_normalization(&buffer, 1, &expected);
+        assert_eq!(runtime.stack_depth(), 0);
     }
 
     #[test]
     fn execute_with_cores_sequential() {
-        use bml_compiler::op_fragments::compile_rmsnorm_fragment;
-
-        let frags: Vec<_> = (0..3)
-            .map(|i| compile_rmsnorm_fragment(&format!("test_{i}"), i, i + 1, 0, 4))
-            .collect();
-
-        let mut runtime = Runtime::new(256, 16);
-        let mut buf = ResultBuffer::new(8, 8);
-        let ctx = bml_domain::EvalContext::new(&[], &[]);
-
-        // Ejecutar con 1 core (secuencial)
-        runtime.execute_with_cores(&frags, &ctx, &mut buf, 1);
-        // No pániquea = OK
+        let (fragments, mut buffer, expected) = rms_chain(3);
+        let mut runtime = Runtime::new(2048, 16);
+        let context = bml_domain::EvalContext::new(&[], &[]);
+        runtime.execute_with_cores(&fragments, &context, &mut buffer, 1);
+        assert_normalization(&buffer, 3, &expected);
     }
 
     #[test]
     fn execute_with_cores_parallel() {
-        use bml_compiler::op_fragments::compile_rmsnorm_fragment;
-
-        let frags: Vec<_> = (0..4)
-            .map(|i| compile_rmsnorm_fragment(&format!("test_{i}"), i, i + 1, 0, 4))
-            .collect();
-
-        let mut runtime = Runtime::new(256, 16);
-        let mut buf = ResultBuffer::new(8, 8);
-        let ctx = bml_domain::EvalContext::new(&[], &[]);
-
-        // Ejecutar con 4 cores (paralelo)
-        runtime.execute_with_cores(&frags, &ctx, &mut buf, 4);
-        // No pániquea = OK
+        let (fragments, mut buffer, expected) = rms_chain(4);
+        let mut runtime = Runtime::new(2048, 16);
+        let context = bml_domain::EvalContext::new(&[], &[]);
+        runtime.execute_with_cores(&fragments, &context, &mut buffer, 4);
+        assert_normalization(&buffer, 4, &expected);
     }
 
     #[test]
     fn execute_with_cores_more_fragments_than_cores() {
-        use bml_compiler::op_fragments::compile_rmsnorm_fragment;
-
-        // 8 fragmentos, 2 cores -> cambio de hot loop
-        let frags: Vec<_> = (0..8)
-            .map(|i| compile_rmsnorm_fragment(&format!("test_{i}"), i, i + 1, 0, 4))
-            .collect();
-
-        let mut runtime = Runtime::new(256, 16);
-        let mut buf = ResultBuffer::new(16, 8);
-        let ctx = bml_domain::EvalContext::new(&[], &[]);
-
-        runtime.execute_with_cores(&frags, &ctx, &mut buf, 2);
-        // No pániquea = OK (cambio de hot loop secuencial)
+        let (fragments, mut buffer, expected) = rms_chain(8);
+        let mut runtime = Runtime::new(2048, 16);
+        let context = bml_domain::EvalContext::new(&[], &[]);
+        runtime.execute_with_cores(&fragments, &context, &mut buffer, 2);
+        assert_normalization(&buffer, 8, &expected);
     }
 }

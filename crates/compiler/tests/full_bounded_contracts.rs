@@ -70,7 +70,7 @@ fn stored(kernel: &CompiledKernel) -> BmlGraph {
     BmlGraph::deserialize(&graph.serialize(), graph.threshold).unwrap()
 }
 fn validate(kernel: &CompiledKernel, limits: GraphLimits) -> Result<ValidatedGraph, GraphError> {
-    let buffered = kernel.layout == OutputLayout::Buffer;
+    let buffered = kernel.layout.uses_buffer();
     ValidatedGraph::new_with_external_constants(
         stored(kernel),
         kernel.signature.inputs,
@@ -90,7 +90,7 @@ fn execute(kernel: &CompiledKernel, input: &[f64], external: &[f64]) -> Vec<f64>
     let graph = validate(kernel, graph_limits()).unwrap();
     let mut constants = kernel.signature.fixed.clone();
     constants.extend_from_slice(external);
-    let mut buffer = if kernel.layout == OutputLayout::Buffer {
+    let mut buffer = if kernel.layout.uses_buffer() {
         ResultBuffer::from_vec(
             1,
             kernel.signature.outputs,
@@ -103,7 +103,7 @@ fn execute(kernel: &CompiledKernel, input: &[f64], external: &[f64]) -> Vec<f64>
     let value = graph
         .execute_indexed_symbolic_with_constants(input, &constants, &mut buffer)
         .unwrap();
-    if kernel.layout == OutputLayout::Buffer {
+    if kernel.layout.uses_buffer() {
         buffer.into_vec()
     } else {
         vec![value]

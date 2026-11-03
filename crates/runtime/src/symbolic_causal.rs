@@ -103,10 +103,13 @@ impl Kernel {
         checked_real: bool,
         indexed: bool,
     ) -> Result<Self, String> {
+        if compiled.layout == OutputLayout::IndexedBuffer && !indexed {
+            return Err("indexed outputs require the complete bounded profile".into());
+        }
         let signature = compiled.signature;
         let expected_programs = match compiled.layout {
             OutputLayout::Scalars => signature.outputs,
-            OutputLayout::Buffer => 1,
+            OutputLayout::Buffer | OutputLayout::IndexedBuffer => 1,
         };
         if signature.outputs == 0 || compiled.graphs.len() != expected_programs {
             return Err("symbolic output count mismatch".into());
@@ -136,8 +139,8 @@ impl Kernel {
                     graph,
                     signature.inputs,
                     constants,
-                    usize::from(compiled.layout == OutputLayout::Buffer),
-                    if compiled.layout == OutputLayout::Buffer {
+                    usize::from(compiled.layout.uses_buffer()),
+                    if compiled.layout.uses_buffer() {
                         signature.outputs
                     } else {
                         0
@@ -182,7 +185,7 @@ impl Kernel {
             Vec::new()
         };
         for program in &self.programs {
-            let mut buffer = if self.layout == OutputLayout::Buffer {
+            let mut buffer = if self.layout.uses_buffer() {
                 // Unwritten outputs must fail; zero-initialization would hide
                 // missing/out-of-range stores in a persisted program.
                 ResultBuffer::from_vec(1, self.outputs, vec![f64::NAN; self.outputs])
@@ -201,7 +204,7 @@ impl Kernel {
             if !value.is_finite() {
                 return Err("symbolic BML evaluation exceeded its numerical domain/range".into());
             }
-            if self.layout == OutputLayout::Buffer {
+            if self.layout.uses_buffer() {
                 result = buffer.into_vec();
                 if result.iter().any(|x| !x.is_finite()) {
                     return Err("symbolic outputs missing or outside numerical domain/range".into());

@@ -589,3 +589,59 @@ Then it rejects the request before expensive generation
     And loop-carried, crossing-slot and unknown indices retain the legacy buffer conversion semantics
     And independent fragments share input slices and write disjoint output slices without copying tensor data
     And shared interpreter stacks fall back to sequential execution and an independent generated-program oracle agrees
+
+  @C88
+  Scenario: Bounded RMS stages preserve the existing arithmetic with constant construction size
+    Given the original bounded RMS configuration and its seventeen canonical literals
+    When reduction, shared normalization and output stages execute every BML with real-domain checks
+    Then their chained outputs preserve the original builder bits and agree with an independent RMS oracle
+    And stage node counts are independent of width and invalid shapes or nodes do not mutate the builder
+
+  @C89
+  Scenario: Bounded softmax stages preserve ordered reduction and the explicit maximum contract
+    Given scores within declared bounds and their validated selected maximum
+    When exponential, ordered reduction, inverse and output stages execute with finite-real checks
+    Then outputs preserve the original builder bits for negative extrema, permutations, zeros and different widths
+    And all stages retain ten canonical literals and constant node counts without mutating on invalid construction
+
+  @C90
+  Scenario: Indexed RMS kernels keep code and scratch independent of model width
+    Given explicitly bounded RMS widths one, two hundred eighty-eight and two thousand forty-eight
+    When stored indexed programs execute with exact step and stack budgets
+    Then their outputs preserve historical v3 bits and match an independent learned-normalization oracle
+    And code, configuration literals and peak stack remain constant while executed work grows linearly
+    And construction, opcode, program and atomic-loop fragment limits remain enforced
+
+  @C91
+  Scenario: Indexed softmax kernels avoid width-sized bytecode and literal prefixes
+    Given the complete bounded profile and a selected maximum for each score vector
+    When compact loops preserve exponential and accumulation order through normalization
+    Then outputs match historical dense v4 bits and an independent stable softmax oracle
+    And stored instructions and ten configuration literals stay constant while exact work grows linearly
+    And inadequate budgets and invalid runtime contexts are rejected
+
+  @C92
+  Scenario: Complete RMS operation fragments carry configuration and normalize every output
+    Given distinct absolute input and weight bases, output slots, epsilon and declared bounds
+    When raw and runtime-managed fragments execute learned RMS normalization
+    Then every output agrees with an independent mean-square and root calculation and unrelated buffer cells remain unchanged
+    And large widths preserve constant code and stack and invalid declarations or addresses reject explicitly
+    And independent workers bind each fragment's own epsilon and constants while zero-width legacy operations write nothing
+
+  @C93
+  Scenario: Public normalization and RoPE helpers implement their separate numerical contracts
+    Given a native reciprocal-scale helper, explicit bounded RMS constructors and pair or vector RoPE configurations
+    When programs execute signed and zero inputs, nonunit weights and different frequencies and positions
+    Then legacy reciprocal scaling preserves IEEE range and signed-zero behavior while writing every output
+    And complete bounded RMS uses the shared mean, epsilon and root without treating the external reciprocal as epsilon
+    And RoPE writes both components of all pairs, including one thousand twenty-four pairs at position zero
+    And malformed layouts, parameters and bounded contexts are rejected without hiding native arithmetic in BML profiles
+
+  @C94
+  Scenario: Indexed output manifests preserve historical artifacts and linear prefix storage
+    Given old scalar, buffered and bounded artifacts plus the new explicit indexed buffer layout
+    When manifests are loaded with zero construction budget and stored programs are executed
+    Then new v4 RMS and softmax retain only seventeen and ten fixed literals and historical v4 dense buffers still load
+    And v1, v2, v3 and unrelated v4 operation families reject the new layout
+    And literal, output and complete-prefix-plan mismatches fail without confirming cache positions
+    And instruction and literal counts grow linearly with context while every required prefix remains present

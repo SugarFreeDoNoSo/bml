@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 
 fn fragment(ops: Vec<RpnOp>) -> OperationFragment {
     OperationFragment {
+        const_pool: None,
         fragment: Fragment { ops },
         // Deliberately unrelated metadata: bytecode decides dependencies.
         meta: FragmentMeta {
@@ -204,6 +205,22 @@ fn empty_or_zero_sized_buffers_keep_sequential_behavior() {
         runtime.execute_with_cores(&[], &context, &mut buffer, 2);
         runtime.execute_with_cores(&[store(0, 0), store(0, 1)], &context, &mut buffer, 2);
         assert!(buffer.data().is_empty());
+    }
+}
+
+#[test]
+fn per_operation_constant_pools_bind_in_sequential_and_parallel_execution() {
+    let mut first = store(0, 0);
+    first.const_pool = Some(vec![11.0]);
+    let mut second = store(0, 1);
+    second.const_pool = Some(vec![17.0]);
+    let third = store(0, 2); // Keeps the shared context.
+    let fragments = [first, second, third];
+    let context = EvalContext::new(&[], &[61.0]);
+    for cores in [0, 1, 2, 3, 8] {
+        let mut buffer = ResultBuffer::new(3, 1);
+        Runtime::new(32, 0).execute_with_cores(&fragments, &context, &mut buffer, cores);
+        assert_eq!(buffer.data(), &[11.0, 17.0, 61.0]);
     }
 }
 

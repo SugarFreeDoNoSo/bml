@@ -237,6 +237,129 @@ impl BMLTransformer {
         self.sub(scaled, twice_product_bound)
     }
 
+    fn bounded_rms_stage_literals(
+        &mut self,
+        input: &[NodeId],
+        arity: usize,
+        config: &BoundedRmsConfig,
+    ) -> Result<[NodeId; 17], BoundedBuildError> {
+        if input.len() != arity {
+            return Err(BoundedBuildError::Shape);
+        }
+        for &node in input {
+            if node as usize >= self.soa.len() {
+                return Err(BoundedBuildError::InvalidNode(node));
+            }
+        }
+        // Every stage has fixed size; this also covers all helper nodes.
+        if self
+            .soa
+            .len()
+            .checked_add(16384)
+            .is_none_or(|size| size > u32::MAX as usize)
+            || self.soa.const_pool.len() > u32::MAX as usize - 17
+        {
+            return Err(BoundedBuildError::SizeOverflow);
+        }
+        let mut literals = [0; 17];
+        for (node, value) in literals.iter_mut().zip(config.fixed_literals()) {
+            *node = self.constant(value);
+        }
+        Ok(literals)
+    }
+
+    /// Build one bounded RMS reduction step from `[total, x]`.
+    ///
+    /// The result is `total + square(normalize(x))`, using exactly the
+    /// arithmetic of [`Self::rms_norm_bounded`]. Initialize `total` with
+    /// `config.fixed_literals()[4]`, then apply this stage once per activation
+    /// in input order. The stage adds the same 17 fixed literals and a constant
+    /// number of nodes, independent of the configured width.
+    ///
+    /// Input shape, node IDs and index capacity are checked before mutation.
+    /// Original inputs must satisfy [`BoundedRmsConfig::validate_values`]; every
+    /// BML intermediate still requires finite-real evaluation checks.
+    pub fn rms_norm_bounded_reduce(
+        &mut self,
+        input: &[NodeId],
+        config: &BoundedRmsConfig,
+    ) -> Result<NodeId, BoundedBuildError> {
+        let [c64, two, twice_m, inv_m, ..] = self.bounded_rms_stage_literals(input, 2, config)?;
+        let normalized = self.bounded_normalize(input[1], twice_m, inv_m, two, c64);
+        let square = self.mul_signed(normalized, normalized);
+        Ok(self.bounded_positive_add(input[0], square, two))
+    }
+
+    /// Build the shared bounded RMS preparation from `[total]`.
+    ///
+    /// `total` must be the result of the configured number of ordered
+    /// [`Self::rms_norm_bounded_reduce`] steps. The roots are
+    /// `[inverse_root, shift]`, consumed by [`Self::rms_norm_bounded_output`].
+    /// This stage adds the same 17 fixed literals and a constant number of
+    /// nodes, independent of width. Shape, node IDs and capacity errors leave
+    /// the builder unchanged; finite-real checks remain required at execution.
+    pub fn rms_norm_bounded_prepare(
+        &mut self,
+        input: &[NodeId],
+        config: &BoundedRmsConfig,
+    ) -> Result<[NodeId; 2], BoundedBuildError> {
+        let [c64, two, _, _, _, inv_width, half, log_bound, twice_log_bound, inv_log_bound, k, ..] =
+            self.bounded_rms_stage_literals(input, 1, config)?;
+        let one = self.one();
+        let variance = self.bounded_positive_mul(input[0], inv_width, c64);
+        let log_variance = self.log2(variance);
+        let normalized_log =
+            self.bounded_normalize(log_variance, twice_log_bound, inv_log_bound, two, c64);
+        let normalized_half = self.bounded_normalize(half, two, one, two, c64);
+        let half_log = self.bounded_product_from_normalized(
+            normalized_log,
+            normalized_half,
+            log_bound,
+            twice_log_bound,
+            two,
+            c64,
+        );
+        let root = self.exp2(half_log);
+        let log_root = self.log2(root);
+        let minus_log_root = self.bounded_neg(log_root, c64);
+        let inverse_root = self.exp2(minus_log_root);
+        let shift = self.bounded_positive_mul(k, root, c64);
+        Ok([inverse_root, shift])
+    }
+
+    /// Build one bounded RMS output from `[x, weight, inverse_root, shift]`.
+    ///
+    /// `x` is the original activation, not the normalized reduction operand;
+    /// the last two operands come from [`Self::rms_norm_bounded_prepare`]. The
+    /// result uses exactly the weighted output formula of
+    /// [`Self::rms_norm_bounded`]. Weight nodes may reference external constants.
+    /// Only the same 17 configuration literals are appended to the owned pool.
+    ///
+    /// Shape, node IDs and capacity are checked before mutation. Graph size is
+    /// independent of width; runtime range and finite-real checks still apply.
+    pub fn rms_norm_bounded_output(
+        &mut self,
+        input: &[NodeId],
+        config: &BoundedRmsConfig,
+    ) -> Result<NodeId, BoundedBuildError> {
+        let [c64, two, twice_m, inv_m, _, _, _, _, _, _, k, twice_k, inv_k, twice_w, inv_w, product_bound, twice_product_bound] =
+            self.bounded_rms_stage_literals(input, 4, config)?;
+        let x = self.bounded_normalize(input[0], twice_m, inv_m, two, c64);
+        let numerator = self.bounded_add(x, input[3], two);
+        let ratio = self.bounded_positive_mul(numerator, input[2], c64);
+        let normalized_x = self.sub(ratio, k);
+        let unit_x = self.bounded_normalize(normalized_x, twice_k, inv_k, two, c64);
+        let unit_weight = self.bounded_normalize(input[1], twice_w, inv_w, two, c64);
+        Ok(self.bounded_product_from_normalized(
+            unit_x,
+            unit_weight,
+            product_bound,
+            twice_product_bound,
+            two,
+            c64,
+        ))
+    }
+
     /// Build RMSNorm with explicitly bounded arithmetic, separate from v1/v2.
     ///
     /// The mathematical result is `x[i]*weight[i]/sqrt(mean(x*x)+epsilon)`.

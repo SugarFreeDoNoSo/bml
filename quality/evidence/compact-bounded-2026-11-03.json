@@ -1,0 +1,367 @@
+{
+  "schema": "bml.compact-bounded-validation.v1",
+  "recorded_utc": "2026-11-03T22:59:48.699716+00:00",
+  "base_commit": "c05df2e9dcbf7df559dd5edec9b607160351bd6e",
+  "scope": "Compact bounded v4 RMS/softmax, public RMS/RoPE programs, owned operation constants and historical artifact compatibility. This delivery does not complete the global specification goal.",
+  "toolchain": "rustc 1.98.1 (48a229cea 2026-09-01), pinned by rust-toolchain.toml",
+  "verification_environment": {
+    "PATH_prefix": "/tmp/bml-cargo/bin",
+    "CARGO_HOME": "/tmp/bml-cargo",
+    "RUSTUP_HOME": "/tmp/bml-rustup",
+    "CARGO_TARGET_DIR": "/home/dev/Work/bml/target/global-restart-build",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "TMPDIR": "/home/dev/Work/bml/target/tool-install-tmp",
+    "OPENSPEC_TELEMETRY": "0 (OpenSpec only)"
+  },
+  "final_checks": [
+    {
+      "command": [
+        "./scripts/check.sh",
+        "origin/master"
+      ],
+      "exit_code": 0,
+      "log": {
+        "path": "target/quality/compact-bounded-worktree-gate.log",
+        "sha256": "703571e490af5933d8cb045b45552aa8d80cb594b6c67b138f0239f27726e0e9"
+      },
+      "exit_record": {
+        "path": "target/quality/compact-bounded-worktree-gate.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      },
+      "results": {
+        "rust_passed": 845,
+        "rust_ignored": 17,
+        "python_passed": 86,
+        "historical_contract_discrepancies": 0,
+        "registered_contracts": 94,
+        "total_contracts": 94,
+        "clippy_diagnostics": 61,
+        "clippy_baseline": 192,
+        "clippy_new": 0,
+        "changed_rust_formatting": "passed"
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "log": {
+        "path": "target/quality/compact-bounded-all-features.log",
+        "sha256": "1045de89d65b8b32c94520dd2607928ce0ef4ab1d92b34598c5901990835bc1a"
+      },
+      "exit_record": {
+        "path": "target/quality/compact-bounded-all-features.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      },
+      "scope": "Compilation with all features; not an all-feature runtime test claim."
+    },
+    {
+      "command": [
+        "npx",
+        "--yes",
+        "--package",
+        "@fission-ai/openspec@1.13.0",
+        "openspec",
+        "validate",
+        "--all",
+        "--strict"
+      ],
+      "exit_code": 0,
+      "log": {
+        "path": "target/quality/compact-bounded-openspec-final.log",
+        "sha256": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7"
+      },
+      "exit_record": {
+        "path": "target/quality/compact-bounded-openspec-final.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      },
+      "results": {
+        "passed": 11,
+        "failed": 0
+      }
+    }
+  ],
+  "focused_checks": [
+    {
+      "log": {
+        "path": "target/quality/bounded-rms-stage-contracts.log",
+        "sha256": "7dda9d725bfacded200a9aea88ae1bbd4c037eed2a08062a079d6c9eee4d7e29"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 4,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    },
+    {
+      "log": {
+        "path": "target/quality/bounded-rms-stage-compatibility.log",
+        "sha256": "5a5ac3fafa7d48399692a3dca1297219802fffe94c96d7a063c006febd11da15"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 5,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    },
+    {
+      "log": {
+        "path": "target/quality/bounded-softmax-stage-contracts.log",
+        "sha256": "c62544f8227bc8b46606d9906c71ccc37022d5dbac940a72b321d2491dcb33e8"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 5,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    },
+    {
+      "log": {
+        "path": "target/quality/bounded-softmax-stage-compatibility.log",
+        "sha256": "0ff7b0706888a1f970b03da6475512a36dcfb6bd0c8ec64b34a8889787032f8a"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 6,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    },
+    {
+      "log": {
+        "path": "target/quality/compact-bounded-rms-contracts.log",
+        "sha256": "784bc0cda99dc206f1f153c0e36a98dbd9acf565b58249f2d62a5ae36cdbc9e5"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 4,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    },
+    {
+      "log": {
+        "path": "target/quality/compact-bounded-softmax-contracts.log",
+        "sha256": "8f58b49b8d0349b7696b35d902d7f25ffbde9111fe213a01deb1b42572c9513c"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 3,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    },
+    {
+      "log": {
+        "path": "target/quality/owned-rms-runtime-contracts.log",
+        "sha256": "40b076d986017d44546e6f6ea27a920863e9509b19a520967e47595cdb378927"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 62,
+          "failed": 0,
+          "ignored": 0
+        },
+        {
+          "status": "ok",
+          "passed": 5,
+          "failed": 0,
+          "ignored": 0
+        },
+        {
+          "status": "ok",
+          "passed": 9,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    },
+    {
+      "log": {
+        "path": "target/quality/rms-rope-focused.log",
+        "sha256": "06efd231bed4a0b4ec25e27be900c7d6209a8615b9d86582cfc8c10158456d4e"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 8,
+          "failed": 0,
+          "ignored": 0
+        },
+        {
+          "status": "ok",
+          "passed": 4,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    },
+    {
+      "log": {
+        "path": "target/quality/rms-rope-compiler-final.log",
+        "sha256": "503d98839fec833aca1ee916ade2f0dbae0325ff8c5b3c0c490184c83620dd81"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 5,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    },
+    {
+      "log": {
+        "path": "target/quality/indexed-buffer-artifact-focused.log",
+        "sha256": "e605e1980ff83077058cb2bafbf5c87d4d7e72b5ca13abc7e747f4cd461051fd"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 6,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    },
+    {
+      "log": {
+        "path": "target/quality/indexed-buffer-plan-storage.log",
+        "sha256": "73285e01c26f76276098c89353c370570a31621ccef9bf8be632aaffa8779afd"
+      },
+      "test_results": [
+        {
+          "status": "ok",
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        }
+      ],
+      "scope": "Focused result before the final canonical gate; final integration is covered by that gate."
+    }
+  ],
+  "superseded_failed_attempts": [
+    {
+      "log": {
+        "path": "target/quality/compact-bounded-lint.log",
+        "sha256": "7cb7c9d81f161be7323593d327851923d479689195d907d7b12512ce7e7a70f3"
+      },
+      "exit_code": 1,
+      "resolution": "Two new chunks_exact_to_as_chunks suggestions; replaced pair iteration without changing numerical operations."
+    },
+    {
+      "log": {
+        "path": "target/quality/compact-bounded-worktree-gate-attempt-1.log",
+        "sha256": "021595da1b500f47b5182d12bf2f705d592e8842b7de98315f7df24414e77009"
+      },
+      "exit_code": 101,
+      "resolution": "Obsolete cfg(test) assumption that RMS begins with Loop; corrected to check owned configuration and presence of Loop(count=8) after initialization."
+    }
+  ],
+  "source_sha256_at_final_gate": {
+    "crates/compiler/src/bml_ops.rs": "57fb806c13085b36cf2a656753bb6725b102e3957b8e6f418b69e4a1dba4eea4",
+    "crates/compiler/src/op_fragments.rs": "b31feacc8de07f42357815756164901078be96704006a2a5528a594f1191845e",
+    "crates/compiler/src/operation_rms.rs": "4a1c8d90fff0b64f3b106c1ee22cae0c6e7c2b9ec924104b494bed91e48a304a",
+    "crates/compiler/src/symbolic_artifact.rs": "4cc67d2dbaf4ae97b59c3a160c06cd95982194799e35b28ce1f0b56754235d46",
+    "crates/compiler/src/symbolic_bounded.rs": "5bbbc11785b282ac0cd6de9e12daeb469fe5cc303ef32a424f89614b4578b8b3",
+    "crates/compiler/src/symbolic_bounded_rms.rs": "77e589d7250aa23f81642ec756531918094a5fa72b0c975ea510984304a265f4",
+    "crates/compiler/src/symbolic_bounded_softmax.rs": "fb454b6941573255fd89bba8f4da191318d328179d49e571a22ebec52f8eb44e",
+    "crates/compiler/src/symbolic_kernels.rs": "5d96bccb18e2f3b011a8a7f030bc43d4df169f8d722ba1e8898f3fa13871195b",
+    "crates/compiler/tests/compact_bounded_rms_contracts.rs": "341b1a86d35b0a5cffbafc8963e1e70cb404440cb2edb753ba98efd08463daec",
+    "crates/compiler/tests/compact_bounded_softmax_contracts.rs": "0782bd7fdf52e0c42a501f2c5edc06a7f3b8c8082a0c10c8ce6753f7b25705e7",
+    "crates/compiler/tests/full_bounded_contracts.rs": "fdae7083281897b0808d95737493c1c119d24b0bc848fd9557db8ffad28cfda9",
+    "crates/compiler/tests/indexed_buffer_artifact_contracts.rs": "95794c7eecd533c4d3b5956fa2ccf368d906d5d0e3fcd7987586e0c817cb2404",
+    "crates/compiler/tests/symbolic_vector_contracts.rs": "d0b406346bf575e4fd78b6a8500657264e8ac264952a15baf4f049330d27bbbc",
+    "crates/domain/src/transformer/bounded.rs": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+    "crates/domain/src/transformer/bounded_ops.rs": "f153b7835cabd71e6a1f8bd01f1b29335f0ac01cdfd17733a59c79e93cbcbef8",
+    "crates/domain/tests/bounded_rms_stage_contracts.rs": "3fb8e5cc2d354ce31e9628e8c3517277164bbded15ffa74aa546f83ed1d91986",
+    "crates/domain/tests/bounded_softmax_stage_contracts.rs": "f748b754fa680ba14f165566dc149f8c4e3758dda26dfc12dacf68af8c0980c5",
+    "crates/runtime/src/operation_schedule.rs": "dbac53a858a7d38f6089589f4320b44a6db55227bf7ae71441dea42dd7017abd",
+    "crates/runtime/src/runtime.rs": "404d8868f7e25e6e11eca474f7d89bdaaf5a88c845f0a9e86438d9f202c3c9aa",
+    "crates/runtime/src/symbolic_causal.rs": "467f5de3786343666f4f801a31c52b416b0587564d3be856bed40be3b47e232b",
+    "crates/runtime/tests/operation_norm_rope_contracts.rs": "7e5569443f1bf48c219e9cdd984120a767644ffd4bcd5298b8e544d9e6389577",
+    "crates/runtime/tests/operation_rms_contracts.rs": "1f95afa2459c59f4f24ebae733e11dace5204cb0eeeb4e66950f271096125674",
+    "crates/runtime/tests/operation_schedule_contracts.rs": "eb7acaaba5e622a15bbf6c771b8f4dae6b7ce370c5faede9ad44cace14c17e83",
+    "Cargo.toml": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+    "Cargo.lock": "a76bdb0d79ca9fe1539694bf2549ff5a981b52a87c052c1bdb855063812cfc0f",
+    "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1"
+  },
+  "evidence": [
+    {
+      "path": "quality/evidence/compact-bounded-2026-11-03.md",
+      "sha256": "a2c201643879df43b83ebd686d5d7eb8a5ca2d02d4c399b36b386d1d006b9767"
+    },
+    {
+      "path": "quality/evidence/compact-bounded-model-2026-11-03.json",
+      "sha256": "88571edbd5e8bc34e5245e798f1ad3aa0ee83e4ed5facc7fff73c683616b146a"
+    },
+    {
+      "path": "quality/evidence/compact-bounded-hot-loop-2026-11-03.json",
+      "sha256": "1a1e13623b4c26e4ed139be1289611afd32f864201f2cf1f28d265a34635bd1e"
+    }
+  ],
+  "model_measurement": "Two completed Stories15M tokens, each with 32000 finite logits; argmax 9038/2501 agrees with the native path. Preserved measured source snapshot and explicit post-run style/comment/cfg(test) changes are in the model report. No claim of rerunning inference after those changes.",
+  "compatibility": {
+    "indexed_buffer": "Only v4 Norm/Softmax; historical v4 Buffer remains loadable and v1-v3 reject the new layout. Tests load persisted programs with max_nodes=0.",
+    "operation_fragment_source_change": "Manual OperationFragment struct literals must supply the new const_pool field. Runtime and dependency analysis bind the same owned pool; None preserves the parent pool.",
+    "legacy_rms_scale": "bml_rmsnorm_program still accepts a precomputed reciprocal and performs two native IEEE multiplications. Full bounded RMS is an explicit separate API.",
+    "numerical_domains": "Native IEEE and checked bounded BML contracts remain distinct; preflight declarations do not automatically validate buffers bound by callers."
+  },
+  "storage": {
+    "rms_stored_ops": 1934,
+    "rms_fixed_literals": 17,
+    "softmax_stored_ops": 1797,
+    "softmax_fixed_literals": 10,
+    "stories_program_bytes_before": 1815059,
+    "stories_program_bytes_after": 64581,
+    "external_gguf_unchanged": true,
+    "context_plan": "All prefixes retained; storage tested affine at contexts 2,4,8,16. MAX_PROGRAMS=4096 remains; no context-2048 claim."
+  },
+  "remaining_scope": [
+    "Public attention, MLP/down, complete layer layout and residual composition",
+    "Historical distributed compiler/worker/CLI and final placeholder audit",
+    "Larger v4 models and additional prompts",
+    "Actual ARM/NEON, PMU/L1 and hardware stress",
+    "Global coverage/mutation gates"
+  ],
+  "excluded_local_paths": [
+    ".serena/"
+  ],
+  "limitations": [
+    "Local target/quality logs, model weights, binaries and generated artifacts are ignored and are not uploaded by this commit. Reports retain summaries and hashes.",
+    "No llama.cpp equivalence, controlled speedup, L1 residency or completed global milestone claim."
+  ]
+}
