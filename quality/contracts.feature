@@ -697,3 +697,12 @@ Then it rejects the request before expensive generation
     And omitting a layer changes the logits
     And persisted bounded kernels load with zero construction-node budget and produce the same results
     And range execution leaves cache position unchanged for the coordinator to commit
+
+
+  @C101
+  Scenario: Symbolic layer sessions prepare and commit independently
+    Given persisted bounded kernels, an explicit layer range and a bounded F32 KV cache
+    When separate sessions prepare, abort, retry, commit and reset positions
+    Then composed logits preserve the full causal forward bits across a three-layer GQA model
+    And invalid ranges, budgets, positions and pending-state transitions reject without advancing committed state
+    And each session owns independent cache state and reset starts a fresh prefix

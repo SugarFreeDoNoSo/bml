@@ -986,5 +986,13 @@
       "invalid_range_position_shape_and_nonfinite_input_fail_before_writes",
       "three_layer_gqa_model_composes_separate_ranges_across_tokens"
     ]
+  },
+  "C101": {
+    "package": "bml-runtime",
+    "target": "symbolic_session_contracts",
+    "tests": [
+      "persisted_sessions_prepare_abort_commit_and_reset_without_losing_causal_equivalence",
+      "session_rejects_invalid_layout_budget_and_uncommitted_errors"
+    ]
   }
 }
