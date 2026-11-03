@@ -100,6 +100,9 @@ pub fn compile_distributed(
     layers_per_fragment: u32,
     include_embeddings: bool,
 ) -> Result<Vec<DistributedFragment>, String> {
+    if layers_per_fragment == 0 {
+        return Err("layers_per_fragment must be greater than zero".into());
+    }
     let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
     let config = read_model_config(&parser)?;
 
@@ -118,7 +121,9 @@ pub fn compile_distributed(
     // Fragmentar capas
     let mut layer = 0u32;
     while layer < config.n_layers {
-        let layer_end = (layer + layers_per_fragment).min(config.n_layers);
+        let layer_end = layer
+            .saturating_add(layers_per_fragment)
+            .min(config.n_layers);
 
         let frag = compile_layer_range(
             &parser, &config, layer, layer_end, head_dim, n_kv_heads, false,
@@ -930,6 +935,9 @@ pub fn compile_distributed_bml(
     gguf_path: &Path,
     layers_per_fragment: u32,
 ) -> Result<(Vec<DistributedFragment>, BmlWeightPool), String> {
+    if layers_per_fragment == 0 {
+        return Err("layers_per_fragment must be greater than zero".into());
+    }
     let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
     let config = read_model_config(&parser)?;
 
@@ -948,7 +956,9 @@ pub fn compile_distributed_bml(
 
     let mut layer = 0u32;
     while layer < config.n_layers {
-        let layer_end = (layer + layers_per_fragment).min(config.n_layers);
+        let layer_end = layer
+            .saturating_add(layers_per_fragment)
+            .min(config.n_layers);
         let frag = compile_layer_range_bml(
             &parser, &config, layer, layer_end, head_dim, n_kv_heads, false, &mut pool,
         )?;
