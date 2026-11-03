@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "scope": "Isolated integration of segmented FIFO WorkQueue and reclamation-sensitive upstream Loom probes",
+  "base_commit": "9aa2e5d",
+  "tested_tree_before_evidence": "b750f9ae227da7cf285a6c44797e929a6bc8c7a4",
+  "selection": "WorkQueue/WorkStealer and regression in queue.rs, SegQueue probe generator and two model/ledger files. PendingWork and other pre-existing changes excluded via temporary index; worktree file untouched.",
+  "preserved_queue_worktree_sha256": "57d522754fe8c814afbcd6d271aeb7ebd0c3f69012be2e80ff2b842b664aa3a9",
+  "review": "SegQueue reserves head before reading. Each non-final consumer publishes READ after its payload access. Block::destroy defers through DESTROY to unfinished consumers; the final consumer resumes destruction. Before the physical free, the probe checks READ for all non-final slots using Relaxed loads. The guard prevents executing an unsafe free in the deliberately broken control.",
+  "upstream": "crossbeam-queue 0.3.13/src/seg_queue.rs",
+  "upstream_sha256": "f4d2e9500ef31a31883075c3b151b8538fa664422e15e1c2fa9045b329aec270",
+  "probe_bounds": {"preemption_bound": 2, "max_branches": 10000, "allocation_ids": 128},
+  "probe_runs": [
+    {"directory": "target/quality/segmented-premature-4-positive", "lap": 4, "exit_code": 0, "passed": 5, "log_sha256": "ed923cbaf0761685814de2a1dda6ffaf5d5015093aad1731055a15f3800f3011"},
+    {"directory": "target/quality/segmented-premature-32-positive", "lap": 32, "exit_code": 0, "passed": 5, "log_sha256": "c5945d039bc846e73c23f0547bba30e8dffedd82658eeddb8812def275951511"},
+    {"directory": "target/quality/segmented-premature-4-negative", "lap": 4, "exit_code": 101, "failed": 1, "log_sha256": "fb50a38380a6d36ad2c6f39c0acc2dc8cf36d492ea7eb972613b09de30b4cc49"},
+    {"directory": "target/quality/segmented-premature-32-negative", "lap": 32, "exit_code": 101, "failed": 1, "log_sha256": "9409af321dbd786b548eff1e128f08ef4b897716787a408e520c4bf0c793f413"}
+  ],
+  "probe_commands": "python3 tools/probe_segmented_work_loom.py --source <cached-crossbeam-queue-0.3.13> --output <new-directory> --lap <4|32> [--premature-retirement]; cargo generate-lockfile --offline --manifest-path <directory>/Cargo.toml; cargo test --manifest-path <directory>/Cargo.toml --offline --locked --lib. Negative runs filter slots::drop_once_across_retirement_and_abandoned_tail -- --exact. DEV/TEST DEBUG=0 and CARGO_INCREMENTAL=0.",
+  "negative_control": "Replace the deferring return in Block::destroy with break. Both sizes fail the pre-free guard: premature segment release: consumer has not published READ.",
+  "gate": {
+    "snapshot": "target/delivery-snapshots/segmented-final",
+    "command": "TMPDIR=/home/dev/Work/bml/target/tool-install-tmp CARGO_PROFILE_TEST_DEBUG=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/home/dev/Work/bml/target/segmented-final-gate-build ./scripts/check.sh origin/master",
+    "fresh_build": true,
+    "exit_code": 0,
+    "rust_tests_passed": 631,
+    "python_tests_passed": 63,
+    "historical_discrepancies": 0,
+    "traceability_registered": "28/28",
+    "new_clippy_diagnostics": 0,
+    "log": "target/quality/segmented-isolated-gate.log",
+    "log_sha256": "5be0ad9eff74ef8f227fcebeb5935fedcdde322b9d4356213d2a03c41926d7a0"
+  },
+  "environment": "Initial gate attempt exhausted disk and linker aborted. Removed historical generated delivery builds, retained logs/evidence, and repeated complete gate successfully.",
+  "limits": "Five bounded models and state preconditions, not general weak-memory/liveness proof. Raw block pointer validity is not fully instrumented. WorkStealer replaces the public deque-specific handle; FIFO and unbounded push remain, steal returns Success/Empty. This delivery does not establish global mutation, hardware measurements, publication or closure of all specs."
+}

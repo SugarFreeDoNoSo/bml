@@ -1,57 +1,72 @@
 //! Cola lock-free con work-stealing para distribución de fragmentos.
 //!
-//! Usa `crossbeam-deque` (Chase-Lev deque) para una cola lock-free por nodo.
+//! Usa `crossbeam-queue::SegQueue` para una cola FIFO lock-free por nodo.
 //! Cuando un nodo vacía su cola, puede robar trabajo de otro nodo.
 //!
 //! # Diseño
 //!
-//! Cada nodo tiene un `Worker` con su cola local. El coordinador empuja
-//! fragmentos a las colas via `Stealer`. Los workers pueden robar de
-//! otros workers cuando su cola está vacía.
+//! Cada nodo y sus handles de robo comparten una cola segmentada. Pop reclama
+//! el índice antes de leer el slot; los segmentos agotados se retiran, sin la
+//! lectura especulativa seguida de CAS del antiguo deque circular. Los handles
+//! de robo solo permiten extraer trabajo; el propietario publica con push.
 
 use bml_compiler::Fragment;
-use crossbeam::deque::{Steal, Stealer, Worker};
+use crossbeam::{deque::Steal, queue::SegQueue};
+use std::sync::Arc;
 
-/// Cola de trabajo de un nodo.
+/// Handle clonable de extracción FIFO para otros nodos.
 ///
-/// Contiene un `Worker` (local) y un `Stealer` (para que otros roben).
+/// Reemplaza el handle específico del deque. La cola segmentada reclama la
+/// posición antes de leer datos; esta interfaz no expone publicación remota.
+#[derive(Clone)]
+pub struct WorkStealer {
+    queue: Arc<SegQueue<Fragment>>,
+}
+
+impl WorkStealer {
+    /// Transfiere un fragmento o informa vacío. No devuelve Retry.
+    pub fn steal(&self) -> Steal<Fragment> {
+        match self.queue.pop() {
+            Some(fragment) => Steal::Success(fragment),
+            None => Steal::Empty,
+        }
+    }
+}
+
+/// Cola FIFO segmentada de un nodo, compartida con handles de robo.
 pub struct WorkQueue {
-    worker: Worker<Fragment>,
-    stealer: Stealer<Fragment>,
+    queue: Arc<SegQueue<Fragment>>,
+    stealer: WorkStealer,
 }
 
 impl WorkQueue {
     /// Crea una nueva cola de trabajo.
     pub fn new() -> Self {
-        let worker = Worker::new_fifo();
-        let stealer = worker.stealer();
-        Self { worker, stealer }
+        let queue = Arc::new(SegQueue::new());
+        let stealer = WorkStealer {
+            queue: Arc::clone(&queue),
+        };
+        Self { queue, stealer }
     }
 
     /// Empuja un fragmento a la cola local.
     pub fn push(&self, fragment: Fragment) {
-        self.worker.push(fragment);
+        self.queue.push(fragment);
     }
 
     /// Saca un fragmento de la cola local (no bloqueante).
     pub fn pop(&self) -> Option<Fragment> {
-        self.worker.pop()
+        self.queue.pop()
     }
 
     /// Retorna el stealer para que otros nodos puedan robar.
-    pub fn stealer(&self) -> &Stealer<Fragment> {
+    pub fn stealer(&self) -> &WorkStealer {
         &self.stealer
     }
 
     /// Intenta robar un fragmento de otro nodo.
-    pub fn steal_from(&self, other: &Stealer<Fragment>) -> Option<Fragment> {
-        loop {
-            match other.steal() {
-                Steal::Success(fragment) => return Some(fragment),
-                Steal::Empty => return None,
-                Steal::Retry => continue,
-            }
-        }
+    pub fn steal_from(&self, other: &WorkStealer) -> Option<Fragment> {
+        other.queue.pop()
     }
 }
 
@@ -124,6 +139,38 @@ mod tests {
     }
 
     #[test]
+    fn segmented_work_ownership_is_unique_across_turnover_and_owner_drop() {
+        let owner = WorkQueue::new();
+        let thieves: Vec<_> = (0..2).map(|_| owner.stealer().clone()).collect();
+        for id in 1..=96 {
+            owner.push(make_fragment(id));
+        }
+        let handles: Vec<_> = thieves
+            .into_iter()
+            .map(|thief| {
+                std::thread::spawn(move || {
+                    let mut ids = Vec::new();
+                    while let Steal::Success(fragment) = thief.steal() {
+                        ids.push(fragment.ops.len());
+                    }
+                    ids
+                })
+            })
+            .collect();
+        let mut ids = Vec::new();
+        if let Some(fragment) = owner.pop() {
+            ids.push(fragment.ops.len());
+        }
+        // Handles retain ownership of the queue after the original node exits.
+        drop(owner);
+        for handle in handles {
+            ids.extend(handle.join().unwrap());
+        }
+        ids.sort_unstable();
+        assert_eq!(ids, (1..=96).collect::<Vec<_>>());
+    }
+
+    #[test]
     fn push_pop_single_queue() {
         let q = WorkQueue::new();
         q.push(make_fragment(3));
@@ -186,8 +233,8 @@ mod tests {
         use std::thread;
 
         // Crear 4 workers y sus stealers
-        let workers: Vec<_> = (0..4).map(|_| Worker::<Fragment>::new_fifo()).collect();
-        let stealers: Vec<Stealer<Fragment>> = workers.iter().map(|w| w.stealer()).collect();
+        let workers: Vec<_> = (0..4).map(|_| WorkQueue::new()).collect();
+        let stealers: Vec<_> = workers.iter().map(|w| w.stealer().clone()).collect();
         let stealers = Arc::new(stealers);
 
         // Llenar colas
