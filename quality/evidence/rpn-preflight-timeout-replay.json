@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "scope": "Isolated diagnosis and fast contractual detection of linearize_outputs mutation timeout",
+  "base_commit": "44e9847",
+  "historical_mutant": "crates/compiler/src/rpn.rs:454:29: replace == with != in linearize_outputs",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/rpn-timeout-mutant",
+  "mutation": "In the reachable-node preflight only, soa.kinds[index] == NodeKind::Bml becomes != NodeKind::Bml",
+  "cause": "The mutant skips BML child ordering validation, so a self-referential BML child in the invalid-input contract reaches the subsequent expansion loop. That loop repeatedly schedules the unexpanded self-child before it can assign its output slot. Conversely, the mutant validates non-BML leaf placeholder children as DAG edges and rejects a valid shared-output DAG.",
+  "contract_used": "persisted_shared_outputs_preserve_external_weights_and_repeated_roots",
+  "test_file": "crates/compiler/tests/rpn_multi_output_contracts.rs",
+  "test_change": "None: existing valid-DAG contract detects the mutant immediately when selected independently of the hanging malformed-input contract. Neither tests nor production behavior weakened.",
+  "verification": [
+    {"stage": "original baseline", "command": "cargo test -p bml-compiler --test rpn_multi_output_contracts --locked", "exit_code": 0, "passed": 4, "log": "target/quality/rpn-timeout-baseline.log", "sha256": "9315884150963b961723af69afb45b4070f8f70e1b2b302e2f52229d9bdd9072"},
+    {"stage": "compile mutant before timing", "command": "cargo test -p bml-compiler --test rpn_multi_output_contracts --locked --no-run", "exit_code": 0, "log": "target/quality/rpn-timeout-mutant-build.log", "sha256": "9ca9127135d507f8207081954991fc8014fa0188c1f7dbfc5db4ed877c507a40"},
+    {"stage": "reproduce malformed-DAG hang", "command": "timeout --kill-after=1s 2s cargo test -p bml-compiler --test rpn_multi_output_contracts --locked multi_output_preflight_rejects_invalid_roots_children_and_index_overflow -- --exact", "exit_code": 124, "log": "target/quality/rpn-timeout-hang-replay.log", "sha256": "c240e5ef211cb6f8a069666f9824284c12e622c891d530ab2b29341f69b1a5e7"},
+    {"stage": "fast contractual detection", "command": "timeout --kill-after=1s 2s cargo test -p bml-compiler --test rpn_multi_output_contracts --locked persisted_shared_outputs_preserve_external_weights_and_repeated_roots -- --exact", "exit_code": 101, "failed": 1, "test_duration_seconds_reported": 0.0, "diagnostic": "DAG children must precede their parent", "log": "target/quality/rpn-timeout-fast-detection.log", "sha256": "8e6a0c5e9e8aa197439152b87cf303821b77965a4114d1226c06828f4fe93887"},
+    {"stage": "restored implementation", "command": "cargo test -p bml-compiler --test rpn_multi_output_contracts --locked", "exit_code": 0, "passed": 4, "log": "target/quality/rpn-timeout-restored.log", "sha256": "f73eb13873ceda6d6f5589c31e3a257c4af2da7eed65a3c5c05ba9a74ea79f12"}
+  ],
+  "environment": "Pinned toolchain; fresh target/rpn-timeout-build initially; CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0, TMPDIR under target. Mutant build completed before timed tests. GNU timeout bounds the command/process group. Only isolated source mutated and subsequently restored from HEAD.",
+  "disposition": "Historical Timeout reproduced; existing valid-DAG contract detects it without timing out. The full mutated suite still hangs on malformed input, so the original report remains Timeout.",
+  "remaining": "Both historical timeouts now have local diagnosis and independent fast detection. 42 historical survivors still require disposition. The original campaign remains incomplete with end_time=null and is not approved; targeted replays do not replace a completed campaign."
+}
