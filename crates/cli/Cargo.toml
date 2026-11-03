@@ -11,6 +11,7 @@ bml-domain = { path = "../domain" }
 bml-compiler = { path = "../compiler" }
 bml-runtime = { path = "../runtime" }
 bml-parser = { path = "../parser" }
+bml-model-weights = { path = "../model-weights", features = ["gguf-import"] }
 clap.workspace = true
 
 [lib]

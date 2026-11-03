@@ -1,28 +1,24 @@
 //! Integración de building blocks BML con el runtime.
 //!
 //! Este módulo conecta los programas RPN generados por `bml_ops` con el
-//! `HotLoop` del runtime para ejecutar el transformer usando BML nativo.
+//! `HotLoop` del runtime para ejecutar las proyecciones IEEE del transformer.
 //!
 //! # Flujo
 //!
 //! 1. Escribir `x` (hidden state) en un slot del ResultBuffer
-//! 2. Escribir `W` (pesos) en otro slot del ResultBuffer
-//! 3. Generar el programa RPN con `bml_matmul_program()` etc.
+//! 2. Escribir una fila de `W` en otro slot del ResultBuffer
+//! 3. Generar el programa RPN con `bml_dot_program()`
 //! 4. Ejecutar via `HotLoop::execute_full()`
-//! 5. Leer resultados del ResultBuffer
+//! 5. Recoger el escalar devuelto para cada fila
 
 use bml_compiler::bml_ops;
 use bml_compiler::gguf_compiler::InferenceCompiler;
-use bml_compiler::rpn::RpnProgram;
-use bml_compiler::sampler;
+use bml_domain::EvalContext;
 use bml_runtime::buffer::ResultBuffer;
 use bml_runtime::hot_loop::HotLoop;
-use bml_domain::EvalContext;
 
-/// Ejecuta un matmul usando BML building blocks: y = x · W.
-///
-/// Escribe x y W en el ResultBuffer, genera el programa RPN con
-/// `bml_matmul_program`, lo ejecuta via HotLoop, y retorna y.
+/// Row-major GGUF projection using native IEEE FMul/FAdd RPN instructions.
+/// Scratch storage contains the input and one weight row, never the full matrix.
 pub fn bml_matmul(
     hot: &mut HotLoop,
     x: &[f64],
@@ -30,45 +26,34 @@ pub fn bml_matmul(
     weight_offset: u64,
     n_in: u32,
     n_out: u32,
-) -> Vec<f64> {
-    let slot_size = n_in.max(n_out) as usize;
-    let mut buf = ResultBuffer::new(3, slot_size);
-
-    // Slot 0: vector x (base=0)
-    for (i, &v) in x.iter().enumerate().take(n_in as usize) {
-        buf.write(0, i as u32, v);
+) -> Result<Vec<f64>, String> {
+    if n_in == 0 || n_out == 0 || x.len() != n_in as usize {
+        return Err("invalid RPN projection dimensions".into());
     }
-
-    // Slot 1: pesos W (base=slot_size)
-    let w_base = slot_size as u32;
-    let n_out_us = n_out as usize;
-    for i in 0..n_in as usize {
-        for j in 0..n_out_us {
-            let idx = weight_offset as usize + i * n_out_us + j;
-            if idx < weights.len() {
-                buf.write(1, (i * n_out_us + j) as u32, weights[idx] as f64);
-            }
-        }
+    n_in.checked_mul(2).ok_or("RPN buffer index overflow")?;
+    let start = usize::try_from(weight_offset).map_err(|_| "weight offset overflow")?;
+    let count = (n_in as usize)
+        .checked_mul(n_out as usize)
+        .ok_or("weight size overflow")?;
+    let end = start.checked_add(count).ok_or("weight range overflow")?;
+    let matrix = weights.get(start..end).ok_or("weight range outside pool")?;
+    let mut buf = ResultBuffer::new(2, n_in as usize);
+    for (i, &value) in x.iter().enumerate() {
+        buf.write(0, i as u32, value);
     }
-
-    // Generar programa RPN: matmul con x en slot 0, W en slot 1
-    let x_base = 0; // slot 0
-    let w_base_rpn = w_base; // slot 1 (en índices absolutos)
-    let program = bml_ops::bml_matmul_program(x_base, w_base_rpn, n_in, n_out, 2);
-
-    // Ejecutar
+    let program = bml_ops::bml_dot_program(0, n_in, n_in);
     let ctx = EvalContext::new(&[], &[]);
-    hot.execute_full(&program, &ctx, &mut buf);
-
-    // Leer resultados del slot 2
-    let mut y = vec![0.0_f64; n_out as usize];
-    for j in 0..n_out as usize {
-        y[j] = buf.read(2, j as u32);
+    let mut output = Vec::with_capacity(n_out as usize);
+    for row in matrix.chunks_exact(n_in as usize) {
+        for (i, &value) in row.iter().enumerate() {
+            buf.write(1, i as u32, f64::from(value));
+        }
+        output.push(hot.execute_full(&program, &ctx, &mut buf));
     }
-    y
+    Ok(output)
 }
 
-/// Ejecuta RMSNorm usando BML: y[i] = x[i] * (1/rms) * w[i].
+/// Native RMSNorm helper with the legacy default epsilon of 1e-5.
 pub fn bml_rmsnorm(
     hot: &mut HotLoop,
     x: &[f64],
@@ -76,7 +61,17 @@ pub fn bml_rmsnorm(
     weight_offset: u64,
     n_embd: usize,
 ) -> Vec<f64> {
-    let eps = 1e-5_f64;
+    bml_rmsnorm_with_epsilon(hot, x, weights, weight_offset, n_embd, 1e-5)
+}
+
+fn bml_rmsnorm_with_epsilon(
+    _hot: &mut HotLoop,
+    x: &[f64],
+    weights: &[f32],
+    weight_offset: u64,
+    n_embd: usize,
+    eps: f64,
+) -> Vec<f64> {
     let mean_sq: f64 = x.iter().map(|v| v * v).sum::<f64>() / n_embd as f64;
     let rms = (mean_sq + eps).sqrt();
     let recip_rms = 1.0 / rms;
@@ -94,14 +89,11 @@ pub fn bml_rmsnorm(
     y
 }
 
-/// Ejecuta SwiGLU usando BML: y = gate * sigmoid(1.7 * gate) * up.
+/// Native SwiGLU used by the experimental BML execution path.
 pub fn bml_swiglu(gate: &[f64], up: &[f64]) -> Vec<f64> {
     gate.iter()
         .zip(up.iter())
-        .map(|(&g, &u)| {
-            let sig = 1.0 / (1.0 + (-1.7 * g).exp());
-            g * sig * u
-        })
+        .map(|(&g, &u)| bml_compiler::gguf_compiler::swiglu_scalar(g, u))
         .collect()
 }
 
@@ -130,145 +122,67 @@ pub fn bml_rope(x: &mut [f64], pos: usize, head_dim: usize) {
     }
 }
 
-/// Forward pass completo usando BML building blocks.
-///
-/// Reemplaza `InferenceCompiler::forward_layer` con versiones BML.
-pub fn forward_layer_bml(
-    hot: &mut HotLoop,
-    compiler: &InferenceCompiler,
-    hidden: &mut Vec<f64>,
-    layer: u32,
-    pos: u32,
-) {
-    let n_embd = compiler.config().n_embd as usize;
-    let prefix = format!("blk.{layer}");
-
-    // === RMSNorm de atención ===
-    let norm_name = format!("{prefix}.attn_norm.weight");
-    let norm_offset = *compiler.weight_offsets().get(&norm_name).unwrap_or(&0) as u64;
-    let normed = bml_rmsnorm(hot, hidden, compiler.weight_pool(), norm_offset, n_embd);
-    *hidden = normed;
-
-    // === Q, K, V projections via bml_matmul ===
-    let (n_in, n_out) = *compiler.tensor_dims().get(&format!("{prefix}.attn_q.weight")).unwrap_or(&(n_embd, n_embd));
-    let q_offset = *compiler.weight_offsets().get(&format!("{prefix}.attn_q.weight")).unwrap_or(&0) as u64;
-    let q = bml_matmul(hot, hidden, compiler.weight_pool(), q_offset, n_in as u32, n_out as u32);
-
-    let (n_in_k, n_out_k) = *compiler.tensor_dims().get(&format!("{prefix}.attn_k.weight")).unwrap_or(&(n_embd, n_embd));
-    let k_offset = *compiler.weight_offsets().get(&format!("{prefix}.attn_k.weight")).unwrap_or(&0) as u64;
-    let k = bml_matmul(hot, hidden, compiler.weight_pool(), k_offset, n_in_k as u32, n_out_k as u32);
-
-    let (n_in_v, n_out_v) = *compiler.tensor_dims().get(&format!("{prefix}.attn_v.weight")).unwrap_or(&(n_embd, n_embd));
-    let v_offset = *compiler.weight_offsets().get(&format!("{prefix}.attn_v.weight")).unwrap_or(&0) as u64;
-    let v = bml_matmul(hot, hidden, compiler.weight_pool(), v_offset, n_in_v as u32, n_out_v as u32);
-
-    let mut q_mut = q;
-    let mut k_mut = k;
-
-    // === RoPE ===
-    let head_dim = compiler.head_dim() as usize;
-    bml_rope(&mut q_mut, pos as usize, head_dim);
-    bml_rope(&mut k_mut, pos as usize, head_dim);
-
-    // === Attention: scaled dot-product ===
-    let n_heads = compiler.config().n_heads as usize;
-    let n_kv_heads = compiler.n_kv_heads() as usize;
-    let scale = 1.0 / (head_dim as f64).sqrt();
-    let q_heads_per_kv = n_heads / n_kv_heads;
-
-    let mut output = vec![0.0_f64; n_heads * head_dim];
-    for h in 0..n_heads {
-        let kv_h = h / q_heads_per_kv;
-        let q_start = h * head_dim;
-        let k_start = kv_h * head_dim;
-        let v_start = kv_h * head_dim;
-
-        let mut dot = 0.0_f64;
-        for d in 0..head_dim {
-            dot += q_mut.get(q_start + d).copied().unwrap_or(0.0)
-                * k_mut.get(k_start + d).copied().unwrap_or(0.0);
-        }
-        let attn = (dot * scale).tanh().clamp(-10.0, 10.0);
-
-        let o_start = h * head_dim;
-        for d in 0..head_dim {
-            output[o_start + d] = attn * v.get(v_start + d).copied().unwrap_or(0.0);
-        }
-    }
-
-    // === Output projection ===
-    let (n_in_o, n_out_o) = *compiler.tensor_dims().get(&format!("{prefix}.attn_output.weight")).unwrap_or(&(n_embd, n_embd));
-    let o_offset = *compiler.weight_offsets().get(&format!("{prefix}.attn_output.weight")).unwrap_or(&0) as u64;
-    let o_out = bml_matmul(hot, &output, compiler.weight_pool(), o_offset, n_in_o as u32, n_out_o as u32);
-
-    // === Residual ===
-    for i in 0..n_embd {
-        hidden[i] += o_out.get(i).copied().unwrap_or(0.0);
-    }
-
-    // === MLP RMSNorm ===
-    let mlp_norm_name = format!("{prefix}.ffn_norm.weight");
-    let mlp_norm_offset = *compiler.weight_offsets().get(&mlp_norm_name).unwrap_or(&0) as u64;
-    let normed = bml_rmsnorm(hot, hidden, compiler.weight_pool(), mlp_norm_offset, n_embd);
-    *hidden = normed;
-
-    // === MLP: gate, up, down ===
-    let (n_in_g, n_out_g) = *compiler.tensor_dims().get(&format!("{prefix}.ffn_gate.weight")).unwrap_or(&(n_embd, n_embd));
-    let g_offset = *compiler.weight_offsets().get(&format!("{prefix}.ffn_gate.weight")).unwrap_or(&0) as u64;
-    let gate = bml_matmul(hot, hidden, compiler.weight_pool(), g_offset, n_in_g as u32, n_out_g as u32);
-
-    let (n_in_u, n_out_u) = *compiler.tensor_dims().get(&format!("{prefix}.ffn_up.weight")).unwrap_or(&(n_embd, n_embd));
-    let u_offset = *compiler.weight_offsets().get(&format!("{prefix}.ffn_up.weight")).unwrap_or(&0) as u64;
-    let up = bml_matmul(hot, hidden, compiler.weight_pool(), u_offset, n_in_u as u32, n_out_u as u32);
-
-    let swiglu_out = bml_swiglu(&gate, &up);
-
-    let (n_in_d, n_out_d) = *compiler.tensor_dims().get(&format!("{prefix}.ffn_down.weight")).unwrap_or(&(n_embd, n_embd));
-    let d_offset = *compiler.weight_offsets().get(&format!("{prefix}.ffn_down.weight")).unwrap_or(&0) as u64;
-    let mlp_out = bml_matmul(hot, &swiglu_out, compiler.weight_pool(), d_offset, n_in_d as u32, n_out_d as u32);
-
-    // === Residual ===
-    for i in 0..n_embd.min(mlp_out.len()) {
-        hidden[i] += mlp_out[i];
-    }
-}
-
-/// Forward pass completo (todos los tokens) usando BML building blocks.
+/// Full causal prefix with RPN matrix projections and shared native attention.
+/// This is not symbolic AST/EML evaluation.
 pub fn forward_bml(
     hot: &mut HotLoop,
     compiler: &InferenceCompiler,
     input_ids: &[u32],
-) -> Vec<f64> {
-    let n_embd = compiler.config().n_embd as usize;
-    let vocab_size = compiler.vocab().len();
+) -> Result<Vec<f64>, String> {
+    compiler.forward_with_projection(input_ids, &mut |x, name| project(hot, compiler, x, name))
+}
 
-    if input_ids.is_empty() {
-        return vec![0.0; vocab_size];
+/// Incremental causal decode; committed cache positions advance only on success.
+pub fn forward_bml_cached(
+    hot: &mut HotLoop,
+    compiler: &InferenceCompiler,
+    input_ids: &[u32],
+    cache: &mut bml_compiler::HashConsedKV,
+) -> Result<Vec<f64>, String> {
+    compiler.forward_cached_with_projection(input_ids, cache, &mut |x, name| {
+        project(hot, compiler, x, name)
+    })
+}
+
+fn project(
+    hot: &mut HotLoop,
+    compiler: &InferenceCompiler,
+    x: &[f64],
+    name: &str,
+) -> Result<Vec<f64>, String> {
+    let columns = u32::try_from(x.len()).map_err(|_| "RPN dimension overflow")?;
+    if columns == 0 || columns.checked_mul(2).is_none() {
+        return Err("invalid RPN row size".into());
     }
-
-    // Embedding lookup
-    let mut hidden = vec![0.0_f64; n_embd];
-    for &tid in input_ids {
-        let emb = compiler.get_embedding(tid);
-        for i in 0..emb.len().min(n_embd) {
-            hidden[i] += emb[i];
+    let mut buffer = ResultBuffer::new(2, x.len());
+    for (i, &value) in x.iter().enumerate() {
+        buffer.write(0, i as u32, value);
+    }
+    let program = bml_ops::bml_dot_program(0, columns, columns);
+    let context = EvalContext::new(&[], &[]);
+    compiler.project_rows(x, name, |_, row| {
+        for (i, &value) in row.iter().enumerate() {
+            buffer.write(1, i as u32, f64::from(value));
         }
-    }
-    let scale = 1.0 / (input_ids.len() as f64).sqrt();
-    for v in &mut hidden {
-        *v *= scale;
-    }
+        Ok(hot.execute_full(&program, &context, &mut buffer))
+    })
+}
 
-    // Forward layers
-    for layer in 0..compiler.config().n_layers {
-        let pos = (input_ids.len() - 1) as u32;
-        forward_layer_bml(hot, compiler, &mut hidden, layer, pos);
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn native_activation_and_normalization_match_closed_form_answers() {
+        let log_two = std::f64::consts::LN_2;
+        let actual = bml_swiglu(&[log_two, -log_two, 0.0], &[3.0, 3.0, 4.0]);
+        for (actual, expected) in actual.into_iter().zip([2.0 * log_two, -log_two, 0.0]) {
+            assert!((actual - expected).abs() < 1e-15);
+        }
+        let mut hot = HotLoop::with_capacity(16);
+        assert_eq!(
+            bml_rmsnorm_with_epsilon(&mut hot, &[3.0, 4.0], &[99.0, 2.0, -0.5], 1, 2, 3.5),
+            [1.5, -0.5]
+        );
     }
-
-    // lm_head
-    let emb_offset = *compiler.weight_offsets().get("token_embd.weight").unwrap_or(&0) as u64;
-    let (emb_dim, vocab_sz) = *compiler.tensor_dims().get("token_embd.weight").unwrap_or(&(n_embd, vocab_size));
-    let logits = bml_matmul(hot, &hidden, compiler.weight_pool(), emb_offset, emb_dim as u32, vocab_sz.min(vocab_size) as u32);
-
-    logits
 }

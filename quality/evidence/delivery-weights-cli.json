@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "scope": "CLI conversion, inspection and explicit checked-F32 causal execution",
+  "base_commit": "1c984ee",
+  "tested_staged_tree_before_evidence": "c8e44fd8c18226121fa47af50c661badd55b4f3c",
+  "selection": "CLI commands and weight options, causal/compiled/symbolic execution dispatch, fallible tokenizer integration, bounded row-wise historical RPN projection and command-level fixtures/contracts. Only the CLI model-weights dependency is added to the lockfile.",
+  "verification": {
+    "command": "CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/home/dev/Work/bml/target/delivery-weights-cli-build cargo test -p bml-cli --locked",
+    "working_directory": "target/delivery-snapshots/weights-cli",
+    "fresh_build_directory": true,
+    "exit_code": 0,
+    "passed": 16,
+    "log": "target/quality/delivery-weights-cli.log",
+    "sha256": "f964768033f5c0956905d0a42c924b4e7c2f97d6fedccddd6496534b1623a94b"
+  },
+  "workspace_verification": {
+    "command": "cargo test --workspace --locked",
+    "exit_code": 101,
+    "log": "target/quality/delivery-weights-cli-workspace.log",
+    "sha256": "489be86f3d56907006fbeb2b789e93de253e14b96973ea37ae55276ea6151162",
+    "finding": "The snapshot server still uses the older infallible tokenizer/inference signatures. Its consumers must handle Result before workspace compilation can pass. Existing uncommitted server integration is not included automatically.",
+    "environment_note": "An initial workspace attempt hit a linker bus error with 23 MiB free. Removing the previously verified runtime build freed space; the retry reached the genuine server type errors recorded here."
+  },
+  "delivery_closed": false,
+  "remaining": "Review server compatibility and other remaining integration work, then repeat the complete gate on the delivered tree. Do not treat CLI tests as workspace approval."
+}

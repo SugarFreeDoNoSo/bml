@@ -201,6 +201,7 @@ version = "0.1.0"
 dependencies = [
  "bml-compiler",
  "bml-domain",
+ "bml-model-weights",
  "bml-parser",
  "bml-runtime",
  "clap",
