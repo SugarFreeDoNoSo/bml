@@ -693,4 +693,7 @@ Then it rejects the request before expensive generation
     When a nonempty contiguous layer range and the output head execute for successive tokens
     Then their logits and cache rows match the complete local causal forward bit for bit
     And invalid range, position, hidden shape or nonfinite hidden input fail before writes
+    And separate instances execute ranges of a three-layer GQA model with distinct layer weights across three tokens with identical logits and layer cache rows
+    And omitting a layer changes the logits
+    And persisted bounded kernels load with zero construction-node budget and produce the same results
     And range execution leaves cache position unchanged for the coordinator to commit

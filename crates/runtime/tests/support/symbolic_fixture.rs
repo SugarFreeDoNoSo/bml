@@ -21,6 +21,12 @@ fn array(kind: u32, values: Vec<Vec<u8>>) -> Vec<u8> {
     bytes
 }
 pub fn fixture(embedding: f32) -> Fixture {
+    fixture_layers(embedding, 1)
+}
+
+#[allow(dead_code)]
+pub fn fixture_layers(embedding: f32, layers: u32) -> Fixture {
+    assert!(layers > 0);
     let mut tokens = vec!["<unk>".into(), "<s>".into(), "</s>".into(), "▁".into()];
     tokens.extend((0..256).map(|b| format!("<0x{b:02X}>")));
     let vocab = tokens.len();
@@ -66,7 +72,7 @@ pub fn fixture(embedding: f32) -> Fixture {
         ("llama.rope.freq_base", 6, 16f32.to_le_bytes().to_vec()),
     ];
     for (name, value) in [
-        ("llama.block_count", 1u32),
+        ("llama.block_count", layers),
         ("llama.attention.head_count", 2),
         ("llama.attention.head_count_kv", 1),
         ("llama.embedding_length", 4),
@@ -120,6 +126,25 @@ pub fn fixture(embedding: f32) -> Fixture {
         ),
         ("blk.0.ffn_down.weight", vec![4, 4], identity),
     ];
+    let mut weights: Vec<(String, Vec<u64>, Vec<f32>)> = weights
+        .into_iter()
+        .map(|(name, dims, values)| (name.to_owned(), dims, values))
+        .collect();
+    let original = weights.clone();
+    for layer in 1..layers {
+        for (name, dims, values) in &original {
+            if let Some(suffix) = name.strip_prefix("blk.0.") {
+                weights.push((
+                    format!("blk.{layer}.{suffix}"),
+                    dims.clone(),
+                    values
+                        .iter()
+                        .map(|v| v * (1.0 + 0.1 * layer as f32))
+                        .collect(),
+                ));
+            }
+        }
+    }
     let mut bytes = b"GGUF".to_vec();
     bytes.extend(3u32.to_le_bytes());
     bytes.extend((weights.len() as u64).to_le_bytes());
@@ -132,7 +157,7 @@ pub fn fixture(embedding: f32) -> Fixture {
     let mut data = Vec::new();
     for (name, dims, values) in weights {
         data.resize(data.len().div_ceil(32) * 32, 0);
-        bytes.extend(string(name));
+        bytes.extend(string(&name));
         bytes.extend((dims.len() as u32).to_le_bytes());
         for dim in dims {
             bytes.extend(dim.to_le_bytes());

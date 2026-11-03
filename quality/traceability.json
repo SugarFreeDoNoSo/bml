@@ -983,7 +983,8 @@
     "target": "symbolic_layer_range_contracts",
     "tests": [
       "range_execution_matches_complete_causal_forward_and_never_commits",
-      "invalid_range_position_shape_and_nonfinite_input_fail_before_writes"
+      "invalid_range_position_shape_and_nonfinite_input_fail_before_writes",
+      "three_layer_gqa_model_composes_separate_ranges_across_tokens"
     ]
   }
 }
