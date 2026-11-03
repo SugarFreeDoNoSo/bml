@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "scope": "Isolated diagnosis and fast contractual detection of a historical mutation timeout",
+  "base_commit": "e4b9f84",
+  "historical_mutant": "crates/compiler/src/graph_directory.rs:80:18: replace == with != in read_file",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/directory-eof-mutant",
+  "mutation": "if count == 0 becomes if count != 0",
+  "cause": "An empty regular file repeatedly returns zero from read. The mutated predicate no longer breaks; appending zero bytes makes no progress and the byte budget is never exceeded. The truncation contract starts with a zero-length header and hangs there. For a nonempty valid file the mutated predicate instead breaks before appending the first read, causing a truncated-record error.",
+  "contract_used": "directory_decodes_every_opcode_and_preserves_ieee_constant_bits",
+  "test_file": "crates/compiler/tests/graph_directory_contracts.rs",
+  "test_change": "None: the existing independent valid-byte fixture detects the mutant. Targeted execution avoids the separate hanging empty-file case; no production behavior or tests were weakened.",
+  "verification": [
+    {"stage": "original baseline", "command": "cargo test -p bml-compiler --test graph_directory_contracts --locked", "exit_code": 0, "passed": 5, "log": "target/quality/directory-eof-baseline.log", "sha256": "bed25b361e61658d577d1c62dab54206954b16efc91898962bbecfc25a96f5c7"},
+    {"stage": "compile mutant before timing", "command": "cargo test -p bml-compiler --test graph_directory_contracts --locked --no-run", "exit_code": 0, "log": "target/quality/directory-eof-mutant-build.log", "sha256": "b2dade1d13bd94018b3d4b66e2d543570ec24425a223af21b0c49d7d29d63ab4"},
+    {"stage": "reproduce empty-file hang", "command": "timeout --kill-after=2s 5s cargo test -p bml-compiler --test graph_directory_contracts --locked every_directory_record_truncation_and_trailing_byte_is_rejected -- --exact", "exit_code": 124, "log": "target/quality/directory-eof-timeout-replay.log", "sha256": "42af94c148f3e1c07cffdd738fb4d049bf02ee249c0315dc93864bba4ccb0bad"},
+    {"stage": "fast contractual detection", "command": "timeout --kill-after=2s 5s cargo test -p bml-compiler --test graph_directory_contracts --locked directory_decodes_every_opcode_and_preserves_ieee_constant_bits -- --exact", "exit_code": 101, "failed": 1, "test_duration_seconds_reported": 0.0, "diagnostic": "truncated graph directory record", "log": "target/quality/directory-eof-fast-detection.log", "sha256": "ba41705caae8212870f6713aace711b88f0ec8fc1ddc31cda3b5bdfe23725e5c"},
+    {"stage": "restored implementation", "command": "cargo test -p bml-compiler --test graph_directory_contracts --locked", "exit_code": 0, "passed": 5, "log": "target/quality/directory-eof-restored.log", "sha256": "7cf157e745702759a0a19ef5075934ef842dae48656d5353b2c046d03b16f353"}
+  ],
+  "environment": "Pinned toolchain; fresh target/directory-eof-build initially; CARGO_INCREMENTAL=0; DEV/TEST DEBUG=0; TMPDIR under target. Compile completed before timeout replay. GNU timeout bounds the command/process group. Only isolated source was mutated, then restored from HEAD.",
+  "disposition": "Historical Timeout reproduced and independently detected by an existing contract without timeout. Full-suite replay with this mutant still hangs on empty files; original campaign outcome is retained as Timeout.",
+  "remaining": "42 historical survivors and the RPN timeout still require disposition. This resolves one timeout investigation locally; it does not complete or approve the global campaign, whose end_time remains null."
+}
