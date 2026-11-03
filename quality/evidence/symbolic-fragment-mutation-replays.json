@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "scope": "Current contractual detection of symbolic fragment maximum and opcode admission survivors",
+  "base_commit": "509aed0",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "historical_mutants": [
+    "crates/compiler/src/symbolic_artifact.rs:270:36: replace > with == in load_directory",
+    "crates/compiler/src/symbolic_artifact.rs:371:21: replace || with && in load_directory"
+  ],
+  "snapshot": "target/delivery-snapshots/symbolic-fragment-replay",
+  "contract": "artifact_loader_enforces_profile_sizes_and_rejects_native_opcodes_itself",
+  "test_file": "crates/compiler/tests/symbolic_artifact_contracts.rs",
+  "test_change": "None. Existing contract rejects declared fragment sizes above 8 MiB, accepts the inclusive maximum and rejects a hash-consistent program containing native FAdd before runtime validation.",
+  "method": "Archive HEAD, baseline suite, independently alter maximum comparison and size/opcode disjunction, restore and rerun. Fresh dedicated build initially, same source path rebuilt after each mutation. Main worktree production source and tests untouched.",
+  "verification": [
+    {"source": "original baseline", "exit_code": 0, "passed": 7, "log": "target/quality/symbolic-fragment-baseline.log", "sha256": "b2eabc897add311b740e3a3bf4422134517b83d1e96292f03ad795fa8de26297"},
+    {"source": "manifest.fragment_bytes > MAX_FILE becomes ==", "exit_code": 101, "passed": 6, "failed": 1, "diagnostic": "symbolic_artifact_contracts.rs:304:56: expected rejection is absent for an oversized declared fragment", "log": "target/quality/symbolic-fragment-maximum.log", "sha256": "88c289dc413e8870fcf29b5715fc58464ead70c319fed556ff0e22d6895198ce"},
+    {"source": "fragment size OR invalid symbolic opcodes becomes AND", "exit_code": 101, "passed": 6, "failed": 1, "diagnostic": "symbolic_artifact_contracts.rs:319:52: expected rejection is absent for native FAdd", "log": "target/quality/symbolic-fragment-opcodes.log", "sha256": "6962db76372f57b0a42115ba5468db0e1aa9c195d3ba5b4ece216c7c7db17424"},
+    {"source": "restored implementation", "exit_code": 0, "passed": 7, "log": "target/quality/symbolic-fragment-restored.log", "sha256": "00610510013a1cf5d12d90c6434fc78e2186bd45a8add761e53822b756bf78a6"}
+  ],
+  "command": "cargo test -p bml-compiler --test symbolic_artifact_contracts --locked",
+  "environment": "Pinned toolchain; CARGO_TARGET_DIR=target/symbolic-fragment-build; CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0; TMPDIR under target.",
+  "interpretation": "Both mutants return success for cases the loader contract forbids. Failures are assertions in the test's expected-error extraction, not timeouts or build failures. Historical survival is not reproduced on current HEAD and the original report remains unchanged.",
+  "remaining": "Thirteen historical survivors now have local detecting-contract evidence; 34 still require disposition. Both historical timeouts have diagnosis and fast independent detection. Global campaign remains incomplete with end_time=null and is not approved."
+}
