@@ -9,7 +9,7 @@
 ## 9. Pruebas de concurrencia
 
 - [ ] 9.1 Pruebas con `loom` de la cola lock-free. (La cola ya existe en queue.rs. Loom tests pueden agregarse.)
-- [ ] 9.2 Pruebas con `loom` del work-stealing. (Work-stealing ya existe.)
+- [x] 9.2 Pruebas con `loom` del work-stealing. Integrado en `a88be04`: FIFO SegQueue real instrumentada, cinco modelos a 3/31 slots, contabilidad de Drop/reservas/liberaciones y control negativo de retirada prematura detectado antes de liberar memoria. Gate aislado: 631 Rust, 63 Python, cero discrepancias y diagnósticos nuevos. Evidencia `quality/evidence/delivery-segmented-work.json`. Cierre de pruebas acotadas, no prueba general de liveness ni de validez de todos los punteros crudos.
 - [ ] 9.3 Pruebas de append-only bajo estrés multicore. (Ya implementado en tests de runtime.)
 - [ ] 9.4 Pruebas de que el hot loop no toca el código de red (aislamiento). (Hot loop + net están en módulos separados.)
 - [ ] 9.5 Pruebas de backpressure: HTTP 429. (Implementado con MAX_PENDING_REQUESTS=64.)
