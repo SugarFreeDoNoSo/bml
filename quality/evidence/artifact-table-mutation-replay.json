@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "scope": "Independent and inclusive artifact table-count admission; targeted survivor replay",
+  "base_commit": "20711b6",
+  "historical_mutant": "crates/compiler/src/causal_artifact.rs:251:9: replace || with && in load_directory",
+  "mutation": "|| manifest.projections.len() > MAX_PROJECTIONS becomes && manifest.projections.len() > MAX_PROJECTIONS",
+  "campaign_report": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+  "campaign_report_sha256": "c02868d540b005352913f19ad1afd028047ff84cac5fb02137e9c1f2ca4aa9df",
+  "snapshot": "target/delivery-snapshots/artifact-table-mutant",
+  "test_file": "crates/compiler/tests/causal_artifact_contracts.rs",
+  "test": "artifact_table_budgets_are_independent_and_inclusive",
+  "contract": "Check program table counts 256/257 and projection table counts 65536/65537 independently, keeping the other table valid and encoded manifest below 16 MiB. At the inclusive maximum, duplicated entries reach subsequent binding checks; one extra entry must fail table-size admission. Restore valid manifest and confirm loading succeeds.",
+  "interpretation": "The mutant does not necessarily accept an invalid model outright: later reference/count checks still reject this fixture. It loses the independent early resource-admission guard. The test distinguishes the required rejection stage and exercises inclusivity without claiming the duplicated boundary tables are valid executable models.",
+  "method": "Archive HEAD, alter only the recorded predicate in the isolated snapshot, run existing suite, add contract, and run mutated/restored variants. Main worktree implementation remains unchanged.",
+  "verification": [
+    {"source": "mutant, existing contracts", "exit_code": 0, "passed": 7, "log": "target/quality/artifact-table-mutant-before.log", "sha256": "daf32ad6417d52b8fe22b8237023a6e4251e45c546edc5f7063bebe5fe703f12"},
+    {"source": "mutant, new contract", "exit_code": 101, "passed": 7, "failed": 1, "diagnostic": "program_table=true, count=257", "log": "target/quality/artifact-table-mutant-after.log", "sha256": "daf782101c1acc1f71b46851ac4029454ae1ddbdda9879ed5fdd03395a3d86e7"},
+    {"source": "restored implementation, new contract", "exit_code": 0, "passed": 8, "log": "target/quality/artifact-table-baseline-after.log", "sha256": "002a6f6aae6c4971e48113024ed41794a578158d0ee9de18feb0ecb808a779e9"}
+  ],
+  "command": "cargo test -p bml-compiler --test causal_artifact_contracts --locked",
+  "environment": "Pinned toolchain; initially fresh target/artifact-table-build; same snapshot path rebuilt after each edit; CARGO_INCREMENTAL=0, DEV/TEST DEBUG=0, TMPDIR under target.",
+  "remaining": "Four historical survivors now have detecting contracts. Remaining 43 survivors and two timeouts require disposition. Original global report remains unchanged with end_time=null; no global mutation approval claimed."
+}

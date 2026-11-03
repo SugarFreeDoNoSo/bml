@@ -224,6 +224,47 @@ fn artifact_projection_dimensions_must_match_independently() {
 }
 
 #[test]
+fn artifact_table_budgets_are_independent_and_inclusive() {
+    use bml_compiler::causal_artifact::load_directory;
+
+    let source = causal_fixture::fixture(false);
+    let dir = Directory::new();
+    let original = compile_directory(&source.0, &dir.0, 32768).unwrap();
+    for (program_table, limit, later_error) in [
+        (true, 256, "unreferenced artifact program"),
+        (false, 65_536, "artifact projection count mismatch"),
+    ] {
+        for count in [limit, limit + 1] {
+            let mut manifest = original.clone();
+            if program_table {
+                manifest.programs = vec![original.programs[0].clone(); count];
+            } else {
+                manifest.projections = vec![original.projections[0].clone(); count];
+            }
+            dir.save(&manifest);
+            // Keep the manifest byte budget from masking table-count admission.
+            assert!(std::fs::metadata(dir.0.join(MANIFEST)).unwrap().len() < 16 * 1024 * 1024);
+            let error = load_directory(&dir.0, None)
+                .err()
+                .expect("duplicated table cannot describe the original model");
+            // At the inclusive maximum, admission must reach binding checks.
+            // One extra entry must instead be rejected by table-size admission.
+            let expected = if count == limit {
+                later_error
+            } else {
+                "unsupported causal artifact profile or table size"
+            };
+            assert_eq!(
+                error, expected,
+                "program_table={program_table}, count={count}"
+            );
+        }
+    }
+    dir.save(&original);
+    assert!(load_directory(&dir.0, None).is_ok());
+}
+
+#[test]
 fn runtime_preflight_rejects_bad_stacks_and_expanded_loop_budgets() {
     let source = causal_fixture::fixture(false);
     let dir = Directory::new();
