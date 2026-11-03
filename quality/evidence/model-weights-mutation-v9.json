@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "scope": "Regression for last survivor of v8; complete bml-model-weights campaign v9 passed. Does not certify mutation closure of other crates or specs.",
+  "analysis": {
+    "survivor": "cache_bytes - previous_cache replaced by addition in from_gguf",
+    "effect": "working already includes previous_cache. Adding it again can inflate the reported peak or reject a valid conversion under a tight memory cap, even when a later cache miss retains no new entry.",
+    "regression": "retained_cache_is_not_charged_again_on_subsequent_cache_misses",
+    "oracle": "Compare identical distinct weights with cache caps 100 and 999. Both cap strings have the same serialized size; proof work, blocks and catalog memory are equal. The cached peak must be no greater than the uncached peak plus the actual retained cache bytes.",
+    "production_changes": false,
+    "test_file_sha256": "961d1312418dd0ed0a7f73ff1f5376b4499e5831a140b777e88e9d77e7252845"
+  },
+  "focused_replay": {
+    "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --re 'replace - with \\+ in from_gguf' --output target/model-weights-mutations-cache",
+    "exit_code": 0,
+    "caught": 2,
+    "missed": 0,
+    "unviable": 0,
+    "timeout": 0,
+    "report": "target/model-weights-mutations-cache/mutants.out/outcomes.json",
+    "sha256": "de54fcfc08c4e10d3a3703fe262ea0c1013c0a75bfc714ca148f73a6e100bd29",
+    "validator_exit_code": 0,
+    "scope": "Filtered replay, not a complete mutation gate."
+  },
+  "verification": [
+    {
+      "command": "CARGO_INCREMENTAL=0 ./scripts/check.sh origin/master",
+      "exit_code": 0,
+      "passed": 703,
+      "log": "target/quality/model-weights-v9-gate.log",
+      "sha256": "3a1f9a6a0a5feccd8a82d0f9576216ea78fdb0c466f36607e0bb67a05353d3a1"
+    },
+    {
+      "command": "cargo test -p bml-gguf --no-default-features --locked",
+      "exit_code": 0,
+      "passed": 50,
+      "log": "target/quality/model-weights-v9-gguf-minimal.log",
+      "sha256": "9be66ba4e75fa2ba0f7b83989ccd983123466ade10f0336271423a8556c6b8c4"
+    },
+    {
+      "command": "cargo test -p bml-gguf --all-features --locked",
+      "exit_code": 0,
+      "passed": 57,
+      "log": "target/quality/model-weights-v9-gguf-all.log",
+      "sha256": "c7bc1b26ec84fb7f1d56ea282067d11bbd18b9c663494c6145ca57cb7ce63539"
+    }
+  ],
+  "workspace_coverage": {
+    "command": "cargo llvm-cov --workspace --locked --json --output-path target/quality/model-weights-v9-workspace-coverage.json",
+    "exit_code": 0,
+    "validator": "python3 tools/quality.py coverage --report target/quality/model-weights-v9-workspace-coverage.json",
+    "validator_exit_code": 0,
+    "lines": {"count": 21390, "covered": 18614, "percent": 87.02197288452548},
+    "functions": {"count": 2157, "covered": 1721, "percent": 79.78674084376449},
+    "sha256": "e1b79a3731466bb07434e8450730423a8cc05dc8e29a65c4befdbe3d3820f1a5"
+  },
+  "complete_campaign_v9": {
+    "command": "CARGO_INCREMENTAL=0 cargo mutants -p bml-model-weights --all-features --cargo-arg=--locked --test-workspace false --jobs 2 --timeout 60 --build-timeout 300 --output target/model-weights-mutations-v9",
+    "status": "Complete; mutation gate passed",
+    "exit_code": 0,
+    "total_mutants": 443,
+    "caught": 391,
+    "missed": 0,
+    "unviable": 52,
+    "timeout": 0,
+    "score_percent": 100.0,
+    "start_time": "2026-11-03T09:41:29.658788776Z",
+    "end_time": "2026-11-03T10:10:14.325399751Z",
+    "report_sha256": "47e1c7417767c94b2c805025fb3b4466cef561705d2a6ba151243f27a1bdb09c",
+    "validator": "python3 tools/quality.py mutations --report target/model-weights-mutations-v9/mutants.out/outcomes.json",
+    "validator_exit_code": 0,
+    "report": "target/model-weights-mutations-v9/mutants.out/outcomes.json",
+    "log": "target/quality/model-weights-mutations-v9.log"
+  },
+  "openspec_validation": {
+    "command": "npx --yes @fission-ai/openspec validate gguf-to-bml-weights --strict",
+    "exit_code": 0
+  },
+  "crate_quality_controls_passed": true,
+  "closure_approved": false,
+  "remaining": "Task 5.3 commit/publication/archive remains open; other specs and historical workspace mutation campaign are not certified by this package-only campaign."
+}

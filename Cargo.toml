@@ -5,6 +5,7 @@ members = [
     "crates/domain",
     "crates/parser",
     "crates/gguf",
+    "crates/model-weights",
     "crates/inference",
     "crates/compiler",
     "crates/runtime",

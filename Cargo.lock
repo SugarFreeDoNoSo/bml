@@ -242,6 +242,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bml-model-weights"
+version = "1.0.0"
+dependencies = [
+ "bml-domain",
+ "bml-gguf",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "bml-parser"
 version = "0.1.0"
 dependencies = [

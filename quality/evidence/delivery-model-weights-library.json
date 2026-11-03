@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "scope": "Standalone BMLGGUF library commit on separately committed exact-number and GGUF prerequisites",
+  "prerequisite_commits": ["d03d4a2", "999f6df"],
+  "tested_staged_tree_before_this_evidence_file": "2cbf563ccbfa29c2d234c24c0e7ffacb21f695cb",
+  "isolation": "git archive of the selected index tree; Cargo.toml and Cargo.lock contain only the model-weights additions, not pending kernels/queue/compiler/runtime integration",
+  "review": [
+    "Crate denies unsafe code and depends on domain plus optional feature-free GGUF import, without compiler/runtime dependency.",
+    "Reader validates lengths, typed metadata, hashes, coverage and bounded BMLS before returning weights.",
+    "Writer verifies certificates, accounts shared memory and publishes through no-clobber temporary/hard-link protocol.",
+    "All-feature snapshot has the exact model-weights source tested by complete mutation campaign v9; the independent staged-tree tests establish manifest and prerequisite completeness."
+  ],
+  "mutation_evidence": "quality/evidence/model-weights-mutation-v9.json",
+  "verification": [
+    {"command": "cargo test -p bml-model-weights --no-default-features --locked", "exit_code": 0, "passed": 50, "log": "target/quality/delivery-model-weights-minimal.log", "sha256": "007c988e754e1009d3938e20976ae24648366d7e72188738d9154cf34eb5bac0"},
+    {"command": "cargo test -p bml-model-weights --all-features --locked", "exit_code": 0, "passed": 76, "log": "target/quality/delivery-model-weights-all.log", "sha256": "0ce890d79a6c4a62e9ace138ff93b3606ee01a2cdc9a165a9ab12ad968428e12"}
+  ],
+  "working_directory": "target/delivery-snapshots/model-weights",
+  "limitations": "This library commit does not include CLI or causal integration. Those shared changes and final specification archive remain pending."
+}
