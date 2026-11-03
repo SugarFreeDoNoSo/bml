@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "scope": "Observed prerequisites for the remaining hardware and publication contracts",
+  "diagnostic_timestamp": "2026-11-03T15:12:57.281068+00:00",
+  "diagnostic": "target/quality/spec-environment-recheck.json",
+  "diagnostic_sha256": "9e8d3ea58dd0b2d8ea4c0686df70ed394f329efb0494cbc1ff10810a1f7206a7",
+  "log": "target/quality/spec-environment-recheck.log",
+  "log_sha256": "b9bfd92868f509d849bb48402646bcd320b787a28cb1423002b4dfee93c41c69",
+  "observations": {
+    "machine": "x86_64",
+    "cpu": "Intel Xeon Processor (Cascadelake)",
+    "logical_cpus": 2,
+    "hypervisor": "Microsoft",
+    "installed_rust_targets": ["x86_64-unknown-linux-gnu"],
+    "perf_executable": null,
+    "perf_event_paranoid": 3,
+    "cpu_pmu_sysfs_type": "absent",
+    "event_source_devices": ["breakpoint", "kprobe", "msr", "power", "software", "tracepoint", "uprobe"]
+  },
+  "external_requirements": [
+    {
+      "tasks": ["bml-exact-numbers-and-matrices 7.3", "bml-exact-numbers-and-matrices 7.4"],
+      "needed": "Native ARM/NEON runner or host access to execute the backend contracts and reproducible campaign",
+      "current_evidence": "x86 native execution and prior ARM compilation do not establish ARM execution"
+    },
+    {
+      "tasks": ["bml-inference-pipeline 9.6", "bml-implementation-plan 5.3"],
+      "needed": "Host exposing usable CPU PMU/instruction-cache events, with perf installed and permission to collect the required counters",
+      "current_evidence": "Static dispatcher size and binary isolation are separate evidence; this VM exposes no CPU PMU device"
+    },
+    {
+      "tasks": ["bml-implementation-plan 5.10", "bml-implementation-plan 5.11"],
+      "needed": "Authorized cloud/bare-metal stress environment and its connection or runner details",
+      "current_evidence": "Local TCP and concurrency tests do not satisfy the requested external stress campaign"
+    },
+    {
+      "tasks": ["bml-inference-pipeline 10.3", "fix-placeholders 9.3", "gguf-to-bml-weights 5.3", "bml-exact-numbers-and-matrices 9.3", "bml-1-0-release 6.3"],
+      "needed": "Explicit authorization identifying the intended remote/branch or release publication target",
+      "current_evidence": "Local commits exist; no push or release publication has been performed"
+    }
+  ],
+  "separate_local_work": "Pipeline 8.6 numerical range/scalability, foundation 4.5/5.4 scope, and the global mutation gate remain independent obligations. Hardware absence is not used to classify those implementation or quality tasks as completed."
+}

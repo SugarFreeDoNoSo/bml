@@ -262,5 +262,13 @@
     "tests": [
       "diagnostic_logit_budget_is_checked_before_expensive_generation"
     ]
+  },
+  "C72": {
+    "package": "bml-compiler",
+    "target": "compiler_entrypoint_contracts",
+    "tests": [
+      "both_gguf_entrypoints_publish_complete_numerical_causal_plans",
+      "explicit_context_hardware_and_budgets_are_enforced_before_publication"
+    ]
   }
 }

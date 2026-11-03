@@ -84,6 +84,44 @@ pub struct LoadedArtifact {
     /// Actual stored programs, never recompiled during loading.
     pub kernels: Vec<CompiledKernel>,
 }
+
+/// Complete, bounded AOT bytecode ready to publish without recompiling.
+///
+/// The private encoded programs and manifest are checked together at construction.
+/// Learned weights remain in the hash-identified GGUF; this object owns only
+/// bytecode, operation literals and metadata. Construction does not certify the
+/// numerical range of an eventual prompt.
+#[derive(Debug)]
+pub struct CompiledArtifact {
+    manifest: Manifest,
+    manifest_bytes: Vec<u8>,
+    encoded: Vec<Vec<Vec<u8>>>,
+}
+
+impl CompiledArtifact {
+    /// Source binding, operation plan and effective context limit.
+    pub fn manifest(&self) -> &Manifest {
+        &self.manifest
+    }
+
+    /// Publish into a new or empty directory, writing the manifest last.
+    /// A write failure can leave uncommitted program files in the destination.
+    pub fn publish(&self, output: &Path) -> Result<(), String> {
+        check_output_directory(output)?;
+        fs::create_dir_all(output).map_err(|e| e.to_string())?;
+        check_output_directory(output)?;
+        for (kernel, files) in self.encoded.iter().enumerate() {
+            for (index, bytes) in files.iter().enumerate() {
+                fs::write(
+                    output.join(format!("kernel_{kernel}_{index}.bmlgraph")),
+                    bytes,
+                )
+                .map_err(|e| e.to_string())?;
+            }
+        }
+        fs::write(output.join(MANIFEST), &self.manifest_bytes).map_err(|e| e.to_string())
+    }
+}
 fn required_kernels(
     model: &InferenceCompiler,
     context: u32,
@@ -161,9 +199,29 @@ pub fn compile_directory(
     source: &Path,
     output: &Path,
     context_length: u32,
-    mut limits: KernelLimits,
+    limits: KernelLimits,
 ) -> Result<Manifest, String> {
     check_output_directory(output)?;
+    let compiled = compile(source, context_length, limits)?;
+    compiled.publish(output)?;
+    Ok(compiled.manifest)
+}
+
+/// Construct every operation needed for an explicit causal context, with no
+/// filesystem output. The same bytecode is published by [`compile_directory`].
+pub fn compile(
+    source: &Path,
+    context_length: u32,
+    limits: KernelLimits,
+) -> Result<CompiledArtifact, String> {
+    compile_with_context(source, Some(context_length), limits)
+}
+
+pub(crate) fn compile_with_context(
+    source: &Path,
+    context_length: Option<u32>,
+    mut limits: KernelLimits,
+) -> Result<CompiledArtifact, String> {
     limits.max_programs = limits.max_programs.min(MAX_PROGRAMS);
     limits.max_ops = limits.max_ops.min(MAX_OPS);
     if limits.fragment_bytes < std::mem::size_of::<RpnOp>() || limits.fragment_bytes > MAX_FILE {
@@ -171,9 +229,12 @@ pub fn compile_directory(
     }
     let source = source.canonicalize().map_err(|e| e.to_string())?;
     let parser = GgufParser::open(&source).map_err(|e| e.to_string())?;
+    // Architecture rejection precedes tokenizer/weight loading at every entry.
+    crate::gguf_compiler::read_model_config(&parser)?;
     let source_sha256 = hash(parser.bytes());
     let tokenizer = TokenizerSpec::from_gguf(&parser).map_err(|e| e.to_string())?;
     let model = InferenceCompiler::from_mapped_parser(parser)?;
+    let context_length = context_length.unwrap_or(model.config().context_length);
     let required = required_kernels(&model, context_length, limits.max_programs, true)?;
     let mut descriptors = Vec::with_capacity(required.len());
     let mut encoded = Vec::with_capacity(required.len());
@@ -236,19 +297,11 @@ pub fn compile_directory(
     if bytes.len() > MAX_MANIFEST {
         return Err("symbolic manifest exceeds byte budget".into());
     }
-    fs::create_dir_all(output).map_err(|e| e.to_string())?;
-    check_output_directory(output)?;
-    for (kernel, files) in encoded.iter().enumerate() {
-        for (index, bytes) in files.iter().enumerate() {
-            fs::write(
-                output.join(format!("kernel_{kernel}_{index}.bmlgraph")),
-                bytes,
-            )
-            .map_err(|e| e.to_string())?;
-        }
-    }
-    fs::write(output.join(MANIFEST), bytes).map_err(|e| e.to_string())?;
-    Ok(manifest)
+    Ok(CompiledArtifact {
+        manifest,
+        manifest_bytes: bytes,
+        encoded,
+    })
 }
 /// Load a bounded artifact and verify source, metadata, literal bindings, hashes
 /// and the complete operation plan. Runtime validation remains mandatory.

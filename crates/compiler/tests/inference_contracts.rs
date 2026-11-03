@@ -337,8 +337,7 @@ fn unsupported_architecture_cannot_be_compiled_as_a_llama_graph() {
     for architecture in ["gemma4", "unrecognized-model"] {
         let fixture = architecture_only(architecture);
         let error = compile_gguf(&fixture.0, &hardware)
-            .err()
-            .expect("an unsupported architecture must not become a graph");
+            .expect_err("an unsupported architecture must not become a graph");
         assert!(error.contains(architecture), "{error}");
         assert!(error.contains("unsupported"), "{error}");
     }
@@ -350,8 +349,7 @@ fn unsupported_architecture_cannot_bypass_validation_in_fast_compilation() {
     for architecture in ["gemma4", "unrecognized-model"] {
         let fixture = architecture_only(architecture);
         let error = compile_gguf_fast(&fixture.0, &hardware)
-            .err()
-            .expect("an unsupported architecture must not become a placeholder graph");
+            .expect_err("an unsupported architecture must not become a placeholder graph");
         assert!(error.contains(architecture), "{error}");
         assert!(error.contains("unsupported"), "{error}");
     }

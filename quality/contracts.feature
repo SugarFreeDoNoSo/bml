@@ -150,3 +150,12 @@ Scenario: Bound retained diagnostic logits before generation
 Given a request for complete logits exceeding the diagnostic payload budget
 When the command-line entrypoint validates the request
 Then it rejects the request before expensive generation
+
+  @C72
+  Scenario: Public GGUF compiler entry points produce complete symbolic causal plans
+    Given a mapped GQA fixture with rotary positions and nonzero signed MLP weights
+    When either GGUF compiler entry point constructs and publishes its bounded AOT plan
+    Then prefill and decode match the independent full-model oracle without recompilation
+    And every transformer operation uses BML bytecode and externally bound weights
+    And explicit context, hardware fragment size and construction budgets are enforced
+    And publication rejects a nonempty destination without overwriting its manifest

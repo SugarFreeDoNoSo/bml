@@ -1,34 +1,17 @@
-//! Compilador GGUF → `.bmlgraph`.
+//! GGUF compilation and the separate native causal execution profile.
 //!
-//! Toma un archivo GGUF (parseado con `bml-parser`), traduce las
-//! operaciones del transformer a sub-DAGs BML usando los pesos como
-//! `Const` y los inputs como `Var`, aplica Hash Consing + constant
-//! folding + fragmentación AOT, y serializa los `.bmlgraph` a disco.
-//!
-//! # Flujo
-//!
-//! 1. Parsear GGUF → metadatos + tensor infos + datos zero-copy.
-//! 2. Comprobar la arquitectura: solo se admite la ruta experimental `llama`.
-//! 3. Leer dimensiones del modelo (n_layers, n_heads, n_embd, etc.).
-//! 4. Para cada capa del transformer:
-//!    a. Leer pesos de los tensores (zero-copy desde mmap).
-//!    b. Traducir cada operación (matmul, RMSNorm, RoPE, attention, MLP)
-//!       a sub-DAGs BML usando `HashConsRegistry`.
-//!    c. Los pesos son `Const(id)` (precomputados con constant folding).
-//!    d. Los inputs son `Var(id)`.
-//!    e. RoPE usa EML compile-time para precomputar cos/sin como `Const`.
-//! 5. Concatenar los sub-DAGs.
-//! 6. Linearizar a RPN.
-//! 7. Fragmentar con `fragment_program` según el hardware objetivo.
-//! 8. Serializar a `.bmlgraph`.
+//! The compilation entry points construct the complete bounded symbolic AOT
+//! operation plan through BMLTransformer. Programs reference external mapped
+//! weights and cover every prefix up to their declared context. Publish with
+//! `CompiledArtifact::publish`, then load with the symbolic causal runtime.
+//! The legacy scalar container reader/writer remains available for stored graphs.
+//! Native `InferenceCompiler` arithmetic has its own IEEE/F32-KV contract.
 
-use crate::eml;
-use crate::fragment::{fragment_program, BmlGraph, BMLGRAPH_MAGIC, BMLGRAPH_VERSION};
+use crate::fragment::{BmlGraph, BMLGRAPH_MAGIC, BMLGRAPH_VERSION};
 use crate::hardware::HardwareSpec;
-use crate::hash_cons::HashConsRegistry;
-use crate::rpn::linearize;
+use crate::symbolic_artifact::{self, CompiledArtifact};
+use crate::symbolic_kernels::KernelLimits;
 use crate::tokenizer::Vocabulary;
-use bml_domain::NodeId;
 use bml_parser::{GgufMetadataValue, GgufParser};
 use std::collections::HashMap;
 use std::io::Write as IoWrite;
@@ -52,7 +35,8 @@ pub struct ModelConfig {
     pub vocab_size: u32,
 }
 
-/// Resultado de la compilación.
+/// Historical scalar graph container, retained for legacy serialization.
+/// New GGUF compilation returns a complete [`CompiledArtifact`].
 pub struct CompilationResult {
     /// Grafo BML fragmentado.
     pub graph: BmlGraph,
@@ -64,49 +48,38 @@ pub struct CompilationResult {
     pub num_fragments: usize,
 }
 
-/// Compila un GGUF a `.bmlgraph`.
+/// Compile a complete symbolic plan for the source model's context limit.
 ///
-/// # Argumentos
-///
-/// - `gguf_path`: Ruta al archivo GGUF.
-/// - `hardware`: Especificaciones del hardware objetivo.
-///
-/// # Retorna
-///
-/// Un `CompilationResult` con el grafo fragmentado, el pool de constantes,
-/// y la configuración del modelo.
+/// Uses default construction budgets and the hardware fragment threshold.
+/// Large models/contexts can exceed those budgets; use
+/// [`compile_gguf_with_limits`] to select an explicit context and budgets.
+/// Publish the returned artifact with [`CompiledArtifact::publish`].
+/// This replaces the former scalar placeholder return value in the experimental
+/// compiler API. The legacy [`serialize_to_dir`] is for scalar containers only.
 pub fn compile_gguf<P: AsRef<Path>>(
     gguf_path: P,
     hardware: &HardwareSpec,
-) -> Result<CompilationResult, String> {
-    let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
-    let config = read_model_config(&parser)?;
+) -> Result<CompiledArtifact, String> {
+    symbolic_artifact::compile_with_context(
+        gguf_path.as_ref(),
+        None,
+        KernelLimits {
+            fragment_bytes: hardware.fragment_threshold(),
+            ..Default::default()
+        },
+    )
+}
 
-    // Construir el DAG BML del transformer.
-    let mut reg = HashConsRegistry::with_capacity(1024);
-
-    // Para cada capa, construir los sub-DAGs.
-    // Por ahora, construimos un DAG simplificado que representa
-    // la estructura del transformer sin los pesos reales.
-    // La implementación completa requiere leer los tensores y
-    // traducir cada operación matricial.
-    let root = build_transformer_dag(&mut reg, &config, &parser)?;
-
-    // Linearizar a RPN.
-    let soa_pool = reg.into_soa_and_pool();
-    let (soa, const_pool) = soa_pool;
-    let program = linearize(&soa, root);
-
-    // Fragmentar según el hardware.
-    let threshold = hardware.fragment_threshold();
-    let graph = fragment_program(&program, threshold);
-
-    Ok(CompilationResult {
-        num_fragments: graph.num_fragments(),
-        graph,
-        const_pool,
-        config,
-    })
+/// Compile all transformer operations for an explicit causal context and budget.
+/// The hardware's fragment threshold takes precedence over `limits.fragment_bytes`.
+pub fn compile_gguf_with_limits<P: AsRef<Path>>(
+    gguf_path: P,
+    hardware: &HardwareSpec,
+    context_length: u32,
+    mut limits: KernelLimits,
+) -> Result<CompiledArtifact, String> {
+    limits.fragment_bytes = hardware.fragment_threshold();
+    symbolic_artifact::compile(gguf_path.as_ref(), context_length, limits)
 }
 
 /// Lee la configuración para las rutas experimentales de ejecución.
@@ -146,200 +119,6 @@ pub(crate) fn read_model_config(parser: &GgufParser) -> Result<ModelConfig, Stri
     })
 }
 
-/// Build a balanced BML tree from all weight elements.
-fn build_weight_dag(reg: &mut HashConsRegistry, weights: &[f32]) -> NodeId {
-    if weights.is_empty() {
-        return reg.const_value(0.0);
-    }
-    let nodes: Vec<NodeId> = weights.iter().map(|&w| reg.const_value(w as f64)).collect();
-    combine_balanced(reg, &nodes)
-}
-
-/// Combine nodes into a balanced BML tree.
-fn combine_balanced(reg: &mut HashConsRegistry, nodes: &[NodeId]) -> NodeId {
-    match nodes.len() {
-        0 => reg.const_value(0.0),
-        1 => nodes[0],
-        2 => reg.bml(nodes[0], nodes[1]),
-        _ => {
-            let mid = nodes.len() / 2;
-            let left = combine_balanced(reg, &nodes[..mid]);
-            let right = combine_balanced(reg, &nodes[mid..]);
-            reg.bml(left, right)
-        }
-    }
-}
-
-/// Construye el DAG BML del transformer con pesos reales del GGUF.
-///
-/// Lee los tensores del GGUF (zero-copy + dequantizacion), los almacena
-/// como `Const` en el pool de constantes, y construye el DAG usando
-/// los pesos reales.
-///
-/// # Estructura por capa
-///
-/// 1. RMSNorm de los inputs (con pesos de norma reales).
-/// 2. Matmul con pesos de atención Q, K, V (pesos reales).
-/// 3. RoPE (precomputado con EML).
-/// 4. Attention scores (Q·K^T).
-/// 5. Softmax de los scores.
-/// 6. Matmul con V.
-/// 7. Matmul con pesos de output projection.
-/// 8. Residual connection.
-/// 9. RMSNorm.
-/// 10. MLP: matmul + SwiGLU + matmul.
-/// 11. Residual connection.
-fn build_transformer_dag(
-    reg: &mut HashConsRegistry,
-    config: &ModelConfig,
-    parser: &GgufParser,
-) -> Result<NodeId, String> {
-    // Input: Var(0) representa el embedding del token actual.
-    let input = reg.var(0);
-
-    // Leer frecuencia base de RoPE.
-    let rope_freq_base = parser
-        .get_metadata(&format!("{}.rope.freq_base", config.architecture))
-        .and_then(|v| match v {
-            bml_parser::GgufMetadataValue::F32(f) => Some(*f as f64),
-            _ => None,
-        })
-        .unwrap_or(10000.0);
-
-    // Precomputar constantes de RoPE con EML.
-    let rope_consts = eml::rope_constants(
-        config.context_length as usize,
-        config.n_embd as usize,
-        rope_freq_base,
-    );
-
-    // Construir capa por capa.
-    let mut hidden = input;
-
-    for layer in 0..config.n_layers {
-        let prefix = format!("blk.{layer}");
-
-        // === RMSNorm de atención ===
-        // Leer pesos de norma (F32, n_embd elementos).
-        let norm_name = format!("{prefix}.attn_norm.weight");
-        let norm_weights = read_tensor_f32(parser, &norm_name)
-            .ok_or(format!("tensor no encontrado: {norm_name}"))?;
-        // Construir DAG combinado con todos los pesos de norma
-        let norm_weight_dag = build_weight_dag(reg, &norm_weights);
-        hidden = reg.bml(hidden, norm_weight_dag);
-
-        // === Self-attention: Q, K, V ===
-        // Leer pesos Q, K, V (Q4_0, dequantizados a f32).
-        let q_name = format!("{prefix}.attn_q.weight");
-        let k_name = format!("{prefix}.attn_k.weight");
-        let v_name = format!("{prefix}.attn_v.weight");
-
-        let q_weights =
-            read_tensor_f32(parser, &q_name).ok_or(format!("tensor no encontrado: {q_name}"))?;
-        let k_weights =
-            read_tensor_f32(parser, &k_name).ok_or(format!("tensor no encontrado: {k_name}"))?;
-        let v_weights =
-            read_tensor_f32(parser, &v_name).ok_or(format!("tensor no encontrado: {v_name}"))?;
-
-        // Almacenar TODOS los pesos como Const y construir DAGs combinados
-        let q_weight_dag = build_weight_dag(reg, &q_weights);
-        let k_weight_dag = build_weight_dag(reg, &k_weights);
-        let v_weight_dag = build_weight_dag(reg, &v_weights);
-
-        let q = reg.bml(hidden, q_weight_dag);
-        let k = reg.bml(hidden, k_weight_dag);
-        let v = reg.bml(hidden, v_weight_dag);
-
-        // === RoPE ===
-        // Aplicar RoPE con constantes precomputadas.
-        if !rope_consts.is_empty() {
-            let cos_val = reg.const_value(rope_consts[0].0);
-            let sin_val = reg.const_value(rope_consts[0].1);
-            let q_rotated = reg.bml(q, sin_val);
-            let q_scaled = reg.bml(q, cos_val);
-            let q_new = reg.bml(q_scaled, q_rotated);
-            let _ = q_new; // placeholder: en implementación completa se aplicaría a todos los pares
-        }
-
-        // === Attention scores: Q · K^T ===
-        let score = reg.bml(q, k);
-
-        // === Softmax ===
-        // Escala por 1/sqrt(head_dim)
-        let head_dim = config.n_embd / config.n_heads;
-        let softmax_scale_val = 1.0 / (head_dim as f64).sqrt();
-        let softmax_scale = reg.const_value(softmax_scale_val);
-        let attn = reg.bml(score, softmax_scale);
-
-        // === Output: attn · V ===
-        let attn_out = reg.bml(attn, v);
-
-        // === Output projection ===
-        let o_name = format!("{prefix}.attn_output.weight");
-        let o_weights =
-            read_tensor_f32(parser, &o_name).ok_or(format!("tensor no encontrado: {o_name}"))?;
-        let o_weight_dag = build_weight_dag(reg, &o_weights);
-        let o_out = reg.bml(attn_out, o_weight_dag);
-
-        // === Residual ===
-        hidden = reg.bml(hidden, o_out);
-
-        // === MLP RMSNorm ===
-        let mlp_norm_name = format!("{prefix}.ffn_norm.weight");
-        let mlp_norm_weights = read_tensor_f32(parser, &mlp_norm_name)
-            .ok_or(format!("tensor no encontrado: {mlp_norm_name}"))?;
-        let mlp_norm_dag = build_weight_dag(reg, &mlp_norm_weights);
-        hidden = reg.bml(hidden, mlp_norm_dag);
-
-        // === MLP: gate, up, down ===
-        let gate_name = format!("{prefix}.ffn_gate.weight");
-        let up_name = format!("{prefix}.ffn_up.weight");
-        let down_name = format!("{prefix}.ffn_down.weight");
-
-        let gate_weights = read_tensor_f32(parser, &gate_name)
-            .ok_or(format!("tensor no encontrado: {gate_name}"))?;
-        let up_weights =
-            read_tensor_f32(parser, &up_name).ok_or(format!("tensor no encontrado: {up_name}"))?;
-        let down_weights = read_tensor_f32(parser, &down_name)
-            .ok_or(format!("tensor no encontrado: {down_name}"))?;
-
-        let gate_weight_dag = build_weight_dag(reg, &gate_weights);
-        let up_weight_dag = build_weight_dag(reg, &up_weights);
-        let down_weight_dag = build_weight_dag(reg, &down_weights);
-
-        let gate = reg.bml(hidden, gate_weight_dag);
-        let up = reg.bml(hidden, up_weight_dag);
-
-        // SwiGLU: gate * sigmoid(gate) * up
-        // Simplificado: bml(gate, up)
-        let mlp_act = reg.bml(gate, up);
-        let mlp_out = reg.bml(mlp_act, down_weight_dag);
-
-        // === Residual ===
-        hidden = reg.bml(hidden, mlp_out);
-    }
-
-    // === Final RMSNorm ===
-    let final_norm_name = "output_norm.weight";
-    let final_norm_weights = read_tensor_f32(parser, final_norm_name)
-        .ok_or(format!("tensor no encontrado: {final_norm_name}"))?;
-    let final_norm_dag = build_weight_dag(reg, &final_norm_weights);
-    hidden = reg.bml(hidden, final_norm_dag);
-
-    // === Output projection (lm_head) ===
-    let lm_head_name = if parser.find_tensor("output.weight").is_some() {
-        "output.weight"
-    } else {
-        "token_embd.weight"
-    };
-    let lm_head_weights = read_tensor_f32(parser, lm_head_name)
-        .ok_or(format!("tensor no encontrado: {lm_head_name}"))?;
-    let lm_head_dag = build_weight_dag(reg, &lm_head_weights);
-    hidden = reg.bml(hidden, lm_head_dag);
-
-    Ok(hidden)
-}
-
 /// Lee un tensor del GGUF y retorna sus valores como f32.
 ///
 /// Para tipos estándar (F32, F16), lee directamente.
@@ -348,33 +127,13 @@ pub fn read_tensor_f32(parser: &GgufParser, name: &str) -> Option<Vec<f32>> {
     parser.read_tensor_f32(name).ok()
 }
 
-/// Compila un GGUF a `.bmlgraph` usando solo metadatos + grafo simbólico.
-///
-/// No carga ni dequantiza los pesos (eso sería O(n_params) en RAM y CPU).
-/// Lee los metadatos del GGUF (config del modelo) y construye un DAG
-/// simbólico que representa la estructura del transformer.
-///
-/// Los pesos se cargan en runtime (no en compile-time).
+/// Historical spelling for [`compile_gguf`], now compiling the same complete plan.
+/// Matrix weights stay mapped; this name does not promise a faster compilation.
 pub fn compile_gguf_fast(
     gguf_path: &std::path::Path,
-    _hardware: &HardwareSpec,
-) -> Result<CompilationResult, String> {
-    let parser = bml_parser::GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
-    let config = read_model_config(&parser)?;
-
-    let mut reg = HashConsRegistry::with_capacity(64);
-    let root = reg.var(0);
-    let soa_pool = reg.into_soa_and_pool();
-    let (soa, const_pool) = soa_pool;
-    let program = linearize(&soa, root);
-    let graph = fragment_program(&program, 32 * 1024);
-
-    Ok(CompilationResult {
-        num_fragments: graph.num_fragments(),
-        graph,
-        const_pool,
-        config,
-    })
+    hardware: &HardwareSpec,
+) -> Result<CompiledArtifact, String> {
+    compile_gguf(gguf_path, hardware)
 }
 ///
 /// Crea un directorio con:
@@ -1416,10 +1175,8 @@ mod tests {
         let hw = HardwareSpec::new(4, 32 * 1024, 256 * 1024, 16 * 1024 * 1024);
 
         let result = compile_gguf(&path, &hw);
-        let error = result
-            .err()
-            .expect("incomplete model must fail compilation");
-        assert_eq!(error, "tensor no encontrado: output_norm.weight");
+        let error = result.expect_err("incomplete model must fail compilation");
+        assert!(error.contains("tokenizer"), "{error}");
         let _ = std::fs::remove_file(&path);
     }
 
@@ -1434,15 +1191,17 @@ mod tests {
         let result = compile_gguf(path, &hw);
         match result {
             Ok(r) => {
+                let manifest = r.manifest();
                 println!(
                     "Model: {} ({} layers, {} heads, {} embd)",
-                    r.config.architecture, r.config.n_layers, r.config.n_heads, r.config.n_embd
+                    manifest.config.architecture,
+                    manifest.config.n_layers,
+                    manifest.config.n_heads,
+                    manifest.config.n_embd
                 );
-                println!("Fragments: {}", r.num_fragments);
-                println!("Const pool: {} values", r.const_pool.len());
-                println!("Graph ops: {}", r.graph.total_byte_size());
-                assert!(r.num_fragments >= 1);
-                assert!(r.config.n_layers > 0);
+                println!("Symbolic kernels: {}", manifest.kernels.len());
+                assert!(!manifest.kernels.is_empty());
+                assert!(manifest.config.n_layers > 0);
             }
             Err(e) => {
                 panic!("Error compiling tinyllama: {e}");
@@ -1508,30 +1267,30 @@ mod tests {
         // Serializar a disco
         let out_dir =
             std::env::temp_dir().join(format!("bml_test_bmlgraph_{}", std::process::id()));
-        serialize_to_dir(&result, &out_dir).expect("serializar");
+        result.publish(&out_dir).expect("serializar");
 
         // Verificar que el directorio existe
         assert!(out_dir.exists());
-        assert!(out_dir.join("header.bmlgraph").exists());
+        assert!(out_dir.join(symbolic_artifact::MANIFEST).exists());
 
         // Cargar de disco
-        let (graph, const_pool, config) = load_from_dir(&out_dir).expect("cargar");
+        let loaded = symbolic_artifact::load_directory(&out_dir, None).expect("cargar");
 
         // Verificar que los datos coinciden
-        assert_eq!(graph.num_fragments(), result.num_fragments);
-        assert_eq!(const_pool.len(), result.const_pool.len());
-        assert_eq!(config.architecture, result.config.architecture);
-        assert_eq!(config.n_layers, result.config.n_layers);
-
-        // Verificar que el grafo cargado evalúa igual que el original
-        let ctx = bml_domain::EvalContext::new(&[], &const_pool);
-        let val_original = result.graph.evaluate(0.0);
-        let val_loaded = graph.evaluate(0.0);
         assert_eq!(
-            val_original.to_bits(),
-            val_loaded.to_bits(),
-            "evaluación no coincide: original={val_original}, loaded={val_loaded}"
+            serde_json::to_vec(&loaded.manifest).unwrap(),
+            serde_json::to_vec(result.manifest()).unwrap()
         );
+        assert_eq!(loaded.kernels.len(), result.manifest().kernels.len());
+        for (kernel, descriptor) in loaded.kernels.iter().zip(&loaded.manifest.kernels) {
+            for (graph, expected_hash) in kernel.graphs.iter().zip(&descriptor.programs) {
+                assert!(graph.const_pool.is_empty());
+                assert_eq!(
+                    &crate::causal_artifact::hash(&graph.serialize()),
+                    expected_hash
+                );
+            }
+        }
 
         // Limpiar
         std::fs::remove_dir_all(&out_dir).ok();
@@ -1544,21 +1303,21 @@ mod tests {
         let path = model_path.as_str();
         let hw = HardwareSpec::detect_local();
         let result = compile_gguf(path, &hw).expect("compilar");
+        let manifest = result.manifest();
 
         println!(
             "Model: {} ({} layers, {} heads, {} embd)",
-            result.config.architecture,
-            result.config.n_layers,
-            result.config.n_heads,
-            result.config.n_embd
+            manifest.config.architecture,
+            manifest.config.n_layers,
+            manifest.config.n_heads,
+            manifest.config.n_embd
         );
-        println!("Fragments: {}", result.num_fragments);
-        println!("Const pool: {} values", result.const_pool.len());
+        println!("Symbolic kernels: {}", manifest.kernels.len());
 
         // Serializar
         let out_dir =
             std::env::temp_dir().join(format!("bml_tinyllama_bmlgraph_{}", std::process::id()));
-        serialize_to_dir(&result, &out_dir).expect("serializar");
+        result.publish(&out_dir).expect("serializar");
         println!("Serialized to: {:?}", out_dir);
 
         // Listar archivos generados
@@ -1569,16 +1328,19 @@ mod tests {
         }
 
         // Cargar y verificar
-        let (graph, const_pool, config) = load_from_dir(&out_dir).expect("cargar");
-        println!(
-            "Loaded: {} fragments, {} consts, arch={}",
-            graph.num_fragments(),
-            const_pool.len(),
-            config.architecture
-        );
-
-        assert!(graph.num_fragments() > 0);
-        assert!(config.n_layers > 0);
+        let mut model = bml_runtime::symbolic_causal::SymbolicCausalModel::open_artifact(
+            &out_dir,
+            None,
+            bml_runtime::symbolic_causal::SymbolicLimits {
+                max_nodes: 0,
+                ..Default::default()
+            },
+        )
+        .expect("cargar sin recompilar");
+        let ids = model.compiler().vocab().encode("A").expect("tokenizar");
+        let logits = model.forward(&ids).expect("inferencia simbólica");
+        assert_eq!(logits.len(), model.compiler().vocab().len());
+        assert!(logits.iter().all(|v| v.is_finite()));
 
         // Limpiar
         std::fs::remove_dir_all(&out_dir).ok();
