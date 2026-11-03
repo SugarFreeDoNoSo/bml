@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "command": "cargo metadata --format-version 1 --all-features --locked --offline",
+  "scope": "transitive normal/build dependencies; development dependencies excluded",
+  "status": "passed",
+  "closures": {
+    "bml": [
+      "bml",
+      "bml-domain",
+      "bml-gguf",
+      "bml-kernels",
+      "libc",
+      "memmap2"
+    ],
+    "bml-domain": [
+      "bml-domain"
+    ],
+    "bml-gguf": [
+      "bml-domain",
+      "bml-gguf",
+      "libc",
+      "memmap2"
+    ],
+    "bml-kernels": [
+      "bml-domain",
+      "bml-kernels"
+    ]
+  },
+  "forbidden_application_packages": [
+    "bml-bench",
+    "bml-cli",
+    "bml-compiler",
+    "bml-inference",
+    "bml-runtime",
+    "bml-server",
+    "bml-worker"
+  ],
+  "manifest_sha256": {
+    "bml": "cc1abfd090a74bb111d0a14702f2e9f01719f86632fe3342624782bd71293ff8",
+    "bml-bench": "16c8ff64d9a2f9f4c0e50e78ffa21e864e9493f04f3e27a4ff17fd0183ebe330",
+    "bml-cli": "fce8f864641816d2b82d42290ba4c36f25eac9011b8351925a47c4568e4fcc5b",
+    "bml-compiler": "09f1c0d94cc4a77d6a6ec5472ed3f448cae7da3f4aa56f3590d20c255edc9bd4",
+    "bml-domain": "ab5553ea1a83d4cb7fa5705c43d91c5c4e57495bb6a969acd54b5667bdfecd34",
+    "bml-gguf": "b438900aa7b28aa6acd102915b4539de47207721ed19a89f19a47d001bdbb43d",
+    "bml-inference": "74dc746b24aa24a977e8fcfe5b67eea03f883603b4347994c13d793dd7f13399",
+    "bml-kernels": "b65604f277bcc5ad9ae23b3199fae0daa41d0f0639467a3ed1d705cc2c903631",
+    "bml-parser": "e7a442452bc46f79fa10e43547094ab3a9cc8a3c269cb81b86152dfb45ed5388",
+    "bml-runtime": "89c80e8f4b6112675a300b53d181d2e518f2880d3dbb647d50d3d2570260bc91",
+    "bml-server": "314ff0dedc999cc2a2b36cc8ea5160f93f096f5f60b86e887f8c243c4bb8323c",
+    "bml-tests": "16286f32e7dfa442e82f2a1ca38767e946839df9f73b04e48fc36d3d59501cae",
+    "bml-worker": "17b191fff7051163f3b2bb1cddf82175bd30b8820483c1ffeac0a48f263ffb98"
+  }
+}

@@ -50,12 +50,12 @@
   - Análisis de complejidad Big O (referencia al reporte existente).
   - Limitaciones (qué se compara, qué no, por qué).
   - Conclusiones y próximos pasos.
-- [ ] 6.2 Generar gráficos comparativos (si es posible con `criterion` o `gnuplot`).
+- [x] 6.2 Generar gráficos comparativos. SVG/PNG reproducibles con matplotlib en `docs/benchmarks/inference-comparison.*`, desde campaña Stories15M de inferencia completa (snapshot 2026-11-02, hashes preservados). Muestras, dispersión, prefill/decode, wall y RSS; sin graficar extrapolaciones TinyLlama como inferencia equivalente.
 - [x] 6.3 Documentar la proyección de rendimiento potencial (qué pasaría con hot loop nativo, SIMD, GPU).
 - [x] 6.4 Revisar el reporte para honestidad técnica (no sobre-reclamar, documentar limitaciones).
 
 ## 7. Cierre
 
-- [ ] 7.1 `openspec validate bml-vs-llamacpp-bench` pasa sin errores.
+- [x] 7.1 `openspec validate bml-vs-llamacpp-bench --strict` pasa sin errores.
 - [x] 7.2 Commit y push del reporte y resultados.
 - [x] 7.3 Actualizar el README principal con un enlace al reporte de benchmark.

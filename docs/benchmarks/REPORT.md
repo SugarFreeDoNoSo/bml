@@ -5,9 +5,62 @@
 > acreditan inferencia equivalente ni el rendimiento de la versión actual.
 > La nueva ruta y su evidencia se describen en [BML 1.0](../BML_1_0.md).
 
+El target `final_benchmark` ahora mide exclusivamente instrucciones RPN por
+segundo sobre una recurrencia finita, con el resultado validado antes de medir.
+Ya no genera las extrapolaciones de tokens/s, precios cloud ni ratios contra
+llama.cpp que aparecen en este registro histórico. Su unidad incluye todas las
+instrucciones ejecutadas (`One`, `Swap` y `Bml`), no solo operaciones `Bml`.
+
+El target histórico `fma_vs_bml` compara ahora la misma recurrencia BML finita
+en escalar directo, RPN con constantes deduplicadas y RPN sin compartirlas.
+Las tres variantes reciben entradas dinámicas 1 y 2; un oráculo de paridad
+comprueba el resultado antes de medir, y cada programa conserva su pool de
+constantes. Las unidades son pasos BML por segundo. El nombre del target se
+mantiene por compatibilidad, pero las operaciones exp2/log2 no son FMA.
+Construcción y compilación quedan fuera del tiempo medido; la evaluación RPN
+incluye la gestión de su pila. Esta comparación no acredita velocidad de
+inferencia, ventajas asintóticas ni ausencia de asignaciones.
+
+Para medir reservas, ejecutar `python3 tools/measure_recurrence.py --output
+quality/evidence/equal-work-rpn-memory.json` con el toolchain fijado. El ejemplo
+comparte el constructor y el cálculo escalar con el benchmark, comprueba el
+contador mediante una reserva conocida y registra siete muestras de diez
+evaluaciones por caso. Preparación, verificación y escritura JSON quedan fuera
+de la región observada. Reporta error absoluto, payload de bytecode y constantes,
+capacidad reservada del programa, llamadas al allocator, bytes solicitados y pico
+adicional de heap vivo. Estos bytes son datos y reservas solicitadas; no son RSS,
+overhead del allocator ni tamaño de código máquina. Los tiempos de esta campaña
+incluyen la instrumentación del allocator.
+
 **Fecha:** 2026-07-09
 **Hardware:** Intel Xeon (Cascadelake), 4 vCPU, 7.8 GB RAM, Debian 13
 **Modelo:** TinyLlama-1.1B Q4_0 (606 MB, 1.1B parámetros)
+
+## Campaña posterior con inferencia completa (snapshot 2026-11-02)
+
+La siguiente figura corresponde a Stories15M F32, no a las extrapolaciones
+TinyLlama del resto de este documento. Compara los binarios identificados por
+SHA-256 en [el reporte crudo](inference-2026-11-02.json), con igualdad de tokens y
+texto comprobada en cada par. No mide las modificaciones posteriores del árbol
+de trabajo. Las verificaciones de logits están en la evidencia de BML 1.0.
+
+![Prefill, decode, tiempo total y RSS de dos motores sobre Stories15M](inference-comparison.svg)
+
+Tres muestras por prompt y motor; barras con media y desviación poblacional,
+puntos individuales, warmups excluidos. Un hilo CPU, contexto 128, greedy y
+16 tokens solicitados. RSS es máximo por proceso, no bytes asignados. El tiempo
+total incluye arranque, carga y comprobaciones de integridad; los tiempos internos
+de prefill/decode no. La caché del SO no se vació: no son ejecuciones en frío.
+En esta campaña llama.cpp tuvo menores tiempos y BML un RSS algo menor; no se
+generaliza a otros modelos, equipos, revisiones o concurrencia.
+
+Reproducción del gráfico: instalar `tools/plot-requirements.txt` en un entorno
+Python y ejecutar `python tools/plot_inference_benchmark.py
+docs/benchmarks/inference-2026-11-02.json --output
+docs/benchmarks/inference-comparison`. También hay [PNG](inference-comparison.png)
+y [manifiesto con hashes](inference-comparison.json). El generador rechaza campañas
+fallidas o pares con salidas distintas; calcula las estadísticas desde las
+muestras y no mezcla warmups con mediciones.
 
 ---
 

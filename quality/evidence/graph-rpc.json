@@ -1,0 +1,28 @@
+{
+  "contract": "C47; implementation-plan 5.9",
+  "protocol": {
+    "request": 10,
+    "response": 11,
+    "version": 1,
+    "max_bytes": 16777216
+  },
+  "validation": {
+    "codec_tests": 5,
+    "codec_log": "target/quality/spec-graph-rpc-codec.log",
+    "two_worker_test": "connection_tests::graph_rpc_two_worker_stages_match_complete_local_graph",
+    "local_and_remote_log": "target/quality/spec-graph-rpc-validation.log",
+    "canonical_gate": "passed",
+    "gate_log": "target/quality/spec-graph-rpc-gate.log",
+    "traceability": "47/47",
+    "clippy_new": 0
+  },
+  "source_sha256": {
+    "crates/runtime/src/graph_rpc.rs": "6ed9a46ac7aa511d914bb44cdd0b33add3e2738b6e1a7aceadad811bfa2f2a95",
+    "crates/runtime/src/net.rs": "680b571fc2ea5aefc30720cc8a2098d57114237e8ab6a8857c90d838f5678a79",
+    "crates/runtime/src/buffer.rs": "6fb5357170137353edd2a4c1dee47489649b721cd4d85180ed632c91b1ea8529",
+    "crates/compiler/src/fragment.rs": "c31f00e35b6f388179b6a6bba2d5b07704ed802d868d0ec629e03b049d733788",
+    "crates/runtime/tests/graph_rpc_contracts.rs": "6466dd31663a26291ac4908c01eecc994da08f301212446dfa46b44eca4df254",
+    "crates/worker/src/main.rs": "1c10b0a876de388845bbb322e4a3b29c37e9ed04e1fe2eef51fe90acf704edf0"
+  },
+  "limits": "Explicit preflight and decoder budgets; stateless graph execution returns new buffers. No automatic compiler partitioning, ambiguous retry or persistent append-only RPC result publication yet."
+}

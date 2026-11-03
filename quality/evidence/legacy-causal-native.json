@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T16:23:18.911314+00:00",
+  "scope": "Historical native causal prefill/decode, GQA, residual preservation, bounded KV admission and HTTP/SSE incremental generation",
+  "contract": "C52",
+  "source_sha256": {
+    "crates/compiler/src/gguf_compiler.rs": "f1c596756c34d30a6bb742a0a10d398eab04a51a704c0004cec336886dd5e57a",
+    "crates/compiler/src/kv_cache.rs": "6c9dbbacc13890ddabaaad8d528b22c1f2a6f20e78b146d1e73e033b54fcb4c7",
+    "crates/compiler/src/distributed.rs": "520ee0287ab4a3740c79c47c5c3ac28fea3a971fbce611f14908cfced326e21f",
+    "crates/compiler/tests/causal_contracts.rs": "5e4cd0be29ab0a0fe69a9e5820c94d80bcd2f2fb9784a97d0c3de2ac941fd747",
+    "crates/cli/src/main.rs": "a1b9b8f19d2251f8fa0c035e783d943dc60ae9ea484465d4948b7698541379d0",
+    "crates/cli/tests/support/token_fixture.rs": "f078d65b136314314abddbe6a697dafc8ce79d38f9565aa783bd1b7b36ea7412",
+    "crates/api/src/main.rs": "a69cae71984746eb27d99db78d08f5c57ed5df97a898c5b45c80cf842c2f78f4"
+  },
+  "independent_oracle": {
+    "configuration": "One layer, width 4, 2 query heads, 1 KV head, zero Q/K projections, V selecting first two normalized components, identity attention output, zero MLP, epsilon 3",
+    "input_A": [
+      2,
+      0,
+      0,
+      0
+    ],
+    "input_B": [
+      0,
+      2,
+      0,
+      0
+    ],
+    "final_hidden_before_output_norm": {
+      "A": [
+        3,
+        0,
+        1,
+        0
+      ],
+      "AB": [
+        0.5,
+        2.5,
+        0.5,
+        0.5
+      ],
+      "BA": [
+        2.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "ABA": [
+        2.6666666666666665,
+        0.3333333333333333,
+        0.6666666666666666,
+        0.3333333333333333
+      ]
+    },
+    "output": "First four logits are hidden / sqrt(mean(hidden^2)+3); all other logits zero",
+    "absolute_tolerance": 1e-06
+  },
+  "tests": [
+    "causal_prefix_and_incremental_gqa_match_uniform_attention_and_raw_residuals",
+    "invalid_prefix_cache_layout_and_context_fail_before_committing_history",
+    "arithmetic_failure_keeps_committed_prefix_and_retry_overwrites_uncommitted_rows",
+    "cache_allocation_budget_and_size_arithmetic_are_checked_before_allocating",
+    "distributed_metadata_keeps_the_actual_gguf_kv_head_count",
+    "tests::historical_stream_and_completion_share_causal_decode_without_prompt_echo"
+  ],
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "status": "passed",
+    "log": "target/quality/spec-legacy-causal-gate.log",
+    "sha256": "755576bdc1ffad4c1fea469651297a4717f1b94435f948b4cd2e46de1503e9e4",
+    "contracts_registered": 52,
+    "new_clippy_diagnostics": 0
+  },
+  "failure_scope": "Rejected input leaves the cache untouched; numerical failure may write uncommitted rows but does not advance position or alter committed rows. Retry overwrites uncommitted rows.",
+  "limitations": [
+    "Full TinyLlama generation after these changes has not yet been recorded.",
+    "The optional --bml RPN projection/attention path still requires repair and separate validation.",
+    "No numerical parity with llama.cpp or modern bml-model is claimed by these closed-form tests.",
+    "Raw legacy KV storage methods retain ring-address semantics; causal callers enforce capacity before using them."
+  ]
+}

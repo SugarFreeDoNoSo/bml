@@ -28,6 +28,48 @@
 - [x] 5.4 Review public errors/APIs, resource budgets and legacy compatibility.
 
 ## 6. Cierre
+
+Verificación local actualizada el 2026-11-03 en
+`quality/evidence/spec-local-validation-2026-11-03.json`: gate canónico completo,
+features GGUF independientes y fachada/runtime/kernels all-features aprobados;
+cobertura de líneas 86,26 % y funciones 80,15 %. La tarea 6.2 permanece abierta
+porque falta la campaña de mutaciones sobre este snapshot.
+
+Campaña actual lanzada con 2.507 candidatos, resultados finales pendientes en
+`target/spec-mutations-2026-11-03/mutants.out/outcomes.json`. Regresiones y replays
+separados registrados en `quality/evidence/spec-mutation-progress-2026-11-03.json`:
+37 mutantes matriciales detectados y uno no compilable; 6/6 detectados para
+selección de artefactos y límite de fragmentación de la CLI. Las suites actuales
+pasan 610 pruebas Rust; estos replays no sustituyen el gate de la campaña completa.
+
+Seguimiento del compilador simbólico:
+`quality/evidence/symbolic-boundary-mutation-replays.json` acredita 12 mutantes
+de dimensiones/fragmentación y 10 del loader detectados tras añadir los casos
+de frontera inclusiva y rechazo de opcodes nativos sin depender del runtime.
+Gate canónico actualizado: 613 pruebas Rust, auditoría cero discrepancias,
+traza 71/71 y Clippy sin diagnósticos nuevos. La campaña completa sigue pendiente.
+
+Seguimiento local posterior (`6a3e6cc`): los 47 supervivientes del informe
+incompleto de 1.507 resultados tienen disposición: 38 detectados por contratos
+y 9 equivalentes/redundantes bajo los contratos actuales. Los dos timeouts
+también tienen detección local. Evidencia:
+`quality/evidence/survivor-dispositions-2026-11-03.md`. El gate de esa entrega
+aislada pasa 656 pruebas Rust y 63 Python, traza 28/28, cero discrepancias y
+cero diagnósticos nuevos. No acredita el resto del árbol pendiente ni aprueba
+exclusiones de mutación. La auditoría encontró 962 registros `Unviable` con el
+mismo E0505 en una prueba original; se requiere una campaña nueva sobre un
+snapshot congelado con baseline aprobado. 6.2 continúa abierta.
+
+El snapshot completo congelado `e997a84452ee5599858c081c41b6bb21b24c44768e0a30c5459fe32484d498a4`
+pasa ahora el gate canónico: 726 pruebas Rust, 82 Python, traza 71/71, cero
+discrepancias y cero diagnósticos nuevos. Features mínimas/completas aprobadas;
+cobertura de líneas 87,16 % y funciones 79,98 %, sobre los pisos vigentes.
+La campaña nueva de 3.025 candidatos se interrumpió sobre ese mismo snapshot,
+sin exclusiones por equivalencia: 423 resultados terminales (355 detectados,
+31 supervivientes, 11 timeouts y 26 no viables), y 2.602 pendientes. No queda
+ningún proceso de la campaña activo y el gate global sigue sin aprobar. Estado
+verificado en `quality/evidence/global-mutation-status-2026-11-03.json`.
+Evidencia: `quality/evidence/global-quality-restart-2026-11-03.json`.
 - [x] 6.1 `openspec validate bml-1-0-release` passes.
-- [ ] 6.2 Canonical workspace gate, feature checks and applicable coverage/mutation pass.
+- [ ] 6.2 Canonical workspace gate, feature checks and applicable coverage/mutation pass. La campaña del snapshot anterior terminó con 1163 candidatos: 769 caught, 246 missed, 25 timeouts y 123 unviable (exit 3). No acredita el código actual ni satisface el gate de mutaciones; evidencia y casos pendientes en `quality/evidence/spec-mutation-campaign-2026-11-02.json`. Se añadieron regresiones de límites del decoder del worker, con gate canónico aprobado (`quality/evidence/worker-decoder-boundaries.json`); replay aislado de los cuatro mutantes históricos del decoder: 4/4 detectados por las pruebas actuales (`quality/evidence/worker-decoder-mutation-replays.json`). La campaña completa sigue pendiente.
 - [ ] 6.3 Commit the reviewable release work with reproducible evidence; publish only when authorized.

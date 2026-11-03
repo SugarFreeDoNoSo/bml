@@ -74,6 +74,39 @@ normas 172/688 y producto 336 y que las expectativas de embeddings distinguen
 mitades intercambiadas, nibbles intercalados y bloques intercambiados; no se
 modificó el decodificador productivo para simular esos fallos.
 
+## TinyLlama en la CLI histórica
+
+La ruta GGUF histórica completó diez tokens greedy con el modelo fijado por
+SHA-256 `da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556`,
+prompt `Hello`, contexto 64 y un hilo. Mantiene 608,2 MiB mapeados y solo
+0,4 MiB de normalizaciones expandidas; decodifica una fila por proyección.
+Se observaron 57,6 s y 647.144 KiB de RSS máximo bajo carga concurrente,
+con límite de espacio de direcciones de 2 GiB. No es un benchmark controlado.
+
+La salida fue `, World!\n\nStep 3: Add`; `llama-cli` fijado produjo
+`, World!\n\nStep 2: Create`. Sobre el mismo prefijo de nueve tokens, el
+máximo error absoluto entre logits es 0,2150369823 y el argmax difiere
+(29941 frente a 29906). El máximo error frente al motor moderno de BML
+es 1,80e-6. La comparación documenta la divergencia, sin aislar su causa.
+Las proyecciones históricas F64 y los kernels cuantizados GGML no ejecutan
+la misma aritmética. [Evidencia, comandos y hashes](../quality/evidence/tinyllama-legacy-mapped.json).
+Esto valida generación por GGUF; no acredita la ruta compilada `.bmlgraph`
+ni la traducción completa del transformer a identidades BML.
+
+## TinyLlama desde el artefacto compilado
+
+El mismo modelo se compiló como dos programas RPN compartidos por 155
+proyecciones, con un manifest de 1.190.154 bytes y dos archivos de programa
+de 48 bytes, sin copiar los pesos GGUF. La ejecución de diez tokens desde
+`.bmlgraph` completó la misma salida textual que la ruta nativa mapeada en
+478,2 s, con 659.224 KiB de RSS máximo y límite AS de 2 GiB.
+[Evidencia, comandos y hashes](../quality/evidence/tinyllama-compiled-causal.json).
+
+Son tiempos observados bajo carga concurrente, no un benchmark controlado.
+El perfil `llama-causal-f64-f32kv-rpn-v1` ejecuta las proyecciones guardadas,
+pero mantiene normalización, RoPE, atención, activación y residuales nativos.
+La traducción completa del transformer a identidades BML continúa pendiente.
+
 ## Siguiente validación con un archivo real
 
 Modelo seleccionado: `google/gemma-4-E2B-it-qat-q4_0-gguf`, revisión

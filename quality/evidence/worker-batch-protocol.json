@@ -1,0 +1,27 @@
+{
+  "scope": "Legacy worker BatchRequest framing and shard upload acknowledgement",
+  "test": "connection_tests::legacy_batch_tcp_validates_dimensions_and_exact_payload_length",
+  "cases": {
+    "valid": 1,
+    "wrong_dimension": 1,
+    "trailing_bytes": 1,
+    "truncated_prefixes": 28
+  },
+  "behavior": "Require checked exact byte length and header dimension equal to the loaded shard before allocating hidden state or executing layers; reject invalid messages with empty BatchResult and close session.",
+  "verification": [
+    "9 worker tests passed",
+    "OpenSpec: 8 passed, 0 failed",
+    "Canonical gate passed: 67/67 contracts, zero audit discrepancies, zero new static diagnostics"
+  ],
+  "limitations": [
+    "The zero-layer fixture verifies byte-preserving transport, not legacy layer mathematics or causal inference.",
+    "No full-workspace mutation campaign repeated."
+  ],
+  "sha256": {
+    "crates/worker/src/main.rs": "2bae432e26683ea7a0e03c48c9eb56e7a50832a7c8e09e28b4522147a455b9fe",
+    "crates/runtime/src/net.rs": "f6ae4a3474c8d7722eecf6c950e39ae55943eba5c5151b2ca284309e56ba3fce",
+    "target/quality/spec-worker-batch-tests.log": "4c013f9c753b1d85b5aa9f3accdb7cbfeeb83c13f8f947d01d4838c4edebbdda",
+    "target/quality/spec-worker-batch-openspec.log": "d485b9428cb9ee203a5e683375d42d0def5fe3e3b69ee8856c98ebd301b6524b",
+    "target/quality/spec-worker-batch-gate.log": "5adba2b9af9d77a01ff41e937eb4e1e97b1994f21200d005fd3161acd40eb57c"
+  }
+}

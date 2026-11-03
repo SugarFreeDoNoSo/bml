@@ -1,0 +1,537 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T14:06:10.574480+00:00",
+  "source_snapshot_sha256": "631f0599f2e04ecf05139cb281e89aa914ff347db806767afad657d0b7f92050",
+  "source_snapshot_method": "Sorted crates/**/*.rs, crates/**/Cargo.toml, Cargo.toml, Cargo.lock; path NUL then raw file SHA-256 digest",
+  "canonical_gate": {
+    "status": "passed",
+    "command": "./scripts/check.sh origin/master",
+    "log": "target/quality/current-spec-gate.log"
+  },
+  "coverage": {
+    "status": "passed",
+    "tool": "cargo-llvm-cov 0.9.1",
+    "command": "cargo llvm-cov --workspace --locked --json --output-path target/quality/coverage.json",
+    "report": "target/quality/coverage.json",
+    "report_sha256": "e58dab0c878301c52aa2db6463ecb7ff12abfaf2521774c4dd8c802572a1b1ec",
+    "totals": {
+      "branches": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0
+      },
+      "functions": {
+        "count": 1514,
+        "covered": 1156,
+        "percent": 76.35402906208718
+      },
+      "instantiations": {
+        "count": 3152,
+        "covered": 1500,
+        "percent": 47.588832487309645
+      },
+      "lines": {
+        "count": 14979,
+        "covered": 11074,
+        "percent": 73.93016890313106
+      },
+      "mcdc": {
+        "count": 0,
+        "covered": 0,
+        "notcovered": 0,
+        "percent": 0
+      },
+      "regions": {
+        "count": 26612,
+        "covered": 18996,
+        "notcovered": 7616,
+        "percent": 71.3813317300466
+      }
+    },
+    "line_floor": 52.0,
+    "function_floor": 60.0
+  },
+  "affected_features": {
+    "status": "passed",
+    "command": "cargo test -p bml -p bml-runtime --all-features --locked",
+    "log": "target/quality/spec-features.log"
+  },
+  "mutation": {
+    "status": "running_at_observation_not_complete",
+    "tool": "cargo-mutants 27.1.0",
+    "candidate_count": 1163,
+    "command": "cargo mutants --workspace --cargo-arg=--locked --test-workspace true --jobs 2 --timeout 30 --build-timeout 180 --in-diff target/quality/spec-changes.diff --output target/spec-mutations-retry",
+    "log": "target/quality/spec-mutation-retry.log",
+    "result_directory": "target/spec-mutations-retry/mutants.out",
+    "gate_passed": false,
+    "previous_attempt": {
+      "status": "baseline_failed_before_mutations",
+      "directory": "target/spec-mutations/mutants.out",
+      "cause": "ExecutableFileBusy/ETXTBSY launching a just-written test ELF during parallel tests",
+      "regression": "embedded_child_launch_waits_for_a_transient_write_handle",
+      "fix_validation": "cargo test -p bml-inference --test embedded_contracts --locked: 9 passed, 2 explicit child helpers ignored; Clippy no new diagnostics"
+    },
+    "observed_at_utc": "2026-11-02T14:14:15.097357+00:00",
+    "test_source_sha256": "4295adc21accd72c88eb5444e99b5df1ce3bb322db1a34f2b435efe5905c7859",
+    "baseline_status": "passed",
+    "baseline_build_seconds": 67,
+    "baseline_test_seconds": 4,
+    "followup_regressions": [
+      {
+        "test": "exact_failure_diagnostics_are_nonempty_and_keep_typed_causes",
+        "source": "crates/domain/tests/bml_certified.rs",
+        "source_sha256": "fbeb6027260fb6f447f3ed2eadb5eb334375d6c60e8c1adc816d976bc35c8e79",
+        "baseline": "passed in workspace and isolated dependency-free domain copy",
+        "replays": [
+          {
+            "change": "ExactError Display returns empty success",
+            "result": "caught; assertion on nonempty public diagnostic",
+            "log": "target/quality/spec-diagnostic-replay-mutant.log"
+          },
+          {
+            "change": "ExactError source omits rational cause",
+            "result": "caught; typed cause must remain available",
+            "log": "target/quality/spec-diagnostic-replay-source.log"
+          },
+          {
+            "change": "build-cause",
+            "caught": true,
+            "log": "target/quality/spec-diagnostic-replay-build-cause.log"
+          },
+          {
+            "change": "source-none",
+            "caught": true,
+            "log": "target/quality/spec-diagnostic-replay-source-none.log"
+          }
+        ],
+        "scope": "Focused replay confirms regression effectiveness; ongoing full campaign uses its earlier copied tests and is not retroactively credited."
+      },
+      {
+        "test": "replay_accepts_exact_inclusive_budgets_and_rejects_before_oversized_build",
+        "source": "crates/domain/tests/bml_certified.rs",
+        "source_sha256": "ba70de101c7d51c63be568ecea28beb9ef963d7a670cdf56e5af4a84b51235e9",
+        "baseline": "passed",
+        "replays": [
+          {
+            "change": "inclusive-step-cap",
+            "caught": true,
+            "log": "target/quality/spec-budget-replay-inclusive-step-cap.log"
+          },
+          {
+            "change": "remaining-bit-budget",
+            "caught": true,
+            "log": "target/quality/spec-budget-replay-remaining-bit-budget.log"
+          }
+        ],
+        "scope": "Isolated source replays, not a replacement for the running full campaign"
+      }
+    ],
+    "counts_at_observation": {
+      "caught": 6,
+      "missed": 4,
+      "timeout": 1,
+      "unviable": 10
+    }
+  },
+  "release_complete": false,
+  "followup_regressions": [
+    {
+      "tests": [
+        "positive_rules_reject_each_nonpositive_operand",
+        "replay_checks_structural_and_rational_budgets_independently"
+      ],
+      "source": "crates/domain/tests/bml_certified.rs",
+      "sha256": "6e351325f4ebcc760ff61503732a8d828f0eea13c538ba7aa2f80f99702e0425",
+      "validation": "cargo test -p bml-domain --test bml_certified --locked: 12 passed",
+      "focused_mutation_replays": [
+        {
+          "mutation": "left-domain",
+          "test": "positive_rules_reject_each_nonpositive_operand",
+          "caught": true,
+          "log": "target/quality/spec-independent-left-domain.log"
+        },
+        {
+          "mutation": "denominator-budget",
+          "test": "replay_checks_structural_and_rational_budgets_independently",
+          "caught": true,
+          "log": "target/quality/spec-independent-denominator-budget.log"
+        },
+        {
+          "mutation": "structure-budget",
+          "test": "replay_checks_structural_and_rational_budgets_independently",
+          "caught": true,
+          "log": "target/quality/spec-independent-structure-budget.log"
+        }
+      ],
+      "scope": "Focused replays against updated tests; original full campaign remains a separate snapshot."
+    }
+  ],
+  "certified_survivor_recheck": {
+    "scope": "15 original missed certified.rs mutations replayed individually against current complete bml_certified target; not a replacement for running workspace campaign",
+    "source_sha256": {
+      "crates/domain/src/number/certified.rs": "b3122ee556cd1e7e8316ce6542e994b721e750b9a9e1f1c64e7517aedb42d77c",
+      "crates/domain/tests/bml_certified.rs": "6e351325f4ebcc760ff61503732a8d828f0eea13c538ba7aa2f80f99702e0425"
+    },
+    "results": [
+      {
+        "mutation": "crates/domain/src/number/certified.rs:92:9: replace <impl fmt::Display for ExactError>::fmt -> fmt::Result with Ok(Default::default())",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-92-9.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:104:13: delete match arm Self::Rational(e) in <impl std::error::Error for ExactError>::source",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-104-13.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:105:13: delete match arm Self::Build(e) in <impl std::error::Error for ExactError>::source",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-105-13.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:181:29: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-181-29.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:194:71: replace - with + in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-194-71.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:242:48: replace || with && in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-242-48.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:256:17: replace || with && in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-256-17.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:255:17: replace || with && in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-255-17.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:254:33: replace > with == in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-254-33.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:254:33: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-254-33.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:255:64: replace > with == in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-255-64.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:255:64: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-255-64.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:256:66: replace > with == in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-256-66.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:256:66: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-256-66.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:263:22: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-263-22.log"
+      }
+    ]
+  },
+  "certified_depth_boundary_recheck": {
+    "test": "synthesis_depth_budget_is_inclusive_for_literals_and_decomposition",
+    "baseline_log": "target/quality/spec-certified-depth.log",
+    "replays": [
+      {
+        "mutation": "crates/domain/src/number/certified.rs:92:9: replace <impl fmt::Display for ExactError>::fmt -> fmt::Result with Ok(Default::default())",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-92-9.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:104:13: delete match arm Self::Rational(e) in <impl std::error::Error for ExactError>::source",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-104-13.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:105:13: delete match arm Self::Build(e) in <impl std::error::Error for ExactError>::source",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-105-13.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:181:29: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-181-29.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:194:71: replace - with + in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-194-71.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:242:48: replace || with && in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-242-48.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:256:17: replace || with && in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-256-17.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:255:17: replace || with && in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-255-17.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:254:33: replace > with == in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-254-33.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:254:33: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-254-33.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:255:64: replace > with == in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-255-64.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:255:64: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-255-64.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:256:66: replace > with == in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-256-66.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:256:66: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-256-66.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:263:22: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-263-22.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:287:18: replace > with == in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-287-18.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:287:18: replace > with >= in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-287-18.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:288:38: replace > with == in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-288-38.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:288:38: replace > with >= in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-288-38.log"
+      }
+    ],
+    "scope": "Individual replays against current tests; workspace campaign still separate.",
+    "tests_passed": 14,
+    "source_sha256": "e7e47535c07928f25f1bbd1a37cf013b648eb655ec6c0126a615cd3fb43effbd"
+  },
+  "input_and_simplification_regressions": {
+    "replays": [
+      {
+        "mutation": "crates/domain/src/number/evaluate.rs:15:9: replace <impl fmt::Display for SimplifiedEvalError>::fmt -> fmt::Result with Ok(Default::default())",
+        "status": "caught",
+        "log": "target/quality/spec-input-replay-15-9.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/evaluate.rs:23:9: replace <impl std::error::Error for SimplifiedEvalError>::source -> Option<&(dyn std::error::Error +'static)> with None",
+        "status": "caught",
+        "log": "target/quality/spec-input-replay-23-9.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/exact.rs:40:9: replace <impl fmt::Display for ExactInputError>::fmt -> fmt::Result with Ok(Default::default())",
+        "status": "caught",
+        "log": "target/quality/spec-input-replay-40-9.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/exact.rs:79:41: replace > with == in ExactRational::from_decimal_str",
+        "status": "caught",
+        "log": "target/quality/spec-input-replay-79-41.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/exact.rs:79:41: replace > with >= in ExactRational::from_decimal_str",
+        "status": "caught",
+        "log": "target/quality/spec-input-replay-79-41.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/exact.rs:92:48: replace > with >= in ExactRational::from_decimal_str",
+        "status": "caught",
+        "log": "target/quality/spec-input-replay-92-48.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/exact.rs:100:23: replace > with == in ExactRational::from_decimal_str",
+        "status": "caught",
+        "log": "target/quality/spec-input-replay-100-23.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/exact.rs:100:23: replace > with >= in ExactRational::from_decimal_str",
+        "status": "caught",
+        "log": "target/quality/spec-input-replay-100-23.log"
+      }
+    ],
+    "baseline": "target/quality/spec-input-errors.log",
+    "scope": "Current targeted tests catch original campaign survivors; original workspace snapshot remains unchanged.",
+    "parser_baseline": "target/quality/spec-decimal-precedence.log",
+    "parser_tests_passed": 8,
+    "source_sha256": "e1652dd892ba984746d5dbd7d1c63e0a333e03b0d7d0dc54d5cde1529469559d"
+  },
+  "certified_remainder_depth_recheck": {
+    "test": "synthesis_depth_budget_is_inclusive_for_literals_and_decomposition",
+    "boundary": {
+      "value": 81,
+      "accepted_depth": 5,
+      "rejected_depth": 4,
+      "path": [
+        81,
+        47,
+        17,
+        15,
+        4,
+        2
+      ]
+    },
+    "source_sha256": "ec4dd4bdbd6cd21de6bfdae3a418172e30c399f9f95c31bca1b8c2fca906eb52",
+    "baseline": "target/quality/spec-remainder-depth.log",
+    "replays": [
+      {
+        "mutation": "crates/domain/src/number/certified.rs:92:9: replace <impl fmt::Display for ExactError>::fmt -> fmt::Result with Ok(Default::default())",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-92-9.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:104:13: delete match arm Self::Rational(e) in <impl std::error::Error for ExactError>::source",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-104-13.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:105:13: delete match arm Self::Build(e) in <impl std::error::Error for ExactError>::source",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-105-13.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:181:29: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-181-29.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:194:71: replace - with + in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-194-71.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:242:48: replace || with && in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-242-48.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:256:17: replace || with && in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-256-17.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:255:17: replace || with && in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-255-17.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:254:33: replace > with == in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-254-33.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:254:33: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-254-33.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:255:64: replace > with == in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-255-64.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:255:64: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-255-64.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:256:66: replace > with == in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-256-66.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:256:66: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-256-66.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:263:22: replace > with >= in ExactDerivation::replay",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-263-22.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:287:18: replace > with == in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-287-18.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:287:18: replace > with >= in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-287-18.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:288:38: replace > with == in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-288-38.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:288:38: replace > with >= in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-288-38.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:308:73: replace + with * in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-308-73.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:315:31: replace + with * in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-315-31.log"
+      },
+      {
+        "mutation": "crates/domain/src/number/certified.rs:317:68: replace + with * in Synthesizer::integer",
+        "status": "caught",
+        "log": "target/quality/spec-certified-replay-317-68.log"
+      }
+    ]
+  }
+}

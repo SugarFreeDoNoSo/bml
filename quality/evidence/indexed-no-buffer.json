@@ -1,0 +1,20 @@
+{
+  "contract": "C44",
+  "finding": "Three bufferless VarIndexed execution paths still fabricated zero despite the completed task claim.",
+  "change": "Return NaN in direct RPN and both Fragment loop bodies.",
+  "validation": {
+    "test": "indexed_reads_without_buffer_are_nan_at_every_supported_loop_depth",
+    "coverage": "Program and Fragment at depths 0,1,2; HotLoop with populated ResultBuffer returns 17 at all depths.",
+    "workspace_gate": "passed",
+    "log": "target/quality/spec-indexed-gate.log",
+    "traceability": "44/44",
+    "historical_discrepancies": 0,
+    "clippy_new": 0,
+    "openspec": "fix-placeholders --strict passed"
+  },
+  "sha256": {
+    "crates/compiler/src/rpn.rs": "52cc82e2a68beaf1f3ce25d05751f2bd4f52afcb51da6d644013667990b23700",
+    "crates/compiler/src/fragment.rs": "284b93107235a0220a88044671593c245b25b1a5854b1483568bb7a664223024",
+    "crates/compiler/tests/contracts.rs": "3f48258ba055c01640d2dac4fa44afe6ee36a43e2c06bd6dbc4c5638749a189c"
+  }
+}

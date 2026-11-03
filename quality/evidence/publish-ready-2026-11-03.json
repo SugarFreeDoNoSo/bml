@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "purpose": "Publish verified local implementation, tests, tooling and honest evidence; not a release-completion claim",
+  "base_commit": "51c9cf230605ddaedd59512d62fc6e465211fa96",
+  "source_manifest": "target/quality/publish-input-manifest.json",
+  "source_manifest_sha256": "e1ab52918a066181f5004893336a3adaa4852c0739ed863f7df908c2a4e20a10",
+  "input_hashes_verified": true,
+  "post_gate_adjustments": [
+    "openspec/changes/bml-1-0-release/tasks.md",
+    "openspec/specs/bml-benchmark/spec.md",
+    "sandbox/Cargo.lock",
+    "AGENTS.md documentation corrected to reflect existing facade"
+  ],
+  "verification": {
+    "canonical": {
+      "log": "target/quality/publish-ready-worktree-gate.log",
+      "sha256": "a52be8b25aa6fb4c5161a72e5fc495fb99e6c94944f5ace0b89aad856149a071",
+      "rust_tests_passed": 736,
+      "exit_code": 0,
+      "python_tests_passed": 82,
+      "traceability": "74/74",
+      "historical_discrepancies": 0,
+      "new_clippy_diagnostics": 0
+    },
+    "features": {
+      "log": "target/quality/publish-ready-features.log",
+      "sha256": "45503513a748b003dc83d0e13e810f3040f4318b86d5c5176e8f2aa949a21e69",
+      "rust_tests_passed": 111,
+      "command": "cargo test -p bml -p bml-kernels -p bml-runtime -p bml-queue --all-features --locked",
+      "exit_code": 0
+    },
+    "openspec": {
+      "log": "target/quality/publish-ready-openspec.log",
+      "sha256": "c057d40ba75ba779a12f9596c1d64c0deb0b80ab7d41bfc6a8077c73b0fda44c",
+      "rust_tests_passed": 0,
+      "command": "openspec validate --all --strict",
+      "exit_code": 0,
+      "items_passed": 11
+    }
+  },
+  "notebook_smoke": {
+    "scope": "Original notebook examples executed in isolated copy; saved local notebook edits untouched",
+    "command": [
+      "cargo",
+      "run",
+      "--manifest-path",
+      "/home/dev/Work/bml/target/publish-sandbox-smoke/Cargo.toml",
+      "--locked",
+      "--quiet"
+    ],
+    "lock_sha256": "9fe322bd5255db8fc6583831325f04b5d9c4101027eeabec810aebcaf30dc4af",
+    "results": [
+      {
+        "source": "sandbox/examples/01_codificacion.rs",
+        "source_sha256": "760696a61f16dc149b0dcb9c05c45c6c5c3fb9841309b36fb30dc1f6d19c6b81",
+        "exit_code": 0,
+        "seconds": 3.5430572539917193,
+        "log": "target/quality/publish-sandbox-01_codificacion.log",
+        "log_sha256": "cf128b662c531d6ef8c39697b7c5a3a63442d71575e8c87063259e47c6932025"
+      },
+      {
+        "source": "sandbox/examples/02_conversion.rs",
+        "source_sha256": "1804a68c1cfd2f93f16b93a357edda633fec2cac56c34236ae36e8093b375342",
+        "exit_code": 0,
+        "seconds": 0.21655353001551703,
+        "log": "target/quality/publish-sandbox-02_conversion.log",
+        "log_sha256": "60471d579da7398aad92a935370023669cca1a08f20c6b6ed2d9a45c8d0d01b0"
+      },
+      {
+        "source": "sandbox/examples/03_operaciones.rs",
+        "source_sha256": "17fb32e99b5a62e610d3999aebc72ed1f6261282bb9fb9f7a3880279fe259662",
+        "exit_code": 0,
+        "seconds": 0.21480661199893802,
+        "log": "target/quality/publish-sandbox-03_operaciones.log",
+        "log_sha256": "6719c781d9109ba9b10b518e0ac213e87023637ec9cfc3636a78101405890629"
+      },
+      {
+        "source": "sandbox/examples/04_variables.rs",
+        "source_sha256": "291a7d94b3b1bf7a0c8e2c9fe0765d1e13fbb400d2f5377475e75d8d641758e1",
+        "exit_code": 0,
+        "seconds": 0.2147213720018044,
+        "log": "target/quality/publish-sandbox-04_variables.log",
+        "log_sha256": "ee955236459c58da62dd9560e96cdcafd611b3189a9dd2b4537e036749b0365f"
+      },
+      {
+        "source": "sandbox/examples/05_dominio_real.rs",
+        "source_sha256": "9118debedcd9c5c4234ff837e678121d2667cfacf39e0c6b36b11d21bce8e21d",
+        "exit_code": 0,
+        "seconds": 0.21509095901274122,
+        "log": "target/quality/publish-sandbox-05_dominio_real.log",
+        "log_sha256": "e50633fe466e47a9e1f7b804c92350d1175009dd5848c17a5718f568819fe286"
+      },
+      {
+        "source": "sandbox/examples/06_formas_y_vistas.rs",
+        "source_sha256": "7b33d9643d373f56c2c37888e0ed9b466a745a3edbec01cb94aa034d1a3e0f95",
+        "exit_code": 0,
+        "seconds": 0.26511553800082766,
+        "log": "target/quality/publish-sandbox-06_formas_y_vistas.log",
+        "log_sha256": "066a14bda753181f8c6b056f706f929e9f329224ac1a5648102bc64ed365857f"
+      },
+      {
+        "source": "sandbox/examples/07_kernels.rs",
+        "source_sha256": "741f5959ea07153963429e25cc414be73e85087cb8390590efc6fec20f9d9856",
+        "exit_code": 0,
+        "seconds": 0.2148670199967455,
+        "log": "target/quality/publish-sandbox-07_kernels.log",
+        "log_sha256": "12613055a604c8c9a04bfea4722b8f7a7a26ee3ecd17927601a161340b8bdbc6"
+      },
+      {
+        "source": "sandbox/examples/08_matrices.rs",
+        "source_sha256": "6bfa339c08b498729a72b52b4d67949c9636ad27a7d461f4a6aea482e54b9f6e",
+        "exit_code": 0,
+        "seconds": 0.21890154702123255,
+        "log": "target/quality/publish-sandbox-08_matrices.log",
+        "log_sha256": "29fc3cbe33931ed59e6a221d22ae3b2315e3654f942dee0c130253165250b20e"
+      },
+      {
+        "source": "sandbox/examples/09_base_tensor.rs",
+        "source_sha256": "e1f23d2a0584a4e951082c7e51735fb4ee45dde627a0dea7d35e656beb9f1365",
+        "exit_code": 0,
+        "seconds": 0.21477205600240268,
+        "log": "target/quality/publish-sandbox-09_base_tensor.log",
+        "log_sha256": "0df8b1b629cabae47894d86122a1494692ae33135cce88e65ff90aa32bec8208"
+      },
+      {
+        "source": "sandbox/examples/10_codecs.rs",
+        "source_sha256": "345d2bb330e96a15b8fbdbe0c48fc608c49440e019be84b1189b7f2076893783",
+        "exit_code": 0,
+        "seconds": 0.2157001690065954,
+        "log": "target/quality/publish-sandbox-10_codecs.log",
+        "log_sha256": "c53e71cea7b121099cdc6ba0fd109d420d69b061576c5829c7667ae812879eaf"
+      },
+      {
+        "source": "sandbox/examples/11_gguf_tensor.rs",
+        "source_sha256": "1d621774a3e82e7b474b572e42e2f91d4d6476f5ae9f3fb1a5e44ba665634c27",
+        "exit_code": 0,
+        "seconds": 0.3154369020194281,
+        "log": "target/quality/publish-sandbox-11_gguf_tensor.log",
+        "log_sha256": "ff622427b0ad1f62962788866142116adf27a273d8b09b54a2024aa8fe72b28a"
+      },
+      {
+        "source": "sandbox/examples/12_compilador.rs",
+        "source_sha256": "7bf29b30c9eec1f95e0de5d525e6869fbe1ba13fcf8fbd63f2514d005f57bd1d",
+        "exit_code": 0,
+        "seconds": 0.26866413600509986,
+        "log": "target/quality/publish-sandbox-12_compilador.log",
+        "log_sha256": "7cfe03d90fe171f6495c5239c1914dd707b278adbd99938f67cad34c70eb007f"
+      }
+    ]
+  },
+  "scope_limits": [
+    "Global mutation gate is unapproved; the interrupted campaign has only 423/3025 terminal outcomes.",
+    "Symbolic real-model range/scalability, ARM, PMU and external stress requirements remain open.",
+    "The new bounded-RMS Python probe is diagnostic only, under ignored target/, not integrated or published."
+  ],
+  "left_local": [
+    ".serena/project.yml",
+    "ignored target/ diagnostics and model/build files",
+    "ignored sandbox/.local/ user edits and outputs"
+  ]
+}

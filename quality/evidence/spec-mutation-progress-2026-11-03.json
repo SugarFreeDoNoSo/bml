@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "tool": "cargo-mutants 27.1.0",
+  "campaign": {
+    "status": "launched_final_result_pending",
+    "candidate_count": 2507,
+    "initial_source_snapshot_sha256": "a1905d87eece7400dcb54d96277e71dd5f243c5b28006589cdc7bbc8b59c6e21",
+    "diff": "target/quality/spec-changes-2026-11-03.diff",
+    "diff_sha256": "c84c2771d8f780c4b99372391dda158c8a253d98ec763fa38908b9fa51c74538",
+    "command": "CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 cargo mutants --workspace --cargo-arg=--locked --test-workspace true --jobs 2 --timeout 60 --build-timeout 300 --in-diff target/quality/spec-changes-2026-11-03.diff --output target/spec-mutations-2026-11-03",
+    "temporary_directory": "target/tool-install-tmp",
+    "log": "target/quality/spec-mutations-2026-11-03.log",
+    "outcomes": "target/spec-mutations-2026-11-03/mutants.out/outcomes.json",
+    "gate_passed": false
+  },
+  "matrix_followup": {
+    "test": "crates/domain/tests/bml_matrix_boundaries.rs",
+    "test_sha256": "f2a0028feb9cdaea03c3d2b531b6e1c4c8c83942306c99b342d00776ce435624",
+    "baseline_tests_passed": 5,
+    "filter": "matrix.rs:(72|99|100|131|157|163|199|216|220|231|235|238|470|554):",
+    "scope": "Independent inclusive matrix budgets, transactional replacement and row-major addressing, generalized reduction fallback, typed error sources. Historical survivors motivated these regressions.",
+    "distinct_candidates": 38,
+    "caught": 37,
+    "unviable": 1,
+    "missed": 0,
+    "timeout": 0,
+    "execution": "First invocation interrupted by harness timeout after 34 completed outcomes (33 caught, 1 unviable); --iterate completed the remaining 4 with exit 0. Candidate names from both reports are disjoint and their union has all 38 selected candidates.",
+    "reports": [
+      {"path": "target/spec-matrix-boundaries-2026-11-03/mutants.out.old/outcomes.json", "sha256": "b629acad3226fdeae37f13d77443b7cef1d0d06325428c735bae3da3a983a8e7"},
+      {"path": "target/spec-matrix-boundaries-2026-11-03/mutants.out/outcomes.json", "sha256": "cc3a62534119efd2546d26e56d2c9d7b4c4ab6b538cbbd2d2a850a0809a846a4"}
+    ]
+  },
+  "cli_followup": {
+    "scope": "Current campaign survivors: empty directory misclassified as artifact and ignored --l1-threshold during symbolic compilation. Regression checks all three marker names and deserializes actual persisted fragments under the requested 256-byte limit.",
+    "filter": "is_bmlgraph_dir|delete field fragment_bytes",
+    "caught": 6,
+    "missed": 0,
+    "timeout": 0,
+    "unviable": 0,
+    "exit_code": 0,
+    "report": "target/spec-cli-replay-2026-11-03/mutants.out/outcomes.json",
+    "report_sha256": "8a46ddce07608da076a41a0a09ea7fa0300bc6dd586a2b1f434923faabb898ab",
+    "source_sha256": {
+      "crates/cli/tests/symbolic_token_output.rs": "15b1c776400182fd03b4f5b55e6416fa163bae7ee015925ef795666d75559061",
+      "crates/cli/src/main.rs": "2857f2e9916c8b366305cf15a0d3b33d0d320978012f7a325421dc38edd9ce0c"
+    },
+    "post_replay_change": "Moved the unchanged unit-test module to the end of main.rs to satisfy Clippy."
+  },
+  "regression_verification": {
+    "workspace_tests_passed": 610,
+    "workspace_tests_ignored": 17,
+    "python_tests_passed": 82,
+    "historical_discrepancies": 0,
+    "traceability": "71/71",
+    "gate_log": "target/quality/spec-regressions-gate-2026-11-03.log",
+    "gate_log_sha256": "f63a317210fb0b3a10e42368b142f74720c569f679c07764ce95447780697eba",
+    "gate_note": "Reached Clippy after all prior stages passed; failed on items_after_test_module. Relocated the unit-test module and reran lint successfully.",
+    "final_clippy_new_diagnostics": 0,
+    "final_clippy_log": "target/quality/spec-regressions-clippy-final-2026-11-03.log",
+    "final_clippy_log_sha256": "5bc72c1946772dbc9989a10fee6b26351cbce7d4e32aacab5b9acbcabe410c62"
+  },
+  "limitations": "Focused followups use newer tests than the full campaign snapshot. They do not retroactively make that campaign pass; task 6.2 remains open pending complete outcomes and remaining survivors."
+}

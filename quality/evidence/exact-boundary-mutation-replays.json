@@ -1,0 +1,192 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T16:41:31.304957+00:00",
+  "scope": "Isolated replay of 31 exact.rs survivors from the ongoing older workspace mutation snapshot against current domain tests",
+  "source_sha256": {
+    "crates/domain/src/number/exact.rs": "da29637bbc49161ca1e684f87bd0e1f971af89e9ed9ff8eda3f2d7af024a73bf",
+    "crates/domain/tests/bml_certified.rs": "4b7c0aa26ecb52543ca3f058b0e0201bb84fc00cf4ec96d545f3b52ec93bd27b",
+    "crates/domain/tests/bml_simplified_eval.rs": "2d676b44c25159befd179a204963bdf3861e1e9dda22bbcc717c896ba369b563"
+  },
+  "caught": 24,
+  "survived": 7,
+  "replays": [
+    {
+      "mutation": "crates/domain/src/number/exact.rs:40:9: replace <impl fmt::Display for ExactInputError>::fmt -> fmt::Result with Ok(Default::default())",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-40-9.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:79:41: replace > with == in ExactRational::from_decimal_str",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-79-41.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:79:41: replace > with >= in ExactRational::from_decimal_str",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-79-41.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:92:48: replace > with >= in ExactRational::from_decimal_str",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-92-48.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:100:23: replace > with == in ExactRational::from_decimal_str",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-100-23.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:100:23: replace > with >= in ExactRational::from_decimal_str",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-100-23.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:136:26: replace | with ^ in ExactRational::from_f64",
+      "status": "survived",
+      "log": "target/quality/spec-exact-boundary-replay-136-26.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:269:41: replace | with ^ in shift_right",
+      "status": "survived",
+      "log": "target/quality/spec-exact-boundary-replay-269-41.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:326:34: replace | with ^ in divide_exact",
+      "status": "survived",
+      "log": "target/quality/spec-exact-boundary-replay-326-34.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:444:9: replace ExactRational::check_limit -> Result<(), ExactInputError> with Ok(())",
+      "status": "caught",
+      "log": "target/quality/spec-exact-limit-replay-444-9.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:458:93: replace + with - in add",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-458-93.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:470:21: replace || with && in multiply",
+      "status": "survived",
+      "log": "target/quality/spec-exact-boundary-replay-470-21.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:477:18: replace > with == in multiply",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-477-18.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:477:18: replace > with >= in multiply",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-477-18.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:477:14: replace - with + in multiply",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-477-14.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:477:14: replace - with / in multiply",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-477-14.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:489:76: replace + with - in multiply",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-489-76.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:489:76: replace + with * in multiply",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-489-76.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:489:52: replace + with - in multiply",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-489-52.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:517:13: delete match arm [] in ExactRational::checked_exp2",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-517-13.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:546:9: replace <impl fmt::Display for RationalFloatError>::fmt -> fmt::Result with Ok(Default::default())",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-546-9.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:572:21: replace > with == in ExactRational::to_f64_rounded",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-572-21.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:572:21: replace > with >= in ExactRational::to_f64_rounded",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-572-21.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:575:21: replace < with == in ExactRational::to_f64_rounded",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-575-21.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:575:21: replace < with <= in ExactRational::to_f64_rounded",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-575-21.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:598:21: replace < with == in ExactRational::to_f64_rounded",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-598-21.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:598:21: replace < with <= in ExactRational::to_f64_rounded",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-598-21.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:617:29: replace >>= with <<= in ExactRational::to_f64_rounded",
+      "status": "caught",
+      "log": "target/quality/spec-exact-boundary-replay-617-29.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:623:46: replace | with ^ in ExactRational::to_f64_rounded",
+      "status": "survived",
+      "log": "target/quality/spec-exact-boundary-replay-623-46.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:631:37: replace | with ^ in ExactRational::to_f64_rounded",
+      "status": "survived",
+      "log": "target/quality/spec-exact-boundary-replay-631-37.log"
+    },
+    {
+      "mutation": "crates/domain/src/number/exact.rs:650:34: replace | with ^ in rounded_quotient",
+      "status": "survived",
+      "log": "target/quality/spec-exact-boundary-replay-650-34.log"
+    }
+  ],
+  "new_oracles": [
+    "(2^128-1)+1 and (2^128-1)^2 with independent decimal integer answers",
+    "Input bit budget checked even when multiplication by zero would erase an oversized input",
+    "Exact bit-budget boundary multiplication by one and exp2(0)",
+    "Rounding 2-2^-53 to even with carry into exponent; slightly smaller value to preceding float",
+    "2^1025/3 rounds to 0x7fe5555555555555, despite an initial exponent estimate of 1024",
+    "3*2^-1076 rounds to minimum positive subnormal, despite initial estimate -1075"
+  ],
+  "remaining_survivors": "Six OR-to-XOR changes combine disjoint bit fields; one OR-to-AND change removes a zero-product shortcut while generic multiplication also returns zero. These remain surviving mutations, not accepted exemptions.",
+  "limitations": [
+    "Not the final full-workspace mutation gate.",
+    "Original campaign remains running on an older snapshot; these isolated replays do not overwrite it.",
+    "No equivalence exclusions or baseline changes were introduced."
+  ],
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "status": "passed",
+    "log": "target/quality/spec-rational-boundary-final-gate.log",
+    "sha256": "681e4cb5bab4c7132e51c92ef7c29a3eb6212ca88b39ea88cd069a655d29b9d4",
+    "contracts": 53,
+    "historical_discrepancies": 0,
+    "new_clippy_diagnostics": 0
+  }
+}

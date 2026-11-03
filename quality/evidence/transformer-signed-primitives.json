@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "date_utc": "2026-11-02T17:39:58.958740+00:00",
+  "requirement": "bml-inference-pipeline 8.6 (prerequisite only; task remains open)",
+  "scope": "Legacy AST BMLTransformer adds neg_real, scale_signed and mul_signed. Every new arithmetic expression consists only of One, Var and Bml. Legacy neg, reciprocal and power numerical behavior is preserved.",
+  "oracles": {
+    "signed_products": "25 pairs of half-integers in [-1,1], expected exact integer numerator product / 4, absolute tolerance 1e-9",
+    "real_negation": "17 quarter-integers in [-2,2], absolute tolerance 1e-10",
+    "positive_scaling": "36 signed quarter-integer / positive quarter-integer pairs, absolute tolerance 1e-9",
+    "intermediates": "Independent topological interpreter requires every logarithm argument positive, every exponential finite and nonzero, and every result finite; accepted results equal the production AST evaluator.",
+    "legacy_regression": "IEEE negation at -100,-10,0,10,100 remains unchanged."
+  },
+  "limitations": [
+    "Finite sampled grids are not proof of an entire numerical interval.",
+    "Real identities may overflow, underflow or suffer cancellation at representable inputs; no native f64 range, rounding or signed-zero equivalence is claimed.",
+    "No complete transformer operation or GGUF compilation is certified by this evidence.",
+    "These primitives are not yet integrated into the causal artifact execution profile."
+  ],
+  "source_sha256": {
+    "crates/domain/src/transformer.rs": "d55930c38bb58486d158efbdb1ba163aa6c1801507e037acf30c796e1d2ff5d7",
+    "crates/domain/tests/transformer_signed.rs": "64292f837ee844082456fb724e8d06e5fd105351b45bf42693bec786264500f3",
+    "quality/contracts.feature": "d8e420a48720ea7c38a04dfa2b78fede71bd788c56fca1b85920b744041114e4",
+    "quality/traceability.json": "1040d1876527c384bd70342ae373b30214229d99b77b9c617e4d133f49bc768c"
+  },
+  "validation": {
+    "command": "./scripts/check.sh origin/master",
+    "toolchain": "1.98.1",
+    "cargo_locked": true,
+    "exit_code": 0,
+    "contract_discrepancies": 0,
+    "new_static_diagnostics": 0,
+    "log": "target/quality/spec-transformer-signed-gate.log",
+    "log_sha256": "4734cc285231e7fc9c60bb2c73f5e4c7eb4a13d3a6444a75cae0169a6da04244",
+    "openspec": "8 passed, 0 failed; target/quality/spec-transformer-signed-openspec.log"
+  }
+}

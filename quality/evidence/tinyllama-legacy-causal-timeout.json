@@ -1,0 +1,44 @@
+{
+  "command": [
+    "target/quality/bml-cli-causal-snapshot",
+    "run",
+    "--model",
+    "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+    "--prompt",
+    "Hello",
+    "--num-tokens",
+    "10",
+    "--context-size",
+    "64",
+    "--temp",
+    "0",
+    "--threads",
+    "1"
+  ],
+  "started_at_utc": "2026-11-02T16:24:58.045294+00:00",
+  "binary_sha256": "108ab1424c8449b52f250d25105e070b22f7f9e2799b2edbe1d536312263dc35",
+  "source_sha256": {
+    "crates/compiler/src/gguf_compiler.rs": "f1c596756c34d30a6bb742a0a10d398eab04a51a704c0004cec336886dd5e57a",
+    "crates/compiler/src/kv_cache.rs": "6c9dbbacc13890ddabaaad8d528b22c1f2a6f20e78b146d1e73e033b54fcb4c7",
+    "crates/compiler/src/tokenizer.rs": "9101da35c238ccc6edc88a12116d993f42061cf4e82792cc234c98d8ca96b954",
+    "crates/cli/src/main.rs": "a1b9b8f19d2251f8fa0c035e783d943dc60ae9ea484465d4948b7698541379d0"
+  },
+  "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "address_space_limit_bytes": 10737418240,
+  "timeout_seconds": 900,
+  "status": "timeout",
+  "pid": 3782283,
+  "elapsed_seconds": 901.0274727810029,
+  "max_rss_kib": 3117684,
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T16:40:48.932737+00:00",
+  "stdout": "Cargando modelo desde target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf...\nEsto puede tardar para modelos grandes (dequantizando pesos)...\nModelo: llama (22 capas, 32 heads, 2048 embd, 32000 vocab)\nWeight pool: 1100048384 valores (4196.4 MB)\nPrompt: Hello\nGenerando 10 tokens (temp=0)...\n\nTokenizado: 2 tokens\n, World!\n\nStep ",
+  "stderr": "",
+  "limitations": [
+    "Not a completed ten-token generation run.",
+    "Runs concurrently with a mutation campaign on a memory-constrained VM; elapsed time is not a controlled throughput benchmark.",
+    "Binary is the immutable native causal snapshot predating the RPN projection callback refactor.",
+    "No token-ID or full-logit comparison is established by the partial output."
+  ],
+  "comparison": "Partial generated text is a prefix of the pinned llama-cli result recorded in tinyllama-llama-cli.json; this does not establish parity."
+}

@@ -16,11 +16,32 @@ python3 tools/quality.py mutations --report mutants.out/outcomes.json
 
 Rust está fijado en `rust-toolchain.toml`; las versiones de las herramientas están fijadas en los workflows. El hook pre-commit comprueba el contenido staged, pre-push ejecuta los controles ordinarios y ambos conservan el código de error. Instalación solo local al repositorio; `--no-verify` permite omitir hooks. Las reglas de la rama deben exigir los checks de Actions para impedir merges cuando fallen; este PR no modifica esas reglas.
 
+### Tamaño estático del hot loop
+
+`python3 tools/measure_hot_loop.py --output quality/evidence/bml-hot-loop-code-size.json`
+compila y ejecuta un probe enlazado con el perfil release del workspace, fat LTO
+y stripping desactivado para conservar símbolos. Usa `llvm-nm` y `llvm-objdump`
+del toolchain fijado; registra compilador, flags adicionales, hashes de fuentes
+y binario, tamaño de los símbolos `dispatch_ops` y disassembly en
+`target/quality/hot-loop-probe.asm`. Falla si no encuentra símbolos medibles.
+
+La medición x86_64 registrada es de **1411 bytes** para el símbolo conservado.
+El informe también inspecciona las tablas de símbolos normales y dinámicos del
+probe completo: no contiene símbolos de RPC ni imports de sockets reconocidos.
+`tools/test_measure_hot_loop.py` comprueba el detector con imports versionados y
+rutas Rust de red. Este resultado solo cubre el probe independiente; la auditoría
+del worker descrita más abajo aporta evidencia separada sobre su dispatcher.
+No cuenta copias inline, funciones llamadas ni datos de tablas de salto; no es
+el tamaño de un `.rlib`, ni una prueba de aislamiento de red o residencia L1i.
+Los contadores PMU y la ejecución bajo carga siguen siendo verificaciones
+separadas. El probe comprueba `B(1,1)=2`; las suites de contratos verifican las
+otras operaciones, no esta medición de tamaño.
+
 | Control | Criterio |
 |---|---|
 | Tests y doctests | La suite ordinaria pasa y los optativos figuran como ignored |
 | Auditoría | Cero discrepancias en los seis contratos históricos |
-| Trazabilidad | Veintiocho escenarios con tests registrados por package y target de Cargo; la ejecución se comprueba aparte |
+| Trazabilidad | Veintinueve escenarios con tests registrados por package y target de Cargo; la ejecución se comprueba aparte |
 | Formato | Rustfmt en archivos Rust nuevos o modificados |
 | Clippy | Ningún diagnóstico nuevo por archivo, lint y mensaje |
 | Cobertura | Líneas y funciones sobre los mínimos versionados |
@@ -55,10 +76,22 @@ Strace traza el proceso del parser; perf mide un proceso que ejecuta el evaluado
   denominadores hasta 1024, con tolerancia absoluta 0 y relativa 1e-12. Incluso
   valores finitos pueden fallar por recursos, evaluación o precisión.
 - Las rutas experimentales de ejecución rechazan arquitecturas distintas de `llama` antes de expandir pesos. Las regresiones de embeddings, proyecciones y logits verifican el orden GGUF con `ne0` contiguo. No certifican inferencia Gemma4 ni equivalencia con llama.cpp; véase [validación de inferencia](INFERENCE_VALIDATION.md).
+- `bml-compiler::tokenizer::Vocabulary` usa el tokenizer SentencePiece BPE validado de `bml-inference`; `encode` y `decode` devuelven `Result`. La generación usa `token_piece_bytes`, preservando espacios y UTF-8 partido entre tokens. La CLI escribe bytes; SSE espera secuencias completas y sustituye bytes inválidos o incompletos al terminar. Los fixtures numéricos de cero capas sin metadatos BPE no pueden codificar texto. Esto no acredita la causalidad del motor histórico.
+- `InferenceCompiler::forward` y `forward_cached` devuelven `Result` y ejecutan prefijos causales con residuales sin normalizar, GQA según `attention.head_count_kv` y KV F32. Validan IDs, layout y capacidad antes de escribir; los errores numéricos no avanzan la posición confirmada. Las filas aún no confirmadas se sobrescriben al reintentar. CLI y servidor usan `HashConsedKV::try_new` con un presupuesto de payload KV de 512 MiB. El almacenamiento heredado directo sigue usando índices circulares, pero la inferencia no permite envolver posiciones. El modo `--bml` comparte ese flujo causal y ejecuta las proyecciones con productos escalares RPN `FMul`/`FAdd`, usando dos filas de scratch; no implementa las identidades simbólicas AST/EML. C53 verifica matrices rectangulares con offset, límites y prefijos GQA contra un oráculo cerrado; C51 cubre UTF-8, EOS y capacidad del CLI. Los backends de proyección se validan por dimensión y finitud antes de consumir sus resultados. Evidencia: `quality/evidence/legacy-rpn-causal.json`.
+- CLI y servidor históricos usan `InferenceCompiler::open_mapped`: mantienen matrices cuantizadas en el mapping GGUF y decodifican una fila para cada producto escalar, conservando acumulación F64 y KV F32. `open` conserva la variante expandida para comparación. `get_embedding` devuelve `Result`; en modo mapeado `weight_pool` y `weight_offsets` solo contienen normalizaciones. El archivo mapeado debe permanecer sin modificaciones. C12 cubre lectura por filas, C55 pesos Q4/Q6 con oráculos y C53 atención causal nativa/RPN con ambos almacenamientos.
+- El artefacto causal nuevo usa `model.bmlgraph.json` y programas RPN serializados con SHA-256, configuración, BPE y bindings al GGUF externo completo. `bml-cli compile` local lo produce y `run` ejecuta los programas cargados; `--weights` permite reubicar el mismo GGUF, verificando su hash. Los programas pasan `ValidatedGraph` antes de ejecutar. C56 prueba GQA, ejecución del bytecode persistido y rechazos; C57 prueba los comandos con UTF-8/EOS/contexto. El perfil `llama-causal-f64-f32kv-rpn-v1` mantiene normalización, RoPE, atención y residuales nativos compartidos: no acredita aún su traducción a identidades BML. Los directorios escalares antiguos ya no anuncian generación de texto.
+- `bml-server --model modelo.bmlgraph/ [--weights modelo.gguf]` carga el mismo artefacto causal y ejecuta sus programas tanto en JSON como en SSE; las rutas nativa y compilada comparten admisión, caché por request y ensamblado UTF-8. C58 inicia el ejecutable en un puerto efímero, realiza HTTP real, verifica texto/EOS/DONE sin eco, error de contexto y una modificación de bytecode que cambia la respuesta. El servidor rechaza contenedores escalares antiguos al arrancar, en vez de aceptar el modelo y responder 501.
+- El contenedor histórico por directorio `.bmlgraph` se carga con `GraphLoadLimits`: por defecto 64 MiB codificados, 65.536 fragmentos, 1.000.000 operaciones y 8.000.000 constantes. Los límites son acumulativos; se rechazan truncamientos, bytes sobrantes, versión desconocida, UTF-8 inválido y opcodes desconocidos. C54 prueba fixtures binarios independientes. Estos límites no son un presupuesto RSS ni validan el stack o los pasos de ejecución (eso corresponde a `ValidatedGraph`); el formato aún no acredita generación autorregresiva desde el artefacto.
 - RPN conserva cada nodo alcanzable una vez, con bytecode y pila lineales en los nodos alcanzables. Inicializar el mapa de posiciones y copiar el pool cuesta además O(nodos totales + constantes). El mayor uso de pila obliga a medir de nuevo el rendimiento.
 - `.bmlgraph` v2 guarda el pool de constantes; el lector sigue admitiendo v1. Consumidores antiguos necesitan actualización para leer v2. Una API `*_with_ctx` usa el pool del contexto explícito.
-- En `BMLTransformer`, `add` admite signos en el dominio numérico probado; `sub` exige minuendo positivo; `mul`, `div`, `recip` operandos positivos; `pow` x > 1 e y > 0. Las expansiones no garantizan estabilidad f64 general. `neg` conserva infinitos intermedios del evaluador heredado, incompatible con el evaluador real estricto. Estas restricciones no corresponden a los kernels nativos de `tensor`.
-- GGUF valida rangos exactos para escalares, Q4_0 y Q8_0. Otros cuantizadores solo permiten inspección de metadatos; `tensor_data` devuelve None. Se rechazan arrays anidados. El archivo mapeado debe permanecer sin modificaciones ni truncamiento mientras se usa.
+- En `BMLTransformer`, `add` admite signos en el dominio numérico probado; `sub` exige minuendo positivo; `mul`, `div`, `recip` operandos positivos; `pow` x > 1 e y > 0. Las expansiones no garantizan estabilidad f64 general. `neg` conserva su convención IEEE con infinitos intermedios. La nueva `neg_real` usa la diferencia de dos términos positivos, sin introducir `log2(0)` y con un rango numérico más estrecho; `scale_signed` y `mul_signed` expanden productos con signos mediante componentes positivos. C59 comprueba signos, cero y fracciones contra un oráculo independiente, valida cada intermedio real/finito y mantiene visibles fallos de rango/dominio. No acredita estabilidad general ni traducción del transformer completo. Estas restricciones no corresponden a los kernels nativos de `tensor`.
+- `BMLTransformer::{matmul,rms_norm,rope,softmax,swiglu}` construyen los cinco sub-DAGs con `One`, `Var`, `Const` y `Bml` (C60). Los pesos y los coeficientes fijos pueden referenciarse mediante `constant`, cuyo pool debe acompañar al evaluador. C61 linealiza y serializa cada salida, rechaza bytecode aritmético nativo y ejecuta los fragmentos con `ValidatedGraph`. La prueba de DAG inspecciona cada intermedio; el hot loop conserva su semántica IEEE. Softmax no incorpora un máximo estabilizador; RoPE recibe cosenos/senos precalculados y gira pares adyacentes. SwiGLU es `gate * sigmoid(gate) * up`. Estas pruebas acotadas no acreditan el compilador GGUF completo, pesos zero-copy en esa futura ruta ni estabilidad general.
+- `ValidatedGraph::new_with_external_constants` exige un pool almacenado vacío y declara el número exacto de constantes prestadas (C62). `execute_with_constants` comprueba modo, entradas, constantes y buffer antes de escribir; el contexto cuenta en `max_values`. Los grafos de pool propio conservan su API y no admiten sustituciones implícitas. `symbolic_projection::compile_row` genera referencias `Const` externas bajo un presupuesto exacto de nodos; C63 serializa el programa vacío de pesos y lo ejecuta con filas de un GGUF F32 mapeado. Decodificar/convertir una fila a f64 puede asignar memoria: la afirmación es ausencia de pesos dentro del programa, no ausencia de toda copia durante ejecución. Esta plantilla BML está desenrollada y no cambia el perfil causal nativo ni demuestra todavía el compilador simbólico completo.
+- `runtime::symbolic_causal::SymbolicCausalModel` integra esas operaciones en una ruta causal BML completa, con activaciones F64 y KV F32 (C64). Matrices, normalización, rotaciones, scores, escala, softmax, combinación de valores, SwiGLU y residuales usan programas cuya lista permitida excluye aritmética nativa. El host conserva lookup/decodificación, constantes posicionales y almacenamiento KV. Un fixture GQA con MLP no nula contrasta cuatro prefijos, decode incremental y reintentos con un oráculo independiente; tolerancia absoluta 2e-7. Los presupuestos limitan nodos, programas y opcodes almacenados. El constructor directo sobre GGUF compila kernels bajo demanda y el hot loop conserva semántica IEEE: se comprueban salidas finitas, no cada intermedio real. Un caso numéricamente válido en modo nativo falla explícitamente en BML. C64 por sí solo no acredita persistencia, modelos grandes ni equivalencia numérica general.
+- C65/C66 verifican `symbolic.bmlgraph.json`, el plan AOT completo para un contexto declarado, los hashes del GGUF/programas y los literales canónicos. `open_artifact` valida todo el bytecode antes de inferencia y prohíbe compilación bajo demanda. Los archivos no contienen pesos aprendidos; los grafos tienen pools vacíos y reciben constantes externas. La prueba altera un programa residual guardado y comprueba los logits resultantes, además de cargar con presupuesto de construcción cero. El CLI admite `bml-cli compile -m model.gguf -o model.symbolic --symbolic --context-size 8` y `bml-cli run -m model.symbolic -p "Hello" -n 2 --temp 0`; `--weights` reubica el mismo GGUF. La generación limita su capacidad al contexto compilado. Persistir el plan no amplía el rango numérico BML ni acredita rendimiento/capacidad con modelos reales.
+- C67 extiende la ruta HTTP local al artefacto simbólico: `bml-server --model model.symbolic --weights relocated.gguf` carga y valida el mismo plan AOT. JSON y SSE usan el límite compilado, además del contexto del modelo; un prompt demasiado largo devuelve error y SSE cierra con un único evento terminal y `[DONE]`. Los fragmentos de bytes UTF-8 no se emiten incompletos. Un programa guardado modificado cambia el resultado HTTP; los directorios con marcadores nativo y simbólico simultáneos se rechazan al arrancar. Se conservan los tests del perfil nativo y de admisión/cancelación.
+- C69–C71 comparten los sub-DAGs de RMSNorm, softmax y RoPE entre salidas. El perfil `llama-symbolic-bml-f64-f32kv-v2` persiste un programa por operación vectorial, con índices de salida canónicos en el prefijo de constantes y pesos externos después. `linearize_outputs` conserva cada nodo alcanzable, escribe en slot 0 y deja un resultado administrativo; la aritmética sigue siendo BML. El runtime inicializa el buffer a NaN y exige todas las salidas finitas: detecta salidas omitidas, no certifica cada escritura adicional. Los artefactos escalares v1 siguen cargándose con su layout original y se contrastan bit a bit con v2, sin recompilar al cargar. El tamaño de bytecode de RMSNorm/softmax crece linealmente con el ancho; para ancho 32 se midieron 50.233/14.047 instrucciones frente a 982.688/448.864 escalares. El caso RMSNorm128 necesita aumentar explícitamente `max_output_ops`; los defaults permanecen intactos. Evidencia `quality/evidence/symbolic-shared-vector-programs.json`. El rango numérico, las proyecciones desenrolladas y el plan completo de prefijos siguen limitando modelos grandes; estos conteos no son una medición de velocidad.
+- GGUF valida rangos exactos para escalares, Q4_0, Q8_0 y Q6_K. Otros cuantizadores solo permiten inspección de metadatos; `tensor_data` devuelve None. Se rechazan arrays anidados. El archivo mapeado debe permanecer sin modificaciones ni truncamiento mientras se usa.
 - `tensor` ofrece buffers contiguos f32/f64, vistas prestadas y kernels CPU. EML/BML elementwise valida en f64 y comprueba la conversión de salida; broadcasting y strides arbitrarios siguen pendientes.
 - Reader/codecs y vistas GGUF reconstruidos en `bml-gguf`, con puente tensorial optativo; fuzzing, validación completa de bytecode y concurrencia instrumentada siguen en el roadmap. Microbenchmarks no certifican inferencia ni tokens/s reales.
 
@@ -94,3 +127,138 @@ Esta reconstrucción pasó `scripts/check.sh`, las suites aisladas sin features 
 con `--all-features`, cobertura y mutación del delta #19 con tests del workspace. No se modifican
 baselines ni workflows. El estado comprobado está en
 `quality/evidence/gguf-tensor-views-reconstruction.json`; no usar cifras antiguas.
+
+### Publicación append-only y Loom
+
+`Runtime::execute_append_only` publica en `AppendOnlyResults`, que reserva slots
+una vez, conserva los bits IEEE y nunca recicla índices. Al llenarse devuelve el
+resultado no almacenado; los valores anteriores permanecen inmutables. El método
+histórico `Runtime::execute` continúa usando un ring y puede sobrescribir al rotar.
+
+```sh
+cargo test -p bml-runtime --lib --locked append_only
+cargo test -p bml-runtime --lib --features loom --locked append_only::loom_tests
+```
+
+Con `cfg(test)` y la feature `loom`, el mismo archivo/algoritmo sustituye solo los
+atómicos de std por los de Loom. Las pruebas exploran dos productores/lector
+y una carrera de capacidad uno; el estrés nativo cubre 4.000 resultados de cuatro
+runtimes. No se atribuye esa exploración a ArrayQueue/Deque de Crossbeam, canales
+ni mmap: sus atómicos no están instrumentados por estas pruebas. Las pruebas
+históricas con `std::thread` tampoco pasan a ser pruebas Loom por añadir la feature.
+
+`PendingWork` usa ahora `bml-queue`, una adaptación del algoritmo ArrayQueue de
+Crossbeam 0.3.13 con procedencia y licencias en `crates/queue/`. Producción y el
+modelo compilan el mismo archivo, sustituyendo atómicos, accesos a UnsafeCell y
+backoff. La API pública sigue siendo nativa incluso con todas las features; el
+runtime conserva `deny(unsafe_code)`. Ejecutar:
+
+```sh
+cargo test -p bml-queue --all-features --locked
+just test-loom
+```
+
+Seis modelos cubren saturación, transferencia única, publicación, reutilización
+concurrente y destrucción. Un modelo consume antes de terminar el productor para
+no obtener sincronización accidental mediante `join`; detecta en copias aisladas
+la relajación del Release de publicación y del Acquire de consumo. Son escenarios
+pequeños, sin una prueba general de liveness ni cobertura de reclamación/resize
+del deque de work-stealing. Evidencia: `quality/evidence/pending-work-loom.json`.
+
+El framing TCP legacy del worker rechaza payloads declarados superiores a 64 MiB
+antes de reservar memoria o leer el cuerpo. Para shards mayores debe configurarse
+`bml-worker --max-message-bytes N`; `N` es un presupuesto positivo representable
+por el campo u32 del protocolo. Los consumidores de la API pueden usar
+`recv_msg_with_limit` con su propio presupuesto. Una recepción rechazada invalida
+la sesión: el cuerpo no consumido no debe interpretarse como otra cabecera.
+Las pruebas `frame_budget_rejects_header_before_body_and_accepts_exact_limit` y
+`configured_frame_limit_closes_oversized_session_before_reading_body` verifican
+el límite inclusivo y el rechazo usando sockets reales sin enviar el cuerpo.
+
+Dentro de ese framing, `BatchRequest` legado exige una dimensión u32 que coincida
+con el shard y exactamente esa cantidad de valores f64 little-endian. Rechaza
+truncamientos, dimensiones discordantes y bytes sobrantes con `BatchResult` vacío
+y cierre de sesión. `legacy_batch_tcp_validates_dimensions_and_exact_payload_length`
+comprueba por TCP la carga del shard, su ACK y los mensajes válidos e inválidos;
+un shard sin capas preserva el vector byte por byte. Esta prueba valida el protocolo
+legado, no inferencia causal completa ni generación de tokens.
+
+La carga legacy de `--fragment` restaura la configuración desde el header hermano.
+El lector limita el header a 1 MiB y el shard a 512 MiB; comprueba versión, UTF-8,
+truncamientos, conteos y rangos antes de reservar por conteos declarados. El worker
+valida las formas que ejecuta: RMSNorm `[n_embd, 1]` y Q `[n_embd, n_embd]`, con
+dimensión positiva y rangos de pesos válidos. Un shard malformado se rechaza sin
+sustituir el cargado ni envenenar el mutex. El ejecutor recorre sólo capas con
+operaciones presentes, en orden, sin iterar rangos declarados de capas vacías.
+El límite de archivo no equivale al pico de RSS: bytes y pesos decodificados
+coexisten. C68 y las regresiones TCP/file del
+worker acreditan estos límites, no un transformer completo.
+
+`bml_runtime::graph::ValidatedGraph` realiza preflight sobre un `.bmlgraph` ya
+parseado: conserva constantes y pila entre fragmentos, verifica referencias y
+underflow, limita instrucciones almacenadas, pasos expandidos y valores vivos,
+y exige un único resultado final. Los bucles deben quedar dentro del fragmento
+y no superar dos niveles; incluso un cuerpo vacío consume presupuesto por cada
+índice de iteración. Los cuerpos con cero iteraciones también se inspeccionan
+para detectar referencias y estructura inválidas. La pila se reserva de forma
+falible antes de ejecutar. Un cambio de dimensiones del contexto/buffer se
+rechaza antes de escribir resultados. La operación `ExecuteGraph` utiliza este preflight antes de ejecutar los
+fragmentos recibidos; la carga legacy `ExecuteFragment` conserva su respuesta de
+confirmación y no se presenta como inferencia.
+
+La RPC de grafos usa los tipos 10 (`ExecuteGraph`) y 11 (`GraphResult`). El body
+v1 contiene cinco u32 little-endian: versión, número de inputs, número de slots,
+tamaño de slot y longitud del `.bmlgraph`; siguen los inputs f64, el buffer f64
+plano y el grafo íntegro. El máximo de body es 16 MiB incluso si el límite legacy
+es mayor. El decoder acota fragmentos/opcodes a 100 000 y valores a 1 000 000;
+el preflight limita además pasos expandidos a 1 000 000. La respuesta comienza
+con versión y estado u32. Un rechazo devuelve estado 1 sin datos parciales; un
+éxito devuelve estado 0, resultado f64, número de valores u32 y buffer f64.
+
+`NodeHandle::execute_graph` conserva los inputs/buffer del caller y devuelve un
+resultado nuevo. El worker no retiene estado mutable entre esas peticiones. Se
+pueden encadenar etapas en distintos workers transfiriendo el buffer devuelto;
+la prueba `graph_rpc_two_worker_stages_match_complete_local_graph` compara dos
+workers TCP reales con el mismo DAG local, incluida la reutilización de sesiones.
+No hay particionado automático del compilador ni retry de peticiones ambiguas.
+Los fallos de transporte/respuesta malformada cierran el socket del cliente; un
+rechazo de validación completo permite reutilizar la sesión. Las sesiones KV
+causales usan el protocolo separado de `bml-inference::remote`.
+
+`NodeHandle::execute_graph_append_only` publica el resultado RPC en
+`AppendOnlyResults`: primero el escalar y después todos los valores del buffer,
+en un rango nuevo que nunca se recicla. La reserva del rango completo es atómica;
+si no cabe, no consume posiciones y devuelve `GraphPublishError::StorageFull`
+con el `GraphResult` íntegro. Ese resultado puede publicarse después mediante
+`GraphResult::publish` sin volver a ejecutar la RPC. Los errores RPC se distinguen
+de esta saturación local; no se reintentan peticiones remotas ambiguas.
+
+El descriptor solo se devuelve después de publicar todos los campos. Lectores
+que inspeccionen `reserved_count` durante la escritura pueden observar celdas aún
+no publicadas (`get` devuelve None); no se promete una instantánea atómica de
+varios valores. Loom instrumenta los atomics reales de reserva y publicación:
+comprueba rangos disjuntos, saturación sin reservas parciales y estabilidad de
+los resultados. Esta evidencia no cubre los atomics no instrumentados de las
+colas Crossbeam. La prueba de dos workers publica ambas etapas, comprueba que
+los resultados anteriores no cambian y conserva una respuesta cuando se llena
+el almacén.
+
+`python3 tools/audit_hot_loop_binary.py --output
+quality/evidence/worker-hot-loop-isolation.json` inspecciona el dispatcher dentro
+del **worker real** x86-64 release, con símbolos retenidos y RPC/socket enlazados.
+Resuelve las llamadas indirectas mediante relocaciones GOT (sin confiar en las
+etiquetas que muestra objdump), comprueba sus desplazamientos RIP y decodifica
+las tablas de salto desde segmentos ELF. Cada destino debe ser una instrucción
+del mismo dispatcher; las llamadas deben estar en la lista revisada de recursión,
+exp2/log2 y crecimiento de pila/pánico por límites. Cualquier destino nuevo o no
+resuelto hace fallar la auditoría. Los tests inyectan llamadas de red, syscalls y
+saltos externos para verificar que no se acepten silenciosamente.
+
+La auditoría se repitió tras integrar los artefactos causales y el servidor HTTP/SSE;
+el worker reconstruido mantiene **1590 bytes**, 13 llamadas resueltas y dos saltos
+por tabla internos (hashes actuales en la evidencia). Los 1411 bytes del probe anterior
+son otro binario/snapshot. La auditoría no suma los callees de allocator/pánico,
+no analiza hooks externos ni interposición de librerías, y no acredita caché L1
+ni contadores PMU. El preflight reserva la pila máxima y valida referencias para
+la ruta ordinaria de ejecución. Una arquitectura o compilador cuyo patrón no
+reconozca el auditor requiere revisar la evidencia, no desactivar la comprobación.

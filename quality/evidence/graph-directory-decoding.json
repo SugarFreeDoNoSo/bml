@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T16:46:40.895130+00:00",
+  "scope": "Bounded legacy .bmlgraph directory decoding; distinct from single-file BmlGraph and not complete model inference",
+  "contract": "C54",
+  "source_sha256": {
+    "crates/compiler/src/graph_directory.rs": "78299a7a355f423b38980fae81b334457195bb9dac73eccf9d41928b84cf8437",
+    "crates/compiler/src/gguf_compiler.rs": "869b92f27967fa39bf54acb963604d6aea60b44808c5e8249be7e65ea7afc649",
+    "crates/compiler/src/lib.rs": "81d844309fcf2334494ea80d10c15a862667f0e45b75c71018b22e6ed007f8af",
+    "crates/compiler/tests/graph_directory_contracts.rs": "bb151985b62dbd9e84af1e4ac93f1f214d7cb49aa5cde9b107113b4e6c8b92b2"
+  },
+  "defaults": {
+    "max_total_encoded_bytes": 67108864,
+    "max_fragments": 65536,
+    "max_operations": 1000000,
+    "max_constants": 8000000
+  },
+  "admission": "File metadata checked before payload allocation; bytes checked again while reading; total bytes and operations accumulated across files; collection counts checked before fallible reservation",
+  "validation": [
+    "Known magic and exact version",
+    "Strict architecture UTF-8",
+    "Checked lengths and complete header/fragment consumption",
+    "Known opcodes and complete operands",
+    "Serializer rejects inconsistent fragment count before writing"
+  ],
+  "independent_tests": "Hand-encoded header and all 14 opcode tags; bit-exact constants including negative zero, infinity, NaN payload and smallest subnormal; every proper-prefix truncation; malformed u64/u32 counts; exact/one-short budgets across two fragments; sparse oversized file rejection",
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "status": "passed",
+    "log": "target/quality/spec-graph-directory-gate.log",
+    "sha256": "eed8815b348b44a915ad02b7fee49b598e21cf7134daee83da9c10d85ad7dc31",
+    "contracts": 54,
+    "historical_discrepancies": 0,
+    "new_clippy_diagnostics": 0
+  },
+  "limitations": [
+    "Not a total RSS budget.",
+    "Parser checks framing, not execution stack, loop expansion or model completeness; runtime ValidatedGraph remains separate.",
+    "No autoregressive .bmlgraph generation or complete symbolic transformer translation is established.",
+    "Legacy API continues returning constants separately from the graph."
+  ]
+}

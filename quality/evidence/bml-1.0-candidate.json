@@ -181,15 +181,21 @@
   },
   "performance": {
     "status": "passed",
-    "finished_utc": "2026-11-01T23:30:10.303936+00:00",
-    "report_path": "target/bml-1.0/benchmark-v3/report.json",
-    "report_sha256": "eed59126f8e21fa62ed8e7fb9756168970fce890d4495dea88b406445373cce1",
+    "artifact_revision_label": "1.0.0-final",
+    "finished_utc": "2026-11-02T11:58:54.013425+00:00",
+    "report_path": "target/bml-1.0/benchmark-final/report.json",
+    "report_sha256": "3514d023d22041bb51d0ac403ffc5bac79dc7459f71e5028b751e02574e617cb",
     "system": {
       "system": "Linux",
       "release": "6.12.113+deb13-amd64",
       "machine": "x86_64",
       "cpu_model": "Intel Xeon Processor (Cascadelake)",
-      "logical_cpus": 2
+      "logical_cpus": 2,
+      "allowed_cpus": [
+        0,
+        1
+      ],
+      "python": "3.13.5"
     },
     "protocol": {
       "prompts": [
@@ -213,7 +219,7 @@
     "measured_pairs": 6,
     "warmup_pairs": 2,
     "output_equality_checks_passed": 8,
-    "artifact_sha256": "2f5fb84a15ac613b3a3b3d2868b0ae86e0d70effdcc2aee2b6ee52f748f0c471",
+    "artifact_sha256": "74bef3b5a510b58fa0fbadc676133c65f427f5b4791754801bbd6b80d3261579",
     "reference_binary_sha256": "4a7ce90b6237b89bbd144aafbbdbf789c582398cfcf23c3d3eaf420b638e22bf",
     "summary": [
       {
@@ -221,34 +227,53 @@
         "engine": "artifact",
         "metrics": {
           "prefill_ms": {
-            "mean": 109.63541766666667,
-            "min": 108.655851,
-            "max": 111.17606500000001,
-            "stddev_population": 1.10271733680315
+            "count": 3,
+            "mean": 107.35397033333334,
+            "min": 106.284967,
+            "max": 108.814605,
+            "stddev_population": 1.069204822503571
           },
           "decode_ms": {
-            "mean": 351.6672316666666,
-            "min": 348.64016799999996,
-            "max": 354.47213,
-            "stddev_population": 2.3860655577557557
+            "count": 3,
+            "mean": 344.0080643333333,
+            "min": 342.915935,
+            "max": 344.808567,
+            "stddev_population": 0.799707678421446
           },
           "wall_ms": {
-            "mean": 1975.1982606661234,
-            "min": 1941.3519329973496,
-            "max": 2020.4567639993911,
-            "stddev_population": 33.287353825072316
+            "count": 3,
+            "mean": 1926.9085723305277,
+            "min": 1923.3421710086986,
+            "max": 1930.6449969881214,
+            "stddev_population": 2.9837892879649424
+          },
+          "monotonic_wall_ms": {
+            "count": 3,
+            "mean": 1926.9085723305277,
+            "min": 1923.3421710086986,
+            "max": 1930.6449969881214,
+            "stddev_population": 2.9837892879649424
           },
           "max_rss_kib": {
-            "mean": 107900,
-            "min": 107664,
-            "max": 108032,
-            "stddev_population": 167.2682476343513
+            "count": 3,
+            "mean": 107860,
+            "min": 107796,
+            "max": 107908,
+            "stddev_population": 47.10272462041518
+          },
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "mean": 46.57949358235429,
+            "min": 45.949714195075195,
+            "max": 47.0433415103756,
+            "stddev_population": 0.4616312475496394
           },
           "decode_tokens_per_second": {
-            "mean": 45.49965389375689,
-            "min": 45.1375401501946,
-            "max": 45.892589175209444,
-            "stddev_population": 0.3090169714243389
+            "count": 3,
+            "mean": 46.51078921039757,
+            "min": 46.402559365643604,
+            "max": 46.65866577474739,
+            "stddev_population": 0.1082482331712422
           }
         }
       },
@@ -257,34 +282,53 @@
         "engine": "reference",
         "metrics": {
           "prefill_ms": {
-            "mean": 12.641455666666667,
-            "min": 12.416779,
-            "max": 12.941253,
-            "stddev_population": 0.22060610461383157
+            "count": 3,
+            "mean": 12.087345000000001,
+            "min": 11.912361,
+            "max": 12.362984,
+            "stddev_population": 0.1972542247980174
           },
           "decode_ms": {
-            "mean": 148.971345,
-            "min": 143.102426,
-            "max": 154.74991,
-            "stddev_population": 4.755494630183136
+            "count": 3,
+            "mean": 143.76921566666667,
+            "min": 142.614666,
+            "max": 146.072901,
+            "stddev_population": 1.6289530204214682
           },
           "wall_ms": {
-            "mean": 232.19070033276998,
-            "min": 226.04383900034009,
-            "max": 241.25012999866158,
-            "stddev_population": 6.5406478886127335
+            "count": 3,
+            "mean": 225.66985632875003,
+            "min": 222.93265599000733,
+            "max": 227.4913549917983,
+            "stddev_population": 1.9705018508634904
+          },
+          "monotonic_wall_ms": {
+            "count": 3,
+            "mean": 225.66985632875003,
+            "min": 222.93265599000733,
+            "max": 227.4913549917983,
+            "stddev_population": 1.9705018508634904
           },
           "max_rss_kib": {
-            "mean": 116377.33333333333,
-            "min": 116236,
-            "max": 116460,
-            "stddev_population": 100.41690871340123
+            "count": 3,
+            "mean": 114950.66666666667,
+            "min": 114424,
+            "max": 115892,
+            "stddev_population": 667.1917931816075
+          },
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "mean": 413.76483735359335,
+            "min": 404.43310449969033,
+            "max": 419.7320749429941,
+            "stddev_population": 6.683536760573899
           },
           "decode_tokens_per_second": {
-            "mean": 107.51291980516983,
-            "min": 103.3926287905434,
-            "max": 111.80802762910531,
-            "stddev_population": 3.437795329435232
+            "count": 3,
+            "mean": 111.30364649281746,
+            "min": 109.53434819508377,
+            "max": 112.19042507171037,
+            "stddev_population": 1.2510840324147614
           }
         }
       },
@@ -293,34 +337,53 @@
         "engine": "artifact",
         "metrics": {
           "prefill_ms": {
-            "mean": 43.854283333333335,
-            "min": 43.520929,
-            "max": 44.226571,
-            "stddev_population": 0.2893896005668165
+            "count": 3,
+            "mean": 44.343623666666666,
+            "min": 42.282785000000004,
+            "max": 46.35411,
+            "stddev_population": 1.6624927733196961
           },
           "decode_ms": {
-            "mean": 369.573124,
-            "min": 357.513496,
-            "max": 392.445604,
-            "stddev_population": 16.18129308000125
+            "count": 3,
+            "mean": 352.2390026666667,
+            "min": 347.498488,
+            "max": 359.74809200000004,
+            "stddev_population": 5.370409903839466
           },
           "wall_ms": {
-            "mean": 1935.898819333185,
-            "min": 1924.457753997558,
-            "max": 1945.3890869990573,
-            "stddev_population": 8.655802830708538
+            "count": 3,
+            "mean": 1952.4994409972958,
+            "min": 1876.653578990954,
+            "max": 2018.8853310100967,
+            "stddev_population": 58.44989947637583
+          },
+          "monotonic_wall_ms": {
+            "count": 3,
+            "mean": 1952.4994409972958,
+            "min": 1876.653578990954,
+            "max": 2018.8853310100967,
+            "stddev_population": 58.44989947637583
           },
           "max_rss_kib": {
-            "mean": 107809.33333333333,
-            "min": 107748,
-            "max": 107844,
-            "stddev_population": 43.49201714746691
+            "count": 3,
+            "mean": 107884,
+            "min": 107764,
+            "max": 107976,
+            "stddev_population": 88.78438301112796
+          },
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "mean": 45.16595051085148,
+            "min": 43.14612016065026,
+            "max": 47.30057398064011,
+            "stddev_population": 1.6979899353520944
           },
           "decode_tokens_per_second": {
-            "mean": 43.373854298474214,
-            "min": 40.769981462195204,
-            "max": 44.75355526158935,
-            "stddev_population": 1.842310620767489
+            "count": 3,
+            "mean": 45.43416363255216,
+            "min": 44.475565974648724,
+            "max": 46.04336580595424,
+            "stddev_population": 0.6860791894054491
           }
         }
       },
@@ -329,34 +392,53 @@
         "engine": "reference",
         "metrics": {
           "prefill_ms": {
-            "mean": 11.813317,
-            "min": 11.521895,
-            "max": 12.175057,
-            "stddev_population": 0.27124849050762795
+            "count": 3,
+            "mean": 11.041096333333332,
+            "min": 10.912446,
+            "max": 11.106948,
+            "stddev_population": 0.09097806110022114
           },
           "decode_ms": {
-            "mean": 153.65295333333333,
-            "min": 149.609176,
-            "max": 157.851527,
-            "stddev_population": 3.366705504437079
+            "count": 3,
+            "mean": 148.793079,
+            "min": 144.046901,
+            "max": 157.326746,
+            "stddev_population": 6.046893169214922
           },
           "wall_ms": {
-            "mean": 236.57092133362312,
-            "min": 227.03151400128263,
-            "max": 248.6767129994405,
-            "stddev_population": 9.02102752195485
+            "count": 3,
+            "mean": 232.7308273379458,
+            "min": 223.17962899978738,
+            "max": 249.29927200719249,
+            "stddev_population": 11.761242770556468
+          },
+          "monotonic_wall_ms": {
+            "count": 3,
+            "mean": 232.7308273379458,
+            "min": 223.17962899978738,
+            "max": 249.29927200719249,
+            "stddev_population": 11.761242770556468
           },
           "max_rss_kib": {
-            "mean": 116256,
-            "min": 116036,
-            "max": 116528,
-            "stddev_population": 204.1959842896035
+            "count": 3,
+            "mean": 114289.33333333333,
+            "min": 114140,
+            "max": 114412,
+            "stddev_population": 112.63313110369533
+          },
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "mean": 181.15380371725638,
+            "min": 180.0674676787899,
+            "max": 183.27696650228557,
+            "stddev_population": 1.5014388546315443
           },
           "decode_tokens_per_second": {
-            "mean": 104.18072106684819,
-            "min": 101.36107204081719,
-            "max": 106.94531196402018,
-            "stddev_population": 2.2800888035540217
+            "count": 3,
+            "mean": 107.70489362615183,
+            "min": 101.69917326072452,
+            "max": 111.07493385088515,
+            "stddev_population": 4.257254906943265
           }
         }
       }
@@ -369,13 +451,32 @@
       "CXX_FLAGS": "-O3 -DNDEBUG -std=gnu++17 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -msse4.2 -mf16c -mfma -mbmi2 -mavx -mavx2"
     },
     "interpretation": "The native BML artifact and llama.cpp use different CPU instruction targets (baseline x86-64 versus SSE4.2/AVX/AVX2/F16C/FMA/BMI2). Results describe these binaries on this host; they do not isolate algorithm, precision or SIMD effects.",
-    "artifact_revision_label": "v3 (historical; distinct from 1.0.0-final)"
+    "input_sha256": {
+      "/home/dev/Work/bml/target/bml-1.0/stories15M.gguf": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+      "/home/dev/Work/bml/target/bml-1.0/stories15M-bml-final": "74bef3b5a510b58fa0fbadc676133c65f427f5b4791754801bbd6b80d3261579",
+      "/home/dev/Work/bml/target/bml-1.0/llama-reference": "4a7ce90b6237b89bbd144aafbbdbf789c582398cfcf23c3d3eaf420b638e22bf",
+      "/home/dev/Work/bml/target/bml-1.0/aot-final-build.json": "d1ff309f021620abf5da5e07dd97230ec420806ff1f5737c16f53ab4c2a2013e",
+      "/home/dev/Work/bml/target/bml-1.0/llama-reference.build.json": "364d51c6e422bbc794c50a685964f2164e69fe0f01d42096f31f67e548ff4515",
+      "/home/dev/Work/bml/tools/benchmark_inference.py": "5530b0773cb041aa1a2a8e7c81a12547c09ea48c66ada07e8a64d68824170138",
+      "/home/dev/Work/bml/tools/validate_inference.py": "48820d4cdc8ddbcda72b32b2e145b212c3f94c7b15d90a8bcd316f8016ab468a",
+      "/home/dev/Work/bml/tools/llama_reference.cpp": "99e1ae5aad5317e88232df2e21061b53077bb1a7234f743a9d20e671b9a7dc5f",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/build/src/libllama.a": "2c4e8607d5f35e073a86f04a384856168bb38bbe68cb2b5748db12007d686fbb",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/build/ggml/src/libggml.a": "cb1a9949eee01ab69bcccdf48c2030ce555fe1ca8aed9dc3d2207056fea489f5",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/build/ggml/src/libggml-cpu.a": "44505f8e19a8a19f073fcb60ad1ce8cb792291a53fe58295e9e39c0ebc72bf90",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/build/ggml/src/libggml-base.a": "dac0d3ef5fc44b9ef6c5075e0550a24980949f7635b0dfd5eddf44722fa0192d"
+    },
+    "limitations": [
+      "Only the supplied model, two fixed prompts and this host are measured.",
+      "This benchmark checks identical generated outputs; the separate parity gate checks full logits.",
+      "Internal prefill/decode timings exclude startup, model loading and resource integrity checks; process wall time includes them.",
+      "Maximum RSS is a per-process high-water mark, not allocated-byte accounting or a sum across children.",
+      "No general performance superiority is inferred from these measurements.",
+      "/usr/bin/time is unavailable; wall timing uses perf_counter and includes subprocess launch and exit observation overhead."
+    ]
   },
   "pending_final_evidence": [
-    "Complete coverage/mutation and final release quality gates; close release tasks before declaring the prepared 1.0.0 version complete.",
-    "Repeat artifact validation and isolation if execution sources or generated artifact change.",
-    "Commit the reviewable release with reproducible evidence.",
-    "Measure the delivered 1.0.0 artifact after competing validation workloads stop; retain v3 measurements as historical evidence."
+    "Complete and verify the full mutation campaign, including its inventory; then close the quality task.",
+    "Review and commit final evidence and documentation; current candidate implementation was pushed as 53ba3fe."
   ],
   "limitations": [
     "Full-logit parity covers one F32 model and the fixed corpus; supported codecs do not imply quantized-model parity.",
@@ -504,7 +605,7 @@
     "recorded_utc": "2026-11-02T10:20:02.466261+00:00",
     "workspace_gate": {
       "status": "passed",
-      "command": "./scripts/check.sh origin/master",
+      "command": "./scripts/check.sh deec3aa8d2516ae19e335a5af77e6c38f8a854d8",
       "toolchain": "1.98.1",
       "log": {
         "path": "target/bml-1.0/workspace-patched.log",
@@ -518,7 +619,14 @@
         "baseline": 192,
         "new": 0
       },
-      "cargo_lock_sha256": "70aa67aece009dd4c4c69fce57b3cfdb09adac2917f355d68e39c87afde94d25"
+      "cargo_lock_sha256": "70aa67aece009dd4c4c69fce57b3cfdb09adac2917f355d68e39c87afde94d25",
+      "base_revision": "deec3aa8d2516ae19e335a5af77e6c38f8a854d8",
+      "python_tests_scope": "75 local tests included 63 versioned release tests and 12 untracked sandbox tests.",
+      "ci": {
+        "status": "passed",
+        "revision": "53ba3fec8ed9f1e5483183de00cb911f2eccaf44",
+        "url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41440792908/job/125261836783"
+      }
     },
     "feature_matrix": {
       "status": "passed",
@@ -542,9 +650,11 @@
     },
     "mutation": {
       "status": "running",
-      "report": "target/bml-1.0/mutation-patched-authorized/mutants.out/outcomes.json",
+      "revision": "53ba3fec8ed9f1e5483183de00cb911f2eccaf44",
+      "base_revision": "deec3aa8d2516ae19e335a5af77e6c38f8a854d8",
       "planned_mutants": 698,
-      "previous_campaigns": "Incomplete; sandboxed campaigns are not accepted as detection evidence because runtime socket tests are blocked by sandbox permissions."
+      "url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41440792908/job/125261836768",
+      "previous_campaigns": "Local attempts incomplete; sandboxed results are not accepted as detection evidence because socket tests were blocked."
     },
     "dependency_audit": {
       "status": "passed",
@@ -567,9 +677,273 @@
       "resolution": "tokio 1.52.3 -> 1.53.3; no ignored advisories"
     },
     "coverage": {
-      "status": "running",
-      "report": "target/quality/coverage-patched-authorized.json",
-      "note": "Repeat outside sandbox after local socket tests failed with PermissionDenied."
+      "status": "passed",
+      "command": "cargo llvm-cov --workspace --locked --json --output-path target/quality/coverage.json",
+      "verifier_command": "python3 tools/quality.py coverage --report target/bml-1.0/ci-41440792908/coverage/coverage.json",
+      "report": {
+        "path": "target/bml-1.0/ci-41440792908/coverage/coverage.json",
+        "sha256": "06d2ddd6cb55a118c3abc9674b772c35fe041c1bbf0163d37ac6fecdeed46df4"
+      },
+      "toolchain": "1.98.1",
+      "cargo_llvm_cov_version": "0.9.1",
+      "lines": {
+        "count": 11337,
+        "covered": 7497,
+        "percent": 66.12860545117756
+      },
+      "functions": {
+        "count": 1162,
+        "covered": 824,
+        "percent": 70.91222030981066
+      },
+      "floors": {
+        "lines": 52.0,
+        "functions": 60.0,
+        "path": "quality/coverage-baseline.json",
+        "sha256": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+      },
+      "source_verification": {
+        "verified_against_revision": "53ba3fec8ed9f1e5483183de00cb911f2eccaf44",
+        "verified_utc": "2026-11-02T11:59:37.772383+00:00",
+        "tracked_rust_files_match_revision": true,
+        "tracked_rust_file_count": 99,
+        "rust_source_manifest_sha256": "38d574f206c868a9eb7f10590f1f4bbd71f21602a66322837443037f3cc8e3a5",
+        "manifest_algorithm": "SHA-256 of UTF-8 compact JSON (sorted keys, separators comma/colon) mapping each git ls-files crates tests path ending .rs to its file SHA-256.",
+        "cargo_lock_sha256": "70aa67aece009dd4c4c69fce57b3cfdb09adac2917f355d68e39c87afde94d25",
+        "previous_inference_snapshot_rust_files_matched": 11,
+        "note": "Primary coverage evidence comes from the CI job for the committed revision. Current tracked Rust sources match that revision; the independent local report has identical line/function counts and coverage percentages."
+      },
+      "scope": "Ordinary workspace tests; line and function coverage. Excludes branch instrumentation and doctest coverage. Optional ignored tests remain outside this run.",
+      "ci": {
+        "workflow": ".github/workflows/quality.yml",
+        "run_id": 41440792908,
+        "job_id": 125261836325,
+        "job_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41440792908/job/125261836325",
+        "revision": "53ba3fec8ed9f1e5483183de00cb911f2eccaf44",
+        "artifact_name": "coverage"
+      },
+      "local_confirmation": {
+        "report": {
+          "path": "target/quality/coverage-patched-authorized.json",
+          "sha256": "8732c46bc6124cddfc68a04c10d0ec209a2e160ce963adbb73b1ac87f12396fb"
+        },
+        "log": {
+          "path": "target/bml-1.0/coverage-patched-authorized.log",
+          "sha256": "7158f420bf17c9efc328e4010b699f68de9c99add3bffc1635bb3f07f659f9af"
+        },
+        "command": "cargo llvm-cov --workspace --locked --offline --json --output-path target/quality/coverage-patched-authorized.json",
+        "instrumented_test_results": {
+          "groups": 41,
+          "passed": 381,
+          "failed": 0,
+          "ignored": 17
+        },
+        "line_and_function_totals_identical_to_ci": true,
+        "note": "The report completed before this commit. Rust sources match the delivered revision and the prior inference source snapshot; the inference manifest later lost only its trailing blank line. The older snapshot lockfile predates the Tokio 1.53.3 patch and is not used as the final dependency identity."
+      }
+    },
+    "versioned_python_tests": {
+      "status": "passed",
+      "tests": 63,
+      "selection": "git ls-files 'tools/test_*.py'; unittest.TestLoader.loadTestsFromNames using each path stem with tools on sys.path",
+      "log": {
+        "path": "target/bml-1.0/python-tracked-tests.log",
+        "sha256": "2b36ef0b382dde44ff9ee2feae3f06e8923a51287fd3205b78db799d06903d48"
+      }
     }
-  }
+  },
+  "historical_performance": [
+    {
+      "status": "passed",
+      "finished_utc": "2026-11-01T23:30:10.303936+00:00",
+      "report_path": "target/bml-1.0/benchmark-v3/report.json",
+      "report_sha256": "eed59126f8e21fa62ed8e7fb9756168970fce890d4495dea88b406445373cce1",
+      "system": {
+        "system": "Linux",
+        "release": "6.12.113+deb13-amd64",
+        "machine": "x86_64",
+        "cpu_model": "Intel Xeon Processor (Cascadelake)",
+        "logical_cpus": 2
+      },
+      "protocol": {
+        "prompts": [
+          "Once upon a time",
+          "Hello"
+        ],
+        "predict": 16,
+        "context": 128,
+        "warmups_per_prompt_per_engine": 1,
+        "measured_repetitions_per_prompt_per_engine": 3,
+        "cpu_threads_per_engine": 1,
+        "sampling": "greedy",
+        "logits": false,
+        "new_process_per_sample": true,
+        "cache_policy": "OS page cache is not evicted or controlled; provenance hashing and warmups precede measurements. These are not cold-cache runs.",
+        "engine_order": "Alternates each paired round; exact order is recorded per sample.",
+        "wall_source": "Python perf_counter around the child process; wait4 exit polling interval at most 1 ms plus scheduling delay",
+        "rss_source": "os.wait4(child_pid).ru_maxrss (Linux KiB)",
+        "statistics": "mean/min/max/population standard deviation; warmups excluded"
+      },
+      "measured_pairs": 6,
+      "warmup_pairs": 2,
+      "output_equality_checks_passed": 8,
+      "artifact_sha256": "2f5fb84a15ac613b3a3b3d2868b0ae86e0d70effdcc2aee2b6ee52f748f0c471",
+      "reference_binary_sha256": "4a7ce90b6237b89bbd144aafbbdbf789c582398cfcf23c3d3eaf420b638e22bf",
+      "summary": [
+        {
+          "prompt": "Once upon a time",
+          "engine": "artifact",
+          "metrics": {
+            "prefill_ms": {
+              "mean": 109.63541766666667,
+              "min": 108.655851,
+              "max": 111.17606500000001,
+              "stddev_population": 1.10271733680315
+            },
+            "decode_ms": {
+              "mean": 351.6672316666666,
+              "min": 348.64016799999996,
+              "max": 354.47213,
+              "stddev_population": 2.3860655577557557
+            },
+            "wall_ms": {
+              "mean": 1975.1982606661234,
+              "min": 1941.3519329973496,
+              "max": 2020.4567639993911,
+              "stddev_population": 33.287353825072316
+            },
+            "max_rss_kib": {
+              "mean": 107900,
+              "min": 107664,
+              "max": 108032,
+              "stddev_population": 167.2682476343513
+            },
+            "decode_tokens_per_second": {
+              "mean": 45.49965389375689,
+              "min": 45.1375401501946,
+              "max": 45.892589175209444,
+              "stddev_population": 0.3090169714243389
+            }
+          }
+        },
+        {
+          "prompt": "Once upon a time",
+          "engine": "reference",
+          "metrics": {
+            "prefill_ms": {
+              "mean": 12.641455666666667,
+              "min": 12.416779,
+              "max": 12.941253,
+              "stddev_population": 0.22060610461383157
+            },
+            "decode_ms": {
+              "mean": 148.971345,
+              "min": 143.102426,
+              "max": 154.74991,
+              "stddev_population": 4.755494630183136
+            },
+            "wall_ms": {
+              "mean": 232.19070033276998,
+              "min": 226.04383900034009,
+              "max": 241.25012999866158,
+              "stddev_population": 6.5406478886127335
+            },
+            "max_rss_kib": {
+              "mean": 116377.33333333333,
+              "min": 116236,
+              "max": 116460,
+              "stddev_population": 100.41690871340123
+            },
+            "decode_tokens_per_second": {
+              "mean": 107.51291980516983,
+              "min": 103.3926287905434,
+              "max": 111.80802762910531,
+              "stddev_population": 3.437795329435232
+            }
+          }
+        },
+        {
+          "prompt": "Hello",
+          "engine": "artifact",
+          "metrics": {
+            "prefill_ms": {
+              "mean": 43.854283333333335,
+              "min": 43.520929,
+              "max": 44.226571,
+              "stddev_population": 0.2893896005668165
+            },
+            "decode_ms": {
+              "mean": 369.573124,
+              "min": 357.513496,
+              "max": 392.445604,
+              "stddev_population": 16.18129308000125
+            },
+            "wall_ms": {
+              "mean": 1935.898819333185,
+              "min": 1924.457753997558,
+              "max": 1945.3890869990573,
+              "stddev_population": 8.655802830708538
+            },
+            "max_rss_kib": {
+              "mean": 107809.33333333333,
+              "min": 107748,
+              "max": 107844,
+              "stddev_population": 43.49201714746691
+            },
+            "decode_tokens_per_second": {
+              "mean": 43.373854298474214,
+              "min": 40.769981462195204,
+              "max": 44.75355526158935,
+              "stddev_population": 1.842310620767489
+            }
+          }
+        },
+        {
+          "prompt": "Hello",
+          "engine": "reference",
+          "metrics": {
+            "prefill_ms": {
+              "mean": 11.813317,
+              "min": 11.521895,
+              "max": 12.175057,
+              "stddev_population": 0.27124849050762795
+            },
+            "decode_ms": {
+              "mean": 153.65295333333333,
+              "min": 149.609176,
+              "max": 157.851527,
+              "stddev_population": 3.366705504437079
+            },
+            "wall_ms": {
+              "mean": 236.57092133362312,
+              "min": 227.03151400128263,
+              "max": 248.6767129994405,
+              "stddev_population": 9.02102752195485
+            },
+            "max_rss_kib": {
+              "mean": 116256,
+              "min": 116036,
+              "max": 116528,
+              "stddev_population": 204.1959842896035
+            },
+            "decode_tokens_per_second": {
+              "mean": 104.18072106684819,
+              "min": 101.36107204081719,
+              "max": 106.94531196402018,
+              "stddev_population": 2.2800888035540217
+            }
+          }
+        }
+      ],
+      "provenance_errors": [],
+      "reference_cpu_compilation": {
+        "observed_flags_source": "target/bml-1.0/llama.cpp/build/ggml/src/CMakeFiles/ggml-cpu.dir/flags.make",
+        "flags_source_sha256": "bb5b738a1ea6e3fbb532778a2d22b548f536824da786bb966c83b6c5209ef0e7",
+        "C_FLAGS": "-O3 -DNDEBUG -std=gnu11 -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -msse4.2 -mf16c -mfma -mbmi2 -mavx -mavx2",
+        "CXX_FLAGS": "-O3 -DNDEBUG -std=gnu++17 -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wextra-semi -msse4.2 -mf16c -mfma -mbmi2 -mavx -mavx2"
+      },
+      "interpretation": "The native BML artifact and llama.cpp use different CPU instruction targets (baseline x86-64 versus SSE4.2/AVX/AVX2/F16C/FMA/BMI2). Results describe these binaries on this host; they do not isolate algorithm, precision or SIMD effects.",
+      "artifact_revision_label": "v3 (historical; distinct from 1.0.0-final)"
+    }
+  ]
 }

@@ -1,0 +1,309 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T15:31:30.236712+00:00",
+  "status": "divergence_observed",
+  "model": {
+    "repository": "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
+    "revision": "52e7645ba7c309695bec7ac98f4f005b139cf465",
+    "file": {
+      "rfilename": "tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+      "blobId": "fee5bc6db3d3a837183f00d506cc171ecc0388dc",
+      "size": 637699456,
+      "lfs": {
+        "sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+        "size": 637699456,
+        "pointerSize": 134
+      }
+    }
+  },
+  "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "bml_model": {
+    "prompt_tokens": [
+      1,
+      15043
+    ],
+    "tokens": [
+      29892,
+      2787,
+      29991,
+      13,
+      13,
+      14448,
+      29871,
+      29941,
+      29901,
+      3462
+    ],
+    "eos_id": 2,
+    "text": ", World!\n\nStep 3: Add",
+    "bytes": [
+      44,
+      32,
+      87,
+      111,
+      114,
+      108,
+      100,
+      33,
+      10,
+      10,
+      83,
+      116,
+      101,
+      112,
+      32,
+      51,
+      58,
+      32,
+      65,
+      100,
+      100
+    ],
+    "context": 64,
+    "kv_bytes": 2883584,
+    "prefill_ms": 14202.077870000001,
+    "decode_ms": 68496.93458999999
+  },
+  "run": {
+    "command": [
+      "target/release/bml-model",
+      "run",
+      "--model",
+      "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+      "--prompt",
+      "Hello",
+      "--predict",
+      "10",
+      "--context",
+      "64"
+    ],
+    "status": 0,
+    "elapsed_seconds": 87.52946501600672,
+    "max_rss_kib": 641432
+  },
+  "reference": {
+    "bytes": [
+      44,
+      32,
+      87,
+      111,
+      114,
+      108,
+      100,
+      33,
+      10,
+      10,
+      83,
+      116,
+      101,
+      112,
+      32,
+      50,
+      58,
+      32,
+      67,
+      114,
+      101,
+      97,
+      116,
+      101
+    ],
+    "eos_id": 2,
+    "logits": [],
+    "prompt_tokens": [
+      1,
+      15043
+    ],
+    "reference": {
+      "add_special": true,
+      "context": 64,
+      "eos_id": 2,
+      "flash_attention": false,
+      "kv_dtype": "f32",
+      "parse_special": false,
+      "threads": 1,
+      "weight_repacking": false
+    },
+    "text": ", World!\n\nStep 2: Create",
+    "timing": {
+      "decode_ms": 5493.707142,
+      "prefill_ms": 818.350114
+    },
+    "tokens": [
+      29892,
+      2787,
+      29991,
+      13,
+      13,
+      14448,
+      29871,
+      29906,
+      29901,
+      6204
+    ]
+  },
+  "reference_build": {
+    "schema_version": 1,
+    "reference_revision": "785322d17f2d51e5185cf996a1f4e46d87640841",
+    "command": [
+      "c++",
+      "-std=c++17",
+      "-O2",
+      "-I",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/include",
+      "-I",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/ggml/include",
+      "-I",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/vendor",
+      "/home/dev/Work/bml/tools/llama_reference.cpp",
+      "-Wl,--start-group",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/build/src/libllama.a",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/build/ggml/src/libggml.a",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/build/ggml/src/libggml-cpu.a",
+      "/home/dev/Work/bml/target/bml-1.0/llama.cpp/build/ggml/src/libggml-base.a",
+      "-Wl,--end-group",
+      "-lpthread",
+      "-ldl",
+      "-lm",
+      "-o",
+      "/home/dev/Work/bml/target/bml-1.0/llama-reference"
+    ],
+    "compiler_version": "c++ (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "source_sha256": "99e1ae5aad5317e88232df2e21061b53077bb1a7234f743a9d20e671b9a7dc5f",
+    "binary_sha256": "4a7ce90b6237b89bbd144aafbbdbf789c582398cfcf23c3d3eaf420b638e22bf",
+    "libraries_sha256": {
+      "build/src/libllama.a": "2c4e8607d5f35e073a86f04a384856168bb38bbe68cb2b5748db12007d686fbb",
+      "build/ggml/src/libggml.a": "cb1a9949eee01ab69bcccdf48c2030ce555fe1ca8aed9dc3d2207056fea489f5",
+      "build/ggml/src/libggml-cpu.a": "44505f8e19a8a19f073fcb60ad1ce8cb792291a53fe58295e9e39c0ebc72bf90",
+      "build/ggml/src/libggml-base.a": "dac0d3ef5fc44b9ef6c5075e0550a24980949f7635b0dfd5eddf44722fa0192d"
+    },
+    "build_flags": {
+      "BUILD_SHARED_LIBS": "OFF",
+      "CMAKE_BUILD_TYPE": "Release",
+      "GGML_BLAS": "OFF",
+      "GGML_CPU": "ON",
+      "GGML_CUDA": "OFF",
+      "GGML_METAL": "OFF",
+      "GGML_NATIVE": "OFF",
+      "GGML_OPENMP": "OFF",
+      "GGML_VULKAN": "OFF"
+    }
+  },
+  "bml_binary_sha256": "c397d3dd4fa3ae25d6a792ba572e28be52e1a52437f05b1b7f96da63f1aab79a",
+  "same_prompt_tokens": true,
+  "same_generated_tokens": false,
+  "first_different_generated_index": 7,
+  "limitations": [
+    "This reference is the API oracle, not the separately requested llama-cli invocation.",
+    "Timing includes concurrent compilation/mutation jobs and is diagnostic only.",
+    "Historical CLI was stopped at its explicit timeout; its output is partial and does not validate ten-token completion.",
+    "Logits compared at one common prefix; no full-position numerical parity claim."
+  ],
+  "historical_cli": {
+    "run": {
+      "command": [
+        "target/release/bml-cli",
+        "run",
+        "--model",
+        "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+        "--prompt",
+        "Hello",
+        "--num-tokens",
+        "10",
+        "--context-size",
+        "64",
+        "--temp",
+        "0",
+        "--threads",
+        "1"
+      ],
+      "status": "timeout",
+      "elapsed_seconds": 180.60549089200504,
+      "max_rss_kib": 2989536,
+      "address_space_limit_bytes": 10737418240,
+      "timeout_seconds": 180
+    },
+    "stdout": "Cargando modelo desde target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf...\nEsto puede tardar para modelos grandes (dequantizando pesos)...\nModelo: llama (22 capas, 32 heads, 2048 embd, 32000 vocab)\nWeight pool: 1034512384 valores (7892.7 MB)\nPrompt: Hello\nGenerando 10 tokens (temp=0)...\n\nTokenizado: 1 tokens\nBesidesprosper",
+    "stderr": "",
+    "binary_sha256": "78219407809a76d8913aa432634fd54dc686549bc50f24cc097e5806563bfd00",
+    "source_observations": [
+      "Vocabulary::encode performs word lookup and omits BOS; observed prompt token count is 1, reference is 2.",
+      "InferenceCompiler::open loads no output.weight; forward_cached projects through token_embd.weight instead. TinyLlama has a separate Q6_K output head.",
+      "Historical SwiGLU uses gate * sigmoid(1.7 * gate) * up, unlike the validated native Llama profile.",
+      "Historical CLI prints weight-pool memory using 8 bytes per f32; that diagnostic overstates payload by two."
+    ],
+    "source_sha256": {
+      "crates/compiler/src/tokenizer.rs": "1df4a092ebb1090632f97f44ffa915a4fa591f0986df0fb9a215b60747c905b7",
+      "crates/compiler/src/gguf_compiler.rs": "1dc5b1862a098e287b9c96ec735866aed05097e3e004110a5b8780f6572ab567",
+      "crates/cli/src/main.rs": "9054c690279d0d6364426a3d9c967de4179d5de8f117c1a90b2687e2e82c9f26"
+    }
+  },
+  "same_prefix_logit_probe": {
+    "tokens": [
+      1,
+      15043,
+      29892,
+      2787,
+      29991,
+      13,
+      13,
+      14448,
+      29871
+    ],
+    "same_prompt_tokens": true,
+    "predict": 0,
+    "context": 64,
+    "vocabulary_size": 32000,
+    "bml_top5": [
+      [
+        29941,
+        20.842646
+      ],
+      [
+        29906,
+        20.800093
+      ],
+      [
+        29946,
+        20.501345
+      ],
+      [
+        29945,
+        20.242638
+      ],
+      [
+        29953,
+        19.902319
+      ]
+    ],
+    "reference_top5": [
+      [
+        29906,
+        20.851516723632812
+      ],
+      [
+        29941,
+        20.84872055053711
+      ],
+      [
+        29946,
+        20.489810943603516
+      ],
+      [
+        29945,
+        20.246187210083008
+      ],
+      [
+        29953,
+        19.895366668701172
+      ]
+    ],
+    "maximum_absolute_error": 0.21503703336486812,
+    "rms_error": 0.04798596453959208,
+    "status": "different_argmax_on_identical_prefix",
+    "logs": {
+      "spec-tinyllama-prefix-modern.json": "2df110fdf37fa039231d414f07a0ff22c1962b02f0b9a9789a803240b59ee58d",
+      "spec-tinyllama-prefix-reference.json": "66f7a7c6f0e18d397efef09cabb0eaecf09a46dc826b9905f183cce11bb66833"
+    }
+  }
+}

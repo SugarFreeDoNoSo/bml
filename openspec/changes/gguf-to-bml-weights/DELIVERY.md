@@ -93,9 +93,9 @@ La preparación e integración local del código está acreditada. Antes de arch
 | `bml-1-0-release` | 6.2: mutación completa aplicable al workspace; 6.3: commit/publicación. El éxito del crate de pesos no certifica el workspace. |
 | `bml-exact-numbers-and-matrices` | 7.3–7.4: ejecución y campaña ARM/NEON real; 9.3: entrega/archivo. Compilación cruzada no sustituye ejecución ARM. |
 | `bml-implementation-plan` | 5.3: comportamiento L1 con evidencia adecuada; 5.10: estrés cloud; 5.11: hito completo. |
-| `bml-inference-pipeline` | 8.6: ruta heredada, escalabilidad y validación numérica real; 9.2: Loom del work-stealing real; 9.6: contadores L1i; 10.3: commit/push. |
+| `bml-inference-pipeline` | 8.6: escalabilidad y rango numérico real; las entradas escalares fueron sustituidas en `330be43`. 9.2 está acreditada con los modelos Loom del SegQueue fijado. Siguen 9.6: contadores L1i y 10.3: commit/push. |
 | `fix-placeholders` | 9.3: commit/push. |
-| `tensor-library-foundation` | 4.5: complejos/síntesis y ramas, fuera del MVP; 5.4: completar o separar formalmente la migración antes de archivar. |
+| `tensor-library-foundation` | 4.5 implementada en `189bb8a`, con evaluación compleja y síntesis acotadas; cambio archivado localmente en `2026-11-03-tensor-library-foundation`. No acredita el gate global de mutaciones ni publicación. |
 
 La campaña histórica `target/spec-mutations-2026-11-03/mutants.out/outcomes.json`
 sigue con `end_time=null`: 1410 candidatos declarados, 379 caught, 47 missed,

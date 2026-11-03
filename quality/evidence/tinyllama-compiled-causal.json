@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T17:24:29.207907+00:00",
+  "status": "completed",
+  "run": {
+    "schema": 1,
+    "command": [
+      "target/quality/bml-cli-compiled-snapshot",
+      "run",
+      "--model",
+      "target/bml-1.0/tinyllama/causal-rpn.bmlgraph",
+      "--prompt",
+      "Hello",
+      "--num-tokens",
+      "10",
+      "--context-size",
+      "64",
+      "--temp",
+      "0",
+      "--threads",
+      "1"
+    ],
+    "started_at_utc": "2026-11-02T17:12:13.873257+00:00",
+    "binary_sha256": "29d39f38a4762c3dab31d6e383eb6dab6676b11da61e24b9abd9fa89b305ab6d",
+    "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+    "source_sha256": {
+      "crates/compiler/src/gguf_compiler.rs": "040d7da10984495e71a376ce43135f7081f346916e5c21eb04e1d5f03fa6b621",
+      "crates/compiler/src/kv_cache.rs": "6c9dbbacc13890ddabaaad8d528b22c1f2a6f20e78b146d1e73e033b54fcb4c7",
+      "crates/compiler/src/causal_artifact.rs": "2d7c87f7b14ce1b787e333ae673fb31df516b1449053c9718186aba228113dfe",
+      "crates/runtime/src/causal_artifact.rs": "237832a194bf973793d44df5871435d4c1fc396ec12ba626352a82571a2deb09",
+      "crates/gguf/src/view.rs": "0d3bc804c0ddc39f0c289e70242924df1f5a1c474b02fc568d88939c0a310160",
+      "crates/cli/src/main.rs": "abe3065021914d4665a455100f9480510d2770b58a76bab5b544d113511bcafd"
+    },
+    "address_space_limit_bytes": 2147483648,
+    "timeout_seconds": 900,
+    "artifact_sha256": {
+      "program_1.bmlgraph": "5784cba7d7ed92dff0e5c57958303b665c56ea380e22bda4c66987387c011f81",
+      "model.bmlgraph.json": "ce856b4be156d12e225bc3b1664d7d90ae0a1cfa574239cadf29244215cc3d73",
+      "program_0.bmlgraph": "53845ecf79772c46d7a3ca9848dce18d7464492829bc20f514603e8474a246f0"
+    },
+    "status": "completed",
+    "pid": 628225,
+    "exit_code": 0,
+    "elapsed_seconds": 478.1643787119974,
+    "max_rss_kib": 659224
+  },
+  "stdout": "Perfil compilado: llama-causal-f64-f32kv-rpn-v1\nTokenizado: 2 tokens\n, World!\n\nStep 3: Add\n\nGenerados 10 tokens desde artefacto compilado\n",
+  "stderr": "",
+  "generated_text": ", World!\n\nStep 3: Add",
+  "same_text_as_mapped_native": true,
+  "native_evidence": "quality/evidence/tinyllama-legacy-mapped.json",
+  "artifact_evidence": "quality/evidence/compiled-causal-artifact.json",
+  "compile_stdout": "Compilando target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf → target/bml-1.0/tinyllama/causal-rpn.bmlgraph\nPerfil: llama-causal-f64-f32kv-rpn-v1\nProgramas RPN: 2; proyecciones: 155\nSerializado a: target/bml-1.0/tinyllama/causal-rpn.bmlgraph\n  program_1.bmlgraph (48 bytes)\n  model.bmlgraph.json (1190154 bytes)\n  program_0.bmlgraph (48 bytes)\n",
+  "limitations": [
+    "RPN projections execute saved programs; native normalization, RoPE, attention, activation and residuals remain in the explicitly versioned shared causal profile.",
+    "This does not complete the separate transformer-to-symbolic-BML translation requirement.",
+    "Same generated text is observed; full real-model logit identity between compiled and native paths was not measured here.",
+    "Timing is under concurrent mutation/compiler load, not a controlled benchmark or a speedup claim.",
+    "The output still differs from the pinned llama.cpp reference as documented for the native mapped path."
+  ]
+}

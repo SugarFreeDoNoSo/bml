@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T16:57:57.742041+00:00",
+  "scope": "Row-decoded mapped GGUF storage for the historical native and RPN causal engines",
+  "contracts": [
+    "C12",
+    "C53",
+    "C55"
+  ],
+  "source_sha256": {
+    "crates/gguf/src/view.rs": "0d3bc804c0ddc39f0c289e70242924df1f5a1c474b02fc568d88939c0a310160",
+    "crates/compiler/src/gguf_compiler.rs": "06e96fb85a8ae102025a68702656321a522002597863cdd66d28c47eea7b6a25",
+    "crates/cli/src/bml_inference.rs": "c9d11f9d59e91c9181c0ae42303df392378307be348e650dd93bca73762a2e36",
+    "crates/cli/src/main.rs": "1efeaf9e0aa7734ac640429b122b42c3e34bc4a5c41a601db1ca04ddbd6379f5",
+    "crates/api/src/main.rs": "d191be3e974d870561bbb693db902acea7f5a7041210bfc64a29980a6690a056",
+    "crates/gguf/tests/tensor_views.rs": "13567691b12ba3d99df3749042404cd44c2d4794c2e18ffaaa89b78cd0b61986",
+    "crates/compiler/tests/inference_contracts.rs": "2cb350f4477bf03f425fb875de61a2cdce6af8f53cee46cb1f4a75d0248fb128",
+    "crates/cli/tests/rpn_causal.rs": "e403c446d7a4055cd1a09a3f61773502c18fd8580378a97fe3e2817a483e213e"
+  },
+  "behavior": "CLI and server use open_mapped, retain only normalization vectors in the decoded pool and decode one matrix row at a time. open retains expanded storage for comparison. Input/output dimensions and causal execution are shared.",
+  "tests": "Independent Q4 and pinned GGML Q6 head answers; native/expanded and native/mapped equality; RPN/expanded and RPN/mapped GQA closed-form prefix and incremental equality; byte output/EOS/context CLI tests; checked row indices and flattened outer axes.",
+  "feature_checks": {
+    "minimal": "target/quality/spec-mapped-gguf-minimal.log",
+    "all_features": "target/quality/spec-mapped-gguf-full.log",
+    "status": "passed"
+  },
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "status": "passed",
+    "log": "target/quality/spec-mapped-final-gate.log",
+    "sha256": "1a2644bc34bc8e3eefe4c57f6c98836b0028a84774c39577ea0015a381724ebe",
+    "contracts": 55,
+    "historical_discrepancies": 0,
+    "new_clippy_diagnostics": 0
+  },
+  "real_model_evidence": "quality/evidence/tinyllama-legacy-mapped.json",
+  "limitations": [
+    "Mapped files must remain immutable while borrowed.",
+    "get_embedding now returns Result; mapped matrix weights have no decoded pool offset.",
+    "Scratch scales with one decoded row plus output vector and existing KV, not the whole decoded model.",
+    "No complete symbolic transformer translation or .bmlgraph text generation is established."
+  ],
+  "post_gate_changes": "Documentation-only clarification of expanded versus mapped pools and embedding errors."
+}

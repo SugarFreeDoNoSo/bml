@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "date_utc": "2026-11-02T18:32:34.334034+00:00",
+  "requirement": "bml-inference-pipeline 8.6 (persisted symbolic AOT and CLI implemented; real-model scalability/range and legacy scalar route remain open)",
+  "profile": "llama-symbolic-bml-f64-f32kv-v1",
+  "manifest": "symbolic.bmlgraph.json",
+  "implementation": {
+    "compiler": "Operation construction resides in bml-compiler::symbolic_kernels and has node, total/per-output opcode, scalar-program and fragment budgets.",
+    "aot": "The exact canonical operation plan covers all causal prefixes up to the declared token count. All programs are built before manifest publication.",
+    "bindings": "The complete GGUF hash, source configuration, KV heads, RMS epsilon, RoPE base and tokenizer are checked. Fixed scalar literals must match the profile signature; model weights are not stored in the program files.",
+    "loader": "Stored hashes and bytecode are read under byte/count budgets, with no bytecode regeneration. Runtime preflight validates references, stack and execution limits before exposing the model. Missing kernels cannot trigger compilation in AOT mode.",
+    "cli": "compile --symbolic requires --context-size; run detects the profile and supports hash-checked --weights relocation. Requested generation capacity is clamped to compiled context. Mixed native/symbolic markers are rejected."
+  },
+  "verification": {
+    "artifact_tests": 4,
+    "cli_tests": 1,
+    "aot_fixture": "One-layer GQA/RoPE/nonzero MLP fixture previously checked against the independent C64 oracle; AOT and lazy logits are bit-identical for tested prefill/decode. AOT uses 256-byte fragment targets.",
+    "no_regeneration": "AOT loads and executes with max_nodes=0. Replacing the persisted residual-add program with One (and its hash) yields the independent predicted head logits 0.25/sqrt(1.5).",
+    "io_fixture": "Actual compile/run processes generate the byte pair for \u00e9, then EOS, with a moved GGUF source and context boundaries. The existing native compiled CLI test also passes.",
+    "rejections": [
+      "source hash, configuration, tokenizer and profile mismatches",
+      "incomplete operation plans, changed widths and fixed literals",
+      "corrupt/truncated or oversized files, native opcodes, invalid references and stack effects",
+      "runtime and construction node/opcode/program budgets",
+      "requests beyond compiled context",
+      "nonempty output directories and absent explicit CLI compile context"
+    ]
+  },
+  "limitations": [
+    "AOT persistence does not fix the BML expansions numerical range or rounding limitations.",
+    "No real downloaded model is certified under this symbolic profile; tiny fixtures are not large-model validation.",
+    "Scalar-output duplication and unrolled row programs still limit storage and compile/runtime scalability.",
+    "The historical scalar build_transformer_dag remains outside this working AOT path and is still pending.",
+    "This change integrates the CLI; the HTTP server currently supports the earlier native causal artifact profile.",
+    "Row decoding/conversion still allocates scratch memory; the claim is external source weights and no serialized learned weights."
+  ],
+  "source_sha256": {
+    "crates/compiler/src/symbolic_kernels.rs": "aa1df43c526b435fa8801bbd587f7836d6f96f3a2649eaf0e151e4519edd7cd5",
+    "crates/compiler/src/symbolic_artifact.rs": "6395a62a32800aa74f2bd21c01998ba7b40c96ba3b29f533546498786a5a5ca1",
+    "crates/compiler/src/causal_artifact.rs": "e233e88cff1f92d29d53e0aae1e2baf9a5d5dd89e7abfe9390e7da2075ce014d",
+    "crates/compiler/src/lib.rs": "0bc70307d3e68d731518eff9a04f8e49b49985710cfb3966796f79cf70a7caba",
+    "crates/compiler/tests/symbolic_artifact_contracts.rs": "0f1539836a7a83bac83dad4460ad115ddace2ce600bb0fb742dec501de5c78e4",
+    "crates/runtime/src/symbolic_causal.rs": "033f3876f1fe638c96be11b9c7ce7fa6b2bf1378e759708854ce22c6f28e75ad",
+    "crates/cli/src/main.rs": "c1074519adb50e83556584d52bbe6967accbea5c7f8ce763b6cbdca311ed297e",
+    "crates/cli/tests/symbolic_token_output.rs": "e3dbec9e6952da4689d818537050a695e6bb84d74194ca9387d0176edd3eebdd",
+    "quality/contracts.feature": "4a17f800b4d21abbf171c641f2754d30593fe0f7f82d52097db361d9f1e6788f",
+    "quality/traceability.json": "35a0aa10c0a0135a611657b57f18529031a2368c153331fdbf0486940784fc63"
+  },
+  "validation": {
+    "command": "./scripts/check.sh origin/master",
+    "toolchain": "1.98.1",
+    "cargo_locked": true,
+    "exit_code": 0,
+    "registered_contracts": "66/66",
+    "historical_discrepancies": 0,
+    "static_diagnostics": 66,
+    "baseline_diagnostics": 192,
+    "new_diagnostics": 0,
+    "log": "target/quality/spec-symbolic-aot-gate.log",
+    "log_sha256": "a7be7ed502222a60ad368cef60d41abbf86aa24eb48c358064fbf01dd4e5dacd",
+    "openspec": "8 passed, 0 failed; target/quality/spec-symbolic-aot-openspec.log"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "date_utc": "2026-11-02T14:37:11.323295+00:00",
+  "hardware": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           40 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  2\nOn-line CPU(s) list:                     0,1\nVendor ID:                               GenuineIntel\nModel name:                              Intel Xeon Processor (Cascadelake)\nCPU family:                              6\nModel:                                   85\nThread(s) per core:                      2\nCore(s) per socket:                      1\nSocket(s):                               1\nStepping:                                6\nBogoMIPS:                                5985.93\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm cpuid_fault ssbd ibrs ibpb ibrs_enhanced fsgsbase bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq clflushopt clwb avx512cd avx512bw avx512vl xsaveopt arat pku ospke avx512_vnni arch_capabilities\nHypervisor vendor:                       Microsoft\nVirtualization type:                     full\nL1d cache:                               64 KiB (2 instances)\nL1i cache:                               64 KiB (2 instances)\nL2 cache:                                4 MiB (1 instance)\nL3 cache:                                16 MiB (1 instance)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0,1\nVulnerability Gather data sampling:      Unknown: Dependent on hypervisor status\nVulnerability Indirect target selection: Mitigation; Aligned branch/return thunks\nVulnerability Itlb multihit:             KVM: Mitigation: VMX unsupported\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Vulnerable: Clear CPU buffers attempted, no microcode; SMT Host state unknown\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Mitigation; Enhanced IBRS\nVulnerability Spec rstack overflow:      Not affected\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected\n",
+  "native_avx2": true,
+  "source_sha256": {
+    "crates/kernels/src/tensor.rs": "b09431aa1d2fb16bea90c82fea0244e7384a6397e707c98828545c7749120f8c",
+    "crates/kernels/tests/tensor_simd.rs": "292caf87c4bca681ea057017764d7b124c0b0ee0b3521ead6a2bc425fe51e760",
+    "crates/kernels/Cargo.toml": "ef943b48a6ffbf7755ae2d775e0f36f60e27ceeb08f43f1e1b0aeee11183ea65",
+    "crates/bml/Cargo.toml": "b7b853a86f66d7fbd97a1f1348e2529f9ee0805c63309af81bd3bb67ad714a7d",
+    "crates/bml/src/lib.rs": "09cb13cc5583ec66f870f896119d6716f6dab6324e3cf19f580191f6c7a75fb3"
+  },
+  "checks": [
+    {
+      "command": "cargo test -p bml-kernels -p bml --all-features --locked",
+      "log": "target/quality/spec-tensor-simd-features.log",
+      "status": "passed"
+    },
+    {
+      "command": "cargo clippy -p bml-kernels -p bml --all-features --all-targets --locked",
+      "log": "target/quality/spec-tensor-simd-feature-lint.log",
+      "status": "passed"
+    },
+    {
+      "command": "cargo check -p bml-kernels --all-features --locked --target aarch64-unknown-linux-gnu",
+      "log": "target/quality/spec-tensor-simd-arm-check.log",
+      "status": "passed_compile_only"
+    },
+    {
+      "command": "./scripts/check.sh origin/master",
+      "log": "target/quality/spec-tensor-simd-gate.log",
+      "status": "passed",
+      "historical_discrepancies": 0,
+      "traceability": "43/43",
+      "clippy_new": 0
+    }
+  ],
+  "scope": "Experimental f64 contiguous add/mul only, native IEEE reference. No speed claim, reductions, symbolic rewrites or checked apply_basis. Scalar fallback is exercised via reference policy and capability selector tests. AArch64 compiled only; not executed."
+}

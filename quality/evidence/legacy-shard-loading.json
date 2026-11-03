@@ -1,0 +1,54 @@
+{
+  "scope": "Legacy shard loading and execution shape preflight",
+  "date": "2026-11-03",
+  "behavior": [
+    "Restore ModelConfig from required sibling header instead of constructing zero defaults",
+    "Bound file reads, counts and decoder slices; reject truncated, oversized, invalid-version/UTF8/range/trailing content",
+    "Require positive embedding width and exact RMSNorm/Q dimensions before file/network admission or execution",
+    "Reject malformed upload without replacing existing shard or poisoning shared state; invalid BatchRequest closes session",
+    "Execution visits only represented RMSNorm/Q layers in ascending order, preserving first-duplicate semantics; empty declared ranges up to u32::MAX do not induce a linear layer walk"
+  ],
+  "verification": {
+    "compiler_tests_passed": 3,
+    "worker_tests_passed": 13,
+    "logs": {
+      "target/quality/spec-legacy-shard-loader.log": "3deb26667f4cd0b824755a36a060461612f13fe5332d8100918181b3028eefce",
+      "target/quality/spec-legacy-worker-shapes.log": "dff14f0da7e3d500d6dff86d101b1c497deb6567d728042f9b8f680334483175"
+    }
+  },
+  "source_sha256": {
+    "crates/compiler/src/distributed.rs": "97182a50f4ffa63e58471d73335b0ba5240565995418f9a28b564d9b18838f98",
+    "crates/compiler/tests/distributed_loading_contracts.rs": "b2e872d023085ec8623b2a0715822ea86717ca36c383e188f88e92abf9e90f3b",
+    "crates/worker/src/main.rs": "eb38b3dde337c2643ec15935436dbf90e12c8c0fdd288f8e4e6cf390fc1a521e"
+  },
+  "limits": {
+    "header_bytes": 1048576,
+    "fragment_bytes": 536870912,
+    "opcodes": 1000000,
+    "tensors": 65536
+  },
+  "limitations": [
+    "RPN file decoding is structural, not graph semantic validation.",
+    "The legacy executor remains RMSNorm/Q-only, not causal transformer inference.",
+    "File shards now require the sibling header that the serializer already writes.",
+    "The 512MiB file cap is not a peak-RSS cap: input bytes and decoded weights coexist. Serializer output exceeding the cap is rejected."
+  ],
+  "final_validation": {
+    "canonical_gate": {
+      "command": "./scripts/check.sh origin/master",
+      "exit_code": 0,
+      "contracts": 68,
+      "audit_discrepancies": 0,
+      "static_diagnostics": 65,
+      "new_diagnostics": 0,
+      "log": "target/quality/spec-queue-shard-final-gate.log",
+      "sha256": "c9b2db9bbe8a1b30a1c200c5374c4a4d661294709164005f5f23aa2f01749b51"
+    },
+    "openspec": {
+      "passed": 8,
+      "failed": 0,
+      "log": "target/quality/spec-queue-shard-openspec.log",
+      "sha256": "d485b9428cb9ee203a5e683375d42d0def5fe3e3b69ee8856c98ebd301b6524b"
+    }
+  }
+}

@@ -1,0 +1,434 @@
+{
+  "schema": 1,
+  "measured_at_utc": "2026-11-02T13:21:34.513676+00:00",
+  "revision": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+  "worktree_dirty": true,
+  "source_sha256": {
+    "crates/kernels/examples/code_compare_bench.rs": "a82ba8d2eda2a5d24ae2ab63aa24e2f0e6c9821563859929ed5b2c1802e02f37",
+    "crates/kernels/src/lib.rs": "b328d01458a9c74f7e834313553a3944389b1e42a77570cd8f478a13c5611da8",
+    "crates/kernels/tests/code_comparison.rs": "e9a788b974f10c3f781e4b4604640e9d5c2da41b32351af0cb9fbee9559d9942",
+    "crates/kernels/Cargo.toml": "b65604f277bcc5ad9ae23b3199fae0daa41d0f0639467a3ed1d705cc2c903631"
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu": "Intel Xeon Processor (Cascadelake)",
+    "logical_cpus": 2,
+    "kernel": "6.12.113+deb13-amd64",
+    "execution": "native x86-64 instructions in Microsoft-virtualized Linux VM; not ISA emulation"
+  },
+  "toolchain": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "build": "cargo run -p bml-kernels --example code_compare_bench --release --locked -- 100; workspace release profile; no extra RUSTFLAGS",
+  "semantics": "Unsigned integer prefix-code comparison only; not BML numerical evaluation or inference",
+  "units": {
+    "comparisons_per_second": "iterations * pairs / elapsed_seconds",
+    "preparation_ns": "construction and cloning of both complete input batches",
+    "requested_bytes": "sum of successful allocator request sizes including realloc new sizes; not RSS",
+    "peak_additional_live_bytes": "maximum tracked live heap bytes above the phase starting live bytes",
+    "allocation_calls": "successful alloc/alloc_zeroed/realloc calls; includes output vector allocations"
+  },
+  "campaign": {
+    "iterations": 100,
+    "repetitions": 7,
+    "pairs": 512,
+    "avx2_available": true,
+    "neon_available": false,
+    "workloads": [
+      {
+        "name": "equal-long",
+        "logical_input_bits": 4199424,
+        "preparation": {
+          "ns": 15706716,
+          "allocation_calls": 5122,
+          "requested_bytes": 1624064,
+          "peak_additional_live_bytes": 557056
+        },
+        "backends": [
+          {
+            "backend": "Scalar",
+            "samples": [
+              {
+                "ns": 3586225,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3668804,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3978849,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3865109,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3590388,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3738886,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3686587,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              }
+            ]
+          },
+          {
+            "backend": "Avx2",
+            "samples": [
+              {
+                "ns": 1892641,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1839195,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1925167,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1990057,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1815368,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1894059,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1911674,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "late-difference",
+        "logical_input_bits": 4199424,
+        "preparation": {
+          "ns": 15584080,
+          "allocation_calls": 5122,
+          "requested_bytes": 1624064,
+          "peak_additional_live_bytes": 557056
+        },
+        "backends": [
+          {
+            "backend": "Scalar",
+            "samples": [
+              {
+                "ns": 3681282,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3655759,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3501614,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3455680,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3734410,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3801131,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 3732445,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              }
+            ]
+          },
+          {
+            "backend": "Avx2",
+            "samples": [
+              {
+                "ns": 1968899,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1962796,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 2031417,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1986167,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1908899,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1912755,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 1225072,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "short-mixed",
+        "logical_input_bits": 11264,
+        "preparation": {
+          "ns": 39269,
+          "allocation_calls": 1032,
+          "requested_bytes": 32816,
+          "peak_additional_live_bytes": 32768
+        },
+        "backends": [
+          {
+            "backend": "Scalar",
+            "samples": [
+              {
+                "ns": 391411,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 398216,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 391301,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 431380,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 411107,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 391501,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 398207,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              }
+            ]
+          },
+          {
+            "backend": "Avx2",
+            "samples": [
+              {
+                "ns": 444313,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 452790,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 455459,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 451732,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 444389,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 452237,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              },
+              {
+                "ns": 458404,
+                "allocation_calls": 100,
+                "requested_bytes": 51200,
+                "peak_additional_live_bytes": 512
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "summary": [
+    {
+      "workload": "equal-long",
+      "backend": "Scalar",
+      "median_ns": 3686587,
+      "mean_ns": 3730692.5714285714,
+      "stdev_ns": 144941.52283232153,
+      "min_ns": 3586225,
+      "max_ns": 3978849,
+      "median_comparisons_per_second": 13888184.383007916
+    },
+    {
+      "workload": "equal-long",
+      "backend": "Avx2",
+      "median_ns": 1894059,
+      "mean_ns": 1895451.5714285714,
+      "stdev_ns": 57277.65679523195,
+      "min_ns": 1815368,
+      "max_ns": 1990057,
+      "median_comparisons_per_second": 27031892.881900724
+    },
+    {
+      "workload": "late-difference",
+      "backend": "Scalar",
+      "median_ns": 3681282,
+      "mean_ns": 3651760.1428571427,
+      "stdev_ns": 127496.08854579105,
+      "min_ns": 3455680,
+      "max_ns": 3801131,
+      "median_comparisons_per_second": 13908198.285271272
+    },
+    {
+      "workload": "late-difference",
+      "backend": "Avx2",
+      "median_ns": 1962796,
+      "mean_ns": 1856572.142857143,
+      "stdev_ns": 281647.9556624005,
+      "min_ns": 1225072,
+      "max_ns": 2031417,
+      "median_comparisons_per_second": 26085237.589642532
+    },
+    {
+      "workload": "short-mixed",
+      "backend": "Scalar",
+      "median_ns": 398207,
+      "mean_ns": 401874.71428571426,
+      "stdev_ns": 14784.800761979464,
+      "min_ns": 391301,
+      "max_ns": 431380,
+      "median_comparisons_per_second": 128576343.45955747
+    },
+    {
+      "workload": "short-mixed",
+      "backend": "Avx2",
+      "median_ns": 452237,
+      "mean_ns": 451332,
+      "stdev_ns": 5285.541788691108,
+      "min_ns": 444313,
+      "max_ns": 458404,
+      "median_comparisons_per_second": 113214973.56474592
+    }
+  ],
+  "neon": {
+    "execution": "not_run",
+    "performance": "not_measured",
+    "reason": "No AArch64 execution hardware available in this session",
+    "compilation": "passed",
+    "compile_command": "cargo check -p bml-kernels --all-targets --target aarch64-unknown-linux-gnu --locked (Rust 1.98.1)"
+  },
+  "promotion": {
+    "auto": "Scalar",
+    "reason": "AVX2 wins on the sampled long codes but is slower on the sampled short workload; no universal promotion"
+  },
+  "validation": {
+    "native_tests": "cargo test -p bml-kernels --locked: 4 passed; Scalar and Avx2 runtime available",
+    "facade_all_features": "cargo test -p bml --all-features --locked: passed",
+    "domain_boundary": "bml-domain retains zero dependencies and deny(unsafe_code)"
+  }
+}

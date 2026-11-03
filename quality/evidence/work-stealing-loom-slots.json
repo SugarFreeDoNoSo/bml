@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "scope": "Tracked slot publication and circular reuse in actual crossbeam-deque 0.8.7 FIFO operations",
+  "upstream_source_sha256": "ef56bda48e2e534a315b32b67f4e40d603e3e80e2bd96dfe802c1559dbc9706b",
+  "generator": "tools/probe_work_stealing_loom.py",
+  "models": "tools/loom/work_stealing_slots.rs",
+  "instrumentation": [
+    "Every Buffer payload slot is a loom::cell::UnsafeCell<MaybeUninit<T>>; original volatile read/write operations execute inside tracked with/with_mut accesses.",
+    "Allocation and destruction retain slot and payload semantics; resizing copies payload through tracked read/write instead of copying the instrumentation cell itself.",
+    "Single-item steal models the SeqCst fence that upstream obtains from pin or its reentrant branch. Native epoch protection/reclamation is still not instrumented.",
+    "No production WorkQueue or dependency source is modified; each generated upstream adaptation and its full diff are retained under target/quality."
+  ],
+  "bounds": {"preemption_bound": 2, "max_branches": 10000, "thieves": 1, "live_items_maximum": 1, "capacity_changes_during_models": false},
+  "runs": [
+    {
+      "directory": "target/quality/work-stealing-slots-v2",
+      "generation_options": "--slots --slot-capacity 2",
+      "cargo_arguments": "test --offline --locked --lib",
+      "exit_code": 101,
+      "passed": 5,
+      "failed": 1,
+      "failure": "stale_thief_competes_with_wrapped_slot_reuse: Causality violation: Concurrent read and write accesses",
+      "adapted_source_sha256": "ac16a8134df8adb22a09cf7a3c41d1cbc200a21f031da3190e093b9f9a3d6635",
+      "log_sha256": "789281d36c370cbeca0c35a2b6a28eb7f0dc7543e175f071bbd90877f1025ff3"
+    },
+    {
+      "directory": "target/quality/work-stealing-slots-native-v2",
+      "generation_options": "--slots",
+      "minimum_capacity": 64,
+      "cargo_arguments": "test --offline --locked --lib",
+      "exit_code": 101,
+      "failure": "Concurrent read and write accesses to UnsafeCell, followed by a second panic in destructor cleanup and SIGABRT. This run is not reported as a normally completed six-test suite.",
+      "adapted_source_sha256": "ac9e746a4b036e68b04f8fe40c5f15ba454165583f95411e558f9e246cd02261",
+      "log_sha256": "91958df620d50635639ce51ddf41da0be162dffed2dc9ed01694f27b7eec9c4a"
+    },
+    {
+      "directory": "target/quality/work-stealing-slots-release-v2",
+      "generation_options": "--slots --slot-capacity 2 --weaken-publication",
+      "cargo_arguments": "test --offline --locked --lib slots::concurrent_push_publishes_payload_before_steal -- --exact",
+      "exit_code": 101,
+      "failed": 1,
+      "failure": "Publication model detects removal of push's Release fence with a tracked slot causality violation",
+      "adapted_source_sha256": "145f895df9006b65417a1fd37234e9a3fabd53f0a68acb64afc7a357b48d76dd",
+      "log_sha256": "83397f1ea976c15bdf2303eb599b1bbb89db9ef0aa8d360cfd857ac5c1006e38"
+    },
+    {
+      "directory": "target/quality/work-stealing-slots-acquire-v2",
+      "generation_options": "--slots --slot-capacity 2 --weaken-acquire",
+      "cargo_arguments": "test --offline --locked --lib slots::concurrent_push_publishes_payload_before_steal -- --exact",
+      "exit_code": 101,
+      "failed": 1,
+      "failure": "Publication model detects relaxing thief back-index Acquire load with a tracked slot causality violation",
+      "adapted_source_sha256": "a9882bac8f79b9d29952d86b918d6b2b110f468fa0943d1a53c22ce210486d9e",
+      "log_sha256": "405b1cfa49096047a71e6b6863721d22d979d155de25d2a95e52df125cc91f7f"
+    }
+  ],
+  "environment": "Pinned project Rust toolchain; generated standalone lockfiles offline, tests with --offline --locked, CARGO_INCREMENTAL=0 and CARGO_PROFILE_TEST_DEBUG=0/CARGO_PROFILE_DEV_DEBUG=0. Each probe uses its own build directory.",
+  "finding": "The initial Release/Acquire publication is visible to the model. Circular slot reuse can overlap a speculative thief payload read before the front CAS rejects the stale index. Upstream Buffer::read/write comments explicitly acknowledge the volatile-access race caveat. This is a failure of the instrumented model, not a demonstrated deployed crash or a full epoch safety analysis.",
+  "task_9_2_closed": false,
+  "remaining": "Resolve or replace the speculative slot access protocol, then re-run reuse models and instrument resize/protection/reclamation. Do not hide this failure by atomicizing payloads only in the model or accepting it as a passing test."
+}

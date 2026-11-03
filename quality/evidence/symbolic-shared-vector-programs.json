@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "command": "cargo test -p bml-compiler --test symbolic_vector_contracts --test symbolic_artifact_contracts --locked -- --nocapture",
+  "exit_code": 0,
+  "tests_passed": 9,
+  "log": "/tmp/opencode/specs-symbolic-vector.log",
+  "log_sha256": "47228734bfc20627aab848637074cd5cd993b45243ccbb8d30819e5e08c14c78",
+  "source_sha256": {
+    "crates/compiler/src/symbolic_kernels.rs": "1d85b37f6b2d0c28c011fa98dac0fc2b7ffa9d77c878761441d9ca2a5c99c368",
+    "crates/compiler/src/symbolic_artifact.rs": "bfef57d09defe4385d53f7c9096d9b3ec3cfc5ad4a1182296ef821b9ebd239ce",
+    "crates/compiler/tests/symbolic_vector_contracts.rs": "77f85d4cace2b6ed5a2ac1bc108048bed3cc4580282bcce89069940b111cf437",
+    "crates/compiler/tests/symbolic_artifact_contracts.rs": "ab63a13cc3e079b71c6ecb99af83d6c947f0b2f86afa5f2b0eb88ccf40f4dece"
+  },
+  "opcode_counts": {
+    "widths": [8, 16, 32, 128],
+    "rms_norm_vector": [13009, 25417, 50233, 199129],
+    "softmax_vector": [3511, 7023, 14047, 56191],
+    "rms_norm_scalar_width_32": 982688,
+    "softmax_scalar_width_32": 448864
+  },
+  "scope": "Persisted shared-output programs, bitwise scalar equivalence on bounded fixtures, linear opcode growth, budgets and artifact compatibility. Does not validate the legacy scalar transformer compiler, real-model symbolic numeric range or prefix-plan scalability."
+}

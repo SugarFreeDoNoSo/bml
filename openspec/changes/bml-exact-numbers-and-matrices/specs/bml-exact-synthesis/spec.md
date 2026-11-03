@@ -5,7 +5,11 @@ La representación final SHALL usar exclusivamente `T ::= 1 | B(T,T)` con
 `B(x,y)=2^x-log2(y)`. Los árboles finitos y el constructor binario ordenado SHALL
 describirse como magma libre generado por `1`; ninguna identidad, asociatividad o
 conmutatividad se presume. La interpretación real SHALL describirse como parcial,
-no como magma total sobre los reales. Cada regla de construcción o simplificación SHALL incluir
+no como magma total sobre los reales.
+
+#### Scenario: Justificación de una regla real
+- **WHEN** se introduce una regla de construcción o simplificación
+- **THEN** la regla SHALL incluir
 una derivación para base 2 y las condiciones de dominio de todos sus intermedios.
 Un segundo argumento no positivo SHALL ser inválido en evaluación real; la
 validez de la gramática no SHALL certificar dominio ni evaluabilidad en `f64`.
@@ -91,7 +95,9 @@ El sintetizador SHALL comparar, cuando sean aplicables, factorización, catálog
 de constantes, potencias de dos y expresiones cercanas, sumas/restas y resultados
 previamente compilados. SHALL limitar búsqueda y factorización y contar costos
 después de expandir todas las macros y duplicaciones del árbol serializado.
-El criterio principal SHALL minimizar operadores `B`; profundidad y orden
+#### Scenario: Selección y registro de candidatos
+- **WHEN** se comparan candidatos de síntesis
+- **THEN** el criterio principal SHALL minimizar operadores `B`; profundidad y orden
 lexicográfico del código SHALL usarse para desempatar de forma determinista. Tiempo de
 evaluación y estabilidad SHALL reportarse como objetivos distintos. Cada
 resultado SHALL registrar estrategia, costo, presupuesto consumido y motivo de

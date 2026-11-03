@@ -4,7 +4,11 @@
 `Bml::op` SHALL construir el término ordenado de la primitiva `B(x,y)` sin
 evaluarlo. `Add`, `Sub`, `Mul`, `Div` y `Neg` SHALL representar respectivamente
 las operaciones aritméticas derivadas, con reglas y dominios justificados en base
-2; no SHALL operar aritméticamente sobre los bits codificados. Los métodos
+2; no SHALL operar aritméticamente sobre los bits codificados.
+
+#### Scenario: Compatibilidad y APIs comprobadas
+- **WHEN** se incorporan operadores derivados
+- **THEN** los métodos
 históricos de construcción SHALL conservar su contrato estructural, salvo una
 migración explícita y compatible documentada. Las nuevas APIs comprobadas SHALL
 distinguir construcción, dominio no justificado y evaluación.
@@ -18,7 +22,11 @@ distinguir construcción, dominio no justificado y evaluación.
 `Add`, `Sub`, `Mul`, `Div` y `Neg` SHALL devolver `Result` con errores tipados;
 SHALL ofrecer variantes con operandos prestados sin requerir al usuario clonar
 los originales. La documentación SHALL indicar los casos admitidos, presupuesto
-y cómo usar `?`. Los operadores SHALL delegar en APIs comprobadas, sin ocultar
+y cómo usar `?`.
+
+#### Scenario: Delegación y justificación del dominio
+- **WHEN** se evalúa un operador fallible
+- **THEN** los operadores SHALL delegar en APIs comprobadas, sin ocultar
 errores ni producir resultados parciales; cada regla SHALL justificar sus
 dominios. No SHALL afirmarse que evaluar aproximadamente decide el signo exacto
 de un árbol arbitrario. Si el dominio no puede justificarse SHALL informarse
@@ -49,7 +57,11 @@ La API SHALL definir la conversión numérica de operandos enteros y `f64` en la
 operaciones mixtas admitidas: los enteros representan su valor matemático y los
 `f64` su valor binario exacto bajo el contrato de síntesis exacta. Toda síntesis
 fallida SHALL propagarse; `from_u64` SHALL seguir interpretando un código, no un
-entero numérico. Las variantes simétricas admitidas SHALL documentarse y probarse.
+entero numérico.
+
+#### Scenario: Variantes simétricas y preparación matricial
+- **WHEN** se ofrecen operaciones mixtas simétricas o matriciales
+- **THEN** las variantes simétricas admitidas SHALL documentarse y probarse.
 En matrices, el escalar SHALL convertirse una sola vez antes del kernel, con su
 costo de preparación contabilizado por separado.
 

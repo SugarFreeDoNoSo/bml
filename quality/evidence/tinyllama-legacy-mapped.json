@@ -1,0 +1,170 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T16:57:57.632296+00:00",
+  "status": "completed_generation_with_documented_reference_divergence",
+  "run": {
+    "schema": 1,
+    "command": [
+      "target/quality/bml-cli-mapped-snapshot",
+      "run",
+      "--model",
+      "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+      "--prompt",
+      "Hello",
+      "--num-tokens",
+      "10",
+      "--context-size",
+      "64",
+      "--temp",
+      "0",
+      "--threads",
+      "1"
+    ],
+    "started_at_utc": "2026-11-02T16:53:08.909424+00:00",
+    "binary_sha256": "9a11a8086858e0207c078e05dca86bdc8d9fac55f27d7d97427aea37310bc16b",
+    "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+    "source_sha256": {
+      "crates/compiler/src/gguf_compiler.rs": "0f6e3131be1c94d0b3c901f98c1c316b6d74d5d8ed0b1abae58ad380c06e2e36",
+      "crates/compiler/src/kv_cache.rs": "6c9dbbacc13890ddabaaad8d528b22c1f2a6f20e78b146d1e73e033b54fcb4c7",
+      "crates/gguf/src/view.rs": "0d3bc804c0ddc39f0c289e70242924df1f5a1c474b02fc568d88939c0a310160",
+      "crates/cli/src/main.rs": "1efeaf9e0aa7734ac640429b122b42c3e34bc4a5c41a601db1ca04ddbd6379f5"
+    },
+    "address_space_limit_bytes": 2147483648,
+    "timeout_seconds": 900,
+    "status": "completed",
+    "pid": 182196,
+    "exit_code": 0,
+    "elapsed_seconds": 57.626048164005624,
+    "max_rss_kib": 647144
+  },
+  "stdout": "Cargando modelo desde target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf...\nValidando el modelo y mapeando los pesos...\nModelo: llama (22 capas, 32 heads, 2048 embd, 32000 vocab)\nDecoded normalization pool: 92160 valores (0.4 MiB)\nMapped GGUF: 608.2 MiB\nPrompt: Hello\nGenerando 10 tokens (temp=0)...\n\nTokenizado: 2 tokens\n, World!\n\nStep 3: Add\n\nGenerados 10 tokens desde prompt 'Hello'\n",
+  "stderr": "",
+  "generated_text": ", World!\n\nStep 3: Add",
+  "reference_text": ", World!\n\nStep 2: Create",
+  "reference_evidence": "quality/evidence/tinyllama-llama-cli.json",
+  "reference_revision": "785322d17f2d51e5185cf996a1f4e46d87640841",
+  "same_generated_text": false,
+  "matched_generation_parameters": {
+    "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+    "prompt": "Hello",
+    "prompt_token_ids": [
+      1,
+      15043
+    ],
+    "generation_count": 10,
+    "context": 64,
+    "temperature": 0,
+    "threads": 1,
+    "backend": "CPU",
+    "kv_dtype": "F32",
+    "reference_rendered_prompt": "Hello"
+  },
+  "same_prefix_probe": {
+    "input_ids": [
+      1,
+      15043,
+      29892,
+      2787,
+      29991,
+      13,
+      13,
+      14448,
+      29871
+    ],
+    "vocabulary": 32000,
+    "historical_top5": [
+      [
+        29941,
+        20.842645225438666
+      ],
+      [
+        29906,
+        20.800092031177908
+      ],
+      [
+        29946,
+        20.501344183948486
+      ],
+      [
+        29945,
+        20.242637087231635
+      ],
+      [
+        29953,
+        19.902319199881486
+      ]
+    ],
+    "reference_top5": [
+      [
+        29906,
+        20.851516723632812
+      ],
+      [
+        29941,
+        20.84872055053711
+      ],
+      [
+        29946,
+        20.489810943603516
+      ],
+      [
+        29945,
+        20.246187210083008
+      ],
+      [
+        29953,
+        19.895366668701172
+      ]
+    ],
+    "modern_bml_top5": [
+      [
+        29941,
+        20.842646
+      ],
+      [
+        29906,
+        20.800093
+      ],
+      [
+        29946,
+        20.501345
+      ],
+      [
+        29945,
+        20.242638
+      ],
+      [
+        29953,
+        19.902319
+      ]
+    ],
+    "historical_vs_reference": {
+      "maximum_absolute_error": 0.21503698232817015,
+      "rms_error": 0.04798598014728879
+    },
+    "historical_vs_modern": {
+      "maximum_absolute_error": 1.7957374811583549e-06,
+      "rms_error": 4.2977639575715335e-07
+    },
+    "command": "cargo run -p bml-compiler --example historical_logits --release --locked -- MODEL.gguf 1,15043,29892,2787,29991,13,13,14448,29871",
+    "artifacts_sha256": {
+      "target/quality/spec-historical-prefix-logits.json": "57bde97fdc75896efbb338292df7e692d78b8e24e8b87477f643f63d03a37aea",
+      "target/quality/spec-tinyllama-prefix-reference.json": "66f7a7c6f0e18d397efef09cabb0eaecf09a46dc826b9905f183cce11bb66833",
+      "target/quality/spec-tinyllama-prefix-modern.json": "2df110fdf37fa039231d414f07a0ff22c1962b02f0b9a9789a803240b59ee58d",
+      "crates/compiler/examples/historical_logits.rs": "8a746feb411851533c3e66be400c482dfb080b26fb9838e6a9d328c9d6bd1b90"
+    }
+  },
+  "storage": {
+    "decoded_norm_values": 92160,
+    "decoded_norm_bytes": 368640,
+    "mapped_file_bytes": 637699456,
+    "prior_expanded_values": 1100048384
+  },
+  "limitations": [
+    "Timing collected concurrently with compiler/mutation work; not a controlled performance comparison or speedup claim.",
+    "Historical projections and norms use F64 with F32 decoded weights/KV; reference uses its GGML quantized CPU kernels. Arithmetic paths are not bit-identical.",
+    "The same-prefix comparison proves divergent argmax but does not isolate the root cause to any one kernel.",
+    "Generation was the native historical GGUF CLI path, not the optional RPN path or compiled .bmlgraph.",
+    "Reference CLI provenance includes the asset-build limitation recorded in its separate evidence."
+  ]
+}

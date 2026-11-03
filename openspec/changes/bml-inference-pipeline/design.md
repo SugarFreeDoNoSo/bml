@@ -45,11 +45,80 @@ El runtime BML actual ejecuta programas RPN sobre DAGs fragmentados con Hash Con
 
 ## Risks / Trade-offs
 
+### Brecha de ejecución distribuida verificada
+
+El worker histórico solo aplica RMSNorm y una proyección Q; no implementa una
+capa Llama completa. `bml-inference::Session` sí conserva claves/valores por capa,
+posición causal y orden transaccional mediante `TokenStep`. Para reutilizarlo
+entre nodos, el protocolo debe transportar identidad de sesión, posición de
+token, rango de capas y configuración completa (incluidos epsilon y RoPE).
+El mensaje histórico de hidden state y `ModelConfig` no contiene esos datos.
+No se puede sustituir `execute_layers` por una llamada sin estado ni inferir
+los parámetros ausentes sin romper el contrato. La próxima integración debe
+comparar logits de varios tokens/sesiones contra la ruta local, cubrir rechazo
+de posiciones fuera de orden y rollback/cierre; el matmul TCP actual no es esa
+validación. La carga de pesos y su acknowledgement tampoco son inferencia.
+
+La API `Model::layer_session(range, context, maximum_bytes)` ya ejecuta rangos
+fijos mediante el mismo kernel causal validado. `embed_token` prepara la entrada
+y `final_logits` aplica la salida del pipeline. Cada `LayerSession` comprueba
+posición, ancho y finitud antes de ejecutar; solo avanza después de completar
+su rango. Un fallo numérico permite reintentar la misma posición, sobrescribiendo
+las entradas KV no confirmadas. Las pruebas comparan tres tokens y dos sesiones
+intercaladas contra el evaluador local, además de un fallo en la segunda capa.
+Actualmente conserva el modelo completo y reserva KV para todas sus capas bajo
+presupuesto; no acredita ahorro de memoria por partición. El commit es local a
+cada etapa: el coordinador todavía debe gestionar fallos entre etapas, identidad
+de sesión y reintentos sin ejecutar dos veces una posición confirmada.
+
+`bml-inference::remote` añade transporte TCP versionado para estas sesiones,
+distinto del protocolo histórico del worker. Una conexión dedicada identifica
+una sesión y su KV; `Open` fija contexto, `Forward` lleva posición y hidden state,
+y `Reset`/`Close` controlan el ciclo de vida. El servidor impone límites de frame,
+contexto, memoria y timeouts. Un error de transporte invalida el cliente; no
+reintenta automáticamente una operación que puede haber quedado confirmada.
+Una prueba con dos listeners TCP y capas 0..1/1..2 compara logits contra la
+ejecución local para varios tokens y después de reset. Hay pruebas de tamaño de
+frame y pérdida de respuesta. `bml-layer-worker` implementa arranque/configuración por CLI, límites de sesiones
+y política de saturación mediante cierre de conexión antes de reservar KV. Una
+prueba de proceso con GGUF sintético verifica tres tokens y salida `--once`.
+El endpoint HTTP se conecta mediante `--layer-workers`: cada request abre sus
+sesiones causales, soporta JSON/SSE y propaga errores remotos. El handler tiene
+pruebas contra generación local, incluidas fronteras UTF-8. Aún valida el modelo
+por request y procesa el batch secuencialmente; no es batching numérico fusionado.
+`RemotePipeline` coordina prefill/decode,
+verifica cobertura contigua y única de capas, y solo avanza la posición después
+de todas las etapas y proyección final. Un fallo parcial invalida y desconecta
+todas las etapas; no permite reset/reintento sobre cachés divergentes. Las pruebas
+comparan logits, rechazan planes incompletos e inyectan fallo en la segunda etapa.
+La versión 2 de apertura exige una identidad SHA-256 de configuración numérica
+y tensores (orden canónico por nombre, encoding, dimensiones y bytes), calculada
+una sola vez por modelo. El worker rechaza otra revisión antes de reservar KV.
+No incluye tokenizer ni layout físico del archivo y no autentica al servidor;
+las pruebas cubren reordenación de recursos, cambios de pesos/configuración y
+rechazo de identidad errónea por TCP.
+
 - **R1 — Fórmulas BML de `+`/`-`/`*`/`/`/`pow` no derivadas.** Las fórmulas exactas en base 2 no están en el paper fuente. *Mitigación:* derivarlas del Supplementary Information o usar aproximaciones polinomiales. Si no se derivan, el transformer no puede compilarse a BML puro.
 - **R2 — Overhead del intérprete RPN.** El benchmark mostró ~64x overhead vs naive matmul. *Mitigación:* el hot loop nativo (futuro) y SIMD reducirán esto. El pipeline funciona aunque sea lento.
 - **R3 — gRPC añade dependencias pesadas.** `tonic` + `tokio` + `prost` aumentan el tamaño del binario y pueden impactar D5 (hot loop < 32 KB). *Mitigación:* aislar el código gRPC en un módulo separado; el hot loop no toca el stack gRPC.
-- **R4 — Work-stealing puede introducir bugs de concurrencia.** *Mitigación:* usar `crossbeam-deque` (verificado) y tests con `loom`.
+- **R4 — Work-stealing puede introducir bugs de concurrencia.** *Mitigación:* WorkQueue migra a la FIFO segmentada `crossbeam-queue::SegQueue`, que reclama posición antes de leer el payload. Los modelos del deque circular anterior detectaron conflicto de lectura especulativa con reutilización. Se prueba el código real de SegQueue con slots/atómicos Loom; la reclamación y liveness no se presuponen verificadas (tarea 9.2).
 - **R5 — Cuantización GGUF.** Los modelos GGUF usan cuantización (Q4_0, Q4_K, Q8_0). El compilador debe dequantizar o operar directamente sobre los tensores cuantizados. *Mitigación:* dequantizar a F32 en el compilador (simple pero pierde el beneficio de cuantización) o implementar ops cuantizadas en BML (complejo).
 - **R6 — Memoria de modelos grandes.** Un modelo 7B en F32 ocupa ~28GB. *Mitigación:* mantener mmap zero-copy del GGUF; solo compilar los metadatos y referencias a tensores, no copiar los datos.
 - **R7 — Latencia gRPC.** La comunicación entre nodos añade latencia. *Mitigación:* usar streaming bidireccional y batching de fragmentos.
 - **R8 — API compatible con llama.cpp es extensa.** `llama-cli` tiene muchos flags. *Mitigación:* implementar los flags core (`-m`, `-p`, `-n`, `-t`, `--temp`) primero; los avanzados (`--grammar`, `--json-schema`, etc.) después.
+
+### Reparto de batches entre réplicas
+
+Cada repetición CLI de `--layer-workers` define una réplica completa del pipeline.
+El número de réplicas configura `RequestBatchConfig::nodes`; el consumidor usa
+`batch.node` sin recalcular la selección por request. Dos batches consecutivos
+se verifican contra dos workers TCP reales. El contador de batches permite
+comprobar que diez handlers preadmitidos forman un lote sin depender del despertar
+de hilos dentro de una ventana temporal. El procesamiento interno sigue siendo
+secuencial y no acredita fusión de operaciones tensoriales ni throughput mayor.
+## Extensión de la ruta: pesos BML persistentes
+
+La conversión GGUF → `.bmlgguf` y la carga de pesos preparados se especifican en
+[`gguf-to-bml-weights`](../gguf-to-bml-weights/proposal.md). Esta etapa transforma
+los pesos a términos BML persistentes y permite consumirlos sin el GGUF original.
+Su implementación y validación se siguen en las tareas de ese cambio.

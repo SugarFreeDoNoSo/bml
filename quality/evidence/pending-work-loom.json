@@ -1,0 +1,106 @@
+{
+  "scope": "PendingWork uses the same vendored ArrayQueue algorithm compiled natively and under Loom",
+  "date": "2026-11-03",
+  "upstream": {
+    "package": "crossbeam-queue",
+    "version": "0.3.13",
+    "source": "src/array_queue.rs",
+    "sha256": "d3c421b83cb0ad6cc01ef6a249a87060f1e5753a5238cb6242feff98cade906d"
+  },
+  "verification": {
+    "command": "cargo test -p bml-queue --all-features --locked",
+    "models_passed": 6,
+    "native_tests_passed": 1,
+    "doc_tests_passed": 11,
+    "log": "target/quality/spec-pending-queue-loom.log",
+    "log_sha256": "88e44ae07d11cb349f16536002ba821fc667652d9783cf756ef7496bc8596da6"
+  },
+  "sensitivity": {
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "target/pending-queue-sensitivity/Cargo.toml",
+      "--all-features",
+      "--locked",
+      "model::tests::publication_precedes_producer_completion_without_join_synchronization",
+      "--",
+      "--nocapture"
+    ],
+    "source_sha256": "390347eee166523a7da35261b48ab168657acb22c4052d8574138578a4f8c187",
+    "results": [
+      {
+        "mutation": "baseline",
+        "status": "passed",
+        "exit_code": 0,
+        "log": "target/quality/spec-pending-queue-baseline.log",
+        "log_sha256": "d546077f690d7f4ae2158376cf20177cf4c5a35c28425c7b9d1e261cee168108"
+      },
+      {
+        "mutation": "publication_release_to_relaxed",
+        "status": "caught",
+        "exit_code": 101,
+        "log": "target/quality/spec-pending-queue-publication_release_to_relaxed.log",
+        "log_sha256": "55aa99d6f906f39ac8f95b2af6d10e17bec768bb3c049f06885be013a26642bc",
+        "change": {
+          "method": "ArrayQueue::push_or_else",
+          "before": "slot.stamp.store(tail + 1, Ordering::Release);",
+          "after": "slot.stamp.store(tail + 1, Ordering::Relaxed);"
+        }
+      },
+      {
+        "mutation": "consumption_acquire_to_relaxed",
+        "status": "caught",
+        "exit_code": 101,
+        "log": "target/quality/spec-pending-queue-consumption_acquire_to_relaxed.log",
+        "log_sha256": "211192b3c40b5df723d020622339d2d07f22d4cb9b08cbb096f7d401315db5f8",
+        "change": {
+          "method": "ArrayQueue::pop",
+          "before": "let stamp = slot.stamp.load(Ordering::Acquire);",
+          "after": "let stamp = slot.stamp.load(Ordering::Relaxed);"
+        }
+      }
+    ]
+  },
+  "source_sha256": {
+    "Cargo.lock": "3234ebfc647823b210f8465baa8ebab44ecc901ed144d7db7dc846761f419ffc",
+    "crates/queue/src/array_queue.rs": "390347eee166523a7da35261b48ab168657acb22c4052d8574138578a4f8c187",
+    "crates/queue/src/native_sync.rs": "38f512c5f37c017132f8ec1cbcffa7162ca2d8a9c62ef8532ad1819bd0a77ba9",
+    "crates/queue/src/loom_sync.rs": "98373aa5bd66d8b6f290adc222fcb9154da3eb4f4f5a4a68662c31177439b5f8",
+    "crates/queue/src/loom_tests.rs": "db07809ced01654ba05a8994d687dbaa7d23e8abaa9cc868cede74417a4acd95",
+    "crates/queue/src/lib.rs": "ffd0870c135a5bb62f036d21c8afb136921920aa8686cc0051bd35a2e0bf786c",
+    "crates/runtime/src/queue.rs": "c3d07c14f9c25a7d70492c9682d9844dcae0d20e941c40b51fcad9cf3d338a5f",
+    "crates/queue/PROVENANCE.md": "82aafc9e615a6549ad6e388115ce7da828cc8650d6a77fae771c686858e603a5",
+    "crates/queue/adaptation.diff": "10244e6e7ee91584939e1546f6b756c70c523328ae387c2fadd27ccc69eae761"
+  },
+  "limitations": [
+    "Finite small-capacity scenarios; not a proof over all programs, sizes, executions or liveness.",
+    "Crossbeam deque/epoch/work-stealing remains uninstrumented.",
+    "The first publication model alone did not catch either memory-order relaxation; the additional model consumes before producer completion without join synchronization and catches both.",
+    "No full-workspace mutation campaign performed."
+  ],
+  "final_validation": {
+    "canonical_gate": {
+      "command": "./scripts/check.sh origin/master",
+      "exit_code": 0,
+      "contracts": 68,
+      "audit_discrepancies": 0,
+      "static_diagnostics": 65,
+      "new_diagnostics": 0,
+      "log": "target/quality/spec-queue-shard-final-gate.log",
+      "sha256": "c9b2db9bbe8a1b30a1c200c5374c4a4d661294709164005f5f23aa2f01749b51"
+    },
+    "openspec": {
+      "passed": 8,
+      "failed": 0,
+      "log": "target/quality/spec-queue-shard-openspec.log",
+      "sha256": "d485b9428cb9ee203a5e683375d42d0def5fe3e3b69ee8856c98ebd301b6524b"
+    }
+  },
+  "append_only_regression": {
+    "tests_passed": 4,
+    "command": "cargo test -p bml-runtime --lib --features loom --locked append_only::loom_tests",
+    "log": "target/quality/spec-queue-runtime-loom.log",
+    "sha256": "0ccdee4ea3922d47988e2c14b89bec25716267e11c0b1d435dae3d8639cbeb0a"
+  }
+}

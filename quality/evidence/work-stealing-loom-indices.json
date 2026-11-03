@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "scope": "Actual pinned crossbeam-deque FIFO index arbitration under Loom; partial task 9.2",
+  "upstream": "crossbeam-deque 0.8.7",
+  "source_sha256": "ef56bda48e2e534a315b32b67f4e40d603e3e80e2bd96dfe802c1559dbc9706b",
+  "dependencies": {"crossbeam-epoch": "0.9.20", "crossbeam-utils": "0.8.22", "loom": "0.7.2"},
+  "generator": "tools/probe_work_stealing_loom.py",
+  "models": "tools/loom/work_stealing_indices.rs",
+  "acceptance_review": "openspec/changes/bml-inference-pipeline/WORK_STEALING_LOOM.md",
+  "adaptation": "Replace std atomic/fence imports with Loom and six destructor-only get_mut accesses with with_mut. All production operation bodies remain upstream code in the positive probe.",
+  "bounds": {"preemptions": 2, "max_branches": 10000, "max_items": 2, "max_thieves": 2, "prepopulated": true},
+  "positive": {
+    "command": "CARGO_PROFILE_TEST_DEBUG=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0 cargo test --manifest-path target/quality/work-stealing-loom-probe/Cargo.toml --offline --locked --lib",
+    "exit_code": 0,
+    "passed": 3,
+    "adapted_source_sha256": "a71d3ee83f8d7c22a24c06ce67fe3cb87cb1d104fe9adf140015dabad7b72ff7",
+    "log": "target/quality/work-stealing-loom-probe.log",
+    "log_sha256": "073fe1bcccc331e5ba3a36a01ac23aa08c9ad9aaf3334a0dfd545e77b44df0b2"
+  },
+  "negative_control": {
+    "change": "Successful single-item thief CAS keeps front unchanged instead of incrementing it",
+    "command": "CARGO_PROFILE_TEST_DEBUG=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0 cargo test --manifest-path target/quality/work-stealing-loom-negative/Cargo.toml --offline --locked --lib",
+    "exit_code": 101,
+    "failed": 3,
+    "diagnostic": "lost or duplicated ownership: [0,0] vs [0], or [0,1,1] vs [0,1]",
+    "adapted_source_sha256": "09f012c844e26869f7df5f46458d03cbbef49c2afcb82db99e2c1551385b03ee",
+    "log": "target/quality/work-stealing-loom-negative.log",
+    "log_sha256": "033804bff4d3055fdae3461a38b44dcc653f64d26b0a0cb85ee59380386da6ee"
+  },
+  "uninstrumented": ["slot memory", "Arc refcounts", "epoch protection/reclamation", "backoff"],
+  "production_changed": false,
+  "task_9_2_closed": false,
+  "remaining": "Concurrent publication, slot reuse, buffer resize/reclamation, nontrivial Drop ownership and publication-order negative controls; this is not a complete weak-memory safety proof or mutation campaign."
+}

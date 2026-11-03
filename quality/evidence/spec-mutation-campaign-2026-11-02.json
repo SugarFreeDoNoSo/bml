@@ -1,0 +1,1758 @@
+{
+  "schema": 1,
+  "terminal_exit_code": 3,
+  "status": "completed_failed",
+  "current_snapshot": false,
+  "counts": {
+    "total_mutants": 1163,
+    "missed": 246,
+    "caught": 769,
+    "timeout": 25,
+    "unviable": 123,
+    "success": 0,
+    "start_time": "2026-11-02T14:07:39.690143862Z",
+    "end_time": "2026-11-02T18:09:47.871413865Z",
+    "cargo_mutants_version": "27.1.0"
+  },
+  "command": "cargo mutants --workspace --cargo-arg=--locked --test-workspace true --jobs 2 --timeout 30 --build-timeout 180 --in-diff target/quality/spec-changes.diff --output target/spec-mutations-retry",
+  "outcomes": "target/spec-mutations-retry/mutants.out/outcomes.json",
+  "outcomes_sha256": "c57e865fa32bedcdbe2fd69b6f993b4842c736f01224b73b64cb115196ca9ac2",
+  "diff_sha256": "5076ae9d918706a95a2de53a25d432db701b83da798d600a87ef848c3b6cc0a6",
+  "per_file": {
+    "crates/domain/src/number/certified.rs": {
+      "MissedMutant": 22,
+      "Unviable": 15,
+      "Timeout": 1,
+      "CaughtMutant": 37
+    },
+    "crates/domain/src/number/checked.rs": {
+      "Unviable": 22,
+      "CaughtMutant": 16
+    },
+    "crates/domain/src/number/evaluate.rs": {
+      "MissedMutant": 2,
+      "Unviable": 1,
+      "CaughtMutant": 6
+    },
+    "crates/domain/src/number/exact.rs": {
+      "CaughtMutant": 254,
+      "MissedMutant": 31,
+      "Unviable": 13,
+      "Timeout": 1
+    },
+    "crates/domain/src/number/matrix.rs": {
+      "MissedMutant": 45,
+      "Unviable": 19,
+      "CaughtMutant": 58
+    },
+    "crates/domain/src/number/recognize.rs": {
+      "Unviable": 9,
+      "CaughtMutant": 22,
+      "MissedMutant": 9
+    },
+    "crates/domain/src/number/search.rs": {
+      "Unviable": 4,
+      "CaughtMutant": 49,
+      "MissedMutant": 20
+    },
+    "crates/domain/src/number/stream.rs": {
+      "MissedMutant": 9,
+      "CaughtMutant": 109,
+      "Unviable": 1,
+      "Timeout": 1
+    },
+    "crates/inference/src/bin/bml-layer-worker.rs": {
+      "CaughtMutant": 22,
+      "Unviable": 1,
+      "MissedMutant": 13,
+      "Timeout": 3
+    },
+    "crates/inference/src/model.rs": {
+      "Unviable": 11,
+      "CaughtMutant": 34,
+      "Timeout": 1
+    },
+    "crates/inference/src/remote.rs": {
+      "MissedMutant": 25,
+      "CaughtMutant": 54,
+      "Unviable": 13,
+      "Timeout": 8
+    },
+    "crates/kernels/src/lib.rs": {
+      "MissedMutant": 6,
+      "Unviable": 4,
+      "CaughtMutant": 10
+    },
+    "crates/runtime/src/append_only.rs": {
+      "CaughtMutant": 13,
+      "MissedMutant": 4
+    },
+    "crates/runtime/src/net.rs": {
+      "Unviable": 3,
+      "CaughtMutant": 22,
+      "Timeout": 1
+    },
+    "crates/runtime/src/queue.rs": {
+      "CaughtMutant": 5,
+      "Unviable": 1,
+      "MissedMutant": 1
+    },
+    "crates/runtime/src/runtime.rs": {
+      "CaughtMutant": 2
+    },
+    "crates/runtime/src/scheduler.rs": {
+      "CaughtMutant": 5
+    },
+    "crates/runtime/src/scheduler/requests.rs": {
+      "Unviable": 5,
+      "CaughtMutant": 9,
+      "Timeout": 1
+    },
+    "crates/api/src/main.rs": {
+      "CaughtMutant": 19,
+      "MissedMutant": 29,
+      "Timeout": 5
+    },
+    "crates/worker/src/main.rs": {
+      "MissedMutant": 30,
+      "CaughtMutant": 23,
+      "Timeout": 3,
+      "Unviable": 1
+    }
+  },
+  "unresolved_snapshot_outcomes": [
+    {
+      "name": "crates/domain/src/number/certified.rs:92:9: replace <impl fmt::Display for ExactError>::fmt -> fmt::Result with Ok(Default::default())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_92_col_9.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_92_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:103:9: replace <impl std::error::Error for ExactError>::source -> Option<&(dyn std::error::Error +'static)> with None",
+      "result": "Timeout",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_103_col_9.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_103_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:104:13: delete match arm Self::Rational(e) in <impl std::error::Error for ExactError>::source",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_104_col_13.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_104_col_13.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:105:13: delete match arm Self::Build(e) in <impl std::error::Error for ExactError>::source",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_105_col_13.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_105_col_13.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:181:29: replace > with >= in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_181_col_29_002.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_181_col_29_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:194:71: replace - with + in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_194_col_71.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_194_col_71.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:242:48: replace || with && in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_242_col_48.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_242_col_48.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:256:17: replace || with && in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_256_col_17.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_256_col_17.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:255:17: replace || with && in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_255_col_17.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_255_col_17.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:254:33: replace > with == in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_254_col_33.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_254_col_33.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:254:33: replace > with >= in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_254_col_33_002.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_254_col_33_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:255:64: replace > with == in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_255_col_64.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_255_col_64.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:255:64: replace > with >= in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_255_col_64_002.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_255_col_64_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:256:66: replace > with == in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_256_col_66.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_256_col_66.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:256:66: replace > with >= in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_256_col_66_002.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_256_col_66_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:263:22: replace > with >= in ExactDerivation::replay",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_263_col_22_002.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_263_col_22_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:287:18: replace > with == in Synthesizer::integer",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_287_col_18.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_287_col_18.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:287:18: replace > with >= in Synthesizer::integer",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_287_col_18_002.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_287_col_18_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:288:38: replace > with == in Synthesizer::integer",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_288_col_38.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_288_col_38.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:288:38: replace > with >= in Synthesizer::integer",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_288_col_38_002.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_288_col_38_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:308:73: replace + with * in Synthesizer::integer",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_308_col_73_001.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_308_col_73_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:315:31: replace + with * in Synthesizer::integer",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_315_col_31_001.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_315_col_31_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/certified.rs:317:68: replace + with * in Synthesizer::integer",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__certified.rs_line_317_col_68_001.diff",
+      "log_path": "log/crates__domain__src__number__certified.rs_line_317_col_68_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/evaluate.rs:15:9: replace <impl fmt::Display for SimplifiedEvalError>::fmt -> fmt::Result with Ok(Default::default())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__evaluate.rs_line_15_col_9.diff",
+      "log_path": "log/crates__domain__src__number__evaluate.rs_line_15_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/evaluate.rs:23:9: replace <impl std::error::Error for SimplifiedEvalError>::source -> Option<&(dyn std::error::Error +'static)> with None",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__evaluate.rs_line_23_col_9.diff",
+      "log_path": "log/crates__domain__src__number__evaluate.rs_line_23_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:40:9: replace <impl fmt::Display for ExactInputError>::fmt -> fmt::Result with Ok(Default::default())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_40_col_9.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_40_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:79:41: replace > with == in ExactRational::from_decimal_str",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_79_col_41.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_79_col_41.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:79:41: replace > with >= in ExactRational::from_decimal_str",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_79_col_41_002.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_79_col_41_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:92:48: replace > with >= in ExactRational::from_decimal_str",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_92_col_48_002.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_92_col_48_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:100:23: replace > with == in ExactRational::from_decimal_str",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_100_col_23.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_100_col_23.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:100:23: replace > with >= in ExactRational::from_decimal_str",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_100_col_23_002.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_100_col_23_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:136:26: replace | with ^ in ExactRational::from_f64",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_136_col_26_001.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_136_col_26_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:198:24: replace == with != in normalize",
+      "result": "Timeout",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_198_col_24.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_198_col_24.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:269:41: replace | with ^ in shift_right",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_269_col_41_001.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_269_col_41_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:326:34: replace | with ^ in divide_exact",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_326_col_34_001.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_326_col_34_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:444:9: replace ExactRational::check_limit -> Result<(), ExactInputError> with Ok(())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_444_col_9.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_444_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:458:93: replace + with - in add",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_458_col_93.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_458_col_93.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:470:21: replace || with && in multiply",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_470_col_21.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_470_col_21.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:477:18: replace > with == in multiply",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_477_col_18.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_477_col_18.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:477:18: replace > with >= in multiply",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_477_col_18_002.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_477_col_18_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:477:14: replace - with + in multiply",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_477_col_14.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_477_col_14.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:477:14: replace - with / in multiply",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_477_col_14_001.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_477_col_14_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:489:76: replace + with - in multiply",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_489_col_76.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_489_col_76.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:489:76: replace + with * in multiply",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_489_col_76_001.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_489_col_76_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:489:52: replace + with - in multiply",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_489_col_52.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_489_col_52.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:517:13: delete match arm [] in ExactRational::checked_exp2",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_517_col_13.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_517_col_13.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:546:9: replace <impl fmt::Display for RationalFloatError>::fmt -> fmt::Result with Ok(Default::default())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_546_col_9.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_546_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:572:21: replace > with == in ExactRational::to_f64_rounded",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_572_col_21.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_572_col_21.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:572:21: replace > with >= in ExactRational::to_f64_rounded",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_572_col_21_002.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_572_col_21_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:575:21: replace < with == in ExactRational::to_f64_rounded",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_575_col_21.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_575_col_21.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:575:21: replace < with <= in ExactRational::to_f64_rounded",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_575_col_21_002.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_575_col_21_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:598:21: replace < with == in ExactRational::to_f64_rounded",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_598_col_21.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_598_col_21.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:598:21: replace < with <= in ExactRational::to_f64_rounded",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_598_col_21_002.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_598_col_21_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:617:29: replace >>= with <<= in ExactRational::to_f64_rounded",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_617_col_29.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_617_col_29.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:623:46: replace | with ^ in ExactRational::to_f64_rounded",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_623_col_46_001.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_623_col_46_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:631:37: replace | with ^ in ExactRational::to_f64_rounded",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_631_col_37_001.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_631_col_37_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/exact.rs:650:34: replace | with ^ in rounded_quotient",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__exact.rs_line_650_col_34_001.diff",
+      "log_path": "log/crates__domain__src__number__exact.rs_line_650_col_34_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:72:9: replace <impl fmt::Display for MatrixError>::fmt -> fmt::Result with Ok(Default::default())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_72_col_9.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_72_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:99:9: replace <impl std::error::Error for MatrixError>::source -> Option<&(dyn std::error::Error +'static)> with None",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_99_col_9.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_99_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:100:13: delete match arm Self::Scalar{source, ..} | Self::ScalarPreparation(source) in <impl std::error::Error for MatrixError>::source",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_100_col_13.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_100_col_13.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:131:14: replace > with == in count",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_131_col_14.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_131_col_14.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:131:14: replace > with >= in count",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_131_col_14_002.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_131_col_14_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:137:5: replace output_buffer -> Result<Vec<T>, MatrixError> with Ok(vec![])",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_137_col_5.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_137_col_5.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:157:24: replace > with == in charge",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_157_col_24.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_157_col_24.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:157:24: replace > with >= in charge",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_157_col_24_002.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_157_col_24_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:163:14: replace > with >= in charge",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_163_col_14_002.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_163_col_14_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:199:9: replace BmlMatrix::limits -> MatrixLimits with Default::default()",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_199_col_9.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_199_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:216:28: replace > with == in BmlMatrix::replace",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_216_col_28.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_216_col_28.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:216:28: replace > with >= in BmlMatrix::replace",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_216_col_28_002.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_216_col_28_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:216:67: replace > with >= in BmlMatrix::replace",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_216_col_67_002.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_216_col_67_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:220:49: replace + with - in BmlMatrix::replace",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_220_col_49.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_220_col_49.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:231:9: replace BmlMatrix::validate -> Result<(), MatrixError> with Ok(())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_231_col_9.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_231_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:235:13: replace || with && in BmlMatrix::validate",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_235_col_13.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_235_col_13.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:238:38: replace > with == in BmlMatrix::validate",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_238_col_38.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_238_col_38.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:238:38: replace > with >= in BmlMatrix::validate",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_238_col_38_002.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_238_col_38_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:278:45: replace / with % in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_278_col_45.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_278_col_45.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:278:45: replace / with * in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_278_col_45_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_278_col_45_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:278:63: replace % with / in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_278_col_63.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_278_col_63.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:278:63: replace % with + in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_278_col_63_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_278_col_63_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:281:24: replace / with * in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_281_col_24_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_281_col_24_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:281:24: replace / with % in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_281_col_24.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_281_col_24.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:282:27: replace % with / in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_282_col_27.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_282_col_27.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:282:27: replace % with + in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_282_col_27_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_282_col_27_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:290:19: replace / with % in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_290_col_19.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_290_col_19.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:290:19: replace / with * in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_290_col_19_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_290_col_19_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:291:19: replace % with / in BmlMatrix::elementwise",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_291_col_19.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_291_col_19.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:349:45: replace / with % in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_349_col_45.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_349_col_45.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:349:45: replace / with * in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_349_col_45_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_349_col_45_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:349:63: replace % with / in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_349_col_63.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_349_col_63.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:349:63: replace % with + in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_349_col_63_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_349_col_63_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:352:24: replace / with % in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_352_col_24.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_352_col_24.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:352:24: replace / with * in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_352_col_24_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_352_col_24_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:353:27: replace % with / in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_353_col_27.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_353_col_27.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:353:27: replace % with + in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_353_col_27_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_353_col_27_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:361:19: replace / with % in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_361_col_19.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_361_col_19.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:361:19: replace / with * in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_361_col_19_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_361_col_19_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:362:19: replace % with + in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_362_col_19_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_362_col_19_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:362:19: replace % with / in BmlMatrix::scalar_map",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_362_col_19.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_362_col_19.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:470:55: replace match guard self.columns == 0 with true in BmlMatrix::generalized_product",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_470_col_55.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_470_col_55.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:470:55: replace match guard self.columns == 0 with false in BmlMatrix::generalized_product",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_470_col_55_001.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_470_col_55_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:470:68: replace == with != in BmlMatrix::generalized_product",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_470_col_68.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_470_col_68.log"
+    },
+    {
+      "name": "crates/domain/src/number/matrix.rs:554:15: replace > with >= in retain",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__matrix.rs_line_554_col_15_002.diff",
+      "log_path": "log/crates__domain__src__number__matrix.rs_line_554_col_15_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/recognize.rs:89:33: replace > with == in Recognizer::matches",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__recognize.rs_line_89_col_33.diff",
+      "log_path": "log/crates__domain__src__number__recognize.rs_line_89_col_33.log"
+    },
+    {
+      "name": "crates/domain/src/number/recognize.rs:89:33: replace > with >= in Recognizer::matches",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__recognize.rs_line_89_col_33_002.diff",
+      "log_path": "log/crates__domain__src__number__recognize.rs_line_89_col_33_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/recognize.rs:99:39: replace match guard previous != node with false in Recognizer::matches",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__recognize.rs_line_99_col_39_001.diff",
+      "log_path": "log/crates__domain__src__number__recognize.rs_line_99_col_39_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/recognize.rs:114:18: replace > with == in Recognizer::derive",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__recognize.rs_line_114_col_18.diff",
+      "log_path": "log/crates__domain__src__number__recognize.rs_line_114_col_18.log"
+    },
+    {
+      "name": "crates/domain/src/number/recognize.rs:114:18: replace > with >= in Recognizer::derive",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__recognize.rs_line_114_col_18_002.diff",
+      "log_path": "log/crates__domain__src__number__recognize.rs_line_114_col_18_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/recognize.rs:128:58: replace + with * in Recognizer::derive",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__recognize.rs_line_128_col_58_001.diff",
+      "log_path": "log/crates__domain__src__number__recognize.rs_line_128_col_58_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/recognize.rs:168:46: replace || with && in Bml::certify_exact",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__recognize.rs_line_168_col_46.diff",
+      "log_path": "log/crates__domain__src__number__recognize.rs_line_168_col_46.log"
+    },
+    {
+      "name": "crates/domain/src/number/recognize.rs:168:27: replace > with == in Bml::certify_exact",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__recognize.rs_line_168_col_27.diff",
+      "log_path": "log/crates__domain__src__number__recognize.rs_line_168_col_27.log"
+    },
+    {
+      "name": "crates/domain/src/number/recognize.rs:168:27: replace > with >= in Bml::certify_exact",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__recognize.rs_line_168_col_27_002.diff",
+      "log_path": "log/crates__domain__src__number__recognize.rs_line_168_col_27_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:227:38: replace += with *= in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_227_col_38_001.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_227_col_38_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:249:24: replace == with != in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_249_col_24.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_249_col_24.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:260:17: delete match arm [] in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_260_col_17.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_260_col_17.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:283:50: replace > with >= in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_283_col_50_002.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_283_col_50_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:300:22: replace < with <= in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_300_col_22_002.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_300_col_22_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:302:61: replace - with + in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_302_col_61.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_302_col_61.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:302:61: replace - with / in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_302_col_61_001.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_302_col_61_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:306:69: replace - with + in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_306_col_69.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_306_col_69.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:306:69: replace - with / in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_306_col_69_001.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_306_col_69_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:323:67: replace / with % in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_323_col_67.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_323_col_67.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:323:67: replace / with * in ExactSearcher::search",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_323_col_67_001.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_323_col_67_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:347:47: replace > with >= in ExactSearcher::remember",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_347_col_47_002.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_347_col_47_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:354:59: replace && with || in ExactSearcher::remember",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_354_col_59.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_354_col_59.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:354:41: replace == with != in ExactSearcher::remember",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_354_col_41.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_354_col_41.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:354:75: replace == with != in ExactSearcher::remember",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_354_col_75.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_354_col_75.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:367:17: replace || with && in ExactSearcher::remember",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_367_col_17.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_367_col_17.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:366:39: replace > with == in ExactSearcher::remember",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_366_col_39.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_366_col_39.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:366:39: replace > with >= in ExactSearcher::remember",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_366_col_39_002.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_366_col_39_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:373:39: replace > with == in ExactSearcher::remember",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_373_col_39.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_373_col_39.log"
+    },
+    {
+      "name": "crates/domain/src/number/search.rs:373:39: replace > with >= in ExactSearcher::remember",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__search.rs_line_373_col_39_002.diff",
+      "log_path": "log/crates__domain__src__number__search.rs_line_373_col_39_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/stream.rs:44:9: replace <impl fmt::Display for StreamError>::fmt -> fmt::Result with Ok(Default::default())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__stream.rs_line_44_col_9.diff",
+      "log_path": "log/crates__domain__src__number__stream.rs_line_44_col_9.log"
+    },
+    {
+      "name": "crates/domain/src/number/stream.rs:67:13: replace | with ^ in Bml::try_to_u128",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__stream.rs_line_67_col_13_001.diff",
+      "log_path": "log/crates__domain__src__number__stream.rs_line_67_col_13_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/stream.rs:72:25: replace - with / in Bml::operator_count",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__stream.rs_line_72_col_25_001.diff",
+      "log_path": "log/crates__domain__src__number__stream.rs_line_72_col_25_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/stream.rs:77:25: replace > with >= in Bml::encode_stream",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__stream.rs_line_77_col_25_002.diff",
+      "log_path": "log/crates__domain__src__number__stream.rs_line_77_col_25_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/stream.rs:83:17: replace > with >= in Bml::encode_stream",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__stream.rs_line_83_col_17_002.diff",
+      "log_path": "log/crates__domain__src__number__stream.rs_line_83_col_17_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/stream.rs:135:18: replace > with >= in Bml::decode_stream",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__stream.rs_line_135_col_18_002.diff",
+      "log_path": "log/crates__domain__src__number__stream.rs_line_135_col_18_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/stream.rs:135:45: replace > with >= in Bml::decode_stream",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__stream.rs_line_135_col_45_002.diff",
+      "log_path": "log/crates__domain__src__number__stream.rs_line_135_col_45_002.log"
+    },
+    {
+      "name": "crates/domain/src/number/stream.rs:142:64: replace - with / in Bml::decode_stream",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__stream.rs_line_142_col_64_001.diff",
+      "log_path": "log/crates__domain__src__number__stream.rs_line_142_col_64_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/stream.rs:168:24: replace += with *= in Bml::decode_stream",
+      "result": "Timeout",
+      "diff_path": "diff/crates__domain__src__number__stream.rs_line_168_col_24_001.diff",
+      "log_path": "log/crates__domain__src__number__stream.rs_line_168_col_24_001.log"
+    },
+    {
+      "name": "crates/domain/src/number/stream.rs:199:22: replace > with >= in check_depth",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__domain__src__number__stream.rs_line_199_col_22_002.diff",
+      "log_path": "log/crates__domain__src__number__stream.rs_line_199_col_22_002.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:36:13: delete match arm \"--memory-bytes\" in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_36_col_13.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_36_col_13.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:37:13: delete match arm \"--frame-bytes\" in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_37_col_13.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_37_col_13.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:38:13: delete match arm \"--timeout-ms\" in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_38_col_13.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_38_col_13.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:48:9: replace || with && in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_48_col_9.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_48_col_9.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:47:9: replace || with && in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_47_col_9.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_47_col_9.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:49:9: replace || with && in run",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_49_col_9.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_49_col_9.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:46:9: replace || with && in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_46_col_9.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_46_col_9.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:48:31: replace > with == in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_48_col_31.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_48_col_31.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:45:9: replace || with && in run",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_45_col_9.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_45_col_9.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:48:31: replace > with >= in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_48_col_31_002.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_48_col_31_002.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:55:49: replace > with < in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_55_col_49_001.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_55_col_49_001.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:55:35: replace || with && in run",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_55_col_35.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_55_col_35.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:72:25: replace < with > in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_72_col_25_001.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_72_col_25_001.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:76:27: replace += with *= in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_76_col_27_001.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_76_col_27_001.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:76:27: replace += with -= in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_76_col_27.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_76_col_27.log"
+    },
+    {
+      "name": "crates/inference/src/bin/bml-layer-worker.rs:79:30: replace < with <= in run",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__bin__bml-layer-worker.rs_line_79_col_30_002.diff",
+      "log_path": "log/crates__inference__src__bin__bml-layer-worker.rs_line_79_col_30_002.log"
+    },
+    {
+      "name": "crates/inference/src/model.rs:507:53: replace > with < in Model<'a>::layer_session",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__model.rs_line_507_col_53_001.diff",
+      "log_path": "log/crates__inference__src__model.rs_line_507_col_53_001.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:67:5: replace setup -> Result<()> with Ok(())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_67_col_5.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_67_col_5.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:67:74: replace || with && in setup",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_67_col_74.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_67_col_74.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:67:32: replace || with && in setup",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_67_col_32.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_67_col_32.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:67:54: replace > with == in setup",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_67_col_54.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_67_col_54.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:67:54: replace > with >= in setup",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_67_col_54_002.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_67_col_54_002.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:80:19: replace || with && in receive",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_80_col_19.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_80_col_19.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:80:28: replace > with == in receive",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_80_col_28.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_80_col_28.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:80:28: replace > with >= in receive",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_80_col_28_002.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_80_col_28_002.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:93:20: replace > with == in send",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_93_col_20.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_93_col_20.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:93:20: replace > with >= in send",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_93_col_20_002.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_93_col_20_002.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:92:5: replace send -> Result<()> with Ok(())",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_92_col_5.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_92_col_5.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:198:54: replace match guard start < end && width > 0 with true in LayerClient::connect",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_198_col_54.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_198_col_54.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:198:66: replace && with || in LayerClient::connect",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_198_col_66.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_198_col_66.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:198:60: replace < with <= in LayerClient::connect",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_198_col_60_002.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_198_col_60_002.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:198:75: replace > with >= in LayerClient::connect",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_198_col_75_002.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_198_col_75_002.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:232:39: replace || with && in LayerClient::forward",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_232_col_39.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_232_col_39.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:242:18: replace match guard returned == position && hidden.len() == self.width && hidden.iter().all(|x| x.is_finite()) with true in LayerClient::forward",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_242_col_18.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_242_col_18.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:244:17: replace && with || in LayerClient::forward",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_244_col_17.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_244_col_17.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:243:17: replace && with || in LayerClient::forward",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_243_col_17.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_243_col_17.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:288:49: replace || with && in RemotePipeline<'a>::connect",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_288_col_49.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_288_col_49.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:288:33: replace || with && in RemotePipeline<'a>::connect",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_288_col_33.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_288_col_33.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:288:60: replace > with == in RemotePipeline<'a>::connect",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_288_col_60.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_288_col_60.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:288:44: replace == with != in RemotePipeline<'a>::connect",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_288_col_44.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_288_col_44.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:288:60: replace > with >= in RemotePipeline<'a>::connect",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_288_col_60_002.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_288_col_60_002.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:288:60: replace > with < in RemotePipeline<'a>::connect",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_288_col_60_001.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_288_col_60_001.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:297:17: replace || with && in RemotePipeline<'a>::connect",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_297_col_17.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_297_col_17.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:296:17: replace || with && in RemotePipeline<'a>::connect",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_296_col_17.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_296_col_17.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:295:36: replace != with == in RemotePipeline<'a>::connect",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_295_col_36.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_295_col_36.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:296:38: replace > with < in RemotePipeline<'a>::connect",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_296_col_38_001.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_296_col_38_001.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:297:33: replace != with == in RemotePipeline<'a>::connect",
+      "result": "Timeout",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_297_col_33.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_297_col_33.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:369:13: replace || with && in RemotePipeline<'a>::prefill",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_369_col_13.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_369_col_13.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:369:29: replace > with == in RemotePipeline<'a>::prefill",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_369_col_29.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_369_col_29.log"
+    },
+    {
+      "name": "crates/inference/src/remote.rs:369:29: replace > with >= in RemotePipeline<'a>::prefill",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__inference__src__remote.rs_line_369_col_29_002.diff",
+      "log_path": "log/crates__inference__src__remote.rs_line_369_col_29_002.log"
+    },
+    {
+      "name": "crates/kernels/src/lib.rs:25:9: replace Backend::available -> bool with true",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__kernels__src__lib.rs_line_25_col_9.diff",
+      "log_path": "log/crates__kernels__src__lib.rs_line_25_col_9.log"
+    },
+    {
+      "name": "crates/kernels/src/lib.rs:95:9: replace <impl fmt::Display for CompareError>::fmt -> fmt::Result with Ok(Default::default())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__kernels__src__lib.rs_line_95_col_9.diff",
+      "log_path": "log/crates__kernels__src__lib.rs_line_95_col_9.log"
+    },
+    {
+      "name": "crates/kernels/src/lib.rs:130:19: replace > with >= in compare_codes",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__kernels__src__lib.rs_line_130_col_19_002.diff",
+      "log_path": "log/crates__kernels__src__lib.rs_line_130_col_19_002.log"
+    },
+    {
+      "name": "crates/kernels/src/lib.rs:139:17: replace > with >= in compare_codes",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__kernels__src__lib.rs_line_139_col_17_002.diff",
+      "log_path": "log/crates__kernels__src__lib.rs_line_139_col_17_002.log"
+    },
+    {
+      "name": "crates/kernels/src/lib.rs:170:9: delete match arm Backend::Avx2 in dispatch",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__kernels__src__lib.rs_line_170_col_9.diff",
+      "log_path": "log/crates__kernels__src__lib.rs_line_170_col_9.log"
+    },
+    {
+      "name": "crates/kernels/src/lib.rs:176:9: delete match arm Backend::Neon in dispatch",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__kernels__src__lib.rs_line_176_col_9.diff",
+      "log_path": "log/crates__kernels__src__lib.rs_line_176_col_9.log"
+    },
+    {
+      "name": "crates/runtime/src/append_only.rs:58:9: replace AppendOnlyResults::capacity -> usize with 0",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__runtime__src__append_only.rs_line_58_col_9.diff",
+      "log_path": "log/crates__runtime__src__append_only.rs_line_58_col_9.log"
+    },
+    {
+      "name": "crates/runtime/src/append_only.rs:58:9: replace AppendOnlyResults::capacity -> usize with 1",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__runtime__src__append_only.rs_line_58_col_9_001.diff",
+      "log_path": "log/crates__runtime__src__append_only.rs_line_58_col_9_001.log"
+    },
+    {
+      "name": "crates/runtime/src/append_only.rs:117:9: replace loom_tests::execute -> usize with 0",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__runtime__src__append_only.rs_line_117_col_9.diff",
+      "log_path": "log/crates__runtime__src__append_only.rs_line_117_col_9.log"
+    },
+    {
+      "name": "crates/runtime/src/append_only.rs:117:9: replace loom_tests::execute -> usize with 1",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__runtime__src__append_only.rs_line_117_col_9_001.diff",
+      "log_path": "log/crates__runtime__src__append_only.rs_line_117_col_9_001.log"
+    },
+    {
+      "name": "crates/runtime/src/net.rs:226:9: replace NodeHandle::health_check -> io::Result<bool> with Ok(true)",
+      "result": "Timeout",
+      "diff_path": "diff/crates__runtime__src__net.rs_line_226_col_9.diff",
+      "log_path": "log/crates__runtime__src__net.rs_line_226_col_9.log"
+    },
+    {
+      "name": "crates/runtime/src/queue.rs:42:9: replace PendingWork<T>::is_empty -> bool with true",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__runtime__src__queue.rs_line_42_col_9.diff",
+      "log_path": "log/crates__runtime__src__queue.rs_line_42_col_9.log"
+    },
+    {
+      "name": "crates/runtime/src/scheduler/requests.rs:68:9: replace RequestSubmitter<T>::try_submit -> Result<(), AdmissionError<T>> with Ok(())",
+      "result": "Timeout",
+      "diff_path": "diff/crates__runtime__src__scheduler__requests.rs_line_68_col_9.diff",
+      "log_path": "log/crates__runtime__src__scheduler__requests.rs_line_68_col_9.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:90:34: replace match guard req.stream with true in execute_request",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_90_col_34.diff",
+      "log_path": "log/crates__api__src__main.rs_line_90_col_34.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:68:5: replace start_scheduler with ()",
+      "result": "Timeout",
+      "diff_path": "diff/crates__api__src__main.rs_line_68_col_5.diff",
+      "log_path": "log/crates__api__src__main.rs_line_68_col_5.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:90:34: replace match guard req.stream with false in execute_request",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_90_col_34_001.diff",
+      "log_path": "log/crates__api__src__main.rs_line_90_col_34_001.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:257:5: replace main -> Result<(), Box<dyn std::error::Error>> with Ok(())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_257_col_5.diff",
+      "log_path": "log/crates__api__src__main.rs_line_257_col_5.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:271:13: delete match arm \"--layer-workers\" in main",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_271_col_13.diff",
+      "log_path": "log/crates__api__src__main.rs_line_271_col_13.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:272:19: replace += with -= in main",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_272_col_19.diff",
+      "log_path": "log/crates__api__src__main.rs_line_272_col_19.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:272:19: replace += with *= in main",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_272_col_19_001.diff",
+      "log_path": "log/crates__api__src__main.rs_line_272_col_19_001.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:306:32: delete ! in main",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_306_col_32.diff",
+      "log_path": "log/crates__api__src__main.rs_line_306_col_32.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:340:9: delete match arm ModelBackend::Remote{replicas, ..} in main",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_340_col_9.diff",
+      "log_path": "log/crates__api__src__main.rs_line_340_col_9.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:344:9: delete field nodes from struct RequestBatchConfig expression in main",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_344_col_9.diff",
+      "log_path": "log/crates__api__src__main.rs_line_344_col_9.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:376:37: replace || with && in completions",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_376_col_37.diff",
+      "log_path": "log/crates__api__src__main.rs_line_376_col_37.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:376:56: replace < with > in completions",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_376_col_56_001.diff",
+      "log_path": "log/crates__api__src__main.rs_line_376_col_56_001.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:429:18: replace < with <= in complete_utf8_prefix",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_429_col_18_002.diff",
+      "log_path": "log/crates__api__src__main.rs_line_429_col_18_002.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:433:40: replace += with *= in complete_utf8_prefix",
+      "result": "Timeout",
+      "diff_path": "diff/crates__api__src__main.rs_line_433_col_40_001.diff",
+      "log_path": "log/crates__api__src__main.rs_line_433_col_40_001.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:433:63: replace + with * in complete_utf8_prefix",
+      "result": "Timeout",
+      "diff_path": "diff/crates__api__src__main.rs_line_433_col_63_001.diff",
+      "log_path": "log/crates__api__src__main.rs_line_433_col_63_001.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:457:48: replace || with && in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_457_col_48.diff",
+      "log_path": "log/crates__api__src__main.rs_line_457_col_48.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:457:16: replace > with == in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_457_col_16.diff",
+      "log_path": "log/crates__api__src__main.rs_line_457_col_16.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:446:5: replace generate_remote -> bml_inference::Result<String> with Ok(String::new())",
+      "result": "Timeout",
+      "diff_path": "diff/crates__api__src__main.rs_line_446_col_5.diff",
+      "log_path": "log/crates__api__src__main.rs_line_446_col_5.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:457:16: replace > with >= in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_457_col_16_002.diff",
+      "log_path": "log/crates__api__src__main.rs_line_457_col_16_002.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:472:18: replace == with != in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_472_col_18.diff",
+      "log_path": "log/crates__api__src__main.rs_line_472_col_18.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:460:23: replace == with != in generate_remote",
+      "result": "Timeout",
+      "diff_path": "diff/crates__api__src__main.rs_line_460_col_23.diff",
+      "log_path": "log/crates__api__src__main.rs_line_460_col_23.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:481:36: replace && with || in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_481_col_36.diff",
+      "log_path": "log/crates__api__src__main.rs_line_481_col_36.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:481:23: replace > with == in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_481_col_23.diff",
+      "log_path": "log/crates__api__src__main.rs_line_481_col_23.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:481:23: replace > with < in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_481_col_23_001.diff",
+      "log_path": "log/crates__api__src__main.rs_line_481_col_23_001.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:481:23: replace > with >= in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_481_col_23_002.diff",
+      "log_path": "log/crates__api__src__main.rs_line_481_col_23_002.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:481:39: delete ! in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_481_col_39.diff",
+      "log_path": "log/crates__api__src__main.rs_line_481_col_39.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:485:21: replace < with == in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_485_col_21.diff",
+      "log_path": "log/crates__api__src__main.rs_line_485_col_21.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:485:21: replace < with > in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_485_col_21_001.diff",
+      "log_path": "log/crates__api__src__main.rs_line_485_col_21_001.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:485:21: replace < with <= in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_485_col_21_002.diff",
+      "log_path": "log/crates__api__src__main.rs_line_485_col_21_002.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:485:17: replace + with * in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_485_col_17_001.diff",
+      "log_path": "log/crates__api__src__main.rs_line_485_col_17_001.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:493:25: replace > with == in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_493_col_25.diff",
+      "log_path": "log/crates__api__src__main.rs_line_493_col_25.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:493:25: replace > with < in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_493_col_25_001.diff",
+      "log_path": "log/crates__api__src__main.rs_line_493_col_25_001.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:493:25: replace > with >= in generate_remote",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_493_col_25_002.diff",
+      "log_path": "log/crates__api__src__main.rs_line_493_col_25_002.log"
+    },
+    {
+      "name": "crates/api/src/main.rs:535:5: replace generate_streaming_gguf -> Result<(), String> with Ok(())",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__api__src__main.rs_line_535_col_5.diff",
+      "log_path": "log/crates__api__src__main.rs_line_535_col_5.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:42:5: replace main with ()",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_42_col_5.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_42_col_5.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:153:13: delete match arm MsgType::ExecuteFragment in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_153_col_13.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_153_col_13.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:188:13: delete match arm MsgType::BatchRequest in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_188_col_13.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_188_col_13.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:146:13: delete match arm MsgType::HealthCheck in handle_connection",
+      "result": "Timeout",
+      "diff_path": "diff/crates__worker__src__main.rs_line_146_col_13.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_146_col_13.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:228:13: delete match arm MsgType::EnqueueFragment in handle_connection",
+      "result": "Timeout",
+      "diff_path": "diff/crates__worker__src__main.rs_line_228_col_13.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_228_col_13.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:248:13: delete match arm MsgType::StealWork in handle_connection",
+      "result": "Timeout",
+      "diff_path": "diff/crates__worker__src__main.rs_line_248_col_13.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_248_col_13.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:167:65: replace / with % in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_167_col_65.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_167_col_65.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:167:65: replace / with * in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_167_col_65_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_167_col_65_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:167:59: replace * with + in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_167_col_59.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_167_col_59.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:167:59: replace * with / in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_167_col_59_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_167_col_59_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:167:75: replace * with + in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_167_col_75.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_167_col_75.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:167:75: replace * with / in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_167_col_75_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_167_col_75_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:195:42: replace < with == in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_195_col_42.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_195_col_42.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:195:42: replace < with > in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_195_col_42_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_195_col_42_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:195:42: replace < with <= in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_195_col_42_002.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_195_col_42_002.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:195:46: replace + with - in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_195_col_46.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_195_col_46.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:195:46: replace + with * in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_195_col_46_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_195_col_46_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:195:55: replace * with + in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_195_col_55.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_195_col_55.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:195:55: replace * with / in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_195_col_55_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_195_col_55_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:203:40: replace + with - in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_203_col_40.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_203_col_40.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:203:40: replace + with * in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_203_col_40_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_203_col_40_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:203:44: replace * with + in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_203_col_44.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_203_col_44.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:203:44: replace * with / in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_203_col_44_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_203_col_44_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:205:75: replace + with - in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_205_col_75.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_205_col_75.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:205:75: replace + with * in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_205_col_75_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_205_col_75_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:265:64: replace / with % in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_265_col_64.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_265_col_64.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:265:64: replace / with * in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_265_col_64_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_265_col_64_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:265:74: replace * with + in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_265_col_74.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_265_col_74.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:265:74: replace * with / in handle_connection",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_265_col_74_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_265_col_74_001.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:419:20: replace > with == in deserialize_fragment_from_bytes",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_419_col_20.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_419_col_20.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:419:20: replace > with >= in deserialize_fragment_from_bytes",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_419_col_20_002.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_419_col_20_002.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:436:32: replace / with % in deserialize_fragment_from_bytes",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_436_col_32.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_436_col_32.log"
+    },
+    {
+      "name": "crates/worker/src/main.rs:436:32: replace / with * in deserialize_fragment_from_bytes",
+      "result": "MissedMutant",
+      "diff_path": "diff/crates__worker__src__main.rs_line_436_col_32_001.diff",
+      "log_path": "log/crates__worker__src__main.rs_line_436_col_32_001.log"
+    }
+  ],
+  "interpretation": [
+    "All 1163 candidates reached terminal outcomes; this is not an incomplete campaign.",
+    "The immutable campaign snapshot predates many current tests and the later codec, mapped-weight, artifact and symbolic changes.",
+    "246 misses and 25 timeouts fail the mutation requirement for that snapshot. They must be classified/replayed against current code; this is not a current release pass.",
+    "Previously recorded exact-boundary replays are separate evidence and do not rewrite this campaign result.",
+    "No baseline, mutation exclusions or acceptance thresholds were changed."
+  ]
+}

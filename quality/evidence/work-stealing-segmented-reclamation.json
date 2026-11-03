@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "scope": "Bounded per-segment allocation/free accounting and isolated runtime integration",
+  "models": "tools/loom/segmented_work_slots.rs",
+  "models_sha256": "4af89623253bba1b7838beac55acd6eb864a34c250c45ac65514f2549bb59c46",
+  "ledger": "tools/loom/segmented_work_allocations.rs",
+  "ledger_sha256": "3d7b44f02d88be149916f70502ac7c5f584fff880e9e0bb266c9d90d56c695f8",
+  "instrumentation": "Each Block allocation receives an ID; Block Drop records its release. Relaxed counters assert every allocated ID is released exactly once after the model closure destroys all handles. No extra Acquire/Release publication. Observation budget: 128 segments; preemption bound 2, max branches 10000.",
+  "runs": [
+    {"directory": "target/quality/segmented-reclamation-4-positive", "exit_code": 0, "passed": 5, "log_sha256": "b4a5f36293382cdb348f554bad1ea14ba86e52b7ef3f0f80933a0fd462c9ae11"},
+    {"directory": "target/quality/segmented-reclamation-32-positive", "exit_code": 0, "passed": 5, "log_sha256": "28fc0da5b3e48a448f99e746fc9a7ce327df3a491ccf3534d5023c3afc9eba01"},
+    {"directory": "target/quality/segmented-reclamation-4-retired", "exit_code": 101, "failed": 1, "log_sha256": "51fe571169a3b7272da145fb05e547cd46d9beb7a49ab43cf6b071d617531fac"},
+    {"directory": "target/quality/segmented-reclamation-4-final", "exit_code": 101, "failed": 1, "log_sha256": "a57f973c27fefba60f9cc2f3faf49fd7058b6624907dbae8abe1b4aa13007d09"},
+    {"directory": "target/quality/segmented-reclamation-32-retired", "exit_code": 101, "failed": 1, "log_sha256": "8449627003f8f6695c3c6d626dbb59665056621d0794858edc93ee35398c3843"},
+    {"directory": "target/quality/segmented-reclamation-32-final", "exit_code": 101, "failed": 1, "log_sha256": "5b7a3e9a6ed4fd03b237f58d435236201738b9494280a0ff24b95a60a4dc74ba"}
+  ],
+  "commands": "Generate --lap 4 or --lap 32; retired adds --omit-retired-free, final adds --omit-final-free. Prepare cargo generate-lockfile --offline; run cargo test --manifest-path <directory>/Cargo.toml --offline --locked --lib. Negative controls filter slots::drop_once_across_retirement_and_abandoned_tail -- --exact. DEV/TEST DEBUG=0, CARGO_INCREMENTAL=0.",
+  "negative_diagnostic": "segment allocation 0 (retired) or 1 (final) was not released",
+  "environment": "Initial runs exhausted disk. Only final logs with test summaries and expected assertions are credited. Generated build directories were removed; sources, adaptation diffs, provenance, lockfiles and logs retained.",
+  "isolated_integration": {
+    "tree": "43e02539913e14ab25a196c1581446442f65d103",
+    "snapshot": "target/delivery-snapshots/segmented-reclamation",
+    "selection": "HEAD plus WorkQueue/WorkStealer change and three SegQueue probe files; PendingWork block excluded using a separate temporary index. Original index and worktree preserved.",
+    "worktree_queue_sha256": "57d522754fe8c814afbcd6d271aeb7ebd0c3f69012be2e80ff2b842b664aa3a9",
+    "command": "CARGO_PROFILE_TEST_DEBUG=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=/home/dev/Work/bml/target/segmented-isolated-build cargo test -p bml-runtime --all-features --locked",
+    "fresh_build": true,
+    "passed": 63,
+    "exit_code": 0,
+    "log": "target/quality/segmented-isolated-runtime.log",
+    "log_sha256": "cab894e4a130a3c6aa9fffbb7b5aee7fa6420cd2a2009310d904255f023d23b4"
+  },
+  "limits": "Leak controls establish sensitivity to omitted releases, not arbitrary premature reclamation. Raw block pointers remain native; counter success is not a general use-after-free or liveness proof. Isolated runtime tests are not a complete workspace gate.",
+  "task_9_2_closed": false,
+  "remaining": "Review protection against premature reclamation and finish the isolated integration gate/commit before closing 9.2."
+}

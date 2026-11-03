@@ -1,0 +1,21 @@
+{
+  "contract": "C45",
+  "change": "Reject out-of-slot offsets and overflowing u32 indexed addresses without changing other cells.",
+  "tests": {
+    "unit_log": "target/quality/spec-buffer-bounds.log",
+    "integration_log": "target/quality/spec-buffer-hot-loop.log",
+    "unit_status": "passed",
+    "integration_status": "passed",
+    "release_status": "passed",
+    "release_log": "target/quality/spec-buffer-release.log",
+    "gate_status": "passed",
+    "gate_log": "target/quality/spec-buffer-gate.log",
+    "traceability": "45/45",
+    "clippy_new": 0
+  },
+  "source_sha256": {
+    "crates/runtime/src/buffer.rs": "0d833a8f914049ecf1fcef9b3ca65b532dc37090ccab6c56698e9407ccaa530e",
+    "crates/compiler/tests/contracts.rs": "4f0e49885741694892b3e2161dfb093231a94164d88127fe0f6ac0c062b20819"
+  },
+  "scope": "ResultBuffer address validation only. Full graph preflight and distributed graph RPC remain pending."
+}

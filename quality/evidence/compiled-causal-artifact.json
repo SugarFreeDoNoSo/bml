@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T17:14:19.207866+00:00",
+  "scope": "Persisted RPN projection programs, versioned native causal profile, immutable GGUF bindings and actual CLI generation from the artifact",
+  "contracts": [
+    "C56",
+    "C57"
+  ],
+  "source_sha256": {
+    "Cargo.lock": "ecbe0f38558450bd91fa5f6c9441fae9e79eab8e50cd572bef03ad14bb6f123f",
+    "crates/compiler/Cargo.toml": "deadf0a34cae3d19d26cdbedad47b480a7c2a9e2b23fca2ece4470d88d9e8fbd",
+    "crates/compiler/src/causal_artifact.rs": "2d7c87f7b14ce1b787e333ae673fb31df516b1449053c9718186aba228113dfe",
+    "crates/compiler/src/gguf_compiler.rs": "040d7da10984495e71a376ce43135f7081f346916e5c21eb04e1d5f03fa6b621",
+    "crates/runtime/src/causal_artifact.rs": "237832a194bf973793d44df5871435d4c1fc396ec12ba626352a82571a2deb09",
+    "crates/cli/src/main.rs": "abe3065021914d4665a455100f9480510d2770b58a76bab5b544d113511bcafd",
+    "crates/compiler/tests/causal_artifact_contracts.rs": "0569ec4c8e04a21bf620d6edcb87e4e29a598c9f896ebcedc22d06ad248dae41",
+    "crates/cli/tests/compiled_token_output.rs": "58f25c928b085d72626b8ff245df76cc7d200377b106c58bc8470897935689bf"
+  },
+  "profile": "llama-causal-f64-f32kv-rpn-v1",
+  "execution": "All matrix row projections execute the deserialized programs. Native normalization, RoPE, attention, residuals and activation remain in the explicitly versioned shared host profile. Programs are never rebuilt on load.",
+  "persistence": {
+    "manifest": "model.bmlgraph.json",
+    "programs": "program_N.bmlgraph (bounded single-file BmlGraph format)",
+    "model_identity": "SHA-256 of complete source GGUF",
+    "program_identity": "SHA-256 of each serialized graph",
+    "tokenizer": "Persisted BPE vocabulary/policy checked against the identified source and used for encoding/decoding",
+    "relocation": "--weights changes only the source locator; expected source identity stays fixed"
+  },
+  "oracle": "One-layer, two-query-head/one-KV-head GGUF: independent uniform-attention closed form for ABA, native equality and prefix/incremental equality. Replacing saved bytecode with Zero and updating its digest changes logits to zero, proving stored execution.",
+  "rejection_tests": [
+    "source/model metadata mismatch",
+    "corrupt program digest",
+    "bad program binding",
+    "unknown version",
+    "invalid stack or constant reference",
+    "expanded loop step budget",
+    "too-small fragment threshold",
+    "nonempty output directory overwrite"
+  ],
+  "cli": "Actual compile/run fixture emits split-byte é, stops at EOS, rejects too-short context, stops at full context and accepts hash-verified relocated weights.",
+  "tinyllama_compilation": {
+    "path": "target/bml-1.0/tinyllama/causal-rpn.bmlgraph",
+    "programs": 2,
+    "projections": 155,
+    "files": {
+      "program_1.bmlgraph": {
+        "bytes": 48,
+        "sha256": "5784cba7d7ed92dff0e5c57958303b665c56ea380e22bda4c66987387c011f81"
+      },
+      "model.bmlgraph.json": {
+        "bytes": 1190154,
+        "sha256": "ce856b4be156d12e225bc3b1664d7d90ae0a1cfa574239cadf29244215cc3d73"
+      },
+      "program_0.bmlgraph": {
+        "bytes": 48,
+        "sha256": "53845ecf79772c46d7a3ca9848dce18d7464492829bc20f514603e8474a246f0"
+      }
+    },
+    "copied_weight_bytes": 0,
+    "generation_status": "completed: ten tokens, exit code 0",
+    "run_report": "target/quality/spec-tinyllama-compiled-run.json",
+    "generation_evidence": "quality/evidence/tinyllama-compiled-causal.json"
+  },
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "status": "passed",
+    "log": "target/quality/spec-causal-artifact-gate.log",
+    "sha256": "04cf5d03ba2fc041abb2ce8789a778b3b970a9868df6d6519264a9c41ba0c46f",
+    "contracts": 57,
+    "historical_discrepancies": 0,
+    "new_clippy_diagnostics": 0
+  },
+  "limitations": [
+    "This is not the complete transformer-to-symbolic-BML translation required by bml-inference-pipeline 8.6.",
+    "The legacy scalar-only directory remains a low-level format, and the generation CLI now rejects it with a recompilation instruction.",
+    "Fixture tests do not establish performance; the separate real-model evidence records completed generation without a controlled speed comparison.",
+    "Runtime decoding/stack limits apply, but manifest and graph limits are not a total RSS budget."
+  ]
+}

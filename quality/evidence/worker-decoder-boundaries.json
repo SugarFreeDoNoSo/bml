@@ -1,0 +1,24 @@
+{
+  "scope": "Worker fragment decoder boundary regressions",
+  "tests": [
+    "connection_tests::fragment_decoder_accepts_empty_layer_ranges_and_minimal_tensor_metadata",
+    "connection_tests::fragment_decoder_checks_layer_and_tensor_storage_ranges",
+    "connection_tests::fragment_decoder_rejects_every_truncation_and_invalid_lengths"
+  ],
+  "verified": [
+    "Empty layer intervals accepted at zero and at model layer count",
+    "Reversed layer interval rejected",
+    "Empty tensor name with exactly 20 metadata bytes accepted",
+    "Focused decoder tests: 3 passed",
+    "Canonical gate passed; 67/67 registered contracts, zero audit discrepancies, zero new static diagnostics"
+  ],
+  "limitations": [
+    "No mutation replay performed for this change; old campaign survivors remain unresolved.",
+    "The metadata allocation guard may have behaviorally redundant mutants because subsequent parsing also rejects truncated input; resource-bound correctness still needs separate evidence."
+  ],
+  "files": {
+    "crates/worker/src/main.rs": "2b2c13ae40297234a3172499408c7a5addf724726d51e93e417b8957127c6f3c",
+    "target/quality/spec-worker-decoder-boundaries.log": "9a96667eab898c36f22d9ba3d51dc065d7932f6f5894ba20eb7703642efbf213",
+    "target/quality/spec-worker-boundaries-gate.log": "564e0fd1ac2abc760a201168f5a6e96119df019c9a5b1063881fb3a2ff7a0bce"
+  }
+}

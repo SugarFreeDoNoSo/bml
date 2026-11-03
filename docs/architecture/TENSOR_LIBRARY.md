@@ -14,7 +14,9 @@ representa 2 y `11000` representa 4. Las operaciones construyen términos por
 reglas de base 2 y la conversión desde floats usa síntesis acotada y comprobada.
 Esto no garantiza evaluación real de todos los términos ni síntesis de todo
 `f64`. La fachada `bml` ofrece escalar por defecto y capacidades
-tensor y GGUF opcionales; trigonometría y complejos requieren trabajo posterior.
+tensor y GGUF opcionales. La evaluación compleja finita de términos y la síntesis
+por enumeración acotada se describen en [SYMBOLIC_EXTENSIONS.md](../SYMBOLIC_EXTENSIONS.md);
+la trigonometría simbólica general y los complejos extendidos requieren trabajo posterior.
 
 Las secciones siguientes describen la arquitectura tensorial existente y su
 contexto histórico, cuyos contratos siguen vigentes. Véanse [el escalar BML](BML_NUMBER.md)
@@ -85,8 +87,9 @@ que se redondean a cero. Permite redondeo ordinario y subnormales no nulos; no
 certifica una cota global del error o ausencia de cancelación.
 
 Esta política **no reproduce** derivaciones que necesitan `log(0) = -inf`.
-Un evaluador `ExtendedReal` o complejo futuro deberá tener una política explícita
-y sus propios tests. No se usa para reemplazar silenciosamente el runtime actual.
+El evaluador complejo finito separado exige rama, presupuesto y tests propios;
+también rechaza `log(0)`. Un evaluador `ExtendedReal` sigue pendiente. Estas
+políticas no reemplazan silenciosamente el runtime actual.
 
 `f64 -> ClosedTerm` tampoco es una inversa general: la evaluación no es inyectiva,
 el redondeo pierde información y reconocer `1`/`e` no constituye un algoritmo de
@@ -94,9 +97,9 @@ síntesis. El conjunto de árboles finitos es numerable; no representa todos los
 reales arbitrarios mediante términos finitos. Para `f64`, que es un conjunto
 finito, aún hace falta una construcción y una política de equivalencia.
 
-Si se desarrolla síntesis simbólica, su API será algo como
-`synthesize(target, basis, budget) -> Candidate { term, error, cost }` con un
-estado explícito de “sin candidato dentro del presupuesto”. Una búsqueda con
+La síntesis simbólica acotada ofrece `synthesize(target, interpretation, tolerance,
+budget)` y devuelve candidato, error, tamaño y estado de parada explícito; véase
+`bml_domain::symbolic::synthesis`. Una búsqueda con
 Adam no garantiza representación exacta ni terminación con éxito. La igualdad
 estructural de árboles tampoco equivale a igualdad de funciones.
 
@@ -223,4 +226,25 @@ referencia para futuras comparaciones, sin afirmaciones de aceleración.
    correctos; medir logits, calidad y ejecución completa antes de publicar tokens/s.
 
 Ver [tests](../TESTING.md) y el cambio
-[`tensor-library-foundation`](../../openspec/changes/tensor-library-foundation/proposal.md).
+[`tensor-library-foundation`](../../openspec/changes/archive/2026-11-03-tensor-library-foundation/proposal.md).
+
+## Backend tensorial experimental optativo
+
+La feature `tensor-simd` de `bml` expone `bml::tensor_simd::{add, mul}` para
+vistas contiguas `f64` con formas idénticas. `Policy::Reference` es la política
+por defecto; `Policy::PreferAvx2` permite cuatro operaciones independientes por
+vector cuando la CPU dispone de AVX2 y vuelve a los kernels de `bml-domain` en
+caso contrario. Cada resultado informa `ExecutedBackend` para hacer visible la
+selección y el fallback. Las entradas no se modifican.
+
+Este backend conserva aritmética IEEE nativa, incluidos infinitos, subnormales y
+ceros con signo; NaN conserva su clasificación, sin contrato adicional sobre su
+payload. Las colas usan aritmética escalar. No implementa reducciones, FMA,
+`apply_basis`, aproximaciones exp/log ni aritmética simbólica. `f32`, dot y matmul
+siguen disponibles en la referencia `bml::tensor`. No se atribuye una mejora de
+rendimiento al backend sin una campaña específica. La comparación estructural
+`code-simd` sigue siendo una API distinta.
+
+Verificación: `cargo test -p bml-kernels -p bml --all-features --locked`.
+La compilación a AArch64 verifica la portabilidad del fallback; no constituye una
+prueba ejecutada en hardware ARM.

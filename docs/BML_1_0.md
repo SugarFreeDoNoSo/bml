@@ -24,11 +24,16 @@ metadatos BOS/EOS. La generación selecciona el máximo logit (*greedy*), resuel
 empates por el menor ID y termina al producir EOS o alcanzar `--predict`.
 No hay sampling por temperatura, top-k o top-p.
 
-Los recursos admiten F32, F16, Q4_0 y Q8_0; los pesos cuantizados conservan su
+Los recursos admiten F32, F16, Q4_0, Q8_0 y Q6_K; los pesos cuantizados conservan su
 codificación y se decodifican por filas. Esa capacidad no extiende la evidencia
 de paridad de Stories15M F32 a modelos cuantizados ni a otros modelos. Las
 activaciones y el KV son F32, con acumulaciones escalares F64. Las arquitecturas,
 variantes de RoPE y roles tensoriales ajenos al perfil aceptado producen errores.
+
+Q6_K tiene [pruebas contra 2.048 valores de GGML y de exportación/recarga](../quality/evidence/q6-k-codec.json).
+La [prueba diagnóstica de TinyLlama Q4_0 con salida Q6_K](../quality/evidence/tinyllama-quantized-diagnostic.json)
+carga y genera, pero diverge de la referencia en el octavo token de «Hello».
+Esta observación no acredita paridad cuantizada ni rendimiento comparable.
 
 La fachada `bml` conserva el escalar `Bml` y las capacidades tensor/GGUF optativas.
 Los contratos son distintos: `Bml` y los términos simbólicos comprueban dominio
@@ -287,7 +292,8 @@ tipado, pesos, límites y metadatos de procedencia e integridad.
 ```sh
 target/debug/bml-model compile \
   --model target/bml-1.0/stories15M.gguf \
-  --output target/bml-1.0/stories15M-bml-final
+  --output target/bml-1.0/stories15M-bml-final \
+  > target/bml-1.0/aot-final-build.json
 
 target/bml-1.0/stories15M-bml-final \
   --prompt "Once upon a time" --predict 4 --context 128
@@ -417,11 +423,15 @@ El artefacto final `stories15M-bml-final` ocupa 98 932 768 bytes y tiene SHA-256
 Su reporte de compilación es `target/bml-1.0/aot-final-build.json`; el corpus
 completo está en `target/bml-1.0/parity-final/report.json`.
 
-## Medición del candidato v3
+## Medición del artefacto 1.0.0
 
-Estas mediciones corresponden al artefacto histórico v3. El ejecutable final
-1.0.0 tiene otra identidad y su paridad y aislamiento se verificaron por separado;
-la tabla no constituye una medición de rendimiento del ejecutable final.
+Estas mediciones corresponden a `stories15M-bml-final`, con el hash declarado
+arriba. Se ejecutaron el 2 de noviembre de 2026, después de comprobar que no
+quedaban compilaciones ni otras campañas de validación activas en ese equipo. El reporte completo es
+`target/bml-1.0/benchmark-final/report.json`, SHA-256
+`3514d023d22041bb51d0ac403ffc5bac79dc7459f71e5028b751e02574e617cb`.
+La medición histórica v3 se conserva en `target/bml-1.0/benchmark-v3/report.json`
+y en el registro de evidencia del commit `53ba3fe`.
 
 Se midieron `Once upon a time` y `Hello`, con contexto 128 y 16 tokens solicitados,
 greedy, un hilo por motor y sin `--logits`, sobre Intel Xeon (Cascadelake). Cada
@@ -432,10 +442,10 @@ ni se controló; estos resultados no representan arranques con caché fría.
 
 | Prompt | Motor | Prefill medio (ms) | Decode medio (ms) | Decode medio (tokens/s) | Proceso completo medio (ms) | RSS máximo medio (MiB) |
 |---|---|---:|---:|---:|---:|---:|
-| Once upon a time | BML v3 | 109.64 | 351.67 | 45.50 | 1975.20 | 105.37 |
-| Once upon a time | llama.cpp | 12.64 | 148.97 | 107.51 | 232.19 | 113.65 |
-| Hello | BML v3 | 43.85 | 369.57 | 43.37 | 1935.90 | 105.28 |
-| Hello | llama.cpp | 11.81 | 153.65 | 104.18 | 236.57 | 113.53 |
+| Once upon a time | BML 1.0.0 | 107.35 | 344.01 | 46.51 | 1926.91 | 105.33 |
+| Once upon a time | llama.cpp | 12.09 | 143.77 | 111.30 | 225.67 | 112.26 |
+| Hello | BML 1.0.0 | 44.34 | 352.24 | 45.43 | 1952.50 | 105.36 |
+| Hello | llama.cpp | 11.04 | 148.79 | 107.70 | 232.73 | 111.61 |
 
 Los tiempos internos excluyen arranque, carga y comprobaciones de integridad;
 el tiempo del proceso completo los incluye. El RSS es el máximo de cada proceso,
@@ -452,22 +462,51 @@ efecto del algoritmo, la precisión o las instrucciones vectoriales. En esta
 medición llama.cpp produjo más tokens por segundo y BML tuvo menor RSS máximo.
 No se extrapola ese resultado a otros modelos, contextos o equipos.
 
-El ejecutable v3 ocupa 98 932 768 bytes (94.35 MiB), incluidos los recursos; el
-GGUF ocupa 98 357 920 bytes. Su compilación registrada duró 63.21 s con Rust 1.98.1.
+El ejecutable final ocupa 98 932 768 bytes (94.35 MiB), incluidos los recursos; el
+GGUF ocupa 98 357 920 bytes. El registro de compilación identifica Rust 1.98.1.
 Para repetir la medición con una nueva carpeta de resultados:
 
 ```sh
 python3 tools/benchmark_inference.py \
   --model target/bml-1.0/stories15M.gguf \
   --expected-model-sha256 61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a \
-  --artifact target/bml-1.0/stories15M-bml-v3 \
-  --artifact-build-report target/bml-1.0/aot-v3-build.json \
+  --artifact target/bml-1.0/stories15M-bml-final \
+  --artifact-build-report target/bml-1.0/aot-final-build.json \
   --output target/bml-1.0/benchmark-repeat
 ```
 
 El reporte de compilación debe identificar el hash del artefacto, el del GGUF,
 el target, `rustc_version` y `elapsed_ms`. El script rechaza salidas divergentes,
 tiempos inválidos y archivos modificados durante la medición.
+
+## Reproducir los controles de entrega
+
+La base del delta 1.0 es `deec3aa8d2516ae19e335a5af77e6c38f8a854d8`.
+Se usa ese commit fijo porque `origin/master` ya incluye el candidato y dejaría
+de representar la base anterior a estos cambios. Los comandos requieren el
+toolchain de `rust-toolchain.toml`, las herramientas fijadas en los workflows y
+un entorno que permita los sockets locales usados por las pruebas ordinarias.
+Estas pruebas no necesitan descargar un modelo.
+
+```sh
+BML_RELEASE_BASE=deec3aa8d2516ae19e335a5af77e6c38f8a854d8
+./scripts/check.sh "$BML_RELEASE_BASE"
+python3 tools/mutation_diff.py "$BML_RELEASE_BASE" target/quality/release-changes.diff
+cargo mutants --workspace --cargo-arg=--locked --test-workspace true \
+  --jobs 2 --timeout 30 --build-timeout 180 \
+  --in-diff target/quality/release-changes.diff \
+  --output target/bml-1.0/mutation-repeat
+python3 tools/quality.py mutations \
+  --report target/bml-1.0/mutation-repeat/mutants.out/outcomes.json
+cargo llvm-cov --workspace --locked --json --output-path target/quality/coverage.json
+python3 tools/quality.py coverage --report target/quality/coverage.json
+cargo audit --deny warnings
+```
+
+La campaña de mutación debe terminar y cubrir su inventario completo; un reporte
+parcial no acredita el control. Los criterios, las variantes de features y los
+límites de cobertura se describen en [los controles de calidad](QUALITY.md).
+La entrega sigue abierta mientras falte esa evidencia final.
 
 ## Alcance de la entrega
 
@@ -481,3 +520,75 @@ El cierre requiere completar los controles de calidad y cerrar las tareas
 OpenSpec, manteniendo la evidencia vinculada al artefacto entregado.
 Hasta entonces, este documento describe un **candidato**, no una release 1.0
 publicada o terminada.
+# Sesiones de ejecución por etapas
+
+`Model::layer_session(range, context, maximum_bytes)` crea una sesión causal
+para un rango fijo y no vacío de capas. El coordinador obtiene la entrada con
+`embed_token`, pasa el hidden state por `LayerSession::forward(position, hidden)`
+y aplica `final_logits` al terminar todas las capas. La posición debe coincidir
+con el siguiente token esperado; errores de forma, posición o aritmética no
+avanzan la sesión. Las sesiones son independientes y tienen reset explícito.
+
+La implementación actual conserva el modelo y la reserva KV completos bajo el
+presupuesto indicado. El commit ocurre por etapa, sin transacción distribuida.
+Las pruebas de `model_contracts` comparan logits y recuperación tras fallos;
+la reducción de memoria y el rendimiento todavía no están acreditados.
+
+`bml_inference::remote::{LayerClient, serve_layer_connection, RemoteLimits}`
+permite ejecutar estas etapas por TCP con framing acotado y sesiones dedicadas
+por conexión. Las pruebas con dos workers locales comparan logits completos.
+La apertura exige `Model::fingerprint()` y el worker verifica la identidad
+numérica antes de reservar KV. SHA-256 cubre configuración, nombres, dimensiones,
+encodings y bytes de tensores en orden canónico; excluye el tokenizer y el layout
+del archivo. Se calcula una vez por modelo. Detecta errores de despliegue; no
+autentica al servidor. No hay reconexión automática ni commit transaccional entre workers. La integración con
+el servidor HTTP sigue pendiente. El proceso `bml-layer-worker` permite arrancar
+una etapa sobre un GGUF local:
+
+```sh
+cargo run -p bml-inference --bin bml-layer-worker --release --locked -- \
+  --model model.gguf --layers 0:1 --listen 127.0.0.1:9998 --max-sessions 4
+```
+
+El extremo final del rango es exclusivo. El worker imprime una línea JSON de
+readiness con dirección efectiva, rango e identidad del modelo; `--listen
+127.0.0.1:0` selecciona un puerto libre. Contexto, memoria por sesión, frames y
+timeout son configurables (`--help`); al saturarse cierra la nueva conexión sin
+reservar KV. `--once` atiende una conexión y termina para pruebas/controladores.
+La prueba de proceso usa un GGUF sintético y compara tres tokens con la ruta
+local; no descarga modelos ni acredita rendimiento de despliegue.
+
+
+`RemotePipeline::connect(model, addresses, context, limits)` coordina una sesión
+completa sobre endpoints ordenados. Verifica identidad, ancho y cobertura exacta
+de capas; `prefill`, `decode`, `position`, `reset` y `close` gestionan el ciclo de
+vida. IDs inválidos y desbordamiento de contexto se rechazan antes de enviar
+trabajo. Un fallo de etapa/proyección invalida todo el pipeline, pues otros
+workers pueden haber confirmado el token. Se debe abrir una sesión nueva; no
+hay rollback distribuido. El coordinador conserva el modelo local para embedding
+y proyección final, por lo que esto aún no acredita partición de memoria.
+
+El servidor admite la ruta remota con:
+
+```sh
+cargo run -p bml-server --release --locked -- -m model.gguf --port 8080 \
+  --layer-workers 127.0.0.1:9998,127.0.0.1:9999
+```
+
+Los workers deben cubrir todas las capas en el orden indicado y usar el mismo
+modelo. El scheduler acota admisión; cada petición abre sesiones remotas propias.
+`/v1/completions` devuelve texto o SSE según `stream`, conserva caracteres UTF-8
+que atraviesan límites entre tokens y termina el stream con `[DONE]`. La prueba
+del handler compara ambas respuestas con generación local sobre un GGUF pequeño.
+Un fallo remoto devuelve 502 en modo completo o un evento de error en un stream
+ya abierto. El modo remoto vuelve a validar el modelo del coordinador por
+solicitud y ejecuta los requests del batch secuencialmente; no acredita fusión
+numérica de batches, paralelismo entre requests ni mejora de throughput.
+
+Para réplicas completas, repetir `--layer-workers` una vez por pipeline. Cada
+ocurrencia contiene la lista ordenada de etapas de una réplica; el scheduler
+reparte batches completos round-robin entre esas listas. `/health` expone
+`dispatched_batches` además de solicitudes pendientes. La prueba con dos réplicas
+verifica destinos distintos y respuestas JSON/SSE iguales a la ruta local.
+Las solicitudes de cada batch siguen ejecutándose secuencialmente; no se afirma
+paralelismo de réplicas ni vectorización conjunta por añadir este reparto.

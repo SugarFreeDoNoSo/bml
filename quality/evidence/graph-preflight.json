@@ -1,0 +1,17 @@
+{
+  "contract": "C46",
+  "scope": "Owned immutable compiled graph preflight and local HotLoop execution, preparing but not yet implementing graph RPC.",
+  "checks": {
+    "focused_tests": 5,
+    "focused_log": "target/quality/spec-graph-preflight.log",
+    "gate": "passed",
+    "gate_log": "target/quality/spec-graph-preflight-gate.log",
+    "traceability": "46/46",
+    "clippy_new": 0
+  },
+  "source_sha256": {
+    "crates/runtime/src/graph.rs": "52d5033e5ad7d5244ff20100e014593cf89df2e409bbc3aa13aa1e5606987e08",
+    "crates/runtime/src/hot_loop.rs": "239fe4d9ab0069483e7f90705a5b0dbb0587044eded2283ccb5321e48cffe57e",
+    "crates/runtime/tests/graph_contracts.rs": "2a8ee7fe4a52fca90be460bdd47508dc471b9b0925765a5d23ec6df0131e2246"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "scope": "Replace speculative circular FIFO reads with the production Crossbeam SegQueue ownership protocol",
+  "production_file": "crates/runtime/src/queue.rs",
+  "production_sha256": "57d522754fe8c814afbcd6d271aeb7ebd0c3f69012be2e80ff2b842b664aa3a9",
+  "change": "WorkQueue and WorkStealer share an Arc<crossbeam::queue::SegQueue<Fragment>>. Owner pop and remote steal reserve the position before reading the slot. FIFO and unbounded push remain; WorkStealer replaces the crossbeam-deque-specific public handle. Steal returns Success/Empty, never Retry. Existing PendingWork remains separate.",
+  "algorithm_source": "crossbeam-queue 0.3.13/src/seg_queue.rs",
+  "upstream_sha256": "f4d2e9500ef31a31883075c3b151b8538fa664422e15e1c2fa9045b329aec270",
+  "generator": "tools/probe_segmented_work_loom.py",
+  "models": "tools/loom/segmented_work_slots.rs",
+  "models_sha256": "4364e43fbb20d3e71eeaa8844561cfddceccb0b26cadb3c276723140dbad24c4",
+  "adaptations": "Actual upstream push/pop/block retirement/Drop bodies retained; replace atomics, cells and backoff with Loom, construct initialized instrumentation cells instead of zeroed allocation, adapt exclusive Drop access. Unused push_mut/pop_mut/IntoIterator APIs are omitted from the probe. Native runtime uses the published crate, not this generated test copy.",
+  "models_scope": "Publication without extra flags/joins before consumer read; delayed thief across segment boundary; owner plus two thieves, ID conservation. Preemption bound 2, max branches 10000. Three-slot reduced and 31-slot upstream blocks.",
+  "runs": [
+    {"directory": "target/quality/segmented-work-final-small", "generation_options": "--lap 4", "passed": 3, "exit_code": 0, "source_sha256": "1f90d15853b9455d26bb922f52fe1ddd2cb563dc4440c1ced8a18194767e4e8d", "log_sha256": "b9f2c7fdbfa33d6826e9cc87be56eba0d59e02f64121881b08f15e0d8cf0b15e"},
+    {"directory": "target/quality/segmented-work-final-native", "generation_options": "--lap 32", "passed": 3, "exit_code": 0, "source_sha256": "e599b3ae5d6fdb244725b76d72624276dbc76704ed1796d67e9b3488990356b4", "log_sha256": "d06e84c56ec18e6e740875119b5a99f0b90d15dc51a9058ff568a8039d4ea97d"},
+    {"directory": "target/quality/segmented-work-final-release", "generation_options": "--lap 4 --weaken-publication", "failed": 1, "exit_code": 101, "source_sha256": "1d561b1097595597a90e6e96743cd1ed25a54496ef5c056eae58fe040bd9d334", "log_sha256": "5a744ed91834f3ac340520b0e2da955c8ef94384ad8ce3ed0d80dfe1d6e6a97a"},
+    {"directory": "target/quality/segmented-work-final-acquire", "generation_options": "--lap 4 --weaken-acquire", "failed": 1, "exit_code": 101, "source_sha256": "a19ea3fcf3cb9089f560ff12bade8896de6a27c79a848a36ed388257b37fe1d8", "log_sha256": "5d6677261c5bafc04719a60062f590d0693987a36faedb58bd9cfffcafd0c3a4"}
+  ],
+  "commands": "Generate standalone probe from cached pinned source, cargo generate-lockfile --offline, then cargo test --manifest-path <directory>/Cargo.toml --offline --locked --lib. Negative controls filter slots::concurrent_push_publishes_payload_before_steal -- --exact. CARGO_INCREMENTAL=0 and DEV/TEST DEBUG=0.",
+  "native_verification": {
+    "command": "cargo test -p bml-runtime --all-features --locked",
+    "passed": 82,
+    "exit_code": 0,
+    "log": "target/quality/segmented-runtime-tests.log",
+    "sha256": "94900b5dec9fbfbb1ecd0c62dfe5398cf8e3d2828434411ab1e25dc6ef44ed03",
+    "regression": "segmented_work_ownership_is_unique_across_turnover_and_owner_drop"
+  },
+  "gate": {
+    "command": "TMPDIR=$PWD/target/tool-install-tmp CARGO_PROFILE_TEST_DEBUG=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_INCREMENTAL=0 CARGO_TARGET_DIR=$PWD/target/segmented-runtime-build ./scripts/check.sh origin/master",
+    "exit_code": 0,
+    "rust_tests_passed": 704,
+    "log": "target/quality/segmented-work-gate.log",
+    "sha256": "5c80c23c5aac07ad70db48b8531f0f4c97f1fb25e9cf8d9fbd36e80ac868c91a",
+    "scope": "Current worktree, including prior pending changes; not a standalone selected commit. Earlier attempts hit full /tmp and a transient trace-list failure; only this final run is credited."
+  },
+  "global_campaign_notification": "The workspace mutation command finished with exit 1. Its outcomes still have end_time=null (1507 candidates, 379 caught, 47 missed, 2 timeout, 1079 unviable); no completed successful global campaign is claimed.",
+  "task_9_2_closed": false,
+  "remaining": "Broaden segment-retirement and exact-once Drop models, add reclamation negative controls and integrate the reviewed production/probe changes. Boundary turnover is covered but does not constitute a general reclamation or liveness proof."
+}

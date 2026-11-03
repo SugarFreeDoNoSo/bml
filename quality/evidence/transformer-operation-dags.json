@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "date_utc": "2026-11-02T17:46:31.953489+00:00",
+  "requirement": "bml-inference-pipeline 8.6 (operation sub-DAGs implemented; complete GGUF integration remains open)",
+  "operations": {
+    "matmul": "Row-major rectangular signed products and ordered sums, including empty contractions and empty output shapes.",
+    "rms_norm": "Signed x and weights, mean squared magnitude plus positive epsilon, square root expanded through log2 and half scaling; fractional variances supported algebraically.",
+    "rope": "Every adjacent pair is rotated using the supplied cosine and sine nodes, including zero and negative coefficients.",
+    "softmax": "Natural exponential via exp2(x*LOG2_E), positive sum and reciprocal. No max/comparison stabilization is synthesized.",
+    "swiglu": "gate * sigmoid(gate) * up, natural exponential and unit sigmoid scale."
+  },
+  "verification": {
+    "dag": "Independent topological interpreter checks every log argument and exponential result for finite-real validity. Oracles use independent fractions and native exp formulas.",
+    "runtime": "Each output is linearized, split into multiple 256-byte-target fragments, serialized, deserialized, validated and executed. A whitelist rejects native arithmetic and opaque operators; only One/Var/Const/Bml and stack manipulation occur.",
+    "structural_errors": "Shapes, invalid references, epsilon, dimension overflow, output reservation failure and extreme empty-output dimensions are checked without appending graph nodes.",
+    "absolute_tolerance": 2e-07
+  },
+  "limitations": [
+    "Small bounded examples do not establish numerical stability or evaluability for arbitrary transformer activations.",
+    "These operation builders have not replaced build_transformer_dag or the native host operations in the causal artifact profile.",
+    "Owned constant pools are used in these operation tests; this is not proof of zero-copy GGUF weight binding.",
+    "RoPE trigonometric constants are supplied, not synthesized from real BML.",
+    "The runtime preserves native IEEE evaluation; finite-real intermediate checks here belong to the independent DAG test."
+  ],
+  "source_sha256": {
+    "crates/domain/src/transformer.rs": "b9f9c04c3f9a194aee35e575cb4ba9c30520a5fbdb308e0476d22d3647b9ddfc",
+    "crates/domain/src/transformer/operations.rs": "d5789f282379d04bba9aacb47051a662d1fbff004712707a9ff16442f069f777",
+    "crates/domain/tests/transformer_operations.rs": "c1cc95f62b5423cb0a4c3854f3f7137219494e13850f4458bf22fb8b647b9726",
+    "crates/compiler/tests/transformer_bml_programs.rs": "6aef74eecc9a8719a0441a34d7cc6bd1e3a34ff0100eb2325d209a97564d51ae",
+    "quality/contracts.feature": "646330f926b442206596cce03bf62a10ebfe8b3e9dd47f31b3643895020b003b",
+    "quality/traceability.json": "2637b739b865b685508fe444287181cc11ead1567a4faaa022e5c801b00d4f07"
+  },
+  "validation": {
+    "command": "./scripts/check.sh origin/master",
+    "toolchain": "1.98.1",
+    "cargo_locked": true,
+    "exit_code": 0,
+    "registered_contracts": "61/61",
+    "historical_discrepancies": 0,
+    "static_diagnostics": 66,
+    "baseline_diagnostics": 192,
+    "new_diagnostics": 0,
+    "log": "target/quality/spec-transformer-operations-gate.log",
+    "log_sha256": "7ce08ec0f1dadc6b66154fcb4d860886ae26edf630037417fc8b96909aef15e4",
+    "openspec": "8 passed, 0 failed; target/quality/spec-transformer-operations-openspec.log",
+    "prior_attempts": [
+      "target/quality/spec-transformer-operations-interrupted.log: interrupted after adding the empty-output regression while compilation was already in progress; not accepted as validation.",
+      "target/quality/spec-transformer-operations-lint-failure.log: tests and audit passed, but two new Clippy findings rejected the gate; both corrected without changing the baseline."
+    ]
+  }
+}

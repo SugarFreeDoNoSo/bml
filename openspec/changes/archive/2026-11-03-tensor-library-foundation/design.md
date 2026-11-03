@@ -1,10 +1,10 @@
 ## Context
 
-La [revisión reproducible](../../../docs/architecture/REVIEW_2026-09-20.md)
+La [revisión reproducible](../../../../docs/architecture/REVIEW_2026-09-20.md)
 identifica errores de RPN, contexto de constantes, dominio de multiplicación,
 alignment GGUF, orden de Q4_0 y truncamiento. La referencia de arquitectura está en
-[`TENSOR_LIBRARY.md`](../../../docs/architecture/TENSOR_LIBRARY.md) y la matriz de
-pruebas en [`TESTING.md`](../../../docs/TESTING.md).
+[`TENSOR_LIBRARY.md`](../../../../docs/architecture/TENSOR_LIBRARY.md) y la matriz de
+pruebas en [`TESTING.md`](../../../../docs/TESTING.md).
 
 ## Goals / Non-Goals
 

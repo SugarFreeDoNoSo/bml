@@ -4,7 +4,11 @@
 El sistema SHALL codificar en preorden `C(1)=0` y
 `C(B(a,b))=1 C(a) C(b)`, preservando el orden de los operandos.
 El entero sin signo `0` SHALL representar únicamente la hoja `1`; cualquier
-otro entero SHALL leerse desde su bit más significativo. El almacenamiento
+otro entero SHALL leerse desde su bit más significativo.
+
+#### Scenario: Almacenamiento y validez estructural
+- **WHEN** se almacena y valida un código individual
+- **THEN** el almacenamiento
 existente en palabras `u64` de menor peso primero SHALL conservarse sin
 longitud individual persistida, normalizando las palabras altas nulas.
 La validez sintáctica SHALL exigir exactamente un árbol completo; no SHALL
@@ -46,7 +50,11 @@ las `n+1` hojas; la hoja única SHALL contar como un bit aunque su entero sea ce
 Las exportaciones a `u64` y `u128` SHALL admitir como máximo 31 y 63 operadores,
 respectivamente, y conservar exactamente el código. Una exportación que exceda
 el ancho SHALL devolver un error explícito, nunca truncar, envolver ni provocar
-un panic. El sistema SHALL distinguir tamaño lógico, palabras asignadas y
+un panic.
+
+#### Scenario: Contabilidad del almacenamiento
+- **WHEN** se informa el tamaño de un código
+- **THEN** el sistema SHALL distinguir tamaño lógico, palabras asignadas y
 memoria observada; representar un entero no SHALL prometer una sola palabra.
 
 #### Scenario: Frontera de u64
@@ -75,13 +83,28 @@ preservar los operandos; no SHALL sustituirse por un código parcial o aproximad
 - **THEN** informa agotamiento de recursos y ambos operandos conservan sus códigos originales.
 
 ### Requirement: Flujo versionado que conserva todos los bits útiles
-La serialización de varios valores SHALL usar un formato nuevo y versionado
+La versión 1 SHALL usar una cabecera de 24 bytes: magic ASCII `BMLS`, versión
+`u8=1`, base `u8=2` (BML), dos bytes reservados nulos, `count` como `u64`
+little-endian y `bit_length` como `u64` little-endian. El payload comienza en
+el byte 24. Las otras bases, versiones y campos reservados no nulos SHALL
+rechazarse. Los límites SHALL incluir bits totales, cantidad y profundidad
+por árbol (hoja de profundidad cero), tanto al escribir como al leer.
+
+#### Scenario: Contrato del contenedor versionado
+- **WHEN** se serializan varios valores
+- **THEN** la serialización SHALL usar un formato nuevo y versionado
 con cantidad de elementos `count`, longitud útil total `bit_length` y payload.
 El contrato de la versión SHALL fijar el ancho y endianness de los campos.
-El payload SHALL concatenar los códigos en orden, del bit más significativo
+#### Scenario: Orden y relleno del payload
+- **WHEN** se construye el payload del flujo
+- **THEN** el payload SHALL concatenar los códigos en orden, del bit más significativo
 al menos significativo de cada octeto, preservando las hojas iniciales `0`.
 Su tamaño SHALL ser exactamente `ceil(bit_length/8)` bytes y los bits bajos
-de relleno del último octeto SHALL ser cero. El lector SHALL consumir exactamente
+de relleno del último octeto SHALL ser cero.
+
+#### Scenario: Consumo exacto y límites antes de reservar
+- **WHEN** se lee un flujo versionado
+- **THEN** el lector SHALL consumir exactamente
 `count` árboles y `bit_length` bits útiles; SHALL rechazar versiones desconocidas,
 truncamiento, bytes extra, campos inconsistentes, padding no canónico y tamaños
 que desborden o excedan su presupuesto antes de reservar memoria.

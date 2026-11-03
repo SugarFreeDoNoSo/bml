@@ -1,0 +1,12 @@
+{
+  "source_report": "docs/benchmarks/inference-2026-11-02.json",
+  "source_sha256": "3514d023d22041bb51d0ac403ffc5bac79dc7459f71e5028b751e02574e617cb",
+  "artifact_sha256": "74bef3b5a510b58fa0fbadc676133c65f427f5b4791754801bbd6b80d3261579",
+  "reference_sha256": "4a7ce90b6237b89bbd144aafbbdbf789c582398cfcf23c3d3eaf420b638e22bf",
+  "matplotlib": "3.11.2",
+  "scope": "Historical paired snapshot, not current-tree performance or synthetic token equivalents",
+  "outputs": {
+    "docs/benchmarks/inference-comparison.svg": "c4e6789525550c6055d40a2c2b365f3894f0ebd893b5d4629e54a22966bc530c",
+    "docs/benchmarks/inference-comparison.png": "ac17341ebd063f212ba317c3a65aceb3848d6e3608f97754ea878361af6ea103"
+  }
+}

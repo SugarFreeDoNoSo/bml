@@ -49,18 +49,24 @@
 
 - [x] 5.1 En `bml-runtime`, implementar el inicializador de buffers: reserva toda la memoria necesaria una sola vez al arrancar (cero asignaciones en tiempo de ejecución).
 - [x] 5.2 Implementar el intérprete del flujo RPN (*The Hot Loop*): iteración secuencial sobre el arreglo RPN sin saltos ni recursión.
-- [x] 5.3 Medir el tamaño del hot loop con `cargo asm` y `perf stat -e instructions`; verificar que es < 32 KB. Si excede, refactorizar a tablas de saltos compactas. (Verificado: el `.rlib` del runtime es 5.4 KB, muy por debajo de 32 KB. El hot loop es un `match` sobre 3 variantes de `RpnOp`.)
+- [ ] 5.3 Medir el tamaño del código máquina del hot loop y su comportamiento L1. La antigua justificación por tamaño de `.rlib` y tres variantes RPN no prueba este requisito y no describe el código actual. Requiere medición de símbolos/disassembly; los contadores PMU son evidencia separada.
+
+  Medición estática implementada en `tools/measure_hot_loop.py`: ejecutable
+  release enlazado, símbolo `dispatch_ops` de 1411 bytes en x86_64. Evidencia con
+  hashes y límites en `quality/evidence/bml-hot-loop-code-size.json`. Queda
+  pendiente alcance transitivo/inline, aislamiento binario y mediciones L1/PMU;
+  el tamaño del símbolo no prueba ausencia de expulsiones de caché.
 - [x] 5.4 Pruebas del runtime: ejecutar un `.bmlgraph` de prueba y verificar que el resultado coincide con la evaluación de referencia del DAG.
 - [x] 5.5 Implementar el patrón append-only: cada evaluación escribe `v_o` a una dirección pre-asignada nueva, nunca sobrescribe.
-- [x] 5.6 Pruebas de append-only con `loom` para verificar ausencia de data races bajo estrés multicore.
-- [ ] 5.7 Implementar la interfaz RPC/binaria (gRPC vía `tonic` u otra). (**Deferred**: gRPC/tonic adds heavy dependencies not needed for MVP. Can be re-evaluated when distributed execution becomes the bottleneck.)
-- [ ] 5.8 Aislar el código RPC en un módulo separado del hot loop. (**Deferred**: depends on 5.7.)
-- [ ] 5.9 Pruebas de integración del RPC. (**Deferred**: depends on 5.7.)
+- [x] 5.6 Pruebas de append-only con `loom`. `append_only::loom_tests` instrumenta los mismos atómicos del algoritmo de producción mediante `cfg(test)` y feature `loom`: publicación/lectura concurrente vía `Runtime::execute_append_only` y carrera de saturación. Pasan ambas pruebas; alcance acotado a esas ejecuciones, sin extrapolar a Crossbeam o memoria compartida mmap.
+- [x] 5.7 Implementar la interfaz RPC/binaria. `ExecuteGraph`/`GraphResult` ejecutan `.bmlgraph` validado con inputs y buffer; dos workers intercambian resultados y coinciden con el DAG local. `NodeHandle::execute_graph_append_only` publica escalar y buffer en rangos nuevos de `AppendOnlyResults`; si no hay capacidad devuelve el resultado completo para reintentar solo su publicación local. Cuatro pruebas Loom instrumentan las reservas/publicaciones reales. Las capas causales con sesiones/KV usan `bml-inference::remote`. La carga legacy `ExecuteFragment` sigue siendo un ack explícito. Evidencia: `quality/evidence/graph-rpc-publication.json`.
+- [x] 5.8 Aislar RPC del hot loop. `tools/audit_hot_loop_binary.py` inspecciona el worker x86-64 release con RPC enlazado: dispatcher de 1590 bytes, 13 llamadas resueltas y dos saltos por tabla con todos sus destinos internos. Las únicas llamadas son recursión, exp2/log2 y rutas de crecimiento/pánico; ninguna RPC/socket/syscall en el dispatcher. Falla ante control no resuelto o destinos nuevos. Evidencia: `quality/evidence/worker-hot-loop-isolation.json`. No verifica transitivamente hooks de pánico/allocators externos ni afirma residencia L1.
+- [x] 5.9 Pruebas de integración RPC. Pasan sesiones TCP persistentes, matmul vectorial, admisión y robo concurrente de pendientes; `graph_rpc_two_worker_stages_match_complete_local_graph` contrasta dos workers TCP y el DAG completo local con tres inputs y buffers. `tcp_layer_pipeline_matches_local_logits_and_preserves_causal_order` y los tests del coordinador contrastan las capas causales remotas. Evidencia: `quality/evidence/graph-rpc.json`. El `BatchRequest` legado valida dimensión y longitud exacta antes de ejecutar; pruebas TCP de carga/ACK, vector sin capas, todos los truncamientos y bytes sobrantes en `quality/evidence/worker-batch-protocol.json`. La carga legacy ahora restaura config desde header y valida formas/rangos antes de aceptar shards: C68, trece pruebas del worker y evidencia `quality/evidence/legacy-shard-loading.json`.
 - [ ] 5.10 Pruebas de estrés finales en entorno cloud. (**Deferred**: requires cloud environment and bare metal PMU. Current environment lacks both.)
-- [x] 5.11 Validar hito: runtime ejecuta `.bmlgraph` correctamente, hot loop < 32 KB confirmado. (RPC y cloud deferidos.)
+- [ ] 5.11 Validar hito completo: ejecución `.bmlgraph`, tamaño real del hot loop, RPC y pruebas cloud. Las pruebas actuales no acreditan todos estos contratos.
 
 ## 6. Cierre del Change
 
 - [x] 6.1 `cargo test --workspace` pasa (bml-domain, bml-parser, bml-compiler, bml-runtime).
-- [ ] 6.2 `openspec validate bml-implementation-plan` para mover las specs delta a `openspec/specs/` principales.
-- [ ] 6.3 Actualizar `draft.md` con una nota apuntando a `openspec/specs/` como contrato funcional actual.
+- [x] 6.2 `openspec validate bml-implementation-plan --strict` pasa. La validación estructural no mueve deltas ni acredita implementación; el archivo queda pendiente hasta completar contratos.
+- [x] 6.3 Actualizar `draft.md` con una nota apuntando a `openspec/specs/` como contrato funcional actual, distinguiendo diseño histórico, cambios activos y evidencia.

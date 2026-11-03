@@ -1,0 +1,347 @@
+{
+  "schema": 1,
+  "audited_at": "2026-11-03T20:43:38.299374+00:00",
+  "scope": "Authoritative status of the interrupted replacement mutation campaign; original records preserved",
+  "status": "interrupted_incomplete_not_running",
+  "process_observation": {
+    "method": "Two /proc scans around outcome and source verification; match campaign working directories and cargo-mutants/cargo mutants launchers",
+    "matching_processes_before": [],
+    "matching_processes_after": []
+  },
+  "recorded_status_is_stale": "running",
+  "interruption_evidence": {
+    "log_tail": "Error: interrupted",
+    "outcomes_end_time": null,
+    "normal_completion_recorded": false,
+    "launcher_exit_code": null,
+    "launcher_exit_code_reason": "No terminal launcher exit record was preserved; absence of a process and interruption log do not establish a numeric exit code.",
+    "debug_last_modified_utc": "2026-11-03T16:40:40.194984+00:00",
+    "unfinished_scenarios": [
+      {
+        "name": "crates/compiler/src/graph_directory.rs: replace Cursor<'a>::length -> Result<usize, String> with Ok(1)",
+        "phase": "Test"
+      },
+      {
+        "name": "crates/compiler/src/graph_directory.rs: replace Cursor<'a>::finish -> Result<(), String> with Ok(())",
+        "phase": "Build"
+      }
+    ]
+  },
+  "source": {
+    "head_commit": "6a3e6cca0912db36d30c5cc5099174583dd890bd",
+    "base_commit": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+    "snapshot": "target/delivery-snapshots/global-quality-restart-6a3e6cc",
+    "source_snapshot_sha256": "e997a84452ee5599858c081c41b6bb21b24c44768e0a30c5459fe32484d498a4",
+    "files": 532,
+    "snapshot_files_verified_now": true,
+    "snapshot_source_mismatches": []
+  },
+  "campaign": {
+    "cargo_mutants_version": "27.1.0",
+    "started": "2026-11-03T14:33:24.841572844Z",
+    "command": [
+      "cargo",
+      "mutants",
+      "--workspace",
+      "--cargo-arg=--locked",
+      "--test-workspace",
+      "true",
+      "--jobs",
+      "2",
+      "--timeout",
+      "60",
+      "--build-timeout",
+      "300",
+      "--in-diff",
+      "/home/dev/Work/bml/target/quality/global-restart-changes.diff",
+      "--output",
+      "/home/dev/Work/bml/target/spec-mutations-restart-6a3e6cc"
+    ],
+    "candidate_count": 3025,
+    "completed_mutant_outcomes": 423,
+    "candidates_without_terminal_outcome": 2602,
+    "completed_outcomes": {
+      "CaughtMutant": 355,
+      "Unviable": 26,
+      "MissedMutant": 31,
+      "Timeout": 11
+    },
+    "baseline": "Success",
+    "completed_outcome_entries_including_baseline": 424,
+    "exclusions": "none"
+  },
+  "unresolved_completed_outcomes": [
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/main.rs:478:34: replace && with || in run_text_model",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__main.rs_line_478_col_34.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__main.rs_line_478_col_34.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/main.rs:478:21: replace < with <= in run_text_model",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__main.rs_line_478_col_21_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__main.rs_line_478_col_21_002.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/main.rs:478:17: replace + with * in run_text_model",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__main.rs_line_478_col_17_001.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__main.rs_line_478_col_17_001.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/main.rs:478:70: replace < with <= in run_text_model",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__main.rs_line_478_col_70_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__main.rs_line_478_col_70_002.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/main.rs:566:52: replace < with <= in run_from_gguf",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__main.rs_line_566_col_52_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__main.rs_line_566_col_52_002.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/main.rs:601:5: replace distribute with ()",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__main.rs_line_601_col_5.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__main.rs_line_601_col_5.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/main.rs:857:20: replace != with == in distribute",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__main.rs_line_857_col_20.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__main.rs_line_857_col_20.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/main.rs:949:52: replace < with <= in run_from_gguf_bml",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__main.rs_line_949_col_52_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__main.rs_line_949_col_52_002.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/main.rs:968:20: replace match guard !ids.is_empty() with true in encode_prompt",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__main.rs_line_968_col_20.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__main.rs_line_968_col_20.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/bml_inference.rs:94:5: replace bml_swiglu -> Vec<f64> with vec![]",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__bml_inference.rs_line_94_col_5.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__bml_inference.rs_line_94_col_5.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/bml_inference.rs:154:21: replace || with && in project",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__bml_inference.rs_line_154_col_21.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__bml_inference.rs_line_154_col_21.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/weights.rs:25:23: replace match guard error.kind() == std::io::ErrorKind::UnexpectedEof with true in is_container",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__weights.rs_line_25_col_23.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__weights.rs_line_25_col_23.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/weights.rs:25:23: replace match guard error.kind() == std::io::ErrorKind::UnexpectedEof with false in is_container",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__weights.rs_line_25_col_23_001.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__weights.rs_line_25_col_23_001.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/cli/src/weights.rs:25:36: replace == with != in is_container",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__cli__src__weights.rs_line_25_col_36.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__cli__src__weights.rs_line_25_col_36.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/causal_artifact.rs:102:28: replace + with * in read_bounded",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__causal_artifact.rs_line_102_col_28_001.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__causal_artifact.rs_line_102_col_28_001.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/causal_artifact.rs:118:14: replace > with == in required_projections",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__causal_artifact.rs_line_118_col_14.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__causal_artifact.rs_line_118_col_14.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/causal_artifact.rs:118:14: replace > with >= in required_projections",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__causal_artifact.rs_line_118_col_14_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__causal_artifact.rs_line_118_col_14_002.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/causal_artifact.rs:143:29: replace || with && in required_projections",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__causal_artifact.rs_line_143_col_29.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__causal_artifact.rs_line_143_col_29.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/causal_artifact.rs:176:37: replace > with >= in compile_directory",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__causal_artifact.rs_line_176_col_37_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__causal_artifact.rs_line_176_col_37_002.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/causal_artifact.rs:218:20: replace > with >= in compile_directory",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__causal_artifact.rs_line_218_col_20_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__causal_artifact.rs_line_218_col_20_002.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/causal_artifact.rs:249:9: replace || with && in load_directory",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__causal_artifact.rs_line_249_col_9.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__causal_artifact.rs_line_249_col_9.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/distributed.rs:443:20: replace > with >= in load_distributed_fragment",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__distributed.rs_line_443_col_20_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__distributed.rs_line_443_col_20_002.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/distributed.rs:447:36: replace || with && in load_distributed_fragment",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__distributed.rs_line_447_col_36.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__distributed.rs_line_447_col_36.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/distributed.rs:447:14: replace > with == in load_distributed_fragment",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__distributed.rs_line_447_col_14.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__distributed.rs_line_447_col_14.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/distributed.rs:447:14: replace > with >= in load_distributed_fragment",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__distributed.rs_line_447_col_14_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__distributed.rs_line_447_col_14_002.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/distributed.rs:447:45: replace > with == in load_distributed_fragment",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__distributed.rs_line_447_col_45.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__distributed.rs_line_447_col_45.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/distributed.rs:447:45: replace > with >= in load_distributed_fragment",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__distributed.rs_line_447_col_45_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__distributed.rs_line_447_col_45_002.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/distributed.rs:470:96: replace / with * in load_distributed_fragment",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__distributed.rs_line_470_col_96_001.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__distributed.rs_line_470_col_96_001.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/distributed.rs:520:40: replace > with >= in load_distributed_header",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__distributed.rs_line_520_col_40_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__distributed.rs_line_520_col_40_002.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/distributed.rs:907:5: replace compile_distributed_bml -> Result<(Vec<DistributedFragment>, BmlWeightPool), String> with Ok((vec![], Default::default()))",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__distributed.rs_line_907_col_5.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__distributed.rs_line_907_col_5.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/fragment.rs:424:26: replace > with == in BmlGraph::deserialize_with_limits",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__fragment.rs_line_424_col_26.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__fragment.rs_line_424_col_26.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/fragment.rs:424:26: replace > with >= in BmlGraph::deserialize_with_limits",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__fragment.rs_line_424_col_26_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__fragment.rs_line_424_col_26_002.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/gguf_compiler.rs:131:13: delete match arm Some(GgufMetadataValue::U64(v)) in read_model_config",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__gguf_compiler.rs_line_131_col_13.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__gguf_compiler.rs_line_131_col_13.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/gguf_compiler.rs:133:13: delete match arm Some(GgufMetadataValue::I64(v)) in read_model_config",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__gguf_compiler.rs_line_133_col_13.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__gguf_compiler.rs_line_133_col_13.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/gguf_compiler.rs:622:28: replace || with && in InferenceCompiler::from_parser_storage",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__gguf_compiler.rs_line_622_col_28.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__gguf_compiler.rs_line_622_col_28.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/gguf_compiler.rs:632:36: replace == with != in InferenceCompiler::from_parser_storage",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__gguf_compiler.rs_line_632_col_36.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__gguf_compiler.rs_line_632_col_36.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/gguf_compiler.rs:656:44: replace && with || in InferenceCompiler::from_parser_storage",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__gguf_compiler.rs_line_656_col_44.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__gguf_compiler.rs_line_656_col_44.log"
+    },
+    {
+      "result": "MissedMutant",
+      "name": "crates/compiler/src/gguf_compiler.rs:851:9: replace InferenceCompiler::use_artifact_vocabulary with ()",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__gguf_compiler.rs_line_851_col_9.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__gguf_compiler.rs_line_851_col_9.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/gguf_compiler.rs:1261:32: replace || with && in InferenceCompiler::project_checked",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__gguf_compiler.rs_line_1261_col_32.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__gguf_compiler.rs_line_1261_col_32.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/graph_directory.rs:39:18: replace > with < in Cursor<'a>::take",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__graph_directory.rs_line_39_col_18_001.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__graph_directory.rs_line_39_col_18_001.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/graph_directory.rs:39:18: replace > with >= in Cursor<'a>::take",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__graph_directory.rs_line_39_col_18_002.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__graph_directory.rs_line_39_col_18_002.log"
+    },
+    {
+      "result": "Timeout",
+      "name": "crates/compiler/src/graph_directory.rs:50:9: replace Cursor<'a>::length -> Result<usize, String> with Ok(0)",
+      "diff_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/diff/crates__compiler__src__graph_directory.rs_line_50_col_9.diff",
+      "log_path": "target/spec-mutations-restart-6a3e6cc/mutants.out/log/crates__compiler__src__graph_directory.rs_line_50_col_9.log"
+    }
+  ],
+  "global_gate_approved": false,
+  "limitations": [
+    "Only 423 of 3025 candidates have completed outcomes. The 2602 remaining include interrupted scenarios and candidates never completed; they are not passes.",
+    "31 missed mutants and 11 timeouts remain unresolved for this snapshot. Timeouts do not establish detection.",
+    "This campaign covers the frozen 6a3e6cc worktree snapshot; subsequent commits and current dirty-tree changes are outside its proof scope.",
+    "The original execution record still says running, but no associated process exists and the terminal diagnostic says interrupted. No restart or continuation was attempted.",
+    "No source code, historical quality baseline, original execution record, candidate list or original outcome file was changed."
+  ],
+  "artifact_sha256": {
+    "target/quality/global-restart-mutation-execution.json": "12eb19fc59fc3f44845b731daa8b1c1e0ad0c48735de039f78c3a29fe9f76e14",
+    "quality/evidence/global-quality-restart-2026-11-03.json": "78394b96be8b897a3fae851a9b5fe04b7d84fc5594f5356686fa5f8cb8889118",
+    "target/quality/global-restart-source-manifest.json": "d354c4a28908d05ff294da322c8c5f75bc1ef876da269a46c1ed8662cf25e670",
+    "target/quality/global-restart-candidates.json": "af48f5d6362069def2ed84d8abf7fdcfc54472735eb3458d0e76cb54c4d60d44",
+    "target/quality/global-restart-changes.diff": "f8d5ac86d788136b242a8c94b0bd1973795bac1830b57c5c6ea142af0e18bbbb",
+    "target/spec-mutations-restart-6a3e6cc/mutants.out/outcomes.json": "2f7f0e6047b160a9148861ea71e505fc9f16dab483cb44e806723f9228915214",
+    "target/spec-mutations-restart-6a3e6cc/mutants.out/mutants.json": "af48f5d6362069def2ed84d8abf7fdcfc54472735eb3458d0e76cb54c4d60d44",
+    "target/spec-mutations-restart-6a3e6cc/mutants.out/debug.log": "b295e84c04cb2d42c0aa21eef691498c2829b7ece32e57b6e240bddd5d9ca20c",
+    "target/spec-mutations-restart-6a3e6cc/mutants.out/lock.json": "851c6502cb58d18f9c21698a80d99b0a6ed1aae24c525eceaaec21095be3b784",
+    "target/quality/global-restart-mutations.log": "ab3998d5d6d1e632b84fa1e1a9df03ed11236383c984d2dcb8d17fc321d5655d"
+  }
+}

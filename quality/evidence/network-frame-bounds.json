@@ -1,0 +1,22 @@
+{
+  "contract": "Bound incoming legacy TCP payloads before allocation; explicit larger-budget override",
+  "default_bytes": 67108864,
+  "worker_flag": "--max-message-bytes",
+  "tests": [
+    "net::tests::frame_budget_rejects_header_before_body_and_accepts_exact_limit",
+    "connection_tests::configured_frame_limit_closes_oversized_session_before_reading_body"
+  ],
+  "source_sha256": {
+    "crates/runtime/src/net.rs": "6d9efc1c2190945e7449f459d4aef697fc5ba9d5b1342c7a9926affe4c417ca0",
+    "crates/worker/src/main.rs": "c3c962b9cd19cd29e03bdf9e6efe97b4e9e1a0a37c396264d22d27ad4f4cef81"
+  },
+  "scope": "Framing/resource validation only; does not establish complete distributed graph execution or legacy layer equivalence.",
+  "validation": {
+    "gate": "./scripts/check.sh origin/master",
+    "status": "passed",
+    "log": "target/quality/spec-frame-gate.log",
+    "clippy_new": 0,
+    "traceability": "44/44",
+    "cli": "Missing, zero, nonnumeric and overflowing byte budgets exit 2 before listening; --help documents override"
+  }
+}

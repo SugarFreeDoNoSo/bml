@@ -30,6 +30,11 @@ corrección matemática, representación de datos y rendimiento medido.
 
 ## Estado y entrada al proyecto
 
+Para probar las funcionalidades una por una en un cuaderno HTML editable, ejecuta
+`python3 sandbox/server.py` y abre `http://127.0.0.1:8765`.
+Las ediciones se guardan en archivos auxiliares ignorados por Git.
+Véase [el laboratorio local](sandbox/README.md).
+
 La primera etapa de la reorganización incorpora términos cerrados/abiertos,
 sustitución parcial y evaluación real comprobada en `bml_domain::symbolic`.
 Esta etapa corrige los seis contratos auditados del compilador, parser y runtime.
@@ -42,7 +47,7 @@ y controles de calidad en [QUALITY.md](docs/QUALITY.md).
 - [Arquitectura, contratos y migración](docs/architecture/TENSOR_LIBRARY.md).
 - [Revisión reproducible: seis discrepancias funcionales](docs/architecture/REVIEW_2026-09-20.md).
 - [Estrategia de tests y benchmarks](docs/TESTING.md).
-- [Cambio OpenSpec y tareas pendientes](openspec/changes/tensor-library-foundation/proposal.md).
+- [Foundation completada y archivada](openspec/changes/archive/2026-11-03-tensor-library-foundation/tasks.md).
 
 ## Operadores y alcance matemático
 

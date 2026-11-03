@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "scope": "Bounded exactly-once payload destruction across SegQueue retirement and final handle destruction",
+  "generator": "tools/probe_segmented_work_loom.py",
+  "models": "tools/loom/segmented_work_slots.rs",
+  "models_sha256": "342a4b874f744eb34fc8f06f8608febad8f7be9d78eb1b9fcd17eeb2aa96c502",
+  "upstream_sha256": "f4d2e9500ef31a31883075c3b151b8538fa664422e15e1c2fa9045b329aec270",
+  "bounds": {"preemptions": 2, "max_branches": 10000},
+  "new_models": [
+    "drop_once_across_retirement_and_abandoned_tail: competing consumers drain the first segment; the final handle destroys three pending tail payloads; each ID has exactly one Drop",
+    "popped_payload_survives_queue_destruction: dropping the queue destroys only pending data, while the extracted value remains owned by its consumer"
+  ],
+  "runs": [
+    {"directory": "target/quality/segmented-drop-small", "generation_options": "--lap 4", "exit_code": 0, "passed": 5, "source_sha256": "1f90d15853b9455d26bb922f52fe1ddd2cb563dc4440c1ced8a18194767e4e8d", "log_sha256": "b2a0ddc412ed17126ea76743420c294fd62dcd0ca506d37027633273b8cf5df6"},
+    {"directory": "target/quality/segmented-drop-native", "generation_options": "--lap 32", "exit_code": 0, "passed": 5, "source_sha256": "e599b3ae5d6fdb244725b76d72624276dbc76704ed1796d67e9b3488990356b4", "log_sha256": "fcd21c5acf7a6814404df1d2300bfda205d41878fe402492d65b378d7f5e1d60"},
+    {"directory": "target/quality/segmented-drop-negative", "generation_options": "--lap 4 --omit-payload-drop", "exit_code": 101, "failed": 1, "source_sha256": "af152cbdd3f5f8ce3d7129bac10d0ec5081e28980207fd35af0b339c2af55d54", "log_sha256": "9e6c937ecc1ac996fa7c1097648fe03aabe5f6f09c05760b3ae06cc41de7d154"}
+  ],
+  "commands": "Generate with the listed options from cached crossbeam-queue 0.3.13; cargo generate-lockfile --offline --manifest-path <directory>/Cargo.toml; cargo test --manifest-path <directory>/Cargo.toml --offline --locked --lib. Negative control filters slots::drop_once_across_retirement_and_abandoned_tail -- --exact. DEV/TEST DEBUG=0, CARGO_INCREMENTAL=0.",
+  "negative_diagnostic": "assertion failed: payload was not destroyed",
+  "interpretation": "Positive generated algorithm source hashes match the earlier reviewed probes. Only test coverage and a deliberately broken destructor option were added. Payload counters establish exactly-once Drop in these scenarios, not complete segment allocation/deallocation accounting.",
+  "task_9_2_closed": false,
+  "remaining": "Segment reclamation accounting and negative controls, followed by reviewed isolated integration of WorkQueue/WorkStealer. No general liveness claim."
+}

@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T15:46:46.414160+00:00",
+  "scope": "Historical native SwiGLU and final weighted RMSNorm; no AST/EML contract change",
+  "source_sha256": {
+    "crates/compiler/src/gguf_compiler.rs": "17f597a57a4f75a3f647baf6a3bacd72b1365cb8ccb5fc7fd10aef2fa9788dc8",
+    "crates/compiler/tests/inference_contracts.rs": "48bf7d581005588fc77150b88bf2d4dc848cd71ac4cda18b91ebea5671de588d",
+    "crates/cli/src/bml_inference.rs": "ec784be9957a5fb318c36dc705258c8a19a315e803c2e2119ee05c76ea6e77e7",
+    "openspec/changes/fix-placeholders/specs/real-inference/spec.md": "a7ab785ff5bc6d2e8b4378e60fdbbd4995c9c4e0032676100a38403027b3d199"
+  },
+  "contract": "C49",
+  "checks": [
+    {
+      "command": "cargo test -p bml-compiler --test inference_contracts --locked",
+      "status": "passed",
+      "log": "target/quality/spec-legacy-norm.log",
+      "log_sha256": "cc3c872fb295fc6929f7512f98c97e6d52193ea01157ec1e6f5814bcbd77ea8a"
+    },
+    {
+      "command": "cargo test -p bml-cli --lib --locked",
+      "status": "passed",
+      "log": "target/quality/spec-legacy-native-blocks.log",
+      "log_sha256": "e40458802e2a63365d2ed5eace072fd8ea4c9950dbe6b3a877221ebc621de31e"
+    },
+    {
+      "command": "./scripts/check.sh origin/master",
+      "status": "passed",
+      "log": "target/quality/spec-legacy-norm-gate.log",
+      "log_sha256": "e29842062be784b8610643230793a8daa4d3b1e7adbaf4f6ec82b0673731eea6"
+    },
+    {
+      "command": "python3 tools/quality.py trace",
+      "status": "passed",
+      "log": "target/quality/spec-legacy-norm-trace.log",
+      "log_sha256": "93133188e2725ba6db4296698416fb955b52e0132f739e836f4c788143a0854d"
+    },
+    {
+      "command": "openspec validate fix-placeholders --strict",
+      "status": "passed",
+      "log": "target/quality/spec-legacy-norm-openspec.log",
+      "log_sha256": "618d5929158587dda9f9e821dd627ace143751e0351dfe2e8486401b0f97827c"
+    }
+  ],
+  "independent_answers": {
+    "swiglu": "gate=+/-ln(2), up=3 => 2*ln(2), -ln(2); negative up, signed zero and saturation also covered",
+    "final_norm": "hidden=[3,4], weights=[2,-0.5], epsilon=3.5, identity output => logits=[1.5,-0.5]",
+    "execution": "Both cached and uncached paths, repeated decode, unchanged embedding storage",
+    "rejections": "Nonpositive/nonfinite/wrong-type epsilon; invalid final-norm shape, nonfinite weights or missing norm with nonzero layers"
+  },
+  "limitations": [
+    "Zero-layer projection-only fixtures may omit final norm; they do not certify a full Llama model.",
+    "Historical tokenizer/BOS, causal execution and CLI detokenization remain pending.",
+    "No new full TinyLlama run or inference-parity claim.",
+    "Symbolic graph construction still has separate unfinished semantics."
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "measured_at_utc": "2026-11-02T14:22:14.079640+00:00",
+  "revision": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+  "worktree_dirty": true,
+  "compiler": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "build_command": [
+    "cargo",
+    "build",
+    "-p",
+    "bml-runtime",
+    "--example",
+    "hot_loop_probe",
+    "--release",
+    "--locked",
+    "--config",
+    "profile.release.strip=false",
+    "--message-format=json"
+  ],
+  "extra_flags": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null
+  },
+  "probe_output": "hot-loop probe: 2",
+  "executable_sha256": "9cff1b12505401c0a5c65dc6ac9079b269a2c885433071f8e8bb4f5fd3362875",
+  "source_sha256": {
+    "crates/runtime/src/hot_loop.rs": "59a2cc5a4acf205ced286173dda96961169ab49128cefc14034c4dc55193a6b9",
+    "crates/runtime/examples/hot_loop_probe.rs": "685a3a91b02d43052cfd37a602e8e1457f3e43ddffc843c5dff99941a7932aec",
+    "crates/runtime/src/buffer.rs": "9c4bbf464e9da78b1b70d93d4b451b7eb613ed95d2edc9ae6688f6d9c09a9c65",
+    "Cargo.toml": "d605ba8a81c7ccc7c669ce944a5e61d9e03382c50ce5302d872ded02748f6722",
+    "Cargo.lock": "853adb81522037b1a23cfc5618f109e843e662e6e86c73c7bce75a3b6285551b",
+    "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1",
+    "tools/measure_hot_loop.py": "a1cda988618291929ec5d17a5a4b3862e0e8fd7659ce5fde7369b4954850f1fb"
+  },
+  "symbols": [
+    {
+      "symbol": "_RNvNtCsg22QrmG4Iuz_11bml_runtime8hot_loop12dispatch_ops",
+      "address": 66784,
+      "bytes": 1411
+    }
+  ],
+  "total_dispatch_symbol_bytes": 1411,
+  "threshold_bytes": 32768,
+  "dispatch_symbols_below_threshold": true,
+  "scope": "Linked probe, release optimization and fat LTO; stripping disabled solely to retain symbols. Counts only retained dispatch_ops symbols, not inlined copies, transitive callees, jump-table data, network code isolation, cache residency or instruction-cache misses.",
+  "disassembly": "target/quality/hot-loop-probe.asm",
+  "disassembly_sha256": "7fe8e237f789a4715bee9969fee2a416a5ea5f29e04f6c30ce0bbf6ec64da7e4",
+  "pmu": {
+    "status": "not_measured",
+    "reason": "This tool measures static symbol sizes only"
+  },
+  "network_linkage": {
+    "network_symbols": [],
+    "no_network_symbols_in_linked_probe": true,
+    "symbol_table_sha256": "9b4bc9f14c6a1a1ec3ceaa6dabd9d122f00ec8a112497896cc577468d50ae502",
+    "dynamic_symbol_table_sha256": "bdae5c7b29174c7c10c0598998ca5a1e836de4dc5cfd8d1788b3ee4f7ee5000b",
+    "scope": "Scans the complete unstripped probe and its dynamic imports. This establishes that the standalone hot-loop probe does not link named RPC/socket routines. It does not establish transitive call isolation in the worker/server executable, exclude raw syscalls, or measure instruction-cache residency."
+  }
+}

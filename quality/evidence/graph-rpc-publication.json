@@ -1,0 +1,26 @@
+{
+  "contracts": [
+    "C48",
+    "implementation-plan 5.7"
+  ],
+  "implementation": "Atomic reservation of scalar plus full RPC buffer in fresh immutable-after-publication slots; capacity failure preserves the complete received result for local publication retry.",
+  "validation": {
+    "native_log": "target/quality/spec-graph-publication.log",
+    "codec_log": "target/quality/spec-graph-publication-codec.log",
+    "loom_log": "target/quality/spec-graph-publication-loom.log",
+    "loom_tests": 4,
+    "loom_status": "passed; actual storage atomics instrumented",
+    "gate_status": "passed",
+    "gate_log": "target/quality/spec-graph-publication-gate.log",
+    "traceability": "48/48",
+    "clippy_new": 0,
+    "openspec": "bml-implementation-plan --strict passed"
+  },
+  "source_sha256": {
+    "crates/runtime/src/append_only.rs": "ee575fcf217232c15b2172d7a720ea250c579246715ded4d2e9560b0f0463431",
+    "crates/runtime/src/graph_rpc.rs": "6218ee9369072d3b39d2159eefd608442d4ae9f94b9c5f4c4ea3fabd9aee0a7e",
+    "crates/runtime/tests/graph_rpc_contracts.rs": "93d7b5de3a7193f69b4d605089b920e6ef066da404d6ded9005a1c15458a15de",
+    "crates/worker/src/main.rs": "e15deca93d9c6d32b4b11ac6134d2aabcc372481547599b37cc74f030246041d"
+  },
+  "scope": "Range reservation is atomic; per-cell release/acquire publication is not a multi-value atomic snapshot. Returned descriptors identify fully published records. Does not claim Crossbeam queue/deque Loom coverage or automatic retry of ambiguous RPCs."
+}

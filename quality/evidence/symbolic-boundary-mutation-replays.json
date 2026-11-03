@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "tool": "cargo-mutants 27.1.0",
+  "scope": "Followup regressions for current full-campaign survivors in symbolic kernel signatures and artifact loading. Not a replacement for the full workspace campaign.",
+  "kernels": {
+    "test": "crates/compiler/tests/symbolic_kernel_boundaries.rs",
+    "test_sha256": "453debd72eb1d1281817b6390eb6b1a5ad5256a9a3b2bcf372e2c83e86dd0f80",
+    "filter": "symbolic_kernels.rs:(56|57|58|213):",
+    "contracts": ["Fixed operation widths reject all other tested widths", "A fragment must fit one opcode, with an inclusive lower boundary"],
+    "caught": 12,
+    "missed": 0,
+    "timeout": 0,
+    "unviable": 0,
+    "report": "target/spec-kernel-boundaries-2026-11-03/mutants.out/outcomes.json",
+    "report_sha256": "8898869b80ea00362cc42ee721c8857d83c94689ae2c5f17b898b230b4dfb33d"
+  },
+  "loader": {
+    "test": "crates/compiler/tests/symbolic_artifact_contracts.rs",
+    "test_sha256": "4e3562c88251e0258b79817a687941126f29f9f326c2f2863c1b81626e12786f",
+    "filter": "symbolic_artifact.rs:(269|270|371):",
+    "contracts": ["Fragment limits reject invalid sizes before program loading", "Both size boundaries are inclusive", "The artifact loader itself rejects native opcodes independently of runtime validation"],
+    "first_run": {
+      "caught": 9,
+      "missed": 1,
+      "timeout": 0,
+      "unviable": 0,
+      "report": "target/spec-artifact-loader-boundaries-2026-11-03/mutants.out.old/outcomes.json",
+      "report_sha256": "4edb0ae58e11b44b3aca2f556692d193968842b380da442fd1b3e0b52be87cc9"
+    },
+    "followup": {
+      "change": "Added a genuinely compiled artifact whose fragment threshold is exactly one opcode; replayed the surviving < to <= mutation with --iterate.",
+      "caught": 1,
+      "missed": 0,
+      "timeout": 0,
+      "unviable": 0,
+      "report": "target/spec-artifact-loader-boundaries-2026-11-03/mutants.out/outcomes.json",
+      "report_sha256": "39b86310ca58ec1d02064e0674f899fade0b5e3fb902b7d43ff3b799c956b21e"
+    }
+  },
+  "verification": {
+    "command": "./scripts/check.sh origin/master",
+    "exit_code": 0,
+    "log": "target/quality/spec-symbolic-boundaries-gate-2026-11-03.log",
+    "log_sha256": "93652dd88d6825ecc7d29b093b03b2779e53bc327dc4eda00caf1a91454197c1",
+    "rust_tests_passed": 613,
+    "historical_discrepancies": 0,
+    "traceability": "71/71",
+    "new_clippy_diagnostics": 0
+  }
+}

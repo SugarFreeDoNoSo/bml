@@ -1,0 +1,75 @@
+{
+  "source": "crates/worker/src/main.rs",
+  "source_sha256": "bb032d76825b1429e902235d9bca445a7ee9076e0e870a8049d1ba8eee04f124",
+  "command": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "target/worker-mutation-replay/Cargo.toml",
+    "--locked",
+    "fragment_decoder"
+  ],
+  "scope": "Exact decoder operator replay on isolated current worker source; dependency versions match workspace lockfile",
+  "results": [
+    {
+      "name": "baseline",
+      "before": null,
+      "after": null,
+      "status": "passed",
+      "exit_code": 0,
+      "log": "target/quality/spec-worker-replay-baseline.log",
+      "log_sha256": "79b407e9b6d9a39ae61956c8c1f7bf5217de44efe16dcfa168c184beffca4c62"
+    },
+    {
+      "name": "layer_gt_to_eq",
+      "before": "layer_start > layer_end",
+      "after": "layer_start == layer_end",
+      "status": "caught",
+      "exit_code": 101,
+      "log": "target/quality/spec-worker-replay-layer_gt_to_eq.log",
+      "log_sha256": "86942b71fcea8c6962fd3e03790a29ee7bdf2f0b14082d5634c71977e97db15d"
+    },
+    {
+      "name": "layer_gt_to_ge",
+      "before": "layer_start > layer_end",
+      "after": "layer_start >= layer_end",
+      "status": "caught",
+      "exit_code": 101,
+      "log": "target/quality/spec-worker-replay-layer_gt_to_ge.log",
+      "log_sha256": "dc3bc0e36da2732b2c18a4fc47b9bff3abb0396b33952539737782cd78bb7e7a"
+    },
+    {
+      "name": "metadata_div_to_rem",
+      "before": "bytes.len() / 20",
+      "after": "bytes.len() % 20",
+      "status": "caught",
+      "exit_code": 101,
+      "log": "target/quality/spec-worker-replay-metadata_div_to_rem.log",
+      "log_sha256": "7797347b9dca01865508e1e3f7b3fd4b88a024818819848a502809311623838d"
+    },
+    {
+      "name": "metadata_div_to_mul",
+      "before": "bytes.len() / 20",
+      "after": "bytes.len() * 20",
+      "status": "caught",
+      "exit_code": 101,
+      "log": "target/quality/spec-worker-replay-metadata_div_to_mul.log",
+      "log_sha256": "1b6810c262dd0acb26cb83ef4795df67742134b7d9452838282009006c97904a"
+    }
+  ],
+  "limitations": [
+    "Focused decoder tests only; not a full current-workspace mutation campaign.",
+    "Early rejection is verified by its diagnostic before individual entry parsing; peak allocation is not instrumented.",
+    "No exclusions or threshold changes."
+  ],
+  "dependency_lock": "target/worker-mutation-replay/Cargo.lock",
+  "validation": {
+    "canonical_gate": "target/quality/spec-worker-mutation-gate.log",
+    "openspec": "target/quality/spec-worker-mutation-openspec.log"
+  },
+  "validation_sha256": {
+    "canonical_gate": "614c4a9ffd71ab60c79d22c859fd23688e9f712bc3ed9e74b8722c82d8c49a29",
+    "openspec": "d485b9428cb9ee203a5e683375d42d0def5fe3e3b69ee8856c98ebd301b6524b"
+  },
+  "dependency_lock_sha256": "ace52c12c63cf99c145551754a22839f6480e408bd4ab073b9bf99d7a8e62a23"
+}

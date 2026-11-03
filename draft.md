@@ -1,5 +1,12 @@
 # **Mapa de Requerimientos y Arquitectura: Proyecto BML**
 
+> Estado del documento: diseño histórico. El contrato funcional mantenido está en
+> [`openspec/specs/`](openspec/specs/); las ampliaciones todavía en desarrollo y
+> sus pendientes están en [`openspec/changes/`](openspec/changes/). Las afirmaciones
+> de implementación deben contrastarse con [`docs/BML_1_0.md`](docs/BML_1_0.md),
+> [`docs/QUALITY.md`](docs/QUALITY.md) y la evidencia de `quality/evidence/`.
+> Este mapa no acredita por sí solo exactitud, rendimiento ni residencia en L1.
+
 Este documento define las reglas estrictas de diseño, arquitectura e implementación para el compilador y motor de ejecución **BML** en Rust. El objetivo principal es construir un sistema funcionalmente completo basado en el operador BML, optimizado de forma extrema para la jerarquía de memoria del procesador (específicamente la Caché L1).
 
 ## **1\. Definición del Dominio Matemático (BML Core)**

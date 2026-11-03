@@ -1,0 +1,1330 @@
+{
+  "schema": 1,
+  "measured_at_utc": "2026-11-02T14:32:25.151216+00:00",
+  "command": [
+    "cargo",
+    "run",
+    "-p",
+    "bml-compiler",
+    "--example",
+    "recurrence_metrics",
+    "--release",
+    "--locked"
+  ],
+  "revision": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+  "worktree_dirty": true,
+  "compiler": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+  "flags": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null
+  },
+  "hardware": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           40 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  2\nOn-line CPU(s) list:                     0,1\nVendor ID:                               GenuineIntel\nModel name:                              Intel Xeon Processor (Cascadelake)\nCPU family:                              6\nModel:                                   85\nThread(s) per core:                      2\nCore(s) per socket:                      1\nSocket(s):                               1\nStepping:                                6\nBogoMIPS:                                5985.93\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm cpuid_fault ssbd ibrs ibpb ibrs_enhanced fsgsbase bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq clflushopt clwb avx512cd avx512bw avx512vl xsaveopt arat pku ospke avx512_vnni arch_capabilities\nHypervisor vendor:                       Microsoft\nVirtualization type:                     full\nL1d cache:                               64 KiB (2 instances)\nL1i cache:                               64 KiB (2 instances)\nL2 cache:                                4 MiB (1 instance)\nL3 cache:                                16 MiB (1 instance)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0,1\nVulnerability Gather data sampling:      Unknown: Dependent on hypervisor status\nVulnerability Indirect target selection: Mitigation; Aligned branch/return thunks\nVulnerability Itlb multihit:             KVM: Mitigation: VMX unsupported\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Vulnerable: Clear CPU buffers attempted, no microcode; SMT Host state unknown\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Mitigation; Enhanced IBRS\nVulnerability Spec rstack overflow:      Not affected\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS SW sequence; BHI SW loop, KVM SW loop\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected\n",
+  "source_sha256": {
+    "crates/compiler/examples/recurrence_metrics.rs": "4dc25dc500869ee579a35e192351aaa50509870066df73968e7317e5cc0f7368",
+    "crates/compiler/benches/support/recurrence.rs": "d0d3bc85d6d19c63f13202122b069a241a929dce0a101ebb791a5bfbb67d37c6",
+    "crates/compiler/src/rpn.rs": "de9d94196934891b662560123b4b20f66d913abcb72ea064a31fd3f0633064d8",
+    "Cargo.toml": "d605ba8a81c7ccc7c669ce944a5e61d9e03382c50ce5302d872ded02748f6722",
+    "Cargo.lock": "853adb81522037b1a23cfc5618f109e843e662e6e86c73c7bce75a3b6285551b",
+    "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1",
+    "tools/measure_recurrence.py": "710bc962df6386095d5420346240f7c6e76a30f0c89a1c07676d47ba7b93dee2"
+  },
+  "scope": "Single-thread instrumented execution, 7 samples of 10 evaluations. Construction, correctness checks and JSON formatting excluded. Allocator forwards to System and counts successful calls including realloc; requested bytes include complete replacement sizes, not just growth. Peak is additional requested live heap, not RSS or allocator overhead. Bytecode/pool sizes and capacities are data, not machine-code size. Timers include allocator instrumentation. VM may have concurrent load; these are not dedicated-hardware latency or inference claims.",
+  "cases": [
+    {
+      "variant": "direct_scalar",
+      "steps": 10,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 0,
+      "constant_pool_payload_bytes": 0,
+      "program_heap_capacity_bytes": 0,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 1166,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 546,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 504,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 506,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 489,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 499,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 492,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        }
+      ]
+    },
+    {
+      "variant": "rpn_deduplicated",
+      "steps": 10,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 648,
+      "constant_pool_payload_bytes": 8,
+      "program_heap_capacity_bytes": 800,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 2672,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2498,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2534,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2485,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2469,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2488,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2547,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        }
+      ]
+    },
+    {
+      "variant": "rpn_unshared",
+      "steps": 10,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 972,
+      "constant_pool_payload_bytes": 80,
+      "program_heap_capacity_bytes": 1616,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 3271,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3236,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3196,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3217,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3219,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3208,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3200,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        }
+      ]
+    },
+    {
+      "variant": "direct_scalar",
+      "steps": 10,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 0,
+      "constant_pool_payload_bytes": 0,
+      "program_heap_capacity_bytes": 0,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 678,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 469,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 469,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 453,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 449,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 445,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 442,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        }
+      ]
+    },
+    {
+      "variant": "rpn_deduplicated",
+      "steps": 10,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 648,
+      "constant_pool_payload_bytes": 8,
+      "program_heap_capacity_bytes": 800,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 2523,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2503,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2503,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2480,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2472,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2461,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        },
+        {
+          "ns": 2463,
+          "allocation_calls": 10,
+          "requested_bytes": 4320,
+          "peak_additional_live_bytes": 432
+        }
+      ]
+    },
+    {
+      "variant": "rpn_unshared",
+      "steps": 10,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 972,
+      "constant_pool_payload_bytes": 80,
+      "program_heap_capacity_bytes": 1616,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 3232,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3194,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3197,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3186,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3187,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3162,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        },
+        {
+          "ns": 3184,
+          "allocation_calls": 10,
+          "requested_bytes": 6480,
+          "peak_additional_live_bytes": 648
+        }
+      ]
+    },
+    {
+      "variant": "direct_scalar",
+      "steps": 101,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 0,
+      "constant_pool_payload_bytes": 0,
+      "program_heap_capacity_bytes": 0,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 4023,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3879,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3887,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3864,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3858,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3851,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3851,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        }
+      ]
+    },
+    {
+      "variant": "rpn_deduplicated",
+      "steps": 101,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 6108,
+      "constant_pool_payload_bytes": 8,
+      "program_heap_capacity_bytes": 6176,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 21447,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20624,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20776,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20587,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20692,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20561,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20608,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        }
+      ]
+    },
+    {
+      "variant": "rpn_unshared",
+      "steps": 101,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 9708,
+      "constant_pool_payload_bytes": 808,
+      "program_heap_capacity_bytes": 13096,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 28897,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 27941,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 36084,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 37715,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 29548,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 27820,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 36772,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        }
+      ]
+    },
+    {
+      "variant": "direct_scalar",
+      "steps": 101,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 0,
+      "constant_pool_payload_bytes": 0,
+      "program_heap_capacity_bytes": 0,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 3986,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3866,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3823,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3830,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3833,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3826,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 3805,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        }
+      ]
+    },
+    {
+      "variant": "rpn_deduplicated",
+      "steps": 101,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 6108,
+      "constant_pool_payload_bytes": 8,
+      "program_heap_capacity_bytes": 6176,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 20700,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20875,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20533,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20689,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20785,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20699,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        },
+        {
+          "ns": 20657,
+          "allocation_calls": 10,
+          "requested_bytes": 40720,
+          "peak_additional_live_bytes": 4072
+        }
+      ]
+    },
+    {
+      "variant": "rpn_unshared",
+      "steps": 101,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 9708,
+      "constant_pool_payload_bytes": 808,
+      "program_heap_capacity_bytes": 13096,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 28034,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 28266,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 1102094,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 28162,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 28184,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 28127,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        },
+        {
+          "ns": 28294,
+          "allocation_calls": 10,
+          "requested_bytes": 64720,
+          "peak_additional_live_bytes": 6472
+        }
+      ]
+    },
+    {
+      "variant": "direct_scalar",
+      "steps": 1000,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 0,
+      "constant_pool_payload_bytes": 0,
+      "program_heap_capacity_bytes": 0,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 36943,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36824,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36729,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36751,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36699,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36778,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36742,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        }
+      ]
+    },
+    {
+      "variant": "rpn_deduplicated",
+      "steps": 1000,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 60048,
+      "constant_pool_payload_bytes": 8,
+      "program_heap_capacity_bytes": 98336,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 208988,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 199128,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 228773,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 200726,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 208275,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 199238,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 198294,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        }
+      ]
+    },
+    {
+      "variant": "rpn_unshared",
+      "steps": 1000,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 96012,
+      "constant_pool_payload_bytes": 8000,
+      "program_heap_capacity_bytes": 106304,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 293820,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 337805,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 274165,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 279467,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 271008,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 271657,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 272176,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        }
+      ]
+    },
+    {
+      "variant": "direct_scalar",
+      "steps": 1000,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 0,
+      "constant_pool_payload_bytes": 0,
+      "program_heap_capacity_bytes": 0,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 36581,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 41206,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36355,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36325,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36392,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36400,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 36421,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        }
+      ]
+    },
+    {
+      "variant": "rpn_deduplicated",
+      "steps": 1000,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 60048,
+      "constant_pool_payload_bytes": 8,
+      "program_heap_capacity_bytes": 98336,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 199689,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 199089,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 196979,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 203653,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 197820,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 197980,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        },
+        {
+          "ns": 197300,
+          "allocation_calls": 10,
+          "requested_bytes": 400320,
+          "peak_additional_live_bytes": 40032
+        }
+      ]
+    },
+    {
+      "variant": "rpn_unshared",
+      "steps": 1000,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 96012,
+      "constant_pool_payload_bytes": 8000,
+      "program_heap_capacity_bytes": 106304,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 272083,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 277547,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 2481243,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 285638,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 271537,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 271446,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        },
+        {
+          "ns": 276696,
+          "allocation_calls": 10,
+          "requested_bytes": 640080,
+          "peak_additional_live_bytes": 64008
+        }
+      ]
+    },
+    {
+      "variant": "direct_scalar",
+      "steps": 10001,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 0,
+      "constant_pool_payload_bytes": 0,
+      "program_heap_capacity_bytes": 0,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 379204,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 365491,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 371612,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 382884,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 365278,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 370795,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 365653,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        }
+      ]
+    },
+    {
+      "variant": "rpn_deduplicated",
+      "steps": 10001,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 600108,
+      "constant_pool_payload_bytes": 8,
+      "program_heap_capacity_bytes": 786464,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 2093022,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2061790,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 1986562,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2197334,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2156723,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2042095,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2079996,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        }
+      ]
+    },
+    {
+      "variant": "rpn_unshared",
+      "steps": 10001,
+      "initial": 1,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 960108,
+      "constant_pool_payload_bytes": 80008,
+      "program_heap_capacity_bytes": 1652872,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 2782529,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 3149987,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 3192111,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 2956176,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 3078233,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 2828806,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 2864688,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        }
+      ]
+    },
+    {
+      "variant": "direct_scalar",
+      "steps": 10001,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 0,
+      "constant_pool_payload_bytes": 0,
+      "program_heap_capacity_bytes": 0,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 362787,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 371110,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 362543,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 362616,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 618084,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 380045,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        },
+        {
+          "ns": 363320,
+          "allocation_calls": 0,
+          "requested_bytes": 0,
+          "peak_additional_live_bytes": 0
+        }
+      ]
+    },
+    {
+      "variant": "rpn_deduplicated",
+      "steps": 10001,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 600108,
+      "constant_pool_payload_bytes": 8,
+      "program_heap_capacity_bytes": 786464,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 2013234,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2272144,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2312890,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2053707,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2352748,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2338787,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        },
+        {
+          "ns": 2212065,
+          "allocation_calls": 10,
+          "requested_bytes": 4000720,
+          "peak_additional_live_bytes": 400072
+        }
+      ]
+    },
+    {
+      "variant": "rpn_unshared",
+      "steps": 10001,
+      "initial": 2,
+      "absolute_error": 0,
+      "bytecode_payload_bytes": 960108,
+      "constant_pool_payload_bytes": 80008,
+      "program_heap_capacity_bytes": 1652872,
+      "iterations_per_sample": 10,
+      "samples": [
+        {
+          "ns": 2984943,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 3011743,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 2991036,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 2854370,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 2963739,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 2910631,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        },
+        {
+          "ns": 4654705,
+          "allocation_calls": 10,
+          "requested_bytes": 6400720,
+          "peak_additional_live_bytes": 640072
+        }
+      ]
+    }
+  ]
+}

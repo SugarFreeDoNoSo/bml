@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "date_utc": "2026-11-02T18:40:24.079203+00:00",
+  "requirement": "HTTP/SSE execution of the persisted symbolic AOT profile",
+  "implementation": "LocalModel selects the native, native-artifact or symbolic-artifact backend. Symbolic artifacts execute the stored programs under their compiled context cap. Per-request KV and UTF-8 buffering remain in the common request path. Ambiguous profile markers fail startup.",
+  "verification": {
+    "real_processes": true,
+    "transport": "TCP HTTP/1.1 JSON and SSE, with dechunked response parsing",
+    "fixture": "Zero-layer byte-token GGUF, symbolically compiled for 6, 3 and 2 tokens of context; requested prompt has 3 tokens.",
+    "assertions": [
+      "UTF-8 \u00e9 is identical in JSON and SSE with no prompt echo",
+      "full compiled context produces an empty completion without error",
+      "prompt exceeding compiled context yields JSON error or one SSE error terminal event",
+      "exactly one DONE and exactly one terminal event for each stream",
+      "changed stored program and updated hash change HTTP output",
+      "moved identical GGUF is accepted through --weights",
+      "mixed native and symbolic artifact markers reject startup"
+    ],
+    "server_tests": "7 unit tests and 2 real HTTP integration tests passed, including the existing native artifact path"
+  },
+  "limitations": [
+    "This fixture verifies server routing, persistence and output contracts; C64/C65 separately cover nonzero-layer causal arithmetic and AOT parity.",
+    "No large-model symbolic numerical-range or performance claim.",
+    "The distributed remote-worker path is unchanged."
+  ],
+  "source_sha256": {
+    "crates/api/src/main.rs": "6ab43e13fdf326499ee2f5d8e34103b3f684d33c73164bb54954f118434bce64",
+    "crates/api/tests/compiled_server.rs": "2b5435292a1ca3171537b5053057ad5aea5ae3ac7837fb37be5c901eb71f9baf",
+    "crates/compiler/src/symbolic_artifact.rs": "6395a62a32800aa74f2bd21c01998ba7b40c96ba3b29f533546498786a5a5ca1",
+    "crates/runtime/src/symbolic_causal.rs": "033f3876f1fe638c96be11b9c7ce7fa6b2bf1378e759708854ce22c6f28e75ad",
+    "quality/contracts.feature": "c63ab65b734139f01dafbb40273f3c8607dc12cb6c3ad042bb38a392c37db408",
+    "quality/traceability.json": "8c9d6976fc5d1c48ec23256d7b8a99281fe3d6e225c69cc7baa891e18b40b495"
+  },
+  "validation": {
+    "command": "./scripts/check.sh origin/master",
+    "toolchain": "1.98.1",
+    "cargo_locked": true,
+    "exit_code": 0,
+    "registered_contracts": "67/67",
+    "historical_discrepancies": 0,
+    "static_diagnostics": 66,
+    "baseline_diagnostics": 192,
+    "new_diagnostics": 0,
+    "log": "target/quality/spec-symbolic-server-gate.log",
+    "log_sha256": "7c89e3647ff4dad1c1af789d343599be7898f38c483e7e1d5a45ebc4e0d2d9f5",
+    "openspec": "8 passed, 0 failed; target/quality/spec-symbolic-server-openspec.log"
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T16:35:38.951145+00:00",
+  "scope": "Historical --bml CLI with actual row-bounded IEEE RPN projections and shared causal GQA/KV implementation",
+  "contracts": [
+    "C53",
+    "C52",
+    "C51"
+  ],
+  "source_sha256": {
+    "crates/compiler/src/gguf_compiler.rs": "b2576d5bf568aff45505bb8da2117454ad6290b6f9b13975f2ced0da39baec8a",
+    "crates/compiler/tests/causal_contracts.rs": "92bd5cda0e499f0eb64ef0a9674122e7baf15a6ec5d0d73e9381a6b48893cca6",
+    "crates/compiler/tests/support/causal_fixture.rs": "95f3c0cfa910b2b76b8f3e5b395b10f2eab68a05a3b0b50260f0b20de7466ad3",
+    "crates/cli/src/bml_inference.rs": "80c6e1a48d3435394b087c756d1b0413132f0f824993a500af3800d2d9af4086",
+    "crates/cli/src/main.rs": "8f1d3b38574a3501f4cae7fefc93c5e7528d9139592ccd310238edbdb2181f9e",
+    "crates/cli/tests/rpn_causal.rs": "b42220e86ee71cd3db2cbd16bed7934f9fc65497ac48ab02f29b1a6fad759df4",
+    "crates/cli/tests/token_output.rs": "fe0ea07678931dfd5babd7661ab1637d081f362703c5a0d6f8bb999cd838c788",
+    "crates/cli/tests/support/token_fixture.rs": "255d202895f5f5540ba22ac04f12e1d871f62fda822a29533b0a90ecdee9d2e5"
+  },
+  "projection": {
+    "layout": "GGUF axis zero contiguous; output row j starts at offset + j*n_in",
+    "scratch_values": "2*n_in, independent of n_out",
+    "program": "bml_dot_program: Zero, Loop(Dup, VarIndexed, Swap, VarIndexed, FMul, FAdd)",
+    "constants": "None required; scalar returned from execute_full, no StoreResult offset constants",
+    "validation": "Nonzero dimensions, exact input length, checked index arithmetic and complete weight slice; shared model caller rejects nonfinite or wrong-sized projection results"
+  },
+  "oracle": {
+    "rectangular_3_to_2": {
+      "input": [
+        2,
+        -1,
+        0.5
+      ],
+      "weights": [
+        1,
+        -2,
+        3,
+        -4,
+        5,
+        -6
+      ],
+      "weight_offset": 1,
+      "output": [
+        5.5,
+        -16
+      ]
+    },
+    "causal": "Shared independent GGUF fixture from legacy-causal-native.json: zero Q/K, uniform causal attention, two query heads and one KV head, epsilon 3; A, AB, BA, ABA closed-form logits within 1e-6",
+    "backend_parity": "Exact equality with native compiler on fixture, full-prefix and incremental",
+    "failure_retry": "Early malformed backend results and late output-head failure do not advance committed positions; retry matches fresh full prefix"
+  },
+  "cli": "Both native and --bml emit split UTF-8 byte pieces as é and stop at EOS; --bml rejects too-short capacity, stops at capacity, never truncates the prompt",
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "status": "passed",
+    "log": "target/quality/spec-rpn-causal-gate.log",
+    "sha256": "85f88fff824afbbb9dde4070868e28f919c533e6f450a3a8c30d9f89fab55587",
+    "contracts_registered": 53,
+    "static_diagnostics": 69,
+    "baseline_diagnostics": 192,
+    "new_clippy_diagnostics": 0
+  },
+  "openspec": {
+    "command": "openspec validate --all",
+    "passed": 8,
+    "failed": 0,
+    "log": "target/quality/spec-rpn-causal-openspec.log"
+  },
+  "limitations": [
+    "RPN uses native IEEE multiplication/addition, not AST/EML symbolic identities.",
+    "This evidence does not establish full TinyLlama generation or numerical parity with llama.cpp.",
+    "Shared causal attention and norms remain native arithmetic; matrix projections execute through HotLoop.",
+    "Full mutation campaign still running on an older source snapshot; no final mutation gate claimed."
+  ]
+}

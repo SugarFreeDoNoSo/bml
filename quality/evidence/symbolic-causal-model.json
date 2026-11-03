@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "date_utc": "2026-11-02T18:11:42.988449+00:00",
+  "requirement": "bml-inference-pipeline 8.6 (complete in-memory causal arithmetic; persisted/AOT symbolic compilation remains open)",
+  "profile": "Experimental F64 BML activation arithmetic with F32 KV storage; no native arithmetic fallback.",
+  "fixture": {
+    "layers": 1,
+    "embedding_width": 4,
+    "query_heads": 2,
+    "kv_heads": 1,
+    "head_dimension": 2,
+    "feed_forward_width": 4,
+    "vocabulary": 260,
+    "prefixes": [
+      [
+        69
+      ],
+      [
+        69,
+        70
+      ],
+      [
+        70,
+        69
+      ],
+      [
+        69,
+        70,
+        69
+      ]
+    ],
+    "properties": "Nonzero Q/K/V, adjacent-pair RoPE at different positions, nonzero gate/down and negative up weights, learned normalization and vocabulary projection weights."
+  },
+  "verification": {
+    "oracle": "Independent fixed-size complete model evaluator, using no production projection/normalization/rotary/attention/activation helpers; native comparison is additional evidence.",
+    "absolute_tolerance": 2e-07,
+    "mlp_sensitivity": "Independent logits with and without MLP differ by more than 1e-6 in every tested prefix.",
+    "program_policy": "Every compiled output program is checked against One/Var/Const/Bml and stack instructions; native arithmetic opcodes are rejected.",
+    "executed_families": [
+      "dot",
+      "residual_add",
+      "rms_norm",
+      "rope",
+      "scale",
+      "softmax",
+      "swiglu"
+    ],
+    "cache": "Prefill plus incremental decode matches the full-prefix oracle. A late program-budget failure leaves the committed position unchanged, and another instance with the same source successfully retries on that cache.",
+    "failure_cases": "Node/opcode/program budgets, invalid token/context/layout, and a finite native input rejected by symbolic numerical range are explicit errors."
+  },
+  "limitations": [
+    "Kernels are compiled lazily and retained in memory; no persisted symbolic AOT artifact or CLI profile is claimed.",
+    "The legacy scalar build_transformer_dag is not replaced by this work.",
+    "Only a small F32 GGUF fixture is validated; no large-model numerical stability, capacity or performance claim.",
+    "The hot loop retains IEEE semantics. Finite outputs do not certify every intermediate in the strict real domain.",
+    "The host performs embedding lookup, row decode, metadata/position constant precomputation and F32 KV storage.",
+    "Separate output programs duplicate shared DAG work; scalability remains pending."
+  ],
+  "source_sha256": {
+    "crates/runtime/src/symbolic_causal.rs": "f797986a9b5a1b43d6be59f35eb75c49d771b29b700998095ccea8aa343a6a61",
+    "crates/runtime/tests/symbolic_causal_contracts.rs": "7a9c6b4b0ceeeaccb394a2b1cbf7c5a0fd03044d6ebeeeacfc55be67a1d0931c",
+    "crates/runtime/tests/support/symbolic_fixture.rs": "8580ae11efa4f3c4ffb8f87b9b23e6a84f661534f66b1f30c3738cbe1cddb6d1",
+    "crates/compiler/src/kv_cache.rs": "4db0cf221d682e9bb72503e59b77486a63bc48e37c430d7586a22ce45304936e",
+    "quality/contracts.feature": "253fe7e54e81883955a7d438a9e2bb0cccd17c738f890354e82a3b36449b47cb",
+    "quality/traceability.json": "09f94b46c3ce950edb65e99e203143b3f7d0edf2f743fc4d45a6ba066e6d43d6"
+  },
+  "validation": {
+    "command": "./scripts/check.sh origin/master",
+    "toolchain": "1.98.1",
+    "cargo_locked": true,
+    "exit_code": 0,
+    "registered_contracts": "64/64",
+    "historical_discrepancies": 0,
+    "static_diagnostics": 66,
+    "baseline_diagnostics": 192,
+    "new_diagnostics": 0,
+    "log": "target/quality/spec-symbolic-causal-gate.log",
+    "log_sha256": "a74366bc0054c8caad6f046f7fcecacb1bd3814dbd7711df02c1a2cd5ff92379",
+    "openspec": "8 passed, 0 failed; target/quality/spec-symbolic-causal-openspec.log"
+  }
+}

@@ -3,11 +3,17 @@
 ### Requirement: Matrices con elementos Bml y formas comprobadas
 La biblioteca SHALL proporcionar una capacidad explícita de matrices cuyos
 elementos permanezcan como `Bml`, preparados durante la carga o antes del kernel,
-sin volver a sintetizarlos por cada operación. La disposición inicial SHALL ser
+sin volver a sintetizarlos por cada operación.
+
+#### Scenario: Disposición y costos de almacenamiento
+- **WHEN** se prepara el almacenamiento matricial
+- **THEN** la disposición inicial SHALL ser
 row-major y estar documentada; SHALL evaluar localidad, bloques, caché, buffers,
 memoria y asignaciones sin prometer que los payloads de `Vec<Bml>` sean contiguos.
 Constantes y valores repetidos MAY reutilizarse sin ocultar costos de preparación.
-SHALL validar dimensiones, productos de tamaños
+#### Scenario: Validación y separación de contratos numéricos
+- **WHEN** se construye una matriz simbólica
+- **THEN** se SHALL validar dimensiones, productos de tamaños
 y cantidad de elementos antes de asignar memoria. No SHALL convertir elementos
 a floats implícitamente. Los tensores IEEE `f32/f64`, sus kernels y los bloques
 GGUF existentes SHALL conservar sus contratos separados.
@@ -28,7 +34,9 @@ matricial y `hadamard` como producto elemento a elemento. Las operaciones con
 escalar SHALL definir su aplicación a cada elemento y preparar el escalar una
 vez antes del kernel. SHALL validar formas y delegar la matriz o el bloque completo
 en kernels que apliquen las operaciones simbólicas comprobadas.
-Los códigos enteros no SHALL sumarse o multiplicarse como valores matemáticos.
+#### Scenario: Errores transaccionales de operadores matriciales
+- **WHEN** se ejecuta una operación matricial simbólica
+- **THEN** los códigos enteros no SHALL sumarse o multiplicarse como valores matemáticos.
 Las operaciones SHALL retornar errores explícitos de dominio/recursos con la
 posición del fallo, preservar operandos y no entregar resultados parciales.
 `Add`/`Mul` SHALL devolver `Result` y preservar este contrato fallible.
@@ -59,7 +67,11 @@ requiera. Una API de reemplazo comprobado SHALL preservar la matriz al fallar.
 La referencia escalar SHALL iniciar una reducción no vacía con el primer producto,
 reducir los restantes de izquierda a derecha y devolver el cero simbólico en
 reducciones vacías. SHALL aplicar límites por elemento y al conjunto
-de la operación, incluyendo intermediarios y duplicación de subárboles. Cambiar
+de la operación, incluyendo intermediarios y duplicación de subárboles.
+
+#### Scenario: Cambio de orden de reducción
+- **WHEN** se propone cambiar la asociación o el orden
+- **THEN** cambiar
 asociación u orden SHALL requerir una justificación explícita de equivalencia,
 dominio y política de evaluación/recursos; la equivalencia matemática sola no
 SHALL prometer códigos idénticos, igual memoria o igual comportamiento flotante.

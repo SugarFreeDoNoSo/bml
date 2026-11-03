@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "date": "2026-11-03",
+  "source_snapshot_sha256": "a1905d87eece7400dcb54d96277e71dd5f243c5b28006589cdc7bbc8b59c6e21",
+  "source_snapshot_method": "Sorted crates/**/*.rs, crates/**/Cargo.toml, Cargo.toml, Cargo.lock; path NUL then raw file SHA-256 digest",
+  "toolchain": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "exit_code": 0,
+    "log": "/tmp/opencode/specs-local-gate-complete.log",
+    "log_sha256": "e62265c24777614edb5bfc1ebb6dfca3770cd47053a1bc760e723e1275838412",
+    "changed_rust_format": "passed",
+    "python_tests_passed": 82,
+    "rust_tests_passed": 604,
+    "rust_tests_ignored": 17,
+    "historical_discrepancies": 0,
+    "traceability": "71/71",
+    "clippy_new_diagnostics": 0
+  },
+  "features": [
+    {
+      "command": "cargo test -p bml-gguf --no-default-features --locked",
+      "exit_code": 0,
+      "passed": 50,
+      "ignored": 1,
+      "log_sha256": "da70198ef0d59c4a0b3526162b0d780384fb9370bdbb11a48e94c190ffc4845e"
+    },
+    {
+      "command": "cargo test -p bml-gguf --all-features --locked",
+      "exit_code": 0,
+      "passed": 57,
+      "ignored": 1,
+      "log_sha256": "bfb9ae028854a3bf7871c086e2a6dad714b53bd9f27cbc20146703e1419cc02a"
+    },
+    {
+      "command": "cargo test -p bml -p bml-runtime -p bml-kernels --all-features --locked",
+      "exit_code": 0,
+      "log": "/tmp/opencode/specs-feature-checks.log",
+      "log_sha256": "ce09e5409086b0b3908d2a59600eafca9263daba8ae993c93d11d4ab28498da8"
+    }
+  ],
+  "coverage": {
+    "tool": "cargo-llvm-cov 0.9.1",
+    "command": "CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 cargo llvm-cov --workspace --locked --json --output-path target/quality/specs-coverage-current.json",
+    "exit_code": 0,
+    "report_sha256": "55967cbcfd9b9d7696770753e96e7ef15a38aa8714af9d8abc446d77eba0d0e1",
+    "lines": {"covered": 15971, "count": 18515, "percent": 86.2597893599784},
+    "functions": {"covered": 1506, "count": 1879, "percent": 80.14901543374135},
+    "regions": {"covered": 27513, "count": 32623, "percent": 84.33620451828465}
+  },
+  "openspec": {
+    "command": "npx --yes @fission-ai/openspec validate --all --strict",
+    "passed": 8,
+    "failed": 0,
+    "archived": ["bml-number-foundation", "bml-vs-llamacpp-bench"]
+  },
+  "limitations": [
+    "Mutation campaign on the current snapshot remains pending.",
+    "ARM execution, PMU measurements and cloud stress are not validated by these local checks.",
+    "The 15 unchecked tasks remain open; this evidence does not establish release completion."
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T15:38:35.209548+00:00",
+  "scope": "Historical inference output-head selection, including explicit-head shape/encoding rejection",
+  "source_sha256": {
+    "crates/compiler/src/gguf_compiler.rs": "46c99949513c8d3566950011caec41614f407cde0a5226566bc1325cbc5e5aec",
+    "crates/compiler/tests/inference_contracts.rs": "af9b2346d856bb4541d50c5e2e954823c1ef873fa84d195a238a6c804485537a",
+    "crates/cli/src/bml_inference.rs": "fc653c214c973cf85a89ce6a32930592e095b1daa041bbacc1f16fd4c3e60942"
+  },
+  "regressions": [
+    "separate_output_head_is_used_by_both_legacy_forward_paths",
+    "malformed_or_unsupported_explicit_head_cannot_fall_back_to_embeddings",
+    "tied_embedding_projection_matches_independent_rectangular_dot_products"
+  ],
+  "focused_tests": {
+    "command": "cargo test -p bml-compiler --test inference_contracts --locked",
+    "passed": 11,
+    "log": "target/quality/spec-legacy-head.log"
+  },
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "status": "passed",
+    "log": "target/quality/spec-legacy-head-gate.log",
+    "sha256": "888c62b1b70ec1c008427f0a1dde82bb0e4e346f54e404549f5c54d8b563a6b4"
+  },
+  "limitations": [
+    "Historical tokenizer/BOS, final RMSNorm, SwiGLU, causal behavior and CLI detokenization still require repair/verification.",
+    "No successful ten-token TinyLlama rerun after this isolated fix.",
+    "Symbolic graph head selection does not establish full symbolic transformer semantics."
+  ]
+}

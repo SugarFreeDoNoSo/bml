@@ -4,7 +4,11 @@
 Cada kernel SHALL disponer de una referencia escalar y seleccionar su backend
 por arquitectura y capacidades habilitadas de la CPU cuando corresponda. AVX2
 SHALL dirigirse a x86/x86-64 y NEON a ARM compatible; una instrucción específica
-no SHALL ejecutarse sin garantizar su disponibilidad. La compilación condicional,
+no SHALL ejecutarse sin garantizar su disponibilidad.
+
+#### Scenario: Disponibilidad y contrato del backend
+- **WHEN** se configura o solicita un backend
+- **THEN** la compilación condicional,
 los requisitos de CPU, las funciones `unsafe` y sus invariantes SHALL documentarse.
 Un backend no disponible SHALL usar fallback escalar o devolver un error explícito
 al solicitarlo de forma forzada. SVE/SVE2 SHALL quedar fuera del alcance inicial.

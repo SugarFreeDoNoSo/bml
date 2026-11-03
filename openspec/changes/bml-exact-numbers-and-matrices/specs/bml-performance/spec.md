@@ -5,7 +5,9 @@ Todo resultado de rendimiento SHALL definir qué cuenta y el intervalo medido:
 construcciones BML/s para creación de términos/códigos, aplicaciones de B/s para
 evaluación de primitivas, expresiones/s para árboles completos, elementos/s para
 elementos matriciales y productos matriciales/s para operaciones completas.
-FLOP/s SHALL usarse solo con una convención explícita; `exp2`, `log2` y resta no
+#### Scenario: Convención de FLOP y unidades
+- **WHEN** un informe usa FLOP/s o compara unidades
+- **THEN** FLOP/s SHALL usarse solo con una convención explícita; `exp2`, `log2` y resta no
 SHALL convertirse automáticamente en tres FLOP. Las unidades no SHALL sumarse
 ni compararse como si fuesen equivalentes.
 
@@ -29,7 +31,11 @@ El almacenamiento lógico no SHALL confundirse con bytes reservados o residentes
 ### Requirement: Comparación reproducible y puerta de corrección
 Cada variante SHALL compararse con una referencia escalar bajo el mismo contrato,
 datos dinámicos, presupuestos y política de precisión/errores. SHALL pasar la
-validación antes de comparar tiempos. El informe SHALL incluir CPU y capacidades,
+validación antes de comparar tiempos.
+
+#### Scenario: Metadatos reproducibles del informe
+- **WHEN** se publica una comparación
+- **THEN** el informe SHALL incluir CPU y capacidades,
 arquitectura, sistema, revisión, compilador/flags, backend, hilos, semilla,
 formas, distribución/tamaños de árboles, comandos, calentamiento, repeticiones,
 dispersión y política de errores. SHALL registrar resultados de equivalencia y

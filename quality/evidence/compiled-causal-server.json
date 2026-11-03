@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-11-02T17:27:55.119370+00:00",
+  "scope": "Production server startup and real HTTP/SSE execution of persisted causal artifacts",
+  "contract": "C58",
+  "source_sha256": {
+    "Cargo.lock": "ba40fbd4a201d2356ece4c1f1efb4036f3a29e6719fe173bae597d2bedcd0acb",
+    "crates/api/Cargo.toml": "adcfd5468d4adef6b42ca04ce55a10fd56f21245ddaf853651b1be329b38fd17",
+    "crates/api/src/main.rs": "d3cf2734cccc87d0cb90b6b16bd528e55af96b270d63d12107ecd66c90c03fc5",
+    "crates/api/tests/compiled_server.rs": "cb9aed5c73cf2cae057bba67a6b281131dd3ab0acb641515c95f928ddb72ce01"
+  },
+  "behavior": "Local native and compiled models share admission, per-request KV, generation and UTF-8 assembly; the compiled variant dispatches every matrix projection to its saved programs. --weights supports hash-verified relocation. Legacy scalar directories are rejected during startup.",
+  "test_evidence": {
+    "target": "bml-server::compiled_server",
+    "test": "compiled_http_and_sse_use_persisted_programs_and_do_not_echo_the_prompt",
+    "transport": "Two actual server executable instances on OS-assigned ephemeral TCP ports; raw HTTP/1.1 requests and JSON/SSE response decoding",
+    "cases": [
+      "relocated GGUF source supplied through real --weights argument",
+      "JSON output exactly é, without prompt echo",
+      "SSE pieces [é, empty], exactly one stop and one DONE",
+      "oversized prompt returns an explicit HTTP error",
+      "saved graph replaced with Zero and its digest updated changes the HTTP result to empty, proving compiled dispatch",
+      "child processes terminated and reaped after requests"
+    ]
+  },
+  "canonical_gate": {
+    "command": "./scripts/check.sh origin/master",
+    "status": "passed",
+    "log": "target/quality/spec-compiled-server-gate.log",
+    "sha256": "88def7aeee1bfea6c8d1d6131e7a1777263d1dab5638bbf9f4d4ef7d65978492",
+    "contracts": 58,
+    "historical_discrepancies": 0,
+    "new_clippy_diagnostics": 0
+  },
+  "limitations": [
+    "The HTTP fixture is zero-layer and isolates startup, stored projection dispatch, token IO and request lifecycle; real-model causal execution is independently recorded in tinyllama-compiled-causal.json.",
+    "No real-model HTTP throughput, load-test result, joint numerical batching or full symbolic transformer translation is claimed."
+  ]
+}

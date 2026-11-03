@@ -1,0 +1,809 @@
+{
+  "schema": 1,
+  "revision": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+  "worktree_dirty": true,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu": "Intel Xeon Processor (Cascadelake)",
+    "logical_cpus": 2,
+    "kernel": "6.12.113+deb13-amd64",
+    "execution": "native x86-64 instructions in Microsoft-virtualized Linux VM; not ISA emulation"
+  },
+  "toolchain": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "measured_at_utc": "2026-11-02T13:28:20.868292+00:00",
+  "build": "cargo run -p bml-kernels --example symbolic_phases --release --locked -- 10; workspace release profile; no extra RUSTFLAGS",
+  "source_sha256": {
+    "Cargo.lock": "c36131a5cf11939c1aacfc289d4e525e12febff83048c1cbfbbe48c9c74356bf",
+    "Cargo.toml": "d605ba8a81c7ccc7c669ce944a5e61d9e03382c50ce5302d872ded02748f6722",
+    "crates/domain/src/number/certified.rs": "b3122ee556cd1e7e8316ce6542e994b721e750b9a9e1f1c64e7517aedb42d77c",
+    "crates/domain/src/number/checked.rs": "11972ce60a80d679a9ab3b1c5f3cc50f5147180727908fea286b46f9732ef561",
+    "crates/domain/src/number/convert.rs": "d7abdf97b181f0a78b2d641e98c80faac933797690131344f2f6a1a793a6f641",
+    "crates/domain/src/number/encoding.rs": "e914642dfab9dad767752ff5cfb2bc4e6faa55b37e0d83517918ead86a2139fb",
+    "crates/domain/src/number/evaluate.rs": "e4602f91da384c89ae2a9eda0223827ba2c24cbaf21124ae366eca73ea49e94d",
+    "crates/domain/src/number/exact.rs": "da29637bbc49161ca1e684f87bd0e1f971af89e9ed9ff8eda3f2d7af024a73bf",
+    "crates/domain/src/number/matrix.rs": "f742872b25fb7929e289741248d572e108f7aadbea8497c193bccbba02499d77",
+    "crates/domain/src/number/mod.rs": "6447938efe5ebf55093c50c6d727210677d202c6a7a58f5dbeb6f6bb6100880b",
+    "crates/domain/src/number/operations.rs": "0d11bb78e9d3cca51008aa86f064a4a806f6f5422f407b9a0407dfb1d7c57131",
+    "crates/domain/src/number/recognize.rs": "645905e3daf4bdb551a397019e8de4d8b9198086a43fddaef7d75284690e5e28",
+    "crates/domain/src/number/search.rs": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+    "crates/domain/src/number/stream.rs": "230aee44dd7f6fc448d6dda2f1f0771f419f60b400e369b391a62d19e1573057",
+    "crates/kernels/examples/symbolic_phases.rs": "b9bb1f03ffcf623168462f86ad969ce8aeab784593c57a439eecb79cbdc53176"
+  },
+  "scope": "Small synthetic symbolic workloads on one native x86 VM. No inference throughput claim; no ARM execution. Instrumented allocator overhead included.",
+  "units": {
+    "preparation_ns": "construction and cloning of both complete input batches",
+    "requested_bytes": "sum of successful allocator request sizes including realloc new sizes; not RSS",
+    "peak_additional_live_bytes": "maximum tracked live heap bytes above the phase starting live bytes",
+    "allocation_calls": "successful alloc/alloc_zeroed/realloc calls; includes output vector allocations",
+    "work_per_second": "iterations * work_per_iteration / elapsed_seconds; unit is phase-specific; direct evaluation counts attempts including failures"
+  },
+  "campaign": {
+    "iterations": 10,
+    "repetitions": 7,
+    "seed": 2817,
+    "threads": 1,
+    "initial_preparation": {
+      "ns": 87577,
+      "allocation_calls": 915,
+      "requested_bytes": 28536,
+      "peak_additional_live_bytes": 4552
+    },
+    "direct_errors": 2,
+    "direct_max_absolute_error": 4.163336342344337e-17,
+    "correctness_gate": "passed",
+    "input_terms": [
+      {
+        "decimal": "0",
+        "bits": 7,
+        "operators": 3,
+        "depth": 3,
+        "words": 1,
+        "word_capacity": 1
+      },
+      {
+        "decimal": "1",
+        "bits": 1,
+        "operators": 0,
+        "depth": 0,
+        "words": 0,
+        "word_capacity": 0
+      },
+      {
+        "decimal": "2",
+        "bits": 3,
+        "operators": 1,
+        "depth": 1,
+        "words": 1,
+        "word_capacity": 1
+      },
+      {
+        "decimal": "3",
+        "bits": 7,
+        "operators": 3,
+        "depth": 2,
+        "words": 1,
+        "word_capacity": 1
+      },
+      {
+        "decimal": "4",
+        "bits": 5,
+        "operators": 2,
+        "depth": 2,
+        "words": 1,
+        "word_capacity": 1
+      },
+      {
+        "decimal": "12.375",
+        "bits": 389,
+        "operators": 194,
+        "depth": 23,
+        "words": 7,
+        "word_capacity": 7
+      },
+      {
+        "decimal": "-0.125",
+        "bits": 341,
+        "operators": 170,
+        "depth": 22,
+        "words": 6,
+        "word_capacity": 6
+      },
+      {
+        "decimal": "0.1",
+        "bits": 121,
+        "operators": 60,
+        "depth": 16,
+        "words": 2,
+        "word_capacity": 2
+      },
+      {
+        "decimal": "2049",
+        "bits": 45,
+        "operators": 22,
+        "depth": 9,
+        "words": 1,
+        "word_capacity": 1
+      }
+    ],
+    "matrix": {
+      "left_shape": [
+        2,
+        3
+      ],
+      "right_shape": [
+        3,
+        2
+      ],
+      "output_shape": [
+        2,
+        2
+      ],
+      "input_bits": 24,
+      "output_bits": 3332
+    },
+    "phases": [
+      {
+        "name": "parse_exact_targets",
+        "work_per_iteration": 9,
+        "unit": "targets",
+        "samples": [
+          {
+            "ns": 34908,
+            "allocation_calls": 740,
+            "requested_bytes": 9120,
+            "peak_additional_live_bytes": 80
+          },
+          {
+            "ns": 34598,
+            "allocation_calls": 740,
+            "requested_bytes": 9120,
+            "peak_additional_live_bytes": 80
+          },
+          {
+            "ns": 34608,
+            "allocation_calls": 740,
+            "requested_bytes": 9120,
+            "peak_additional_live_bytes": 80
+          },
+          {
+            "ns": 34469,
+            "allocation_calls": 740,
+            "requested_bytes": 9120,
+            "peak_additional_live_bytes": 80
+          },
+          {
+            "ns": 34523,
+            "allocation_calls": 740,
+            "requested_bytes": 9120,
+            "peak_additional_live_bytes": 80
+          },
+          {
+            "ns": 41684,
+            "allocation_calls": 740,
+            "requested_bytes": 9120,
+            "peak_additional_live_bytes": 80
+          },
+          {
+            "ns": 34539,
+            "allocation_calls": 740,
+            "requested_bytes": 9120,
+            "peak_additional_live_bytes": 80
+          }
+        ]
+      },
+      {
+        "name": "exact_synthesis",
+        "work_per_iteration": 9,
+        "unit": "certified_constructions",
+        "samples": [
+          {
+            "ns": 435900,
+            "allocation_calls": 6060,
+            "requested_bytes": 161360,
+            "peak_additional_live_bytes": 1952
+          },
+          {
+            "ns": 420551,
+            "allocation_calls": 6060,
+            "requested_bytes": 161360,
+            "peak_additional_live_bytes": 1952
+          },
+          {
+            "ns": 428213,
+            "allocation_calls": 6060,
+            "requested_bytes": 161360,
+            "peak_additional_live_bytes": 1952
+          },
+          {
+            "ns": 420708,
+            "allocation_calls": 6060,
+            "requested_bytes": 161360,
+            "peak_additional_live_bytes": 1952
+          },
+          {
+            "ns": 505431,
+            "allocation_calls": 6060,
+            "requested_bytes": 161360,
+            "peak_additional_live_bytes": 1952
+          },
+          {
+            "ns": 450969,
+            "allocation_calls": 6060,
+            "requested_bytes": 161360,
+            "peak_additional_live_bytes": 1952
+          },
+          {
+            "ns": 458492,
+            "allocation_calls": 6060,
+            "requested_bytes": 161360,
+            "peak_additional_live_bytes": 1952
+          }
+        ]
+      },
+      {
+        "name": "search_cold",
+        "work_per_iteration": 9,
+        "unit": "target_searches",
+        "samples": [
+          {
+            "ns": 2891528,
+            "allocation_calls": 47870,
+            "requested_bytes": 1323430,
+            "peak_additional_live_bytes": 9456
+          },
+          {
+            "ns": 2886111,
+            "allocation_calls": 47870,
+            "requested_bytes": 1323430,
+            "peak_additional_live_bytes": 9456
+          },
+          {
+            "ns": 2886986,
+            "allocation_calls": 47870,
+            "requested_bytes": 1323430,
+            "peak_additional_live_bytes": 9456
+          },
+          {
+            "ns": 3020965,
+            "allocation_calls": 47870,
+            "requested_bytes": 1323430,
+            "peak_additional_live_bytes": 9456
+          },
+          {
+            "ns": 2841951,
+            "allocation_calls": 47870,
+            "requested_bytes": 1323430,
+            "peak_additional_live_bytes": 9456
+          },
+          {
+            "ns": 2927187,
+            "allocation_calls": 47870,
+            "requested_bytes": 1323430,
+            "peak_additional_live_bytes": 9456
+          },
+          {
+            "ns": 2890725,
+            "allocation_calls": 47870,
+            "requested_bytes": 1323430,
+            "peak_additional_live_bytes": 9456
+          }
+        ]
+      },
+      {
+        "name": "search_warm",
+        "work_per_iteration": 9,
+        "unit": "target_searches",
+        "samples": [
+          {
+            "ns": 3386808,
+            "allocation_calls": 52060,
+            "requested_bytes": 1381110,
+            "peak_additional_live_bytes": 9840
+          },
+          {
+            "ns": 3297538,
+            "allocation_calls": 52060,
+            "requested_bytes": 1381110,
+            "peak_additional_live_bytes": 9840
+          },
+          {
+            "ns": 3284497,
+            "allocation_calls": 52060,
+            "requested_bytes": 1381110,
+            "peak_additional_live_bytes": 9840
+          },
+          {
+            "ns": 3301013,
+            "allocation_calls": 52060,
+            "requested_bytes": 1381110,
+            "peak_additional_live_bytes": 9840
+          },
+          {
+            "ns": 3492003,
+            "allocation_calls": 52060,
+            "requested_bytes": 1381110,
+            "peak_additional_live_bytes": 9840
+          },
+          {
+            "ns": 3437310,
+            "allocation_calls": 52060,
+            "requested_bytes": 1381110,
+            "peak_additional_live_bytes": 9840
+          },
+          {
+            "ns": 3428533,
+            "allocation_calls": 52060,
+            "requested_bytes": 1381110,
+            "peak_additional_live_bytes": 9840
+          }
+        ]
+      },
+      {
+        "name": "proof_replay",
+        "work_per_iteration": 9,
+        "unit": "certificates",
+        "samples": [
+          {
+            "ns": 345645,
+            "allocation_calls": 4440,
+            "requested_bytes": 90000,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 340035,
+            "allocation_calls": 4440,
+            "requested_bytes": 90000,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 346243,
+            "allocation_calls": 4440,
+            "requested_bytes": 90000,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 346530,
+            "allocation_calls": 4440,
+            "requested_bytes": 90000,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 345508,
+            "allocation_calls": 4440,
+            "requested_bytes": 90000,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 348953,
+            "allocation_calls": 4440,
+            "requested_bytes": 90000,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 339909,
+            "allocation_calls": 4440,
+            "requested_bytes": 90000,
+            "peak_additional_live_bytes": 1120
+          }
+        ]
+      },
+      {
+        "name": "stream_roundtrip",
+        "work_per_iteration": 9,
+        "unit": "term_roundtrips",
+        "samples": [
+          {
+            "ns": 102104,
+            "allocation_calls": 410,
+            "requested_bytes": 23150,
+            "peak_additional_live_bytes": 523
+          },
+          {
+            "ns": 95306,
+            "allocation_calls": 410,
+            "requested_bytes": 23150,
+            "peak_additional_live_bytes": 523
+          },
+          {
+            "ns": 100185,
+            "allocation_calls": 410,
+            "requested_bytes": 23150,
+            "peak_additional_live_bytes": 523
+          },
+          {
+            "ns": 94992,
+            "allocation_calls": 410,
+            "requested_bytes": 23150,
+            "peak_additional_live_bytes": 523
+          },
+          {
+            "ns": 94613,
+            "allocation_calls": 410,
+            "requested_bytes": 23150,
+            "peak_additional_live_bytes": 523
+          },
+          {
+            "ns": 94613,
+            "allocation_calls": 410,
+            "requested_bytes": 23150,
+            "peak_additional_live_bytes": 523
+          },
+          {
+            "ns": 94729,
+            "allocation_calls": 410,
+            "requested_bytes": 23150,
+            "peak_additional_live_bytes": 523
+          }
+        ]
+      },
+      {
+        "name": "direct_tree_evaluation",
+        "work_per_iteration": 9,
+        "unit": "expression_attempts",
+        "samples": [
+          {
+            "ns": 59201,
+            "allocation_calls": 160,
+            "requested_bytes": 9280,
+            "peak_additional_live_bytes": 128
+          },
+          {
+            "ns": 58155,
+            "allocation_calls": 160,
+            "requested_bytes": 9280,
+            "peak_additional_live_bytes": 128
+          },
+          {
+            "ns": 58455,
+            "allocation_calls": 160,
+            "requested_bytes": 9280,
+            "peak_additional_live_bytes": 128
+          },
+          {
+            "ns": 58387,
+            "allocation_calls": 160,
+            "requested_bytes": 9280,
+            "peak_additional_live_bytes": 128
+          },
+          {
+            "ns": 58163,
+            "allocation_calls": 160,
+            "requested_bytes": 9280,
+            "peak_additional_live_bytes": 128
+          },
+          {
+            "ns": 58120,
+            "allocation_calls": 160,
+            "requested_bytes": 9280,
+            "peak_additional_live_bytes": 128
+          },
+          {
+            "ns": 58158,
+            "allocation_calls": 160,
+            "requested_bytes": 9280,
+            "peak_additional_live_bytes": 128
+          }
+        ]
+      },
+      {
+        "name": "simplified_evaluation",
+        "work_per_iteration": 9,
+        "unit": "certified_expressions",
+        "samples": [
+          {
+            "ns": 403363,
+            "allocation_calls": 4840,
+            "requested_bytes": 93840,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 368096,
+            "allocation_calls": 4840,
+            "requested_bytes": 93840,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 374418,
+            "allocation_calls": 4840,
+            "requested_bytes": 93840,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 368241,
+            "allocation_calls": 4840,
+            "requested_bytes": 93840,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 368218,
+            "allocation_calls": 4840,
+            "requested_bytes": 93840,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 432304,
+            "allocation_calls": 4840,
+            "requested_bytes": 93840,
+            "peak_additional_live_bytes": 1120
+          },
+          {
+            "ns": 380013,
+            "allocation_calls": 4840,
+            "requested_bytes": 93840,
+            "peak_additional_live_bytes": 1120
+          }
+        ]
+      },
+      {
+        "name": "basis_scalar_kernel",
+        "work_per_iteration": 1024,
+        "unit": "B_applications",
+        "samples": [
+          {
+            "ns": 121183,
+            "allocation_calls": 0,
+            "requested_bytes": 0,
+            "peak_additional_live_bytes": 0
+          },
+          {
+            "ns": 113344,
+            "allocation_calls": 0,
+            "requested_bytes": 0,
+            "peak_additional_live_bytes": 0
+          },
+          {
+            "ns": 112953,
+            "allocation_calls": 0,
+            "requested_bytes": 0,
+            "peak_additional_live_bytes": 0
+          },
+          {
+            "ns": 124267,
+            "allocation_calls": 0,
+            "requested_bytes": 0,
+            "peak_additional_live_bytes": 0
+          },
+          {
+            "ns": 113204,
+            "allocation_calls": 0,
+            "requested_bytes": 0,
+            "peak_additional_live_bytes": 0
+          },
+          {
+            "ns": 113268,
+            "allocation_calls": 0,
+            "requested_bytes": 0,
+            "peak_additional_live_bytes": 0
+          },
+          {
+            "ns": 113213,
+            "allocation_calls": 0,
+            "requested_bytes": 0,
+            "peak_additional_live_bytes": 0
+          }
+        ]
+      },
+      {
+        "name": "matrix_preparation",
+        "work_per_iteration": 12,
+        "unit": "prepared_elements",
+        "samples": [
+          {
+            "ns": 103014,
+            "allocation_calls": 2240,
+            "requested_bytes": 96000,
+            "peak_additional_live_bytes": 1024
+          },
+          {
+            "ns": 101930,
+            "allocation_calls": 2240,
+            "requested_bytes": 96000,
+            "peak_additional_live_bytes": 1024
+          },
+          {
+            "ns": 101725,
+            "allocation_calls": 2240,
+            "requested_bytes": 96000,
+            "peak_additional_live_bytes": 1024
+          },
+          {
+            "ns": 101745,
+            "allocation_calls": 2240,
+            "requested_bytes": 96000,
+            "peak_additional_live_bytes": 1024
+          },
+          {
+            "ns": 101718,
+            "allocation_calls": 2240,
+            "requested_bytes": 96000,
+            "peak_additional_live_bytes": 1024
+          },
+          {
+            "ns": 108372,
+            "allocation_calls": 2240,
+            "requested_bytes": 96000,
+            "peak_additional_live_bytes": 1024
+          },
+          {
+            "ns": 101821,
+            "allocation_calls": 2240,
+            "requested_bytes": 96000,
+            "peak_additional_live_bytes": 1024
+          }
+        ]
+      },
+      {
+        "name": "matrix_operation_prepared_codes",
+        "work_per_iteration": 1,
+        "unit": "matrix_products",
+        "samples": [
+          {
+            "ns": 3891287,
+            "allocation_calls": 63390,
+            "requested_bytes": 1653440,
+            "peak_additional_live_bytes": 11240
+          },
+          {
+            "ns": 3860046,
+            "allocation_calls": 63390,
+            "requested_bytes": 1653440,
+            "peak_additional_live_bytes": 11240
+          },
+          {
+            "ns": 4024777,
+            "allocation_calls": 63390,
+            "requested_bytes": 1653440,
+            "peak_additional_live_bytes": 11240
+          },
+          {
+            "ns": 3872019,
+            "allocation_calls": 63390,
+            "requested_bytes": 1653440,
+            "peak_additional_live_bytes": 11240
+          },
+          {
+            "ns": 3846058,
+            "allocation_calls": 63390,
+            "requested_bytes": 1653440,
+            "peak_additional_live_bytes": 11240
+          },
+          {
+            "ns": 3953915,
+            "allocation_calls": 63390,
+            "requested_bytes": 1653440,
+            "peak_additional_live_bytes": 11240
+          },
+          {
+            "ns": 3910151,
+            "allocation_calls": 63390,
+            "requested_bytes": 1653440,
+            "peak_additional_live_bytes": 11240
+          }
+        ]
+      },
+      {
+        "name": "matrix_complete",
+        "work_per_iteration": 1,
+        "unit": "matrix_products_including_preparation",
+        "samples": [
+          {
+            "ns": 3991311,
+            "allocation_calls": 65630,
+            "requested_bytes": 1749440,
+            "peak_additional_live_bytes": 11576
+          },
+          {
+            "ns": 4089559,
+            "allocation_calls": 65630,
+            "requested_bytes": 1749440,
+            "peak_additional_live_bytes": 11576
+          },
+          {
+            "ns": 4063139,
+            "allocation_calls": 65630,
+            "requested_bytes": 1749440,
+            "peak_additional_live_bytes": 11576
+          },
+          {
+            "ns": 4034838,
+            "allocation_calls": 65630,
+            "requested_bytes": 1749440,
+            "peak_additional_live_bytes": 11576
+          },
+          {
+            "ns": 3964980,
+            "allocation_calls": 65630,
+            "requested_bytes": 1749440,
+            "peak_additional_live_bytes": 11576
+          },
+          {
+            "ns": 4074273,
+            "allocation_calls": 65630,
+            "requested_bytes": 1749440,
+            "peak_additional_live_bytes": 11576
+          },
+          {
+            "ns": 4080313,
+            "allocation_calls": 65630,
+            "requested_bytes": 1749440,
+            "peak_additional_live_bytes": 11576
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "parse_exact_targets": {
+      "unit": "targets",
+      "median_ns": 34598,
+      "min_ns": 34469,
+      "max_ns": 41684
+    },
+    "exact_synthesis": {
+      "unit": "certified_constructions",
+      "median_ns": 435900,
+      "min_ns": 420551,
+      "max_ns": 505431
+    },
+    "search_cold": {
+      "unit": "target_searches",
+      "median_ns": 2890725,
+      "min_ns": 2841951,
+      "max_ns": 3020965
+    },
+    "search_warm": {
+      "unit": "target_searches",
+      "median_ns": 3386808,
+      "min_ns": 3284497,
+      "max_ns": 3492003
+    },
+    "proof_replay": {
+      "unit": "certificates",
+      "median_ns": 345645,
+      "min_ns": 339909,
+      "max_ns": 348953
+    },
+    "stream_roundtrip": {
+      "unit": "term_roundtrips",
+      "median_ns": 94992,
+      "min_ns": 94613,
+      "max_ns": 102104
+    },
+    "direct_tree_evaluation": {
+      "unit": "expression_attempts",
+      "median_ns": 58163,
+      "min_ns": 58120,
+      "max_ns": 59201
+    },
+    "simplified_evaluation": {
+      "unit": "certified_expressions",
+      "median_ns": 374418,
+      "min_ns": 368096,
+      "max_ns": 432304
+    },
+    "basis_scalar_kernel": {
+      "unit": "B_applications",
+      "median_ns": 113268,
+      "min_ns": 112953,
+      "max_ns": 124267
+    },
+    "matrix_preparation": {
+      "unit": "prepared_elements",
+      "median_ns": 101821,
+      "min_ns": 101718,
+      "max_ns": 108372
+    },
+    "matrix_operation_prepared_codes": {
+      "unit": "matrix_products",
+      "median_ns": 3891287,
+      "min_ns": 3846058,
+      "max_ns": 4024777
+    },
+    "matrix_complete": {
+      "unit": "matrix_products_including_preparation",
+      "median_ns": 4063139,
+      "min_ns": 3964980,
+      "max_ns": 4089559
+    }
+  }
+}

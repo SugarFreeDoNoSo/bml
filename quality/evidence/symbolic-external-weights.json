@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "date_utc": "2026-11-02T17:58:59.769236+00:00",
+  "requirement": "bml-inference-pipeline 8.6 (external-weight projection prerequisite; full integration remains open)",
+  "implementation": {
+    "runtime": "Explicit external-constant mode requires an empty stored pool, validates references against a declared count, counts borrowed values in GraphLimits, and requires the same count at execution. Owned and external execution APIs do not silently substitute for each other.",
+    "compiler": "compile_row measures the deterministic BMLTransformer expansion size with a fixed-size probe, rejects node-budget/size overflow before building the row, and emits Var input references and Const external weight references with no owned values.",
+    "execution": "A serialized BML-only row template is loaded and executed with decoded rows from the mapped F32 causal fixture. Different inputs and different rows produce the independent coordinate-selection oracle.",
+    "store_documentation": "RpnOp::StoreResult documentation now matches the unchanged runtime: pop offset, pop value, consume both. Tests duplicate the retained result explicitly."
+  },
+  "verification": {
+    "runtime_tests": 3,
+    "projection_tests": 2,
+    "contexts": "Wrong constant counts, inputs and buffer shapes fail before writes; owned-pool mixing and implicit execution modes fail; zero external constants remain an explicit mode.",
+    "bounds": "Inclusive external constant references, zero-iteration loop references, value/stack budgets and overflow; inclusive exact row node budgets.",
+    "arithmetic": "No FAdd, FMul or opaque operators; One, Var, Const, Bml and stack operations only.",
+    "projection_absolute_tolerance": 1e-08
+  },
+  "limitations": [
+    "No weights are serialized in the row program; decoding a mapped row and converting F32 to F64 still allocates caller-owned scratch storage.",
+    "The integration fixture is F32, not a new quantized-model correctness claim.",
+    "Signed BML numerical range and rounding differ from native IEEE arithmetic.",
+    "Row templates are unrolled and have linear bytecode storage, unlike the native loop profile.",
+    "This does not replace the full GGUF transformer DAG or the existing causal artifact execution profile."
+  ],
+  "source_sha256": {
+    "crates/domain/src/transformer.rs": "3262e23322739f5c6e795c43a3652b467da1083a1eb864303ac6d616a90a56bd",
+    "crates/compiler/src/symbolic_projection.rs": "b04b6fced0e52faf828efc72623d138a340e4fb4202eee9de37ba92f0c7b0210",
+    "crates/compiler/src/rpn.rs": "03745ccd60e04ba0d7e0a1241bf23ba8673c9752658952182450f87d45715b36",
+    "crates/compiler/tests/symbolic_projection_contracts.rs": "da0a0de18917a1fbe08fdfc5f8eff10a3cf8019a041b9a6f83ca2237a774e58d",
+    "crates/runtime/src/graph.rs": "90ad1810882bc0289ea1579c91898852277d45057bb4859f22d9a6c8b537677e",
+    "crates/runtime/tests/graph_contracts.rs": "bc27fddb038f87f0da9f2bfca3ff06b9830f1f3b4fe2775a15a900b62d70122f",
+    "quality/contracts.feature": "e1512bf41fe47ec0711d4a30c92aa63ecd0f5e46bf19ef0de161adb4f86576a2",
+    "quality/traceability.json": "cf6c54051ff24926d147279d5efe638f9c3bb2798d0fcc6d9ac3221d7aa83049"
+  },
+  "validation": {
+    "command": "./scripts/check.sh origin/master",
+    "toolchain": "1.98.1",
+    "cargo_locked": true,
+    "exit_code": 0,
+    "registered_contracts": "63/63",
+    "historical_discrepancies": 0,
+    "static_diagnostics": 66,
+    "baseline_diagnostics": 192,
+    "new_diagnostics": 0,
+    "log": "target/quality/spec-symbolic-external-weights-gate.log",
+    "log_sha256": "ac96448ad7acd38fef69e83ae48fbabce9417e9b4ed7a9f9dda4a1f67e1d0b42",
+    "openspec": "8 passed, 0 failed; target/quality/spec-symbolic-external-weights-openspec.log"
+  }
+}
