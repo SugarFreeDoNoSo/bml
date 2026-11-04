@@ -94,6 +94,13 @@ fn raw_tree_operators_preserve_order_and_support_chaining() {
     check((4i64 - &a).unwrap(), 6);
     check((4u32 * &a).unwrap(), -8);
     check((4i16 / &a).unwrap(), -2);
+    let expected = Bml::from_decimal_str_exact("-1.5").unwrap();
+    for value in [(&a + 0.5f64).unwrap(), (0.5f64 + &a).unwrap()] {
+        assert_eq!(
+            value.certify_exact(options).unwrap().target(),
+            expected.target()
+        );
+    }
     let sum = (&a + &b).unwrap();
     check((&sum * &b).unwrap(), 3);
     assert_eq!((a, b), originals);
