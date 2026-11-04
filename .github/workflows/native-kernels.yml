@@ -1,0 +1,55 @@
+name: Native kernel campaign
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - .github/workflows/native-kernels.yml
+      - tools/native_kernel_campaign.py
+      - tools/test_native_kernel_campaign.py
+      - crates/kernels/**
+      - crates/domain/**
+      - Cargo.lock
+      - rust-toolchain.toml
+permissions:
+  contents: read
+concurrency:
+  group: native-kernels-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    env:
+      CARGO_TERM_COLOR: never
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust
+        run: rustup show active-toolchain
+      - name: Native contracts and repeated measurements
+        run: >-
+          python3 tools/native_kernel_campaign.py
+          --expected-arch '${{ matrix.arch }}'
+          --output-dir target/quality/native-kernels
+          --iterations 100
+      - name: Preserve campaign evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-kernels-${{ matrix.arch }}-${{ github.sha }}
+          path: target/quality/native-kernels/
+          if-no-files-found: error
+          retention-days: 14

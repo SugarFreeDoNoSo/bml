@@ -294,3 +294,28 @@ and the Debian QEMU binary under `target/arm-qemu/runtime/usr/bin`; hashes and
 preserved test executables are recorded in the evidence. QEMU results establish
 functional behavior under emulation. They provide no real-ARM throughput,
 hardware counters or SIMD speedup evidence; task 7.4 remains open.
+
+
+## Native kernel campaigns on GitHub-hosted runners
+
+`.github/workflows/native-kernels.yml` runs the same structural-code experiment
+on `ubuntu-24.04` (x86-64/AVX2) and `ubuntu-24.04-arm` (AArch64/NEON). GitHub
+lists both as standard runners available free for public repositories:
+[GitHub-hosted runners reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+The workflow runs on relevant master pushes and can also be dispatched manually.
+
+`tools/native_kernel_campaign.py` rejects a host/runner/ELF architecture mismatch
+and Cargo cross-runner overrides. It executes the eight all-feature kernel
+contracts, builds the pinned-toolchain native benchmark, and pins the benchmark
+to one allowed CPU. Each of three fixed workloads uses 512 pairs, 100 iterations
+and seven repetitions, with warm-up excluded. Scalar and the required SIMD
+backend must both produce complete samples; an availability flag alone is not
+evidence of execution. Timings and allocation counts describe structural code
+comparison, not BML numerical evaluation or inference throughput.
+
+Each job uploads the native executable, full samples, test/build logs, CPU
+metadata, source hashes and an output manifest. Source hashes must remain
+unchanged throughout the campaign. Job success and downloaded artifact checks
+are required before crediting task 7.4; creating this workflow is not a completed
+ARM measurement. Hosted-runner wall times are workload-specific measurements,
+not hardware-counter or instruction-cache-residency evidence.
