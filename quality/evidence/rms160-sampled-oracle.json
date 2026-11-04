@@ -1,0 +1,21 @@
+{
+  "scope": "Four synthetic 2048-wide samples for bounded RMS input 160, weight 1 and epsilon from the TinyLlama F32 metadata (9.999999747378752e-6). No uniform error bound or real-model parity claim.",
+  "base_commit": "a9111e3147875d41698842e70d9cfd04a6f67896",
+  "test": "compact_rms_large_input_bound_matches_independent_normalization",
+  "oracle": "native f64 sqrt(mean(x*x)+epsilon), x / denominator * weight",
+  "absolute_tolerance": 2e-07,
+  "cases": [
+    "all zero",
+    "small dense signed values",
+    "one -141.79153563028393 component",
+    "dense signed extrema through +/-160"
+  ],
+  "max_abs_errors": {
+    "0": 4.966551614415948e-10,
+    "1": 1.0225878099845431e-07,
+    "2": 1.7479351299698465e-12,
+    "3": 2.4692747846444263e-12
+  },
+  "log": "target/quality/rms160-oracle-test.log",
+  "log_sha256": "2ce6427577d33bdb8aa167c9a7a7900e55d20bb28285e1bd364b9c92104fe471"
+}

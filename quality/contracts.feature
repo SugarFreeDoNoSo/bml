@@ -608,6 +608,7 @@ Then it rejects the request before expensive generation
     Then outputs preserve the original builder bits for negative extrema, permutations, zeros and different widths
     And all stages retain ten canonical literals and constant node counts without mutating on invalid construction
 
+  # Also checks an RMS input bound of 160 at model width against a native oracle.
   @C90
   Scenario: Indexed RMS kernels keep code and scratch independent of model width
     Given explicitly bounded RMS widths one, two hundred eighty-eight and two thousand forty-eight

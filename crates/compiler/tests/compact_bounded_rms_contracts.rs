@@ -308,3 +308,58 @@ fn compact_rms_keeps_checked_failure_and_dynamic_context_semantics() {
         Err(GraphError::Numerical)
     ));
 }
+
+#[test]
+fn compact_rms_large_input_bound_matches_independent_normalization() {
+    let width = 2048;
+    let epsilon = f64::from(1e-5_f32);
+    let profile = BoundedProfile {
+        rms: RmsBounds {
+            input: 160.0,
+            weight: 1.0,
+        },
+        ..BoundedProfile::default()
+    };
+    let kernel = compile_operation(
+        Operation::Norm,
+        width,
+        epsilon,
+        profile,
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let weights: Vec<_> = (0..width).map(|i| ((i % 9) as f64 - 4.0) / 4.0).collect();
+    for case in 0..4 {
+        let input: Vec<_> = (0..width)
+            .map(|i| match case {
+                0 => 0.0,
+                1 => ((i % 17) as f64 - 8.0) / 800.0,
+                2 => {
+                    if i == 624 {
+                        -141.791_535_630_283_93
+                    } else {
+                        0.0
+                    }
+                }
+                _ => ((i % 17) as f64 - 8.0) * 20.0,
+            })
+            .collect();
+        profile
+            .validate_values(Operation::Norm, width, epsilon, &input, &weights)
+            .unwrap();
+        let actual = execute(&kernel, &input, &weights, true);
+        let divisor = (input.iter().map(|x| x * x).sum::<f64>() / width as f64 + epsilon).sqrt();
+        let mut max_error = 0.0_f64;
+        for (index, ((&observed, &x), &weight)) in
+            actual.iter().zip(&input).zip(&weights).enumerate()
+        {
+            let expected = x / divisor * weight;
+            max_error = max_error.max((observed - expected).abs());
+            assert!(
+                (observed - expected).abs() < 2e-7,
+                "case={case} index={index}: {observed} != {expected}"
+            );
+        }
+        eprintln!("case={case} max_abs_error={max_error}");
+    }
+}
