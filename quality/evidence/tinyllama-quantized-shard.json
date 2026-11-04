@@ -1,0 +1,33 @@
+{
+  "base_commit": "65d224c45ce3b29ccf620a7b92d0a94b283955db",
+  "command": "cargo test --release -p bml-compiler --test symbolic_weight_shard_contracts --locked real_quantized_layer_shard_preserves_gguf_rows -- --ignored --exact --nocapture",
+  "source": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "source_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "manifest": "target/quality/tinyllama-bounded-projection4/symbolic.bmlgraph.json",
+  "manifest_sha256": "cc4901a39a87de00329c781ddd96e6ec46b0620bc84587c374db041b370a6f01",
+  "test_binary": "target/global-restart-build/release/deps/symbolic_weight_shard_contracts-798009de9a200b76",
+  "test_binary_sha256": "a27330eaa6edc2bfaef60a6ce6eb34631bb3f3f3efb2946f743026a823327ae5",
+  "test_log": "target/quality/tinyllama-quantized-shard-final.log",
+  "test_log_sha256": "14346cbc3490d1979e4234ad17028b797dd26f5e5cb9125c6704b2b0b94c7fc2",
+  "measurement": "layer 0: 9 tensors, 7 Q4_0; first, middle, last rows bitwise match source GGUF; 24,788,992 encoded bytes",
+  "worker_admission": {
+    "result": "ready",
+    "line": "symbolic worker listening on 0.0.0.0:35545 for layers 0..1 identity cc4901a39a87de00329c781ddd96e6ec46b0620bc84587c374db041b370a6f01",
+    "worker_pid": 983137,
+    "gguf_mapping_present": false,
+    "artifact_sha256": "cc4901a39a87de00329c781ddd96e6ec46b0620bc84587c374db041b370a6f01",
+    "shard_sha256": "9dcce031433e62ed58bf9b3e1699c07648a52b52cb602211a11a4e08e38b281d",
+    "scope": "Admission only; no inference token requested."
+  },
+  "worker_admission_log": "target/quality/tinyllama-shard-worker.log",
+  "worker_admission_log_sha256": "b3703a7f227dba494ce22bc2d3bf9d61b2a44e588cd5acbe6149335668fecf49",
+  "worker_admission_scope": "Earlier executable was tested before the final exporter memory and byte-limit fixes. Worker announced readiness and /proc/PID/maps contained no mapping of the GGUF; no token requested.",
+  "current_sources_sha256": {
+    "crates/compiler/src/symbolic_weight_shard.rs": "6838e39baf20f26f360343fba1d4c200d946e8a65a981299c5b6bd68958c01b9",
+    "crates/compiler/src/causal_artifact.rs": "9f2d3cdc2038701dec4d498cd39101bbb2aba34669075ebe5ea0481268af4e4e",
+    "crates/compiler/tests/symbolic_weight_shard_contracts.rs": "33c23fd7c930edebc7ac8aebf63d712fb52eaf77419cfd5f6a0e2d703ef7796b",
+    "crates/cli/src/main.rs": "8ab84ee66eb7392da8c5ebb8bb22d5e8524f4c4426fb24f130ffe96d3b61f245",
+    "Cargo.lock": "9e86528c1c4abc2f272f2b1d3b08fe5a28822d9c8c1cb66246bb09348a36774b"
+  },
+  "limitations": "Only selected rows of one layer and worker admission. No complete TinyLlama inference, model parity, performance, or all-layer coverage is claimed."
+}

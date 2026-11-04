@@ -277,6 +277,7 @@ fn main() {
                 eprintln!("export-shard requires the bounded symbolic v4 profile");
                 std::process::exit(1);
             }
+            drop(loaded);
 
             let shard =
                 inference_result(bml_compiler::symbolic_weight_shard::export_layer_weights(

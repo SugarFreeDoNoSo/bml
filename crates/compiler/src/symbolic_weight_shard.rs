@@ -61,15 +61,16 @@ pub fn export_layer_weights(
 ) -> Result<String, String> {
     let identity = checked_identity(directory, source)?;
     let artifact = load_directory(directory, source)?;
+    let manifest = artifact.manifest.clone();
+    drop(artifact);
     if identity != checked_identity(directory, source)? {
         return Err("artifact changed during export".into());
     }
-    if layers.start >= layers.end || layers.end > artifact.manifest.config.n_layers {
+    if layers.start >= layers.end || layers.end > manifest.config.n_layers {
         return Err("invalid layer range".into());
     }
-    let parser =
-        GgufParser::open(source.unwrap_or(&artifact.manifest.source)).map_err(|e| e.to_string())?;
-    if hash(parser.bytes()) != artifact.manifest.source_sha256 {
+    let parser = GgufParser::open(source.unwrap_or(&manifest.source)).map_err(|e| e.to_string())?;
+    if hash(parser.bytes()) != manifest.source_sha256 {
         return Err("source changed during export".into());
     }
     let mut entries = Vec::new();
@@ -104,7 +105,7 @@ pub fn export_layer_weights(
     let desc = Descriptor {
         version: 1,
         artifact_sha256: identity,
-        source_sha256: artifact.manifest.source_sha256,
+        source_sha256: manifest.source_sha256,
         start: layers.start,
         end: layers.end,
         payload_sha256: format!("{:x}", payload_hash.finalize()),

@@ -99,7 +99,7 @@ pub(crate) fn read_bounded(path: &Path, limit: usize) -> Result<Vec<u8>, String>
         return Err("artifact file exceeds its byte budget".into());
     }
     let mut bytes = Vec::new();
-    file.take(limit as u64 + 1)
+    file.take((limit as u64).saturating_add(1))
         .read_to_end(&mut bytes)
         .map_err(|e| e.to_string())?;
     if bytes.len() > limit {

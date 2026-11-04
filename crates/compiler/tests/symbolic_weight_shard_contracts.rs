@@ -36,6 +36,7 @@ fn shard_export_is_range_bounded_and_requires_trusted_identity() {
     assert!(!shard.exists());
     let digest = export_layer_weights(&artifact, None, 1..3, &shard, 1_000_000).unwrap();
     verify_layer_weights(&shard, &digest, &identity, 1..3, 1_000_000).unwrap();
+    verify_layer_weights(&shard, &digest, &identity, 1..3, u64::MAX).unwrap();
     let descriptor: serde_json::Value =
         serde_json::from_slice(&std::fs::read(shard.join("weights.json")).unwrap()).unwrap();
     let tensors = descriptor["tensors"].as_array().unwrap();
@@ -81,4 +82,57 @@ fn shard_export_is_range_bounded_and_requires_trusted_identity() {
     desc.push(b' ');
     std::fs::write(shard.join("weights.json"), desc).unwrap();
     assert!(verify_layer_weights(&shard, &digest, &identity, 1..3, 1_000_000).is_err());
+}
+
+#[test]
+#[ignore = "requires BML_TEST_GGUF and BML_TEST_SYMBOLIC_ARTIFACT"]
+fn real_quantized_layer_shard_preserves_gguf_rows() {
+    let source = std::path::PathBuf::from(std::env::var_os("BML_TEST_GGUF").unwrap());
+    let artifact =
+        std::path::PathBuf::from(std::env::var_os("BML_TEST_SYMBOLIC_ARTIFACT").unwrap());
+    let output = std::env::temp_dir().join(format!("bml-real-weight-shard-{}", std::process::id()));
+    struct Cleanup(std::path::PathBuf);
+    impl Drop for Cleanup {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let _cleanup = Cleanup(output.clone());
+    let identity = checked_identity(&artifact, Some(&source)).unwrap();
+    let digest =
+        export_layer_weights(&artifact, Some(&source), 0..1, &output, 536_870_912).unwrap();
+    let shard = VerifiedLayerWeights::open(&output, &digest, &identity, 0..1, 536_870_912).unwrap();
+    let parser = bml_parser::GgufParser::open(&source).unwrap();
+    let descriptor: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(output.join("weights.json")).unwrap()).unwrap();
+    let entries = descriptor["tensors"].as_array().unwrap();
+    let mut quantized = 0;
+    for entry in entries {
+        let name = entry["name"].as_str().unwrap();
+        let view = parser.tensor_view(name).unwrap();
+        if view.dtype() == bml_gguf::GgufDataType::Q4_0 {
+            quantized += 1;
+        }
+        assert_eq!(shard.dimensions(name), Some(view.ggml_dims()));
+        let rows = view.ggml_dims().iter().skip(1).product::<u64>() as usize;
+        for row in [0, rows / 2, rows - 1] {
+            let expected = view.decode_row_f32(row).unwrap();
+            let actual = shard.decode_row_f32(name, row).unwrap();
+            assert_eq!(
+                actual.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+                expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+                "{name} row {row}"
+            );
+        }
+    }
+    assert!(
+        quantized > 0,
+        "model must actually contain Q4_0 layer tensors"
+    );
+    let bytes = std::fs::metadata(output.join("weights.bin")).unwrap().len();
+    assert!(bytes < std::fs::metadata(&source).unwrap().len());
+    println!(
+        "layer=0 tensors={} q4_tensors={quantized} shard_bytes={bytes}",
+        entries.len()
+    );
 }
