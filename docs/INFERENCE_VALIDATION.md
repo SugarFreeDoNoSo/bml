@@ -452,6 +452,12 @@ SHA-256-authenticated symbolic artifact with the same GGUF and BOS input.
 It has no numerical-parity tolerance and must not be reported as a parity gate.
 Choose a new output directory; a complete real-model forward can take hours.
 
+The recorded TinyLlama BOS run completed with 32,000 finite logits per path,
+matching argmax 29958 (`>`), maximum absolute difference 4.879e-6 and mean
+absolute difference 9.515e-7. The reference is the native F64/F32-KV path;
+these observations do not establish parity or behavior at later positions.
+Provenance and vector hashes: `quality/evidence/tinyllama-bos-logit-diagnostic.json`.
+
 ```sh
 BML_TEST_GGUF=target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf \
 BML_TEST_SYMBOLIC_ARTIFACT=target/quality/tinyllama-bounded-rms4 \
