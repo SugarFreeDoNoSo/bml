@@ -299,6 +299,10 @@ ambos parámetros `--distributed-rms-input-bound` y
 `--distributed-rms-weight-bound`; rechaza parámetros incompletos o inválidos.
 Las cotas de proyección se configuran en pareja mediante
 `--distributed-projection-input-bound` y `--distributed-projection-weight-bound`.
+Las proyecciones `ffn_down` pueden declarar límites independientes mediante
+`--distributed-down-input-bound` y `--distributed-down-weight-bound`; sin ellos
+usan las cotas de proyección generales. Los artefactos con este perfil requieren
+una versión que reconozca el kernel `down_dot`.
 Las cotas de SwiGLU se declaran juntas con `--distributed-gate-bound` y
 `--distributed-up-bound`; el perfil admite compuertas hasta 18. El compilador
 valida las cotas y el producto permitido antes de publicar.

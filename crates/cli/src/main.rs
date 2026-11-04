@@ -100,6 +100,12 @@ enum Command {
         #[arg(long, requires_all = ["distributed", "distributed_projection_input_bound"])]
         distributed_projection_weight_bound: Option<f64>,
         /// Inclusive SwiGLU gate bound for the distributed profile.
+        /// Absolute activation bound for MLP down projections.
+        #[arg(long, requires_all = ["distributed", "distributed_down_weight_bound"])]
+        distributed_down_input_bound: Option<f64>,
+        /// Absolute learned weight bound for MLP down projections.
+        #[arg(long, requires_all = ["distributed", "distributed_down_input_bound"])]
+        distributed_down_weight_bound: Option<f64>,
         #[arg(long, requires_all = ["distributed", "distributed_up_bound"])]
         distributed_gate_bound: Option<f64>,
         /// Inclusive SwiGLU up-projection bound for the distributed profile.
@@ -343,6 +349,8 @@ fn main() {
             distributed_rms_weight_bound,
             distributed_projection_input_bound,
             distributed_projection_weight_bound,
+            distributed_down_input_bound,
+            distributed_down_weight_bound,
             distributed_gate_bound,
             distributed_up_bound,
         } => {
@@ -390,6 +398,14 @@ fn main() {
                     profile.projection_input = input;
                     profile.projection_weight = distributed_projection_weight_bound
                         .expect("clap requires both projection bounds");
+                }
+                if let Some(input) = distributed_down_input_bound {
+                    profile.down_projection =
+                        Some(bml_compiler::symbolic_bounded::ProjectionBounds {
+                            input,
+                            weight: distributed_down_weight_bound
+                                .expect("clap requires both down projection bounds"),
+                        });
                 }
                 if let Some(gate) = distributed_gate_bound {
                     profile.gate = gate;

@@ -1,0 +1,29 @@
+{
+  "status": "running",
+  "started_at_utc": "2026-11-04T02:46:06.552668+00:00",
+  "base_commit": "bb57fe7189fdd1d91a4835e8d94c8e2af626c71f",
+  "scope": "One BOS token, local symbolic execution, not a parity or throughput result.",
+  "source": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "source_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "manifest": "target/quality/tinyllama-bounded-down256/symbolic.bmlgraph.json",
+  "manifest_sha256": "195722db5ee1b7ea3e6a8ba2cadf23379e2840fa3aab10dfe724f9a748a93028",
+  "binary": "target/quality/tinyllama-down256-cli-measured",
+  "binary_sha256": "cd05e1cf91f442f97133d727af63543f1276558cc4c057ea000c68a717d9101c",
+  "source_sha256_at_start": {
+    "crates/compiler/src/symbolic_artifact.rs": "a3d9a26824a0d5e9862333d06c479925c4c2c9e037f579bf9e91415657e17481",
+    "crates/compiler/src/symbolic_bounded.rs": "f84a23903e5ae5e5c8ea7a09167ef6a33c60f8ff5763e2551d422e68fbb67fe6",
+    "crates/compiler/src/symbolic_kernels.rs": "d3ad3aa5a5cb4011f02d497fc595aaeb329281406687bf70e69847611999966d",
+    "crates/runtime/src/symbolic_causal.rs": "e54e011264e07f6abd61c0f523ceba909e0f0d0121db346fbd3f33a507dd1ab1",
+    "crates/cli/src/main.rs": "c5e3d2c109c82bd657cdb7999c4c97561e517e165d7ec52fdc3e943c7fb14b18",
+    "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c"
+  },
+  "log": "target/quality/tinyllama-down256-run.log",
+  "exit_file": "target/quality/tinyllama-down256-run.exit",
+  "graph_max_steps": 100000000,
+  "down_bounds": {
+    "input": 256,
+    "weight": 1.5
+  },
+  "observed_at_utc": "2026-11-04T02:47:35.947052+00:00",
+  "pid": 1238576
+}

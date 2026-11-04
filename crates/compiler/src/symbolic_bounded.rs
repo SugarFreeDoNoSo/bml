@@ -17,6 +17,16 @@ pub(crate) use rms::{append_stage, compact_stage, compile_rms_program, linearize
 #[path = "symbolic_bounded_softmax.rs"]
 mod softmax;
 
+/// Absolute operand bounds for one family of learned projections.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProjectionBounds {
+    /// Absolute activation bound.
+    pub input: f64,
+    /// Absolute weight bound.
+    pub weight: f64,
+}
+
 /// Operand declarations for the opt-in complete bounded arithmetic profile.
 /// These limits reject unsupported contexts; they do not promise evaluability
 /// or uniform accuracy. Every arithmetic instruction is checked at execution.
@@ -29,6 +39,9 @@ pub struct BoundedProfile {
     pub projection_input: f64,
     /// Absolute learned matrix element bound.
     pub projection_weight: f64,
+    /// Optional separate limits for MLP down projections.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub down_projection: Option<ProjectionBounds>,
     /// Absolute query and key element bound.
     pub attention: f64,
     /// Absolute cached attention value bound.
@@ -55,6 +68,7 @@ impl Default for BoundedProfile {
             },
             projection_input: 128.0,
             projection_weight: 2.0,
+            down_projection: None,
             attention: 16.0,
             value: 16.0,
             rope: 16.0,
@@ -90,12 +104,21 @@ impl BoundedProfile {
         ] {
             self.config(op, if op == Operation::Rope { 2 } else { 1 })?;
         }
+        if self.down_projection.is_some() {
+            self.config(Operation::DownDot, 1)?;
+        }
         Ok(())
     }
     fn config(self, op: Operation, width: usize) -> Result<BoundedOpConfig, String> {
         let config = match op {
             Operation::Dot => {
                 BoundedOpConfig::dot_step(self.projection_input, self.projection_weight)
+            }
+            Operation::DownDot => {
+                let bounds = self
+                    .down_projection
+                    .ok_or("missing down projection bounds")?;
+                BoundedOpConfig::dot_step(bounds.input, bounds.weight)
             }
             Operation::AttentionDot => BoundedOpConfig::dot_step(self.attention, self.attention),
             Operation::WeightedSum => BoundedOpConfig::dot_step(1.0, self.value),
@@ -130,6 +153,12 @@ impl BoundedProfile {
             }
             let (left, right) = match op {
                 Operation::Dot => (self.projection_input, self.projection_weight),
+                Operation::DownDot => {
+                    let bounds = self
+                        .down_projection
+                        .ok_or("missing down projection bounds")?;
+                    (bounds.input, bounds.weight)
+                }
                 Operation::AttentionDot => (self.attention, self.attention),
                 _ => (1.0, self.value),
             };
@@ -236,7 +265,7 @@ impl BoundedProfile {
 fn is_dot(op: Operation) -> bool {
     matches!(
         op,
-        Operation::Dot | Operation::AttentionDot | Operation::WeightedSum
+        Operation::Dot | Operation::DownDot | Operation::AttentionDot | Operation::WeightedSum
     )
 }
 /// BML arithmetic, stack/output instructions and bounded indexed iteration.

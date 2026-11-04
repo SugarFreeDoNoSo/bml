@@ -465,6 +465,13 @@ fn full_bounded_runtime_rejects_each_dot_role_without_committing_cache() {
             value: 1.0 / 256.0,
             ..Default::default()
         },
+        BoundedProfile {
+            down_projection: Some(bml_compiler::symbolic_bounded::ProjectionBounds {
+                input: 128.0,
+                weight: 1.0 / 256.0,
+            }),
+            ..Default::default()
+        },
     ]
     .into_iter()
     .enumerate()
@@ -491,6 +498,12 @@ fn full_bounded_runtime_rejects_each_dot_role_without_committing_cache() {
                 let expected = if role == 0 { "input" } else { "weight" };
                 assert!(
                     error.contains(expected) && error.contains("blk.0.") && error.contains("row "),
+                    "{error}"
+                );
+            }
+            if role == 4 {
+                assert!(
+                    error.contains("ffn_down.weight") && error.contains("weight"),
                     "{error}"
                 );
             }
@@ -711,4 +724,50 @@ fn persisted_extended_swiglu_executes_checked_bml_across_boundary() {
     )
     .unwrap();
     assert_eq!(legacy.signature.fixed.len(), 24);
+}
+
+#[test]
+fn persisted_down_projection_has_independent_bounds_and_checked_execution() {
+    use bml_compiler::symbolic_bounded::ProjectionBounds;
+    let source = symbolic_fixture::fixture(0.25);
+    let profile = BoundedProfile {
+        projection_input: 64.0,
+        projection_weight: 4.0,
+        down_projection: Some(ProjectionBounds {
+            input: 256.0,
+            weight: 1.5,
+        }),
+        ..Default::default()
+    };
+    let directory = artifact(&source, profile);
+    let loaded = load_directory(&directory.0, None).unwrap();
+    let kernel = loaded
+        .kernels
+        .iter()
+        .find(|kernel| kernel.operation == Operation::DownDot)
+        .unwrap();
+    let mut input = vec![0.0; kernel.width];
+    let mut weights = vec![0.0; kernel.width];
+    input[0] = 167.621_176_174_126_73;
+    weights[0] = 1.0;
+    profile
+        .validate_values(Operation::DownDot, kernel.width, 0.5, &input, &weights)
+        .unwrap();
+    assert!(profile
+        .validate_values(Operation::Dot, kernel.width, 0.5, &input, &weights)
+        .is_err());
+    let actual = execute(kernel, &input, &weights)[0];
+    assert!((actual - input[0]).abs() < 1e-7, "{actual}");
+    weights[0] = 1.5001;
+    assert!(profile
+        .validate_values(Operation::DownDot, kernel.width, 0.5, &input, &weights)
+        .is_err());
+    let old = serde_json::to_value(BoundedProfile::default()).unwrap();
+    assert!(old.get("down_projection").is_none());
+    assert_eq!(
+        serde_json::from_value::<BoundedProfile>(old)
+            .unwrap()
+            .down_projection,
+        None
+    );
 }

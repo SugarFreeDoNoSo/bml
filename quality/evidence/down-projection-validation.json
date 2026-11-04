@@ -1,0 +1,24 @@
+{
+  "scope": "Optional per-role down-projection bounds, persisted kernel, checked BML and integration; no real-model parity result.",
+  "base_commit": "bb57fe7189fdd1d91a4835e8d94c8e2af626c71f",
+  "bounds": {
+    "global_input": 64,
+    "global_weight": 4,
+    "down_input": 256,
+    "down_weight": 1.5
+  },
+  "focused_tests": [
+    "persisted_down_projection_has_independent_bounds_and_checked_execution",
+    "full_bounded_runtime_rejects_each_dot_role_without_committing_cache",
+    "cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weights"
+  ],
+  "checks": "canonical workspace gate and strict OpenSpec passed",
+  "logs": {
+    "target/quality/down-projection-test.log": "30d3601d621cda18f7db65730e11d6cadd672d90aebc30bd1b26ae4fd762d7d2",
+    "target/quality/down-projection-cli-isolated.log": "f26f7bf15844f26684a0e228d7dcb3f8b1b6adfc772fbbac480f20269058b512",
+    "target/quality/down-role-rejection.log": "ea6ba45875b3f646a84ac4fab8269437a824c5c5aff51aa4bc7383be373360c5",
+    "target/quality/down-projection-gate.log": "1657aa97dd1f87536c38624d326538770182565648083acd60e6144dbe78fe48"
+  },
+  "real_model_run": "quality/evidence/tinyllama-down256-run.json",
+  "worker_audit": "quality/evidence/down-projection-hot-loop.json"
+}

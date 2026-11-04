@@ -550,11 +550,15 @@ impl SymbolicCausalModel {
         let width = input.len();
         let profile = self.bounded_profile;
         let epsilon = self.compiler.rms_norm_epsilon();
-        self.ensure_kernel(Operation::Dot, width)?;
-        let kernel = self
-            .kernels
-            .get_mut(&(Operation::Dot, width))
-            .expect("kernel inserted");
+        let op = if name.ends_with(".ffn_down.weight")
+            && profile.is_some_and(|p| p.down_projection.is_some())
+        {
+            Operation::DownDot
+        } else {
+            Operation::Dot
+        };
+        self.ensure_kernel(op, width)?;
+        let kernel = self.kernels.get_mut(&(op, width)).expect("kernel inserted");
         if let Some(shard) = &self.shard {
             let dims = shard.dimensions(name).ok_or("missing shard projection")?;
             if dims.len() != 2 || dims[0] != width as u64 {
@@ -573,7 +577,7 @@ impl SymbolicCausalModel {
                     .collect::<Vec<_>>();
                 if let Some(profile) = profile {
                     profile
-                        .validate_values(Operation::Dot, width, epsilon, input, &weights)
+                        .validate_values(op, width, epsilon, input, &weights)
                         .map_err(|e| format!("{name} row {row}: {e}"))?;
                 }
                 let value = kernel.execute(input, &weights)?[0];
@@ -591,7 +595,7 @@ impl SymbolicCausalModel {
             let weights: Vec<_> = row.iter().map(|&v| f64::from(v)).collect();
             if let Some(profile) = profile {
                 profile
-                    .validate_values(Operation::Dot, width, epsilon, x, &weights)
+                    .validate_values(op, width, epsilon, x, &weights)
                     .map_err(|e| format!("{name} row {index}: {e}"))?;
             }
             Ok(kernel.execute(x, &weights)?[0])

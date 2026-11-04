@@ -548,6 +548,7 @@ Then it rejects the request before expensive generation
     And a one-step-short execution budget, inadequate storage or an undersized loop fragment is rejected
     And role-specific operand bounds and the extra selected-maximum softmax input are enforced
 
+  # Also verifies optional persisted down-projection bounds independently.
   @C81
   Scenario: Complete bounded v4 artifacts preserve causal behavior and exact numerical metadata
     Given an explicitly selected bounded profile and a complete persisted operation plan with external mapped weights

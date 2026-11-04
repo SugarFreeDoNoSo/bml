@@ -795,7 +795,8 @@
       "full_bounded_artifacts_reject_malformed_profile_literals_layout_and_roles",
       "bounded_v3_artifacts_remain_separate_from_the_new_indexed_profile",
       "swiglu_domain_error_identifies_layer_operand_and_preserves_position",
-      "persisted_extended_swiglu_executes_checked_bml_across_boundary"
+      "persisted_extended_swiglu_executes_checked_bml_across_boundary",
+      "persisted_down_projection_has_independent_bounds_and_checked_execution"
     ]
   },
   "C84": {

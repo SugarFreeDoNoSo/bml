@@ -139,13 +139,19 @@ fn required_kernels(
     program_limit: usize,
     shared_outputs: bool,
     bounded: bool,
+    separate_down: bool,
 ) -> Result<Vec<(Operation, usize)>, String> {
     if context == 0 || context > model.config().context_length {
         return Err("invalid symbolic artifact context".into());
     }
     let mut keys = BTreeSet::new();
-    for (_, columns, _) in required_projections(model)? {
-        keys.insert((Operation::Dot, columns));
+    for (name, columns, _) in required_projections(model)? {
+        let operation = if separate_down && name.ends_with(".ffn_down.weight") {
+            Operation::DownDot
+        } else {
+            Operation::Dot
+        };
+        keys.insert((operation, columns));
     }
     if model.config().n_layers > 0 || model.weight_offsets().contains_key("output_norm.weight") {
         keys.insert((Operation::Norm, model.config().n_embd as usize));
@@ -332,6 +338,7 @@ fn compile_context_with_rms_bounds(
         limits.max_programs,
         true,
         bounded_profile.is_some(),
+        bounded_profile.is_some_and(|profile| profile.down_projection.is_some()),
     )?;
     let mut descriptors = Vec::with_capacity(required.len());
     let mut encoded = Vec::with_capacity(required.len());
@@ -574,6 +581,9 @@ fn load_directory_inner(
             MAX_PROGRAMS,
             shared_outputs,
             manifest.bounded_profile.is_some(),
+            manifest
+                .bounded_profile
+                .is_some_and(|profile| profile.down_projection.is_some()),
         )?
     };
     if required.len() != manifest.kernels.len() {

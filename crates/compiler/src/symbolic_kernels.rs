@@ -34,6 +34,8 @@ impl RmsBounds {
 pub enum Operation {
     /// Signed dot product with external weight constants.
     Dot,
+    /// Bounded-profile MLP down-projection dot product.
+    DownDot,
     /// Bounded-profile query/key dot product, with its own operand bounds.
     AttentionDot,
     /// Bounded-profile probability/value dot product.
@@ -56,6 +58,7 @@ impl Operation {
     pub fn name(self) -> &'static str {
         match self {
             Self::Dot => "dot",
+            Self::DownDot => "down_dot",
             Self::AttentionDot => "attention_dot",
             Self::WeightedSum => "weighted_sum",
             Self::Norm => "rms_norm",
@@ -73,7 +76,7 @@ impl Operation {
             return Err("empty symbolic operation width".into());
         }
         let (inputs, external, outputs, fixed) = match self {
-            Self::Dot => (width, width, 1, vec![]),
+            Self::Dot | Self::DownDot => (width, width, 1, vec![]),
             Self::Norm => {
                 if !epsilon.is_finite() || epsilon <= 0.0 {
                     return Err("invalid symbolic RMS epsilon".into());
@@ -446,7 +449,7 @@ fn build_dag(
                 t.scale_signed(x, y)
             }]
         }
-        Operation::Dot | Operation::AttentionDot | Operation::WeightedSum => {
+        Operation::Dot | Operation::DownDot | Operation::AttentionDot | Operation::WeightedSum => {
             return Err("dot products require their row compiler".into())
         }
     };

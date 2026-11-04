@@ -1,0 +1,212 @@
+{
+  "schema": 1,
+  "date_utc": "2026-11-04T02:50:14.134157+00:00",
+  "compiler": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+  "build_command": [
+    "cargo",
+    "build",
+    "-p",
+    "bml-worker",
+    "--release",
+    "--locked",
+    "--config",
+    "profile.release.strip=false",
+    "--message-format=json"
+  ],
+  "binary_path": "target/quality/down-projection-worker-audited",
+  "rpn_variants": [
+    "One",
+    "Zero",
+    "Bml",
+    "Dup",
+    "Var",
+    "Const",
+    "VarIndexed",
+    "ContextVarIndexed",
+    "ContextConstIndexed",
+    "StoreResult",
+    "Loop",
+    "FAdd",
+    "FMul",
+    "Pick",
+    "Drop",
+    "Swap",
+    "FMax"
+  ],
+  "result": {
+    "symbol": "bml_runtime::hot_loop::dispatch_ops",
+    "address": 572816,
+    "bytes": 2533,
+    "calls": [
+      {
+        "address": 572964,
+        "target": "<alloc::raw_vec::RawVec<f64>>::grow_one"
+      },
+      {
+        "address": 573005,
+        "target": "<alloc::raw_vec::RawVec<f64>>::grow_one"
+      },
+      {
+        "address": 573288,
+        "target": "core::panicking::panic_fmt"
+      },
+      {
+        "address": 573303,
+        "target": "core::panicking::panic_bounds_check"
+      },
+      {
+        "address": 573315,
+        "target": "core::panicking::panic_bounds_check"
+      },
+      {
+        "address": 573425,
+        "target": "bml_runtime::hot_loop::dispatch_ops"
+      },
+      {
+        "address": 573478,
+        "target": "<alloc::raw_vec::RawVec<f64>>::grow_one"
+      },
+      {
+        "address": 573714,
+        "target": "<alloc::raw_vec::RawVec<f64>>::grow_one"
+      },
+      {
+        "address": 573994,
+        "target": "log2"
+      },
+      {
+        "address": 574034,
+        "target": "exp2"
+      },
+      {
+        "address": 574069,
+        "target": "<alloc::raw_vec::RawVec<f64>>::grow_one"
+      },
+      {
+        "address": 574228,
+        "target": "<alloc::raw_vec::RawVec<f64>>::grow_one"
+      },
+      {
+        "address": 574459,
+        "target": "<alloc::raw_vec::RawVec<f64>>::grow_one"
+      },
+      {
+        "address": 574533,
+        "target": "<alloc::raw_vec::RawVec<f64>>::grow_one"
+      },
+      {
+        "address": 574710,
+        "target": "trunc"
+      },
+      {
+        "address": 575016,
+        "target": "<alloc::raw_vec::RawVec<f64>>::grow_one"
+      },
+      {
+        "address": 575189,
+        "target": "trunc"
+      },
+      {
+        "address": 575322,
+        "target": "<alloc::raw_vec::RawVec<f64>>::grow_one"
+      },
+      {
+        "address": 575344,
+        "target": "core::panicking::panic_bounds_check"
+      }
+    ],
+    "jump_tables": [
+      {
+        "branch_address": 572949,
+        "table_address": 34440,
+        "targets": [
+          572951,
+          572992,
+          573855,
+          574169,
+          574472,
+          574085,
+          574817,
+          575029,
+          574546,
+          573039,
+          573320,
+          573545,
+          573641,
+          574117,
+          573760,
+          573778,
+          574241
+        ]
+      },
+      {
+        "branch_address": 573853,
+        "table_address": 34440,
+        "targets": [
+          572951,
+          572992,
+          573855,
+          574169,
+          574472,
+          574085,
+          574817,
+          575029,
+          574546,
+          573039,
+          573320,
+          573545,
+          573641,
+          574117,
+          573760,
+          573778,
+          574241
+        ]
+      }
+    ],
+    "local_math_helpers": [
+      {
+        "symbol": "trunc",
+        "address": 947472,
+        "bytes": 74,
+        "branches": [
+          {
+            "address": 947496,
+            "target": 947545
+          }
+        ]
+      }
+    ],
+    "worker_network_imports": [
+      "accept4",
+      "recv",
+      "send",
+      "socket"
+    ]
+  },
+  "flags": {
+    "RUSTFLAGS": null,
+    "CARGO_ENCODED_RUSTFLAGS": null,
+    "CARGO_TARGET_DIR": "/home/dev/Work/bml/target/entrypoint-repair-build"
+  },
+  "binary_sha256": "02eafe2f4e2209e40068fdf5355b7cdad10a23779433641df4b916272b2739d1",
+  "source_sha256": {
+    "crates/runtime/src/hot_loop.rs": "14882a696a437654e9eb7104cc204850f41af9936449cbc6399ab1e063aecf6f",
+    "crates/runtime/src/buffer.rs": "9736f41f2cc8a2321f048f88cbe75d09b3f93d8b9a86fa2ef76f8b219fa751a2",
+    "crates/runtime/src/graph.rs": "7af83e2bd5b5e91db69ac05d235a57266350d2611bcb70bf626b1688ad2b3666",
+    "crates/runtime/src/graph_rpc.rs": "6218ee9369072d3b39d2159eefd608442d4ae9f94b9c5f4c4ea3fabd9aee0a7e",
+    "crates/runtime/src/net.rs": "dcb142231c8df4a13ee3608aa0b5e5573dbbfa86a1a3f94bc3904e0007559392",
+    "crates/worker/src/main.rs": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+    "crates/runtime/src/runtime.rs": "404d8868f7e25e6e11eca474f7d89bdaaf5a88c845f0a9e86438d9f202c3c9aa",
+    "crates/runtime/src/operation_schedule.rs": "45bc3c2e88b7ac537f883b58a18ccbdbd7919212d7d7e096d1f2d8dc26a1aad1",
+    "crates/compiler/src/rpn.rs": "c5dbfad6884dce6892b2d352568a5ff285a6951fc80ba8fd4b6c45f962fc8895",
+    "Cargo.toml": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+    "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c",
+    "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1",
+    "tools/audit_hot_loop_binary.py": "c9368889b4bf469a5064746a4b53560b0f47a3894622fef29eee48a02756d0d8",
+    "tools/test_audit_hot_loop_binary.py": "942830d93c429475a5fd40a2a5806b7c40214980520e92699104f24ff7a4ef56"
+  },
+  "disassembly_sha256": "d4a22f8aedd640719131a505984d31faa0b8d46b6bb1e24f8adcd2c39e7eb91b",
+  "scope": "Retained x86-64 dispatcher inside the real worker, with network routines linked. All calls resolve to recursion, exp2/log2, local trunc, Vec growth or bounds/ownership panic; all direct branches and computed jump-table targets stay inside the dispatcher. No RPC/socket calls or syscalls occur in it. The local trunc leaf also has no calls, traps or external branches. Allocator/panic slow paths are identified, not transitively verified; arbitrary panic hooks, allocator replacement or dynamic library interposition are outside this audit. ValidatedGraph reserves the peak stack and validates references before execution. No PMU/cache-residency claim.",
+  "original_binary_path": "/home/dev/Work/bml/target/entrypoint-repair-build/release/bml-worker",
+  "retained_binary_sha256": "02eafe2f4e2209e40068fdf5355b7cdad10a23779433641df4b916272b2739d1"
+}
