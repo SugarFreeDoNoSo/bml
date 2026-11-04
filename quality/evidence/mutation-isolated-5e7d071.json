@@ -1,0 +1,42 @@
+{
+  "status": "running",
+  "observed_at_utc": "2026-11-04T03:05:36.114320+00:00",
+  "scope": "Changed Rust lines against formatted base; no gate result until the complete campaign terminates successfully.",
+  "source_commit": "5e7d0716a97f53886e499dbb7af2daa940999926",
+  "base_commit": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+  "candidate_count": 5176,
+  "pid": 1273667,
+  "worktree": "target/mutation-isolated-5e7d071",
+  "exclusive_cargo_target_dir": "target/global-restart-build",
+  "exclusive_cargo_target_policy": "Do not use this target directory for any other build while the campaign process is live.",
+  "diff": "target/quality/mutation-isolated-5e7d071.diff",
+  "diff_sha256": "f269793e82ad878c230441f2d1c9980734193a810b3d1bc87685d6899ec9a0e0",
+  "test_timeout_seconds": 120,
+  "build_timeout_seconds": 300,
+  "log": "target/quality/mutation-isolated-5e7d071.log",
+  "outcomes": "target/spec-mutations-isolated-5e7d071/mutants.out/outcomes.json",
+  "exit_file": "target/quality/mutation-isolated-5e7d071.exit",
+  "command": [
+    "cargo",
+    "mutants",
+    "--workspace",
+    "--cargo-arg=--locked",
+    "--test-workspace",
+    "true",
+    "--timeout",
+    "120",
+    "--build-timeout",
+    "300",
+    "--in-place",
+    "--in-diff",
+    "/home/dev/Work/bml/target/quality/mutation-isolated-5e7d071.diff",
+    "--output",
+    "/home/dev/Work/bml/target/spec-mutations-isolated-5e7d071"
+  ],
+  "baseline": {
+    "result": "passed",
+    "build_seconds": 72,
+    "test_seconds": 96,
+    "note": "The baseline tests selected mutation-bearing packages; subsequent mutants invoke cargo test --workspace."
+  }
+}
