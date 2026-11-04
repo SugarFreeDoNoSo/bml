@@ -1,0 +1,10 @@
+{
+  "revision": "63b60eef537377169f87c3e61590f15a606ce2f6",
+  "command": "cargo llvm-cov --workspace --locked --json --output-path target/quality/coverage-63b60ee.json",
+  "exit_code": 0,
+  "lines_percent": 89.99014153932822,
+  "functions_percent": 81.08594030924128,
+  "report_sha256": "518cb19f13784f1bbf1a9b7532bb0e2099c5bc257e288b467a0cf8d9e88a61bc",
+  "report_path": "target/quality/coverage-63b60ee.json",
+  "scope": "Workspace ordinary tests; ignored tests, branch coverage and doctests are not covered. Report is a local target artifact."
+}
