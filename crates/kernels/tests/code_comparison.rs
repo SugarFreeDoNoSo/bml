@@ -13,10 +13,14 @@ fn chain(operators: usize, right: bool) -> Bml {
     value
 }
 fn available() -> Vec<Backend> {
-    [Backend::Scalar, Backend::Avx2, Backend::Neon]
+    #[cfg(target_arch = "aarch64")]
+    assert!(Backend::Neon.available(), "AArch64 must exercise NEON");
+    let backends: Vec<_> = [Backend::Scalar, Backend::Avx2, Backend::Neon]
         .into_iter()
         .filter(|b| b.available())
-        .collect()
+        .collect();
+    eprintln!("comparison backends exercised: {backends:?}");
+    backends
 }
 #[test]
 fn vector_backends_match_independent_binary_string_order_including_tails() {

@@ -1,0 +1,69 @@
+{
+  "scope": "Functional comparison-code contracts on emulated AArch64: Scalar and NEON exercised, plus all-feature native-tensor fallback tests. Not real ARM hardware or a performance campaign; no numerical NEON tensor kernel claim.",
+  "observed_at_utc": "2026-11-04T13:16:40.935064+00:00",
+  "base_commit": "83261989d2ac619f9360ab51518a434619f37956",
+  "host_architecture": "x86_64",
+  "execution": "QEMU user-mode emulation; CPU max",
+  "target": "aarch64-unknown-linux-musl",
+  "rustc": "1.98.1 (48a229cea 2026-09-01)",
+  "emulator": {
+    "binary": "target/arm-qemu/runtime/usr/bin/qemu-aarch64",
+    "sha256": "73cc2584f119f9e74c85c0a8549dbb6fd104ae3897a06a7500797f9e5b4d0943",
+    "version": "qemu-aarch64 version 10.0.13 (Debian 1:10.0.13+ds-0+deb13u1)",
+    "debian_package": "target/arm-qemu/qemu-user_1%3a10.0.13+ds-0+deb13u1_amd64.deb",
+    "package_sha256": "ca6ede739327a20ae5a3498230c8a3a9a072c586e131bc6bcc1201eb1725e336"
+  },
+  "arm_all_features": {
+    "passed": 8,
+    "failed": 0,
+    "comparison_backends": [
+      "Scalar",
+      "Neon"
+    ],
+    "comparison_tests": 4,
+    "native_tensor_tests": 4,
+    "native_tensor_backend": "Reference fallback; tensor-simd has no NEON arithmetic backend"
+  },
+  "x86_all_features": {
+    "passed": 8,
+    "failed": 0,
+    "comparison_backends": [
+      "Scalar",
+      "Avx2"
+    ]
+  },
+  "source_sha256": {
+    "crates/kernels/src/lib.rs": "82c4511a44cf04c338e823dde904133b1f200f278e12efea66a66617319e23a4",
+    "crates/kernels/src/tensor.rs": "b09431aa1d2fb16bea90c82fea0244e7384a6397e707c98828545c7749120f8c",
+    "crates/kernels/tests/code_comparison.rs": "7f3e33cedc7057ad6305c16686cf7cfd14be4930d5f6790a36d17f5ef677e4ac",
+    "crates/kernels/tests/tensor_simd.rs": "292caf87c4bca681ea057017764d7b124c0b0ee0b3521ead6a2bc425fe51e760",
+    "crates/kernels/Cargo.toml": "ef943b48a6ffbf7755ae2d775e0f36f60e27ceeb08f43f1e1b0aeee11183ea65",
+    "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c",
+    "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1"
+  },
+  "preserved_arm_test_binaries": {
+    "target/quality/arm-neon-bml_kernels-b4c75ce0887bf18f": "ee68499034b087c6538965f0ac35a35eb0be71526e4b7c1142a054c196ba0d9c",
+    "target/quality/arm-neon-code_comparison-7c16b6613fda5f5e": "d17f8b8b39ae5434fb967dc5656619a87722f67915bd25981b1f07db8d83d95f",
+    "target/quality/arm-neon-tensor_simd-f8c85a69ae532baf": "897531d140ea92e95fa32fbe9d24d8406fbe2246ef69834e399909754712c853"
+  },
+  "logs": {
+    "target/quality/arm-neon-code-comparison-build.log": "6e0df5700c34d8e20b737ae739e273615faec81d8bdfe201baedb0387c4ab9b5",
+    "target/quality/arm-neon-code-comparison.log": "b56ff7b242e008ea17f722f0ce5d7aa7ef28e370dda46e1b89d2d19f0a4b9100",
+    "target/quality/arm-neon-all-features.log": "3886df03fc1f33c96e10b63cde4795238e553a83cc17d37798f3776e36842bc6",
+    "target/quality/x86-kernels-all-features.log": "ac93bd8fdf1fdbdfde7f8a521cf9bbb15a6cd63354e5740df89d460dc2650c7d",
+    "target/quality/x86-code-comparison-recheck.log": "9e2f639f23f83f98d3c42db8f01b53f943c322a1a851cfb8cdd5c3ec581ba8fd",
+    "target/quality/arm-neon-functional-gate.log": "f5b21934bafb9fe29ee4f79f00673af400e768970f7ef2846705038ac0d9270b",
+    "target/quality/arm-neon-functional-openspec.log": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7"
+  },
+  "requirements": {
+    "7.3": "functional cases exercised, including emulated NEON; no accumulation in the structural comparison kernel",
+    "7.4": "not completed: real ARM hardware campaign remains absent"
+  },
+  "ordinary_verification": {
+    "workspace_gate": "passed: scripts/check.sh origin/master",
+    "historical_contract_discrepancies": 0,
+    "traceability": "105/105",
+    "new_static_diagnostics": 0,
+    "openspec_strict": "11 passed, 0 failed"
+  }
+}

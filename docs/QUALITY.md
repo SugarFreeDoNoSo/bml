@@ -262,3 +262,35 @@ no analiza hooks externos ni interposición de librerías, y no acredita caché 
 ni contadores PMU. El preflight reserva la pila máxima y valida referencias para
 la ruta ordinaria de ejecución. Una arquitectura o compilador cuyo patrón no
 reconozca el auditor requiere revisar la evidencia, no desactivar la comprobación.
+
+
+## NEON functional checks under AArch64 emulation
+
+`quality/evidence/arm-neon-code-comparison.json` records eight all-feature
+kernel tests on QEMU AArch64 and eight on native x86. The four structural-code
+comparison tests explicitly exercised Scalar/NEON in the emulator and
+Scalar/AVX2 on x86. They cover word positions and unsigned ordering, vector
+tails, non-evaluable symbolic terms, limits, first-error ordering and unchanged
+inputs. AArch64 tests assert NEON availability so it cannot be silently skipped.
+The other four tests cover the separate native IEEE tensor API; on AArch64 it
+uses its Reference fallback, not NEON arithmetic.
+
+For functional reproduction from an x86-64 host, install the pinned toolchain's
+musl target and provide `qemu-aarch64` on PATH. Use a separate Cargo target
+directory and the pinned toolchain's self-contained linker:
+
+```sh
+rustup target add aarch64-unknown-linux-musl
+BML_CROSS_SYSROOT="$(rustc --print sysroot)"
+CARGO_TARGET_DIR="$PWD/target/arm-correctness-build" \
+CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER="$BML_CROSS_SYSROOT/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld" \
+CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER="qemu-aarch64 -cpu max" \
+cargo test -p bml-kernels --all-features --target aarch64-unknown-linux-musl \
+  --locked -- --nocapture
+```
+
+The recorded run used a copy of the pinned toolchain under `target/arm-rustup`
+and the Debian QEMU binary under `target/arm-qemu/runtime/usr/bin`; hashes and
+preserved test executables are recorded in the evidence. QEMU results establish
+functional behavior under emulation. They provide no real-ARM throughput,
+hardware counters or SIMD speedup evidence; task 7.4 remains open.
