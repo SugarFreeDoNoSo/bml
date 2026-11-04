@@ -28,6 +28,7 @@ pub mod symbolic_artifact;
 pub mod symbolic_bounded;
 pub mod symbolic_kernels;
 pub mod symbolic_projection;
+pub mod symbolic_weight_shard;
 pub mod tokenizer;
 
 pub use dag::Dag;
