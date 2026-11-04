@@ -47,7 +47,7 @@ Seguimiento del compilador simbólico:
 de dimensiones/fragmentación y 10 del loader detectados tras añadir los casos
 de frontera inclusiva y rechazo de opcodes nativos sin depender del runtime.
 Gate canónico actualizado: 613 pruebas Rust, auditoría cero discrepancias,
-traza 71/71 y Clippy sin diagnósticos nuevos. La campaña completa sigue pendiente.
+traza 71/71 y Clippy sin diagnósticos nuevos. Dos mutantes históricos adicionales de detección de contenedores se detectaron con una regresión que cubre prefijos truncados y errores de lectura (`quality/evidence/container-detection-mutation-replays.json`). La campaña completa sigue pendiente.
 
 Seguimiento local posterior (`6a3e6cc`): los 47 supervivientes del informe
 incompleto de 1.507 resultados tienen disposición: 38 detectados por contratos

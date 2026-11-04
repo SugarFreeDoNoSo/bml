@@ -1,0 +1,23 @@
+{
+  "scope": "Focused replay of two historical missed mutations in CLI weight container detection, not a full mutation campaign.",
+  "base_commit": "35bcda4d605c2e30bfa9cede7645286215ba5aab",
+  "test": "weights::detection_tests::container_detection_distinguishes_magic_short_files_and_io_errors",
+  "baseline": "passed",
+  "mutations": [
+    {
+      "change": "UnexpectedEof guard replaced with true",
+      "exit_code": 101,
+      "detected_by": "directory read error incorrectly treated as non-container (Unix)"
+    },
+    {
+      "change": "UnexpectedEof guard replaced with false",
+      "exit_code": 101,
+      "detected_by": "truncated magic incorrectly returned as error"
+    }
+  ],
+  "logs": {
+    "target/quality/container-detection-test.log": "0eb8026828dd0538b3d86200f95990e89104bff78b9409769bf6053b37ef1cc0",
+    "target/quality/container-mutation-true.log": "40ba568a77fc3e74632e073ea2ae5d3d4276c170d6b5c9193fd00cb7f95c8fbf",
+    "target/quality/container-mutation-false.log": "d2384810cad3febfb08df0bc89097ddef4399b69b88f0564dc6ba2d368e2cb8a"
+  }
+}

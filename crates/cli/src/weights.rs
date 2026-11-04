@@ -215,3 +215,40 @@ pub fn inspect(args: InspectArgs) -> Result<(), Error> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod detection_tests {
+    use super::is_container;
+
+    #[test]
+    fn container_detection_distinguishes_magic_short_files_and_io_errors() {
+        let root =
+            std::env::temp_dir().join(format!("bml-container-detection-{}", std::process::id()));
+        std::fs::create_dir(&root).unwrap();
+        struct Cleanup(std::path::PathBuf);
+        impl Drop for Cleanup {
+            fn drop(&mut self) {
+                let _ = std::fs::remove_dir_all(&self.0);
+            }
+        }
+        let _cleanup = Cleanup(root.clone());
+        let file = root.join("weights");
+        for size in 0..bml_model_weights::MAGIC.len() {
+            std::fs::write(&file, &bml_model_weights::MAGIC[..size]).unwrap();
+            assert!(!is_container(&file).unwrap(), "prefix length {size}");
+        }
+        std::fs::write(&file, bml_model_weights::MAGIC).unwrap();
+        assert!(is_container(&file).unwrap());
+        std::fs::write(&file, [0u8; 8]).unwrap();
+        assert!(!is_container(&file).unwrap());
+        assert_eq!(
+            is_container(&root.join("missing")).unwrap_err().kind(),
+            std::io::ErrorKind::NotFound
+        );
+        #[cfg(unix)]
+        assert!(
+            is_container(&root).is_err(),
+            "a directory cannot be read as a weights file"
+        );
+    }
+}
