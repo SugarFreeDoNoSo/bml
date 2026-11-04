@@ -648,7 +648,14 @@ impl SymbolicCausalModel {
         }
         left.iter()
             .zip(right)
-            .map(|(&x, &y)| Ok(self.run(Operation::Add, 1, &[x, y], &[])?[0]))
+            .enumerate()
+            .map(|(index, (&x, &y))| {
+                self.run(Operation::Add, 1, &[x, y], &[])
+                    .map(|output| output[0])
+                    .map_err(|error| {
+                        format!("residual element {index}, left {x}, right {y}: {error}")
+                    })
+            })
             .collect()
     }
     // Shared layer execution for local inference and an explicitly bounded shard.
@@ -721,7 +728,9 @@ impl SymbolicCausalModel {
                 }
             }
             let projected = self.project(&attention, &format!("{prefix}.attn_output.weight"))?;
-            hidden = self.residual(&hidden, &projected)?;
+            hidden = self
+                .residual(&hidden, &projected)
+                .map_err(|error| format!("{prefix}.attention: {error}"))?;
             let normalized = self.norm(&hidden, &format!("{prefix}.ffn_norm.weight"))?;
             let gate = self.project(&normalized, &format!("{prefix}.ffn_gate.weight"))?;
             let up = self.project(&normalized, &format!("{prefix}.ffn_up.weight"))?;
@@ -733,7 +742,9 @@ impl SymbolicCausalModel {
                 );
             }
             let down = self.project(&activated, &format!("{prefix}.ffn_down.weight"))?;
-            hidden = self.residual(&hidden, &down)?;
+            hidden = self
+                .residual(&hidden, &down)
+                .map_err(|error| format!("{prefix}.ffn: {error}"))?;
         }
         Ok(hidden)
     }

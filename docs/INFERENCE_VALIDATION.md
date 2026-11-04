@@ -303,6 +303,8 @@ Las proyecciones `ffn_down` pueden declarar límites independientes mediante
 `--distributed-down-input-bound` y `--distributed-down-weight-bound`; sin ellos
 usan las cotas de proyección generales. Los artefactos con este perfil requieren
 una versión que reconozca el kernel `down_dot`. Las cotas limitan entradas, pero no garantizan evaluabilidad: con entrada ±256 y peso del mismo signo ±1,5, el grafo comprobado rechazó los extremos por rango numérico (`quality/evidence/down-projection-validation.json`).
+La cota absoluta de cada operando residual puede declararse con
+`--distributed-residual-bound`; el perfil comprueba su rango permitido.
 Las cotas de SwiGLU se declaran juntas con `--distributed-gate-bound` y
 `--distributed-up-bound`; el perfil admite compuertas hasta 18. El compilador
 valida las cotas y el producto permitido antes de publicar.

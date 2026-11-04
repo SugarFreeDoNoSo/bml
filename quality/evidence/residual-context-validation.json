@@ -1,0 +1,15 @@
+{
+  "scope": "Configurable residual bound and error context, with cache rollback; no real-model parity result.",
+  "tests": [
+    "residual_bound_errors_identify_layer_element_and_operands_without_committing",
+    "symbolic_distributed_cli"
+  ],
+  "checks": "canonical workspace gate and strict OpenSpec passed",
+  "logs": {
+    "target/quality/residual-context-test.log": "86fa11300dffd726afa08a631478a326eaf5ef4ef65b6cb1ac9018d23cfb30b1",
+    "target/quality/residual-cli-test.log": "ce6eb9afc0d2b8600c5bd71d6a121491a3d66d58802be3cc3481166bbe72b7e1",
+    "target/quality/residual-context-gate.log": "1c3d9ecf58edacf409057874ba0906730b2038003994a817ec6983bb60e900ee"
+  },
+  "real_model_run": "quality/evidence/tinyllama-residual128-run.json",
+  "worker_audit": "quality/evidence/residual-context-hot-loop.json"
+}

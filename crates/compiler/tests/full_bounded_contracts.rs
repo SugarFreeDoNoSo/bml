@@ -807,3 +807,37 @@ fn persisted_down_projection_has_independent_bounds_and_checked_execution() {
         None
     );
 }
+
+#[test]
+fn residual_bound_errors_identify_layer_element_and_operands_without_committing() {
+    let source = symbolic_fixture::fixture(0.25);
+    let profile = BoundedProfile {
+        residual: 1.0 / 256.0,
+        ..Default::default()
+    };
+    let directory = artifact(&source, profile);
+    let mut models = [
+        SymbolicCausalModel::open_bounded(&source.0, SymbolicLimits::default(), profile).unwrap(),
+        SymbolicCausalModel::open_artifact(
+            &directory.0,
+            None,
+            SymbolicLimits {
+                max_nodes: 0,
+                ..Default::default()
+            },
+        )
+        .unwrap(),
+    ];
+    for model in &mut models {
+        let mut cache = HashConsedKV::new(1, 1, 2, 8);
+        let error = model.forward_cached(&[69], &mut cache).unwrap_err();
+        assert!(
+            error.contains("blk.0.attention: residual element")
+                && error.contains("left ")
+                && error.contains("right ")
+                && error.contains("residual_add"),
+            "{error}"
+        );
+        assert_eq!(cache.current_pos(), 0);
+    }
+}
