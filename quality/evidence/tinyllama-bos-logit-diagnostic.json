@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "completed",
   "scope": "Complete BOS logit vectors from native F64/F32-KV reference and checked symbolic artifact; diagnostic only, no parity threshold or performance claim.",
   "base_commit": "5986773cf050250875a6b43f6deff9bb6182bc89",
   "started_at_utc": "2026-11-04T12:50:14.691521+00:00",
@@ -33,7 +33,13 @@
     "vector": "target/quality/tinyllama-bos-logits/native-logits.f64le",
     "vector_sha256": "0481d190297c6f1bb2224c175f7c0ac5808b4883760b94bf3a615bccce30449d"
   },
-  "symbolic": "pending; not yet a symbolic logit comparison",
+  "symbolic": {
+    "vector": "target/quality/tinyllama-bos-logits/symbolic-logits.f64le",
+    "vector_sha256": "714229cd4777dcc1d5893fc95bcf7a9d5107b4c468210286621c78ff9eb0adca",
+    "finite_count": 32000,
+    "argmax": 29958,
+    "elapsed_seconds": 22151.472660692
+  },
   "log": "target/quality/tinyllama-bos-logit-diagnostic.log",
   "exit_file": "target/quality/tinyllama-bos-logit-diagnostic.exit",
   "output_directory": "target/quality/tinyllama-bos-logits",
@@ -47,5 +53,16 @@
   "verification_logs": {
     "target/quality/tinyllama-bos-logit-diagnostic-gate.log": "c32c4bfb03ffa436041940ed85db23ded303cd90ddddbeb0fcb38d6a794130d7",
     "target/quality/tinyllama-bos-logit-diagnostic-openspec.log": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7"
-  }
+  },
+  "completed_at_utc": "2026-11-04T19:02:20.840944+00:00",
+  "exit_code": 0,
+  "comparison": {
+    "finite_pairs": 32000,
+    "max_absolute_error": 4.878808905262044e-06,
+    "max_absolute_error_index": 15863,
+    "mean_absolute_error": 9.515421421736447e-07,
+    "equal_argmax": true,
+    "tolerance": "none preset; diagnostic only, no parity claim"
+  },
+  "summary_sha256": "0750edda261e4dff687a7a0e29ad7bff41d4c94ce1ab2942461c6fc2c98bf7b0"
 }
