@@ -1,0 +1,40 @@
+{
+  "status": "running",
+  "scope": "Mutation of changed Rust lines since the formatted base; not a full-workspace manual campaign. No terminal results yet.",
+  "source_commit": "ce61deba23f87afd70667e930a0dd221243856d6",
+  "base_commit": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+  "isolated_worktree": "target/mutation-current-worktree",
+  "diff": "target/quality/current-spec-mutation.diff",
+  "diff_sha256": "a56da6ec0996a39338a9dea7507c9efff8c6b0f7c810ade3f0de8706e5ac95ab",
+  "candidate_count": 5172,
+  "cargo_mutants_pid": 1106106,
+  "test_timeout_seconds": 120,
+  "build_timeout_seconds": 300,
+  "outcomes": "target/spec-mutations-current-ce61deb/mutants.out/outcomes.json",
+  "log": "target/quality/current-spec-mutation-v2.log",
+  "exit_file": "target/quality/current-spec-mutation-v2.exit",
+  "command": [
+    "cargo",
+    "mutants",
+    "--workspace",
+    "--cargo-arg=--locked",
+    "--test-workspace",
+    "true",
+    "--timeout",
+    "120",
+    "--build-timeout",
+    "300",
+    "--in-place",
+    "--in-diff",
+    "/home/dev/Work/bml/target/quality/current-spec-mutation.diff",
+    "--output",
+    "/home/dev/Work/bml/target/spec-mutations-current-ce61deb"
+  ],
+  "observed_at_utc": "2026-11-04T02:09:35.065104+00:00",
+  "baseline": {
+    "result": "passed",
+    "build_seconds": 50,
+    "test_seconds": 66,
+    "log": "target/spec-mutations-current-ce61deb/mutants.out/log/baseline.log"
+  }
+}

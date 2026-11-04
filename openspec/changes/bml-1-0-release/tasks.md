@@ -35,8 +35,12 @@ features GGUF independientes y fachada/runtime/kernels all-features aprobados;
 cobertura de líneas 86,26 % y funciones 80,15 %. La tarea 6.2 permanece abierta
 porque falta la campaña de mutaciones sobre este snapshot.
 
-Campaña actual lanzada con 2.507 candidatos, resultados finales pendientes en
-`target/spec-mutations-2026-11-03/mutants.out/outcomes.json`. Regresiones y replays
+La campaña histórica de 2.507 candidatos quedó incompleta en
+`target/spec-mutations-2026-11-03/mutants.out/outcomes.json`. La campaña
+posterior también fue interrumpida (`quality/evidence/global-mutation-status-2026-11-03.json`). Una nueva campaña
+de 5.172 candidatos sobre el commit `ce61deb` comenzó en una copia aislada;
+su estado inicial y procedencia están en `quality/evidence/current-spec-mutation-run.json`.
+La ejecución en curso todavía no acredita el gate. Regresiones y replays
 separados registrados en `quality/evidence/spec-mutation-progress-2026-11-03.json`:
 37 mutantes matriciales detectados y uno no compilable; 6/6 detectados para
 selección de artefactos y límite de fragmentación de la CLI. Las suites actuales
