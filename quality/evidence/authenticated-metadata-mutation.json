@@ -1,0 +1,22 @@
+{
+  "scope": "Authenticated source-free worker metadata validation through the public loader. A valid previously source-validated artifact loads after GGUF removal; 13 independently invalid JSON metadata cases with matching hashes are rejected. Focused replay, not full mutation campaign.",
+  "base_commit": "d34e51099122587bd65198fd04ab1f937366a6ef",
+  "test": "authenticated_workers_reject_individually_invalid_model_metadata",
+  "invalid_cases": 13,
+  "baseline_exit_code": 0,
+  "mutation": "replace || config.n_heads == 0 with && config.n_heads == 0 in from_authenticated_manifest",
+  "mutation_exit_code": 101,
+  "logs": {
+    "target/quality/authenticated-metadata-test.log": "37e3b2ab8320285a1af64fa6287fe5bef726a13d115fc49dbb117eeb91640fca",
+    "target/quality/authenticated-metadata-mutant.log": "a0c9d64e7b4bcf896b36221baabf588400aa39b05555e938df2599a3fabe69f9",
+    "target/quality/authenticated-metadata-gate.log": "6db2c17615795e0e22898c856fcb8753383ee23079bb27e6ddfc48ae3c24187b",
+    "target/quality/authenticated-metadata-openspec.log": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7"
+  },
+  "verification": {
+    "workspace_gate": "passed: scripts/check.sh origin/master",
+    "historical_contract_discrepancies": 0,
+    "traceability": "105/105",
+    "new_static_diagnostics": 0,
+    "openspec_strict": "11 passed, 0 failed"
+  }
+}

@@ -4,9 +4,84 @@ use bml_compiler::{
     symbolic_kernels::KernelLimits,
     symbolic_weight_shard::{export_layer_weights, verify_layer_weights, VerifiedLayerWeights},
 };
+use sha2::{Digest, Sha256};
 #[allow(dead_code)]
 #[path = "../../runtime/tests/support/symbolic_fixture.rs"]
 mod symbolic_fixture;
+
+#[test]
+fn authenticated_workers_reject_individually_invalid_model_metadata() {
+    use bml_compiler::symbolic_artifact::{load_directory_authenticated, MANIFEST};
+    use serde_json::json;
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    let root = source.0.with_extension("authenticated-metadata");
+    struct Cleanup(std::path::PathBuf);
+    impl Drop for Cleanup {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let _cleanup = Cleanup(root.clone());
+    std::fs::create_dir(&root).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &root,
+        3,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let identity = checked_identity(&root, None).unwrap();
+    let original = std::fs::read(root.join(MANIFEST)).unwrap();
+    let valid: serde_json::Value = serde_json::from_slice(&original).unwrap();
+    // Exercise the worker-only metadata path without access to a source GGUF.
+    std::fs::remove_file(&source.0).unwrap();
+    let loaded = load_directory_authenticated(&root, &identity).unwrap();
+    assert_eq!(loaded.compiler.config().n_layers, 3);
+    assert_eq!(loaded.compiler.mapped_bytes(), 0);
+    for (section, field, value) in [
+        ("config", "architecture", json!("other")),
+        ("config", "n_layers", json!(0)),
+        ("config", "n_heads", json!(0)),
+        ("config", "n_embd", json!(0)),
+        ("config", "context_length", json!(0)),
+        ("config", "n_embd", json!(3)),
+        ("", "kv_heads", json!(0)),
+        ("", "kv_heads", json!(3)),
+        ("", "rms_norm_epsilon", json!(0.0)),
+        ("", "rms_norm_epsilon", json!(-1.0)),
+        ("", "rope_frequency_base", json!(0.0)),
+        ("", "rope_frequency_base", json!(-1.0)),
+        (
+            "config",
+            "vocab_size",
+            json!(valid["config"]["vocab_size"].as_u64().unwrap() + 1),
+        ),
+    ] {
+        let mut bad = valid.clone();
+        let object = if section.is_empty() {
+            &mut bad
+        } else {
+            &mut bad[section]
+        };
+        object[field] = value;
+        let bytes = serde_json::to_vec(&bad).unwrap();
+        std::fs::write(root.join(MANIFEST), &bytes).unwrap();
+        // A matching trusted digest does not replace format validation.
+        let digest = format!("{:x}", Sha256::digest(&bytes));
+        let error = load_directory_authenticated(&root, &digest)
+            .err()
+            .expect("individually invalid metadata must be rejected");
+        let expected = if field == "vocab_size" {
+            "symbolic vocabulary size mismatch"
+        } else {
+            "invalid authenticated symbolic model metadata"
+        };
+        assert_eq!(error, expected, "{section}.{field}");
+    }
+    std::fs::write(root.join(MANIFEST), original).unwrap();
+    load_directory_authenticated(&root, &identity).unwrap();
+}
 
 #[test]
 fn shard_export_is_range_bounded_and_requires_trusted_identity() {
