@@ -1629,44 +1629,54 @@ pub fn serialize_vector_fragment(vf: &VectorFragment) -> Vec<u8> {
 
 /// Deserializa un VectorFragment desde bytes (recibido via TCP).
 pub fn deserialize_vector_fragment(bytes: &[u8]) -> Result<VectorFragment, String> {
-    if bytes.len() < 28 {
-        return Err("payload demasiado pequeño".into());
+    let mut reader = DistributedReader { bytes };
+    let fragment_id = reader.u32()?;
+    let n_in = reader.u32()?;
+    let n_out_total = reader.u32()?;
+    let j_start = reader.u32()?;
+    let n_cols = reader.u32()?;
+    let output_slot = reader.u32()?;
+    if j_start
+        .checked_add(n_cols)
+        .filter(|end| *end <= n_out_total)
+        .is_none()
+    {
+        return Err("invalid vector fragment column range".into());
     }
-    let mut offset = 0;
-
-    let fragment_id = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let n_in = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let n_out_total = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let j_start = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let n_cols = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-    let output_slot = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
-    offset += 4;
-
-    // x
-    let x_len = u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap()) as usize;
-    offset += 8;
-    let mut x = Vec::with_capacity(x_len);
-    for _ in 0..x_len {
-        let v = f64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap());
-        offset += 8;
-        x.push(v);
+    let x_len = usize::try_from(reader.u64()?).map_err(|_| "vector input length overflow")?;
+    if x_len != n_in as usize {
+        return Err("vector input length does not match n_in".into());
     }
-
-    // w_columns
-    let w_len = u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap()) as usize;
-    offset += 8;
-    let mut w_columns = Vec::with_capacity(w_len);
-    for _ in 0..w_len {
-        let v = f64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap());
-        offset += 8;
-        w_columns.push(v);
+    let x_bytes = reader.take(
+        x_len
+            .checked_mul(8)
+            .ok_or("vector input byte length overflow")?,
+    )?;
+    let x = x_bytes
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|b| f64::from_le_bytes(*b))
+        .collect();
+    let w_len = usize::try_from(reader.u64()?).map_err(|_| "vector weight length overflow")?;
+    let expected = (n_in as usize)
+        .checked_mul(n_cols as usize)
+        .ok_or("vector weight count overflow")?;
+    if w_len != expected {
+        return Err("vector weight length does not match dimensions".into());
     }
-
+    let w_bytes = reader.take(
+        w_len
+            .checked_mul(8)
+            .ok_or("vector weight byte length overflow")?,
+    )?;
+    let w_columns = w_bytes
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|b| f64::from_le_bytes(*b))
+        .collect();
+    reader.finish()?;
     Ok(VectorFragment {
         fragment_id,
         x,
