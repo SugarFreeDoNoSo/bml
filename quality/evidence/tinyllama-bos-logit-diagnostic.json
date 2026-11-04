@@ -1,0 +1,51 @@
+{
+  "status": "running",
+  "scope": "Complete BOS logit vectors from native F64/F32-KV reference and checked symbolic artifact; diagnostic only, no parity threshold or performance claim.",
+  "base_commit": "5986773cf050250875a6b43f6deff9bb6182bc89",
+  "started_at_utc": "2026-11-04T12:50:14.691521+00:00",
+  "pid": 2546529,
+  "exec_session": 78245,
+  "binary": "target/quality/tinyllama-bos-logit-diagnostic-measured",
+  "binary_sha256": "cf9c0be8be395766123f06d9a49c9b4d5684f6278e8582e0333e32ffee30658e",
+  "source": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "source_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "manifest": "target/quality/tinyllama-bounded-rms4/symbolic.bmlgraph.json",
+  "manifest_sha256": "94ca984e8ec4b88b1f6a8f7184b452fca55c335efdbd19d3f4d0e278b6ad0b2a",
+  "source_sha256_at_build": {
+    "crates/runtime/tests/symbolic_causal_contracts.rs": "6db06b8c4adbdf93d57c3e8b8b0ec2ee1953d1a73fbc3dd5a894657057eaa619",
+    "crates/runtime/src/symbolic_causal.rs": "fbf8f7c6644b34ed60f44f97706bfc3d471a35a83d7ce176aef4c3f816c75d08",
+    "crates/compiler/src/symbolic_artifact.rs": "a3d9a26824a0d5e9862333d06c479925c4c2c9e037f579bf9e91415657e17481",
+    "crates/compiler/src/symbolic_bounded.rs": "f84a23903e5ae5e5c8ea7a09167ef6a33c60f8ff5763e2551d422e68fbb67fe6",
+    "crates/compiler/src/symbolic_kernels.rs": "d3ad3aa5a5cb4011f02d497fc595aaeb329281406687bf70e69847611999966d",
+    "crates/compiler/src/bml_ops.rs": "80565438c0e35ba8496be898bc34f4f889659a4bf25f36f26149aedaa99849ac",
+    "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c"
+  },
+  "test": "real_model_bos_symbolic_logit_diagnostic",
+  "input_ids": [
+    1
+  ],
+  "context_capacity": 2,
+  "graph_max_steps": 100000000,
+  "native": {
+    "logits": 32000,
+    "argmax": 29958,
+    "decoded_output": ">",
+    "vector": "target/quality/tinyllama-bos-logits/native-logits.f64le",
+    "vector_sha256": "0481d190297c6f1bb2224c175f7c0ac5808b4883760b94bf3a615bccce30449d"
+  },
+  "symbolic": "pending; not yet a symbolic logit comparison",
+  "log": "target/quality/tinyllama-bos-logit-diagnostic.log",
+  "exit_file": "target/quality/tinyllama-bos-logit-diagnostic.exit",
+  "output_directory": "target/quality/tinyllama-bos-logits",
+  "ordinary_verification": {
+    "workspace_gate": "passed: scripts/check.sh origin/master; real-model diagnostic ignored by the ordinary gate",
+    "historical_contract_discrepancies": 0,
+    "traceability": "105/105",
+    "new_static_diagnostics": 0,
+    "openspec_strict": "11 passed, 0 failed"
+  },
+  "verification_logs": {
+    "target/quality/tinyllama-bos-logit-diagnostic-gate.log": "c32c4bfb03ffa436041940ed85db23ded303cd90ddddbeb0fcb38d6a794130d7",
+    "target/quality/tinyllama-bos-logit-diagnostic-openspec.log": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7"
+  }
+}

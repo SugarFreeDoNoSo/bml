@@ -435,3 +435,31 @@ BML_TEST_GGUF=/ruta/tinyllama-q4_0.gguf cargo test --release -p bml-compiler --t
 
 La muestra no demuestra paridad del modelo simbólico completo. Evidencia:
 `quality/evidence/tinyllama-real-weighted-attention-oracle.json`.
+
+
+## Completed symbolic BOS run and full-logit diagnostic
+
+`quality/evidence/tinyllama-rms4-run.json` records the completed TinyLlama
+Q4_0 symbolic-artifact run: exit 0, one greedy generated token (`>`), with
+immutable artifact/binary hashes and build-time source hashes. This establishes
+successful checked execution for that BOS input. The CLI did not preserve the
+logit vector, so this result alone does not establish numerical parity.
+
+The opt-in diagnostic below preserves both full vocabulary vectors as
+little-endian f64 files and reports their maximum absolute difference and
+argmax IDs. It uses the native F64/F32-KV implementation as a reference and a
+SHA-256-authenticated symbolic artifact with the same GGUF and BOS input.
+It has no numerical-parity tolerance and must not be reported as a parity gate.
+Choose a new output directory; a complete real-model forward can take hours.
+
+```sh
+BML_TEST_GGUF=target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf \
+BML_TEST_SYMBOLIC_ARTIFACT=target/quality/tinyllama-bounded-rms4 \
+BML_TEST_LOGITS_DIR=target/quality/tinyllama-bos-logits \
+cargo test -p bml-runtime --test symbolic_causal_contracts --release --locked \
+  real_model_bos_symbolic_logit_diagnostic -- --ignored --exact --nocapture
+```
+
+The output contains `native-logits.f64le`, `symbolic-logits.f64le` and
+`summary.txt`. Absence of the latter two means the symbolic forward has not
+completed successfully; the native vector alone is not symbolic evidence.

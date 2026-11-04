@@ -5,6 +5,94 @@ mod symbolic_fixture;
 #[path = "support/symbolic_oracle.rs"]
 mod symbolic_oracle;
 use symbolic_oracle::logits as oracle;
+
+/// Opt-in measurement, not a numerical-parity gate. Preserve both complete
+/// vectors so aggregate statistics cannot hide an individual bad logit.
+#[test]
+#[ignore = "requires BML_TEST_GGUF, BML_TEST_SYMBOLIC_ARTIFACT and a new BML_TEST_LOGITS_DIR; full real-model execution can take hours"]
+fn real_model_bos_symbolic_logit_diagnostic() {
+    use std::{io::Write, path::PathBuf, time::Instant};
+    let source = PathBuf::from(std::env::var_os("BML_TEST_GGUF").expect("BML_TEST_GGUF"));
+    let artifact = PathBuf::from(
+        std::env::var_os("BML_TEST_SYMBOLIC_ARTIFACT").expect("BML_TEST_SYMBOLIC_ARTIFACT"),
+    );
+    let output =
+        PathBuf::from(std::env::var_os("BML_TEST_LOGITS_DIR").expect("BML_TEST_LOGITS_DIR"));
+    std::fs::create_dir(&output).expect("output directory must be new");
+    let native = InferenceCompiler::open_mapped(&source).unwrap();
+    let ids = native.vocab().encode("").unwrap();
+    assert_eq!(ids, vec![native.vocab().bos_token_id]);
+    let cache = || {
+        HashConsedKV::try_new(
+            native.config().n_layers,
+            native.n_kv_heads(),
+            native.head_dim(),
+            2,
+            bml_compiler::kv_cache::DEFAULT_MAX_KV_BYTES,
+        )
+        .unwrap()
+    };
+    let save = |name: &str, values: &[f64]| {
+        let file = std::fs::File::create(output.join(name)).unwrap();
+        let mut writer = std::io::BufWriter::new(file);
+        for value in values {
+            writer.write_all(&value.to_le_bytes()).unwrap();
+        }
+        writer.flush().unwrap();
+    };
+    let argmax = |values: &[f64]| {
+        values
+            .iter()
+            .enumerate()
+            .max_by(|(_, a), (_, b)| a.total_cmp(b))
+            .unwrap()
+            .0
+    };
+    let mut native_cache = cache();
+    let reference = native.forward_cached(&ids, &mut native_cache).unwrap();
+    assert!(reference.iter().all(|x| x.is_finite()));
+    save("native-logits.f64le", &reference);
+    let native_id = argmax(&reference);
+    eprintln!(
+        "native_bos_argmax={native_id} decoded={:?} logits={}",
+        native.vocab().decode(&[native_id as u32]).unwrap(),
+        reference.len()
+    );
+    let limits = SymbolicLimits {
+        max_nodes: 2_000_000,
+        max_cached_ops: 4_000_000,
+        max_programs: 4096,
+        graph: bml_runtime::graph::GraphLimits {
+            max_ops: 2_000_000,
+            max_steps: 100_000_000,
+            max_values: 4_000_000,
+        },
+    };
+    let mut symbolic =
+        SymbolicCausalModel::open_artifact(&artifact, Some(&source), limits).unwrap();
+    let mut symbolic_cache = cache();
+    let started = Instant::now();
+    let actual = symbolic.forward_cached(&ids, &mut symbolic_cache).unwrap();
+    save("symbolic-logits.f64le", &actual);
+    assert_eq!(native_cache.current_pos(), 1);
+    assert_eq!(symbolic_cache.current_pos(), 1);
+    assert_eq!(actual.len(), reference.len());
+    assert!(!actual.is_empty());
+    assert!(actual.iter().all(|x| x.is_finite()));
+    let max_abs_error = actual
+        .iter()
+        .zip(&reference)
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0_f64, f64::max);
+    let symbolic_id = argmax(&actual);
+    let summary = format!(
+        "input_ids={ids:?}\nlogits={}\nnative_argmax={native_id}\nsymbolic_argmax={symbolic_id}\nmax_abs_error={max_abs_error:.17e}\nsymbolic_elapsed_seconds={}\noperations={:?}\nqualification=diagnostic only; no numerical tolerance or parity claim\n",
+        actual.len(), started.elapsed().as_secs_f64(), symbolic.executed_operations()
+    );
+    std::fs::write(output.join("summary.txt"), &summary).unwrap();
+    eprintln!("{summary}");
+}
+
 fn close(actual: &[f64], expected: &[f64]) {
     assert_eq!(actual.len(), expected.len());
     for (i, (a, b)) in actual.iter().zip(expected).enumerate() {

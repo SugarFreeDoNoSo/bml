@@ -1,8 +1,8 @@
 {
-  "status": "running",
+  "status": "completed",
   "started_at_utc": "2026-11-04T06:30:12.316301+00:00",
   "base_commit": "a56c3e3ff160798f93ea22200c2b4a3f7b14afbd",
-  "scope": "One BOS token, local symbolic execution; no parity or performance result.",
+  "scope": "Completed local symbolic BOS forward and one greedy generated token. No saved logits, numerical parity or performance result.",
   "source": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
   "source_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
   "manifest": "target/quality/tinyllama-bounded-rms4/symbolic.bmlgraph.json",
@@ -23,7 +23,7 @@
   "rms_input_bound": 160,
   "rms_weight_bound": 4,
   "residual_bound": 160,
-  "qualification": "Experimental declarations and sampled numeric validation, not proof all intermediate values are evaluable.",
+  "qualification": "Successful checked BML-only execution on this input and artifact, not proof all declared operands are evaluable. Token text alone does not establish numerical parity.",
   "pid": 1709496,
   "observed_at_utc": "2026-11-04T06:31:14.494432+00:00",
   "post_launch_source_changes": {
@@ -35,5 +35,17 @@
       "sha256": "23f24d7076011a9648d1452378bb7f299514af06b2d1bcc9baa76f6b19a5d8a8",
       "description": "CLI options for explicit RoPE and attention bounds added after launch; the active process uses its recorded binary and build-time source."
     }
+  },
+  "exit_code": 0,
+  "completed_at_utc": "2026-11-04T12:37:35.979514+00:00",
+  "generated_tokens": 1,
+  "decoded_output": ">",
+  "log_sha256": "1b54cd8e590b864643b8818026d04968f47adac58d45f68aa21d26d7658b43f5",
+  "decoded_text_comparison": {
+    "native_reference": "quality/evidence/tinyllama-bos-logit-diagnostic.json",
+    "native_argmax": 29958,
+    "native_decoded_output": ">",
+    "same_decoded_text": true,
+    "qualification": "The completed CLI run did not print the selected token ID or preserve logits. Equal decoded text does not prove numerical parity."
   }
 }
