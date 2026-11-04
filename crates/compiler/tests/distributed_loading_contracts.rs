@@ -113,6 +113,27 @@ fn distributed_roundtrip_restores_header_configuration_and_all_opcode_encodings(
 }
 
 #[test]
+fn distributed_opcode_budget_accepts_one_million_and_rejects_one_more() {
+    let directory = Directory::new();
+    let mut fragment = fixture();
+    fragment.ops = vec![RpnOp::Zero; 1_000_000];
+    serialize_distributed(std::slice::from_ref(&fragment), &directory.0).unwrap();
+    let loaded = load_distributed_fragment(&directory.shard()).unwrap();
+    assert_eq!(loaded.ops, fragment.ops);
+    assert_eq!(loaded.weights, fragment.weights);
+    assert_eq!(loaded.tensors[0].name, fragment.tensors[0].name);
+
+    // Keep a complete, otherwise valid file: an EOF error would hide failure
+    // to enforce the independent opcode budget before allocating the vector.
+    fragment.ops.push(RpnOp::Zero);
+    serialize_distributed(std::slice::from_ref(&fragment), &directory.0).unwrap();
+    assert_eq!(
+        load_distributed_fragment(&directory.shard()).err().unwrap(),
+        "distributed opcode count exceeds budget or available bytes"
+    );
+}
+
+#[test]
 fn distributed_loader_rejects_malformed_counts_ranges_names_and_envelopes() {
     let directory = Directory::new();
     serialize_distributed(&[fixture()], &directory.0).unwrap();

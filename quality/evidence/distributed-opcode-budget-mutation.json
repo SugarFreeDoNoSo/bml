@@ -1,0 +1,21 @@
+{
+  "scope": "Legacy distributed container opcode budget: complete valid files at 1000000 and 1000001 opcodes distinguish the independent cap from EOF validation. Parsing only; no semantic execution claim. Focused replay, not full mutation campaign.",
+  "base_commit": "4e8f3a6953da13074a9b993fe6a4c4df624abd6d",
+  "test": "distributed_opcode_budget_accepts_one_million_and_rejects_one_more",
+  "baseline_exit_code": 0,
+  "mutation": "n_ops > MAX_DISTRIBUTED_OPS || n_ops > reader.bytes.len() replaced by &&",
+  "mutation_exit_code": 101,
+  "logs": {
+    "target/quality/distributed-opcode-budget-test.log": "cae46f257e301d90c7a8d72b26e8311da553aab588a7010cab9533ddcdc84017",
+    "target/quality/distributed-opcode-budget-mutant.log": "12be0ba4ba51540a92241c9bfcc2b953f0bc39f7bac001e72766d583e4d65a15",
+    "target/quality/distributed-opcode-budget-gate.log": "29c37e60ff20e52ca9ad49544c02b55c1f5ee1c70af2234afb758d7a094e1696",
+    "target/quality/distributed-opcode-budget-openspec.log": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7"
+  },
+  "verification": {
+    "workspace_gate": "passed: scripts/check.sh origin/master",
+    "historical_contract_discrepancies": 0,
+    "traceability": "105/105",
+    "new_static_diagnostics": 0,
+    "openspec_strict": "11 passed, 0 failed"
+  }
+}
