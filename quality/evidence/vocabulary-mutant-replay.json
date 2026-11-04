@@ -1,0 +1,11 @@
+{
+  "scope": "Focused replay of the no-op use_artifact_vocabulary mutant. Two ordinary shard tests passed; this is not proof of universal equivalence.",
+  "revision": "21e6ea78d6d313c696b0f940212de31cc13c2471",
+  "mutation": "replace self.vocab = vocab with a no-op",
+  "tests_passed": 2,
+  "tests_ignored": 1,
+  "exit_code": 0,
+  "log": "target/quality/vocabulary-mutant-replay.log",
+  "log_sha256": "24be22e3194d8380db1dd26a2fbee53ae57dc34db4e56c358a043d2da70859e2",
+  "analysis": "Both source-backed loaders compare serialized tokenizer specifications before replacement; the source-free worker constructs Vocabulary directly from the manifest. Additional observable behavior has not been ruled out."
+}
