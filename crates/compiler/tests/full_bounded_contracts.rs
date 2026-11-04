@@ -659,3 +659,56 @@ fn swiglu_domain_error_identifies_layer_operand_and_preserves_position() {
         assert_eq!(cache.current_pos(), 0);
     }
 }
+
+#[test]
+fn persisted_extended_swiglu_executes_checked_bml_across_boundary() {
+    let source = symbolic_fixture::fixture(0.25);
+    let profile = BoundedProfile {
+        gate: 18.0,
+        up: 16.0,
+        ..Default::default()
+    };
+    let directory = artifact(&source, profile);
+    let loaded = load_directory(&directory.0, None).unwrap();
+    let kernel = loaded
+        .kernels
+        .iter()
+        .find(|kernel| kernel.operation == Operation::Swiglu)
+        .unwrap();
+    assert_eq!(kernel.signature.fixed.len(), 25);
+    for gate in [
+        -18.0_f64,
+        -17.2,
+        -16.0,
+        -1.0,
+        0.0,
+        1.0,
+        16.0,
+        17.196_898_568_148_562,
+        18.0,
+    ] {
+        for up in [-16.0, -1.0, 0.0, 1.0, 16.0] {
+            profile
+                .validate_values(Operation::Swiglu, 1, 0.5, &[gate, up], &[])
+                .unwrap();
+            let actual = execute(kernel, &[gate, up], &[])[0];
+            let expected = gate / (1.0 + (-gate).exp()) * up;
+            assert!(
+                (actual - expected).abs() < 3e-8,
+                "{gate}, {up}: {actual} != {expected}"
+            );
+        }
+    }
+    assert!(profile
+        .validate_values(Operation::Swiglu, 1, 0.5, &[18.01, 0.0], &[])
+        .is_err());
+    let legacy = compile_operation(
+        Operation::Swiglu,
+        1,
+        0.5,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(legacy.signature.fixed.len(), 24);
+}

@@ -176,6 +176,36 @@ fn bounded_swiglu_covers_gate_signs_extremes_and_zero() {
 }
 
 #[test]
+fn bounded_swiglu_extended_range_checks_every_node_and_matches_silu() {
+    for (gate_bound, up_bound) in [
+        (16.000_000_000_000_004, 16.0),
+        (17.2, 16.0),
+        (18.0, 16.0),
+        (18.0, 26.0),
+    ] {
+        let config = BoundedOpConfig::swiglu(gate_bound, up_bound).unwrap();
+        let (builder, roots) = build(&config);
+        for step in 0..=3600 {
+            let gate = gate_bound * (f64::from(step) / 1800.0 - 1.0);
+            for up in [-up_bound, -1.0, 0.0, 1.0, up_bound] {
+                config.validate_values(&[gate, up], &[]).unwrap();
+                let result = evaluate(&builder, &roots, &[gate, up], &[])
+                    .unwrap_or_else(|e| panic!("gate={gate} up={up}: {e}"))[0];
+                let expected = gate / (1.0 + (-gate).exp()) * up;
+                assert!(
+                    (result - expected).abs() < 3e-8,
+                    "gate={gate} up={up}: {result} != {expected}"
+                );
+            }
+        }
+        assert!(config
+            .validate_values(&[gate_bound + 0.01, 1.0], &[])
+            .is_err());
+    }
+    assert!(BoundedOpConfig::swiglu(18.0, 27.0).is_err());
+}
+
+#[test]
 fn bounded_softmax_uses_selected_maximum_for_negative_extremes_and_permutations() {
     for scores in [
         vec![-16.0_f64, -16.0],
@@ -214,7 +244,7 @@ fn bounded_operation_parameters_and_contexts_are_enforced_without_builder_mutati
     assert!(BoundedOpConfig::product(32.0, 16.0).is_err());
     assert!(BoundedOpConfig::add(256.0, 256.0).is_err());
     assert!(BoundedOpConfig::rope(241.0).is_err());
-    assert!(BoundedOpConfig::swiglu(17.0, 1.0).is_err());
+    assert!(BoundedOpConfig::swiglu(18.0001, 1.0).is_err());
     assert!(BoundedOpConfig::softmax(2, 17.0).is_err());
     for width in [0, 65537, usize::MAX] {
         assert!(BoundedOpConfig::softmax(width, 16.0).is_err());

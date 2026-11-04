@@ -299,7 +299,9 @@ ambos parámetros `--distributed-rms-input-bound` y
 `--distributed-rms-weight-bound`; rechaza parámetros incompletos o inválidos.
 Las cotas de proyección se configuran en pareja mediante
 `--distributed-projection-input-bound` y `--distributed-projection-weight-bound`.
-El compilador valida las cotas y el producto permitido antes de publicar.
+Las cotas de SwiGLU se declaran juntas con `--distributed-gate-bound` y
+`--distributed-up-bound`; el perfil admite compuertas hasta 18. El compilador
+valida las cotas y el producto permitido antes de publicar.
 No se recortan pesos ni se infieren límites a partir de activaciones observadas.
 
 El timeout de lectura/escritura por defecto es de 30 segundos. Para una

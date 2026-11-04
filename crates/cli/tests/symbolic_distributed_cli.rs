@@ -132,6 +132,10 @@ fn cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weig
             "4",
             "--distributed-projection-weight-bound",
             "4",
+            "--distributed-gate-bound",
+            "18",
+            "--distributed-up-bound",
+            "16",
             "--model",
         ])
         .arg(&source.0)
@@ -154,6 +158,7 @@ fn cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weig
         (bounds.projection_input, bounds.projection_weight),
         (4.0, 4.0)
     );
+    assert_eq!((bounds.gate, bounds.up), (18.0, 16.0));
     let moved = symbolic_fixture::Fixture(source.0.with_extension("moved.gguf"));
     std::fs::rename(&source.0, &moved.0).unwrap();
     let mut reference = SymbolicCausalModel::open_artifact(
@@ -338,6 +343,13 @@ fn distributed_compile_rejects_partial_or_invalid_rms_bounds() {
     let directory = Directory(source.0.with_extension("bad-rms-profile"));
     for args in [
         vec!["--distributed-rms-input-bound", "4"],
+        vec!["--distributed-gate-bound", "18"],
+        vec![
+            "--distributed-gate-bound",
+            "18.1",
+            "--distributed-up-bound",
+            "16",
+        ],
         vec!["--distributed-projection-weight-bound", "4"],
         vec![
             "--distributed-projection-input-bound",

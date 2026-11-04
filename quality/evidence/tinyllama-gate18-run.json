@@ -1,0 +1,45 @@
+{
+  "base_commit": "5b6afda45c2d5f51335f8e48685853aac43f6fe7",
+  "status": "running",
+  "scope": "One BOS token of TinyLlama Q4_0 through local symbolic v4; not yet a parity or performance result.",
+  "source": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "source_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "manifest": "target/quality/tinyllama-bounded-gate18/symbolic.bmlgraph.json",
+  "manifest_sha256": "89a138f9400838814c4c4ca99dc165f1bfd7c282da2cca6d34651e049deb2816",
+  "binary": "target/quality/tinyllama-gate18-cli-measured",
+  "binary_sha256": "93d3e00a52175baa3f540352bb8eaa08bad88ebd7248a34c9c7fc6bb7bdcb390",
+  "execution_log": "target/quality/tinyllama-gate18-run.log",
+  "execution_exit_file": "target/quality/tinyllama-gate18-run.exit",
+  "source_sha256_at_start": {
+    "crates/domain/src/transformer/bounded_ops.rs": "77b45bbb6d83263d9a1cee879aab0f31d8eb157f1caee30b140652fdc4173b75",
+    "crates/domain/tests/bounded_operation_contracts.rs": "05fcff1eb02eae6abd5276de20d6e8d29646d48e7ebaac04c9a9ef934d75130d",
+    "crates/compiler/src/symbolic_bounded.rs": "c013beb491687f8ff7b53e97d501cec64bbd35dc70a9ba287cc6bfce36d60ac9",
+    "crates/compiler/tests/full_bounded_contracts.rs": "1892faa9be9d7a3874c9277f5866c72d62decb68d9ac5712757da169dfe1512e",
+    "crates/runtime/src/symbolic_causal.rs": "913e996762d42355cfb8e53edf555d13c5f66bac833c676b54f52c643dc868f3",
+    "crates/cli/src/main.rs": "1ca3cd64264481176c372e158ba591fc37199510210a8113c82c80b362268356",
+    "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c"
+  },
+  "graph_max_steps": 100000000,
+  "bounds": {
+    "rms": {
+      "input": 1.0,
+      "weight": 1.0
+    },
+    "projection_input": 64.0,
+    "projection_weight": 4.0,
+    "attention": 16.0,
+    "value": 16.0,
+    "rope": 16.0,
+    "gate": 18.0,
+    "up": 16.0,
+    "residual": 32.0,
+    "scale_input": 256.0,
+    "score": 16.0
+  },
+  "post_launch_source_changes": {
+    "crates/domain/src/transformer/bounded_ops.rs": {
+      "sha256": "ee7b5e406263a6e22d604bbb4a01c23090362a0d7ff6cb696668c44dc2f7b202",
+      "description": "Documentation comments corrected after launch; executable statements unchanged."
+    }
+  }
+}

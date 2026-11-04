@@ -99,6 +99,12 @@ enum Command {
         /// Inclusive projection weight bound for the distributed profile.
         #[arg(long, requires_all = ["distributed", "distributed_projection_input_bound"])]
         distributed_projection_weight_bound: Option<f64>,
+        /// Inclusive SwiGLU gate bound for the distributed profile.
+        #[arg(long, requires_all = ["distributed", "distributed_up_bound"])]
+        distributed_gate_bound: Option<f64>,
+        /// Inclusive SwiGLU up-projection bound for the distributed profile.
+        #[arg(long, requires_all = ["distributed", "distributed_gate_bound"])]
+        distributed_up_bound: Option<f64>,
     },
 
     /// Ejecuta inferencia desde .bmlgraph, GGUF o BMLGGUF con evaluación explícita
@@ -337,6 +343,8 @@ fn main() {
             distributed_rms_weight_bound,
             distributed_projection_input_bound,
             distributed_projection_weight_bound,
+            distributed_gate_bound,
+            distributed_up_bound,
         } => {
             if !model.exists() {
                 eprintln!("Error: el archivo GGUF no existe: {}", model.display());
@@ -382,6 +390,10 @@ fn main() {
                     profile.projection_input = input;
                     profile.projection_weight = distributed_projection_weight_bound
                         .expect("clap requires both projection bounds");
+                }
+                if let Some(gate) = distributed_gate_bound {
+                    profile.gate = gate;
+                    profile.up = distributed_up_bound.expect("clap requires both SwiGLU bounds");
                 }
                 let manifest =
                     inference_result(bml_compiler::symbolic_artifact::compile_directory_bounded(

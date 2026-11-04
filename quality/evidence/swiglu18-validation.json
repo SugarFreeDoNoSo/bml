@@ -1,0 +1,16 @@
+{
+  "scope": "Checked real BML SwiGLU extension; sampled numerical evidence, not a universal accuracy proof or model parity result.",
+  "gate_bound_max": 18,
+  "product_bound_max": 480,
+  "previous_profile": "Gate bounds up to 16 retain their prior constants and arithmetic.",
+  "method": "For bounds above 16, shift by 8 and use B(log2(n), 2^(-a)) = n + a with n=exp(gate-8), a=exp(-8).",
+  "domain_test": "bounded_swiglu_extended_range_checks_every_node_and_matches_silu: 72,020 gate/up pairs across four bounds, all BML nodes checked, absolute error below 3e-8.",
+  "compiler_test": "persisted_extended_swiglu_executes_checked_bml_across_boundary",
+  "cli_test": "symbolic_distributed_cli: compiled and distributed execution with explicit gate/up bounds",
+  "experimental_grid": {
+    "samples": 18005,
+    "max_absolute_error": 5.576339390245266e-11,
+    "log": "target/quality/swiglu18-stable-denominator.log"
+  },
+  "tinyllama_run": "quality/evidence/tinyllama-gate18-run.json"
+}

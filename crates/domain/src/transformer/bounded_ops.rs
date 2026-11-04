@@ -96,12 +96,12 @@ impl BoundedOpConfig {
         })
     }
 
-    /// SwiGLU inputs `[gate, up]`, with a gate bound no larger than 16.
+    /// SwiGLU inputs `[gate, up]`, with a gate bound no larger than 18.
     /// The sigmoid uses a fixed exponential scaling, keeping its denominator
-    /// above `exp(-gate_bound)` without evaluating the unstable `exp(-gate)`.
+    /// above a positive fixed offset without evaluating the unstable `exp(-gate)`.
     pub fn swiglu(gate_bound: f64, up_bound: f64) -> Result<Self, BoundedBuildError> {
         let mut config = Self::product(gate_bound, up_bound)?;
-        if gate_bound > 16.0 {
+        if gate_bound > 18.0 {
             return Err(BoundedBuildError::Parameter("sigmoid_range"));
         }
         config.kind = Kind::Swiglu;
@@ -180,15 +180,22 @@ impl BoundedOpConfig {
                 values.push(2.0 * self.left);
             }
             Kind::Swiglu => {
+                // For the extended range, keep the denominator away from tiny
+                // values. Both sigmoid terms use the same fixed scaling.
+                let shift = if self.left > 16.0 { 8.0 } else { self.left };
                 values.extend([
-                    -self.left,
+                    -shift,
                     2.0 * self.left,
-                    (-self.left).exp(),
+                    (-shift).exp(),
                     std::f64::consts::LOG2_E,
                 ]);
                 product(&mut values, 2.0 * self.left, 2.0);
                 product(&mut values, self.left, 1.0);
                 product(&mut values, self.left, self.right);
+                if self.left > 16.0 {
+                    // B(log2(n), 2^(-a)) = n + a, with a = exp(-shift).
+                    values.push(2.0_f64.powf(-(-shift).exp()));
+                }
             }
             Kind::Softmax => {
                 values.extend([2.0 * self.left, std::f64::consts::LOG2_E]);
@@ -467,7 +474,12 @@ impl BMLTransformer {
                 let shifted = self.bounded_add(inputs[0], c[2], c[3]);
                 let exponent = self.product_with_literals(shifted, c[5], &c[..2], &c[6..12]);
                 let numerator = self.exp2(exponent);
-                let denominator = self.bounded_positive_add(c[4], numerator, c[1]);
+                let denominator = if config.left > 16.0 {
+                    let log_numerator = self.log2(numerator);
+                    self.bml(log_numerator, c[24])
+                } else {
+                    self.bounded_positive_add(c[4], numerator, c[1])
+                };
                 let log_denominator = self.log2(denominator);
                 let minus_log = self.bounded_neg(log_denominator, c[0]);
                 let inverse = self.exp2(minus_log);

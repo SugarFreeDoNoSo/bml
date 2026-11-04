@@ -773,7 +773,8 @@
       "bounded_swiglu_covers_gate_signs_extremes_and_zero",
       "bounded_softmax_uses_selected_maximum_for_negative_extremes_and_permutations",
       "bounded_operation_parameters_and_contexts_are_enforced_without_builder_mutation",
-      "bounded_softmax_literals_and_graph_growth_are_independent_of_observed_values"
+      "bounded_softmax_literals_and_graph_growth_are_independent_of_observed_values",
+      "bounded_swiglu_extended_range_checks_every_node_and_matches_silu"
     ]
   },
   "C80": {
@@ -793,7 +794,8 @@
       "full_bounded_runtime_rejects_each_dot_role_without_committing_cache",
       "full_bounded_artifacts_reject_malformed_profile_literals_layout_and_roles",
       "bounded_v3_artifacts_remain_separate_from_the_new_indexed_profile",
-      "swiglu_domain_error_identifies_layer_operand_and_preserves_position"
+      "swiglu_domain_error_identifies_layer_operand_and_preserves_position",
+      "persisted_extended_swiglu_executes_checked_bml_across_boundary"
     ]
   },
   "C84": {

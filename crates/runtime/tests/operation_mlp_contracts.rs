@@ -683,7 +683,7 @@ fn mlp_dimensions_addresses_and_explicit_scratch_layout_are_checked() {
             ..bounds
         },
         MlpBounds {
-            gate: 17.0,
+            gate: 18.0001,
             ..bounds
         },
         MlpBounds {

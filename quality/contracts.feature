@@ -535,6 +535,7 @@ Then it rejects the request before expensive generation
     When their BML DAGs execute across signs, zeros, boundary values and the real first-token RoPE counterexample
     Then every BML intermediate is finite-real and outputs match independent native arithmetic within measured tolerances
     And softmax receives the selected maximum explicitly and handles negative extrema and permutations accurately
+    And SwiGLU accepts explicitly declared gate bounds through 18 with every intermediate checked
     And malformed parameters, operands, maximum declarations and node references reject before construction or execution
     And softmax graph growth is linear with fixed configuration literals
 
@@ -554,6 +555,7 @@ Then it rejects the request before expensive generation
     Then outputs match an independent GQA, nonidentity RoPE and nonzero MLP oracle
     And every dot role rejects exceeded bounds without advancing committed KV state
     And a SwiGLU domain failure identifies the layer and operand without committing KV state
+    And persisted extended-range SwiGLU executes checked BML across the former boundary
     And profile, literals, layouts and role mismatches reject while floating-point literals survive JSON roundtrip exactly
     And v3 artifacts retain their separate profile and nonindexed bytecode
 
