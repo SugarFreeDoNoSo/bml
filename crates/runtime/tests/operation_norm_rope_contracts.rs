@@ -360,6 +360,19 @@ fn vector_rope_position_zero_covers_all_1024_pairs_with_constant_bytecode() {
     )
     .unwrap();
     assert_eq!(large.program().ops.len(), small.program().ops.len());
+
+    // The documented coordinate cap is inclusive and applies across heads.
+    // Position zero supplies an independent identity oracle for every write.
+    let maximum = RopeVectorConfig {
+        heads: 32,
+        ..config
+    };
+    let input: Vec<_> = (0..65_536)
+        .map(|index| (index % 31) as f64 - 15.0)
+        .collect();
+    close(&run_rope(maximum, &input), &input);
+    let compiled = bml_rope_vector_program(5, 2, maximum).unwrap();
+    assert_eq!(compiled.program().ops.len(), small.program().ops.len());
 }
 
 #[test]

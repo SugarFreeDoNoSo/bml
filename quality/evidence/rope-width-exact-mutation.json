@@ -1,0 +1,21 @@
+{
+  "scope": "Inclusive RoPE maximum coordinate count: 65536 coordinates across 32 heads, checked finite-real preflight, complete identity oracle at position zero, bounded writes and constant bytecode size. Focused replay, not full mutation campaign.",
+  "base_commit": "5c5f23b7abf2265b23fd67807667c1840786ac2d",
+  "test": "vector_rope_position_zero_covers_all_1024_pairs_with_constant_bytecode",
+  "baseline_exit_code": 0,
+  "mutation": "width > 65536 replaced by width >= 65536 in bml_rope_vector_program",
+  "mutation_exit_code": 101,
+  "logs": {
+    "target/quality/rope-width-exact-test.log": "ad014f398b9ab4a2ee3b1dfa6eb0a2354bfb848441b8552c0f618a3ded8b3592",
+    "target/quality/rope-width-exact-mutant.log": "fe727c0d93ffc7429e43aa1fbeba8d5024d2417be6c4cb6b6410e83aa619ac3d",
+    "target/quality/rope-width-exact-gate.log": "14a78763dd0930df618caf52229104b133057e45c5bc1c325be6270b7de960ae",
+    "target/quality/rope-width-exact-openspec.log": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7"
+  },
+  "verification": {
+    "workspace_gate": "passed: scripts/check.sh origin/master",
+    "historical_contract_discrepancies": 0,
+    "traceability": "105/105",
+    "new_static_diagnostics": 0,
+    "openspec_strict": "11 passed, 0 failed"
+  }
+}
