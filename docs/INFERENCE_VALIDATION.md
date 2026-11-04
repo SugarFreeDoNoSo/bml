@@ -11,11 +11,12 @@ sus tiempos no representan tokens por segundo.
 
 ## Contrato de ejecución actual
 
-Las rutas `compile_gguf`, `compile_gguf_fast`, `InferenceCompiler::open`,
-`compile_distributed` y `compile_distributed_bml` solo admiten la arquitectura
+Las rutas `compile_gguf`, `compile_gguf_fast` e `InferenceCompiler::open` solo admiten la arquitectura
 `llama` experimental. Cualquier otra arquitectura, incluida `gemma4`, produce
 un error explícito antes de leer el vocabulario o expandir pesos. La inspección
 de metadatos y los codecs de `bml-gguf` siguen disponibles para otros modelos.
+
+Los constructores `compile_distributed` y `compile_distributed_bml` están retirados: rechazan incluso modelos compatibles y dirigen a `symbolic_artifact::compile_directory_bounded` y `SymbolicPipeline`. Ya no producen fragmentos `Var(0)` que aparentan ejecutar un transformer. La lectura del formato histórico se conserva.
 
 Aceptar `llama` no certifica equivalencia con llama.cpp: el tokenizer, la
 normalización, los residuales, RoPE y la atención de las rutas experimentales

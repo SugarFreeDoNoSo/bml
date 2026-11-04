@@ -506,7 +506,6 @@
       "invalid_prefix_cache_layout_and_context_fail_before_committing_history",
       "arithmetic_failure_keeps_committed_prefix_and_retry_overwrites_uncommitted_rows",
       "cache_allocation_budget_and_size_arithmetic_are_checked_before_allocating",
-      "distributed_metadata_keeps_the_actual_gguf_kv_head_count",
       "projection_backend_errors_and_invalid_outputs_do_not_commit_cache_positions",
       "late_projection_failure_preserves_committed_history_for_retry"
     ]
@@ -1029,6 +1028,13 @@
       "cli_rejects_missing_symbolic_artifact_before_using_legacy_fragments",
       "cli_stops_at_eos_and_emits_partial_utf8_bytes_without_replacement",
       "distributed_compile_rejects_partial_or_invalid_rms_bounds"
+    ]
+  },
+  "C105": {
+    "package": "bml-compiler",
+    "target": "causal_contracts",
+    "tests": [
+      "distributed_legacy_compilers_reject_placeholder_output"
     ]
   }
 }

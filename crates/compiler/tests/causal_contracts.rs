@@ -145,19 +145,14 @@ fn rotary_pairs_use_distinct_frequencies_and_absolute_cached_positions() {
 }
 
 #[test]
-fn distributed_metadata_keeps_the_actual_gguf_kv_head_count() {
+fn distributed_legacy_compilers_reject_placeholder_output() {
     use bml_compiler::distributed::{compile_distributed, compile_distributed_bml};
     let file = fixture(false);
-    for fragments in [
-        compile_distributed(&file.0, 1, true).unwrap(),
-        compile_distributed_bml(&file.0, 1).unwrap().0,
-    ] {
-        assert!(!fragments.is_empty());
-        for fragment in fragments {
-            assert_eq!(fragment.config.n_heads, 2);
-            assert_eq!(fragment.n_kv_heads, 1);
-            assert_eq!(fragment.head_dim, 2);
-        }
+    let plain = compile_distributed(&file.0, 1, true).unwrap_err();
+    let encoded = compile_distributed_bml(&file.0, 1).err().unwrap();
+    for error in [plain, encoded] {
+        assert!(error.contains("retired"), "{error}");
+        assert!(error.contains("compile_directory_bounded"), "{error}");
     }
 }
 

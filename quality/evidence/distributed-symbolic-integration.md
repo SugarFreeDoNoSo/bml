@@ -59,10 +59,10 @@ cargo test -p bml-compiler --test indexed_buffer_artifact_contracts --locked dis
 La validación es de un fixture local, no de TinyLlama ni de velocidad o L1. Cada
 worker aún requiere acceso al modelo entero y reserva KV para todas las capas;
 no existe transferencia automática de pesos por shard. Los constructores
-públicos históricos `compile_distributed` y `compile_distributed_bml` siguen
-emitiendo instrucciones provisionales; la CLI nueva ya no los usa y rechaza sus
-artefactos como entrada para generación. La tarea 8.5.8 sigue abierta hasta
-resolver esas APIs y el alcance restante del pipeline.
+públicos históricos `compile_distributed` y `compile_distributed_bml` están
+retirados y devuelven un error explícito de migración; la CLI rechaza sus
+artefactos históricos como entrada para generación. La tarea 8.5.8 sigue abierta
+por el alcance restante del pipeline.
 
 ## Modelo real: Stories15M
 

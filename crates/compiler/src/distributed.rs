@@ -35,7 +35,7 @@
 //! 22 capas × 200 MB = ~4.4 GB + embeddings 32000×2048 = 262 MB ≈ 4.6 GB total
 
 use crate::fragment::{BMLGRAPH_MAGIC, BMLGRAPH_SELECTION_VERSION, BMLGRAPH_VERSION};
-use crate::gguf_compiler::{read_model_config, read_tensor_f32, ModelConfig};
+use crate::gguf_compiler::{read_model_config, ModelConfig};
 use crate::rpn::RpnOp;
 use bml_domain::encoder::RealEncoder;
 use bml_parser::GgufParser;
@@ -82,202 +82,22 @@ pub struct DistributedFragment {
     pub head_dim: u32,
 }
 
-/// Compila un GGUF a fragmentos distribuidos con pesos embebidos.
+/// Retired legacy constructor. It previously returned placeholder bytecode.
 ///
-/// Cada capa del transformer se convierte en un fragmento independiente
-/// con sus pesos embebidos. Un nodo carga el fragmento y su header compartido
-/// para recuperar la configuración sin el GGUF original.
-///
-/// # Parámetros
-///
-/// - `gguf_path`: Ruta al GGUF.
-/// - `layers_per_fragment`: Cuántas capas por fragmento (1 = una capa
-///   por fragmento, más granularidad; N = menos fragmentos más grandes).
-/// - `include_embeddings`: Si true, el último fragmento incluye
-///   token_embd.weight y output_norm.weight para compute_logits.
+/// Use `symbolic_artifact::compile_directory_bounded` to create a validated
+/// artifact for `SymbolicLayerServer` and `SymbolicPipeline` instead.
 pub fn compile_distributed(
     gguf_path: &Path,
     layers_per_fragment: u32,
-    include_embeddings: bool,
+    _include_embeddings: bool,
 ) -> Result<Vec<DistributedFragment>, String> {
     if layers_per_fragment == 0 {
         return Err("layers_per_fragment must be greater than zero".into());
     }
     let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
-    let config = read_model_config(&parser)?;
-
-    let head_dim = config.n_embd / config.n_heads;
-    let n_kv_heads = parser
-        .get_metadata(&format!("{}.attention.head_count_kv", config.architecture))
-        .and_then(|v| match v {
-            bml_parser::GgufMetadataValue::U32(n) => Some(*n),
-            bml_parser::GgufMetadataValue::I32(n) => Some(*n as u32),
-            _ => None,
-        })
-        .unwrap_or(config.n_heads);
-
-    let mut fragments = Vec::new();
-
-    // Fragmentar capas
-    let mut layer = 0u32;
-    while layer < config.n_layers {
-        let layer_end = layer
-            .saturating_add(layers_per_fragment)
-            .min(config.n_layers);
-
-        let frag = compile_layer_range(
-            &parser, &config, layer, layer_end, head_dim, n_kv_heads, false,
-        )?;
-        fragments.push(frag);
-
-        layer = layer_end;
-    }
-
-    // Fragmento final: embeddings + output_norm + lm_head
-    if include_embeddings {
-        let frag = compile_layer_range(
-            &parser,
-            &config,
-            config.n_layers,
-            config.n_layers + 1,
-            head_dim,
-            n_kv_heads,
-            true,
-        )?;
-        fragments.push(frag);
-    }
-
-    Ok(fragments)
+    read_model_config(&parser)?;
+    Err("legacy distributed compilation is retired: use symbolic_artifact::compile_directory_bounded and SymbolicPipeline".into())
 }
-
-/// Compila un rango de capas a un fragmento distribuido.
-fn compile_layer_range(
-    parser: &GgufParser,
-    config: &ModelConfig,
-    layer_start: u32,
-    layer_end: u32,
-    head_dim: u32,
-    n_kv_heads: u32,
-    is_final: bool,
-) -> Result<DistributedFragment, String> {
-    let mut weights: Vec<f32> = Vec::new();
-    let mut tensors: Vec<TensorMeta> = Vec::new();
-
-    let add_tensor = |parser: &GgufParser,
-                      weights: &mut Vec<f32>,
-                      tensors: &mut Vec<TensorMeta>,
-                      name: &str|
-     -> Result<(), String> {
-        if let Some(vals) = read_tensor_f32(parser, name) {
-            let info = parser.find_tensor(name);
-            let (n_rows, n_cols) = if let Some(info) = info {
-                if info.dims.len() >= 2 {
-                    (info.dims[0] as u32, info.dims[1] as u32)
-                } else if info.dims.len() == 1 {
-                    (info.dims[0] as u32, 1)
-                } else {
-                    (vals.len() as u32, 1)
-                }
-            } else {
-                (vals.len() as u32, 1)
-            };
-            let offset = weights.len() as u64;
-            weights.extend(vals);
-            tensors.push(TensorMeta {
-                name: name.to_string(),
-                offset,
-                n_rows,
-                n_cols,
-            });
-        }
-        Ok(())
-    };
-
-    // Cargar pesos de cada capa en el rango
-    for layer in layer_start..layer_end {
-        if is_final {
-            // Fragmento final: output_norm + token_embd (lm_head tied)
-            add_tensor(parser, &mut weights, &mut tensors, "output_norm.weight")?;
-            add_tensor(parser, &mut weights, &mut tensors, "token_embd.weight")?;
-        } else {
-            let prefix = format!("blk.{layer}");
-            add_tensor(
-                parser,
-                &mut weights,
-                &mut tensors,
-                &format!("{prefix}.attn_norm.weight"),
-            )?;
-            add_tensor(
-                parser,
-                &mut weights,
-                &mut tensors,
-                &format!("{prefix}.attn_q.weight"),
-            )?;
-            add_tensor(
-                parser,
-                &mut weights,
-                &mut tensors,
-                &format!("{prefix}.attn_k.weight"),
-            )?;
-            add_tensor(
-                parser,
-                &mut weights,
-                &mut tensors,
-                &format!("{prefix}.attn_v.weight"),
-            )?;
-            add_tensor(
-                parser,
-                &mut weights,
-                &mut tensors,
-                &format!("{prefix}.attn_output.weight"),
-            )?;
-            add_tensor(
-                parser,
-                &mut weights,
-                &mut tensors,
-                &format!("{prefix}.ffn_norm.weight"),
-            )?;
-            add_tensor(
-                parser,
-                &mut weights,
-                &mut tensors,
-                &format!("{prefix}.ffn_gate.weight"),
-            )?;
-            add_tensor(
-                parser,
-                &mut weights,
-                &mut tensors,
-                &format!("{prefix}.ffn_up.weight"),
-            )?;
-            add_tensor(
-                parser,
-                &mut weights,
-                &mut tensors,
-                &format!("{prefix}.ffn_down.weight"),
-            )?;
-        }
-    }
-
-    // Bytecode: un nodo Var(0) placeholder.
-    // El worker ejecuta el transformer usando los pesos directamente
-    // (matmul/attention/RoPE en f64), no via RPN bytecode.
-    let ops = vec![RpnOp::Var(0)];
-
-    let fragment_id = if is_final { layer_end } else { layer_start };
-
-    Ok(DistributedFragment {
-        fragment_id,
-        layer_start,
-        layer_end,
-        ops,
-        weights,
-        tensors,
-        config: config.clone(),
-        n_kv_heads,
-        head_dim,
-    })
-}
-
 /// Serializa fragmentos distribuidos a un directorio.
 ///
 /// Genera:
@@ -709,105 +529,6 @@ mod tests {
             assert_eq!(deserialize_op(&following).unwrap(), (expected, bytes.len()));
         }
     }
-
-    #[test]
-    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
-    fn compile_distributed_tinyllama() {
-        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
-        let path = model_path.as_str();
-
-        let fragments = compile_distributed(Path::new(path), 1, true).expect("compile");
-        assert!(fragments.len() > 0);
-
-        let config = &fragments[0].config;
-        println!(
-            "Model: {} ({} layers, {} heads, {} embd)",
-            config.architecture, config.n_layers, config.n_heads, config.n_embd
-        );
-        println!("Fragments: {}", fragments.len());
-
-        for frag in &fragments {
-            let weight_mb = frag.weights.len() as f64 * 4.0 / (1024.0 * 1024.0);
-            println!(
-                "  fragment {} (layers {}-{}): {} tensors, {:.1} MB weights",
-                frag.fragment_id,
-                frag.layer_start,
-                frag.layer_end,
-                frag.tensors.len(),
-                weight_mb,
-            );
-        }
-
-        // Verificar que la suma de pesos ≈ peso total del modelo
-        let total_weights: usize = fragments.iter().map(|f| f.weights.len()).sum();
-        println!(
-            "Total weights: {} ({:.1} MB)",
-            total_weights,
-            total_weights as f64 * 4.0 / (1024.0 * 1024.0)
-        );
-    }
-
-    #[test]
-    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
-    fn serialize_load_distributed_roundtrip() {
-        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
-        let path = model_path.as_str();
-
-        let fragments = compile_distributed(Path::new(path), 4, true).expect("compile");
-        let out_dir = std::env::temp_dir().join(format!("bml_dist_test_{}", std::process::id()));
-
-        serialize_distributed(&fragments, &out_dir).expect("serialize");
-        println!(
-            "Serialized {} fragments to {}",
-            fragments.len(),
-            out_dir.display()
-        );
-
-        // Listar archivos
-        for entry in std::fs::read_dir(&out_dir).unwrap() {
-            let entry = entry.unwrap();
-            let meta = entry.metadata().unwrap();
-            println!(
-                "  {} ({} bytes)",
-                entry.file_name().to_string_lossy(),
-                meta.len()
-            );
-        }
-
-        // Cargar header
-        let (config, n_fragments) = load_distributed_header(&out_dir).expect("header");
-        assert_eq!(n_fragments, fragments.len());
-        assert_eq!(config.architecture, fragments[0].config.architecture);
-        assert_eq!(config.n_layers, fragments[0].config.n_layers);
-
-        // Cargar primer fragmento
-        let frag0_path = out_dir.join(format!("fragment_{}.bmlgraph", fragments[0].fragment_id));
-        let frag0 = load_distributed_fragment(&frag0_path).expect("load frag 0");
-
-        assert_eq!(frag0.fragment_id, fragments[0].fragment_id);
-        assert_eq!(frag0.layer_start, fragments[0].layer_start);
-        assert_eq!(frag0.layer_end, fragments[0].layer_end);
-        assert_eq!(frag0.weights.len(), fragments[0].weights.len());
-        assert_eq!(frag0.tensors.len(), fragments[0].tensors.len());
-
-        // Verificar que los pesos coinciden
-        for (i, (a, b)) in frag0
-            .weights
-            .iter()
-            .zip(fragments[0].weights.iter())
-            .enumerate()
-        {
-            assert_eq!(a.to_bits(), b.to_bits(), "peso {i} no coincide");
-        }
-
-        println!(
-            "Roundtrip OK: {} tensors, {} weights",
-            frag0.tensors.len(),
-            frag0.weights.len()
-        );
-
-        std::fs::remove_dir_all(&out_dir).ok();
-    }
 }
 
 // ===========================================================================
@@ -927,165 +648,19 @@ impl Default for BmlWeightPool {
     }
 }
 
-/// Compila un GGUF con pesos codificados como árboles BML.
-///
-/// A diferencia de `compile_distributed`, este codifica los pesos con
-/// `BmlWeightPool` para reportar estadísticas de compresión.
+/// Retired legacy constructor; it emitted placeholder transformer bytecode.
+/// Use `symbolic_artifact::compile_directory_bounded` and `SymbolicPipeline`.
 pub fn compile_distributed_bml(
     gguf_path: &Path,
     layers_per_fragment: u32,
 ) -> Result<(Vec<DistributedFragment>, BmlWeightPool), String> {
     if layers_per_fragment == 0 {
-        return Err("layers_per_fragment must be greater than zero".into());
+        return Err("layers_per_fragment must be greater zero".into());
     }
     let parser = GgufParser::open(gguf_path).map_err(|e| format!("parser: {e}"))?;
-    let config = read_model_config(&parser)?;
-
-    let head_dim = config.n_embd / config.n_heads;
-    let n_kv_heads = parser
-        .get_metadata(&format!("{}.attention.head_count_kv", config.architecture))
-        .and_then(|v| match v {
-            bml_parser::GgufMetadataValue::U32(n) => Some(*n),
-            bml_parser::GgufMetadataValue::I32(n) => Some(*n as u32),
-            _ => None,
-        })
-        .unwrap_or(config.n_heads);
-
-    let mut pool = BmlWeightPool::with_capacity(1024);
-    let mut fragments = Vec::new();
-
-    let mut layer = 0u32;
-    while layer < config.n_layers {
-        let layer_end = layer
-            .saturating_add(layers_per_fragment)
-            .min(config.n_layers);
-        let frag = compile_layer_range_bml(
-            &parser, &config, layer, layer_end, head_dim, n_kv_heads, false, &mut pool,
-        )?;
-        fragments.push(frag);
-        layer = layer_end;
-    }
-
-    // Fragmento final
-    let frag = compile_layer_range_bml(
-        &parser,
-        &config,
-        config.n_layers,
-        config.n_layers + 1,
-        head_dim,
-        n_kv_heads,
-        true,
-        &mut pool,
-    )?;
-    fragments.push(frag);
-
-    Ok((fragments, pool))
+    read_model_config(&parser)?;
+    Err("legacy BML distributed compilation is retired: use symbolic_artifact::compile_directory_bounded and SymbolicPipeline".into())
 }
-
-fn compile_layer_range_bml(
-    parser: &GgufParser,
-    config: &ModelConfig,
-    layer_start: u32,
-    layer_end: u32,
-    head_dim: u32,
-    n_kv_heads: u32,
-    is_final: bool,
-    pool: &mut BmlWeightPool,
-) -> Result<DistributedFragment, String> {
-    let mut weights: Vec<f32> = Vec::new();
-    let mut tensors: Vec<TensorMeta> = Vec::new();
-
-    for layer in layer_start..layer_end {
-        if is_final {
-            if let Some(vals) = read_tensor_f32(parser, "output_norm.weight") {
-                let offset = weights.len() as u64;
-                weights.extend(vals);
-                tensors.push(TensorMeta {
-                    name: "output_norm.weight".into(),
-                    offset,
-                    n_rows: config.n_embd,
-                    n_cols: 1,
-                });
-            }
-            if let Some(vals) = read_tensor_f32(parser, "token_embd.weight") {
-                let offset = weights.len() as u64;
-                let info = parser.find_tensor("token_embd.weight");
-                let (r, c) = if let Some(i) = info {
-                    if i.dims.len() >= 2 {
-                        (i.dims[0] as u32, i.dims[1] as u32)
-                    } else {
-                        (vals.len() as u32, 1)
-                    }
-                } else {
-                    (vals.len() as u32, 1)
-                };
-                weights.extend(vals);
-                tensors.push(TensorMeta {
-                    name: "token_embd.weight".into(),
-                    offset,
-                    n_rows: r,
-                    n_cols: c,
-                });
-            }
-        } else {
-            let prefix = format!("blk.{layer}");
-            for suffix in [
-                "attn_norm.weight",
-                "attn_q.weight",
-                "attn_k.weight",
-                "attn_v.weight",
-                "attn_output.weight",
-                "ffn_norm.weight",
-                "ffn_gate.weight",
-                "ffn_up.weight",
-                "ffn_down.weight",
-            ] {
-                let name = format!("{prefix}.{suffix}");
-                if let Some(vals) = read_tensor_f32(parser, &name) {
-                    let info = parser.find_tensor(&name);
-                    let (r, c) = if let Some(i) = info {
-                        if i.dims.len() >= 2 {
-                            (i.dims[0] as u32, i.dims[1] as u32)
-                        } else {
-                            (vals.len() as u32, 1)
-                        }
-                    } else {
-                        (vals.len() as u32, 1)
-                    };
-                    let offset = weights.len() as u64;
-                    weights.extend(vals);
-                    tensors.push(TensorMeta {
-                        name,
-                        offset,
-                        n_rows: r,
-                        n_cols: c,
-                    });
-                }
-            }
-        }
-    }
-
-    // Codificar todos los pesos en el BmlWeightPool
-    for &w in &weights {
-        pool.encode(w);
-    }
-
-    let ops = vec![RpnOp::Var(0)];
-    let fragment_id = if is_final { layer_end } else { layer_start };
-
-    Ok(DistributedFragment {
-        fragment_id,
-        layer_start,
-        layer_end,
-        ops,
-        weights,
-        tensors,
-        config: config.clone(),
-        n_kv_heads,
-        head_dim,
-    })
-}
-
 #[cfg(test)]
 mod bml_weight_tests {
     use super::*;
@@ -1139,34 +714,6 @@ mod bml_weight_tests {
         assert_eq!(pool.n_unique(), 2);
         assert_eq!(pool.n_total(), 5);
         assert_eq!(pool.const_pool().len(), 2);
-    }
-
-    #[test]
-    #[ignore = "requires BML_TEST_GGUF pointing to a TinyLlama GGUF"]
-    fn compile_distributed_bml_tinyllama() {
-        let model_path = std::env::var("BML_TEST_GGUF").expect("set BML_TEST_GGUF");
-        let path = model_path.as_str();
-
-        let (fragments, pool) = compile_distributed_bml(Path::new(path), 1).expect("compile bml");
-
-        println!("\n=== BML Weight Pool Statistics ===");
-        println!("  Unique values: {}", pool.n_unique());
-        println!("  Total weights: {}", pool.n_total());
-        println!("  Compression ratio: {:.1}x", pool.compression_ratio());
-        println!(
-            "  Estimated BML size: {:.1} MB",
-            pool.estimated_size_bytes() as f64 / 1_000_000.0
-        );
-        println!(
-            "  f32 size: {:.1} MB",
-            pool.f32_size_bytes() as f64 / 1_000_000.0
-        );
-        println!("  Compression vs f32: {:.1}x", pool.compression_vs_f32());
-        println!("  Fragments: {}", fragments.len());
-
-        assert!(pool.n_unique() > 0);
-        assert!(pool.n_total() > 1_000_000);
-        assert!(pool.compression_vs_f32() > 1.0);
     }
 }
 
