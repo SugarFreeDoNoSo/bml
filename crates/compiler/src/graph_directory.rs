@@ -101,28 +101,6 @@ fn read_contents(
     Ok(bytes)
 }
 
-#[cfg(test)]
-mod bounded_read_tests {
-    use super::read_contents;
-    use std::io::Cursor;
-
-    #[test]
-    fn growth_after_metadata_is_bounded_and_failure_preserves_budget() {
-        let mut budget = 8193;
-        let mut input = Cursor::new(vec![0u8; 8194]);
-        let error = read_contents(&mut input, 1, &mut budget).unwrap_err();
-        assert!(error.contains("byte budget"));
-        assert_eq!(budget, 8193);
-
-        let mut input = Cursor::new(vec![0u8; 8193]);
-        assert_eq!(
-            read_contents(&mut input, 1, &mut budget).unwrap().len(),
-            8193
-        );
-        assert_eq!(budget, 0);
-    }
-}
-
 /// Load the legacy graph directory with default resource limits.
 /// Constants remain in the separate return value, as in the historical API.
 pub fn load_from_dir(input: &Path) -> Result<(BmlGraph, Vec<f64>, ModelConfig), String> {
@@ -237,4 +215,26 @@ pub fn load_from_dir_with_limits(
         pool,
         config,
     ))
+}
+
+#[cfg(test)]
+mod bounded_read_tests {
+    use super::read_contents;
+    use std::io::Cursor;
+
+    #[test]
+    fn growth_after_metadata_is_bounded_and_failure_preserves_budget() {
+        let mut budget = 8193;
+        let mut input = Cursor::new(vec![0u8; 8194]);
+        let error = read_contents(&mut input, 1, &mut budget).unwrap_err();
+        assert!(error.contains("byte budget"));
+        assert_eq!(budget, 8193);
+
+        let mut input = Cursor::new(vec![0u8; 8193]);
+        assert_eq!(
+            read_contents(&mut input, 1, &mut budget).unwrap().len(),
+            8193
+        );
+        assert_eq!(budget, 0);
+    }
 }
