@@ -326,7 +326,24 @@ El directorio nuevo contiene `artifact/`, `shard-0/`, `shard-1/` y
 de cada paquete. Si hay más workers que capas solo se preparan los rangos con
 capas. `--max-bytes` limita cada paquete y `--weights` permite reubicar el GGUF.
 Hay que copiar `plan.json`, `artifact/` y el shard asignado a cada nodo y entregar
-el plan por un canal confiable; el comando no transfiere archivos por red.
+el plan por un canal confiable; `prepare-shards` no transfiere archivos por red. Para copiar el
+artefacto, el plan y el shard asignado a directorios nuevos en dos nodos:
+
+```sh
+bml-cli deploy-shards --prepared despliegue \
+  --node usuario@host-a:/srv/bml/worker-0 \
+  --node usuario@host-b:/srv/bml/worker-1
+```
+
+Los destinos deben corresponder al orden del plan y sus directorios padre deben
+existir. La máquina debe tener `ssh` y `scp`, claves de host conocidas y una
+credencial SSH no interactiva. El comando copia solo los archivos del plan a una zona temporal privada y
+verifica sus hashes antes de conectar; usa `TMPDIR` si está configurado. Crea
+cada directorio solo si no existe y no inicia los workers. Si
+falla una transferencia, puede dejar directorios ya creados; informa el fallo y
+no elimina datos remotos. Los workers verifican de nuevo las identidades al abrir.
+Se admiten nombres de host o alias SSH y rutas absolutas sin espacios ni `..`.
+
 Con el plan confiable, `bml-worker --prepared despliegue --worker-index 0`
 selecciona el primer rango y rechaza opciones de artefacto o rango contradictorias.
 

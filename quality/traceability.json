@@ -1035,7 +1035,8 @@
       "distributed_compile_rejects_partial_or_invalid_rms_bounds",
       "cli_exports_trusted_shards_for_source_free_workers_and_generates",
       "symbolic_step_budget_is_explicit_and_enforced",
-      "cli_prepares_source_free_shards_with_coordinator_partition"
+      "cli_prepares_source_free_shards_with_coordinator_partition",
+      "cli_deploys_validated_prepared_shards_to_distinct_nodes"
     ]
   },
   "C105": {

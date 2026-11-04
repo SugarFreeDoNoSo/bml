@@ -1,0 +1,56 @@
+{
+  "base_commit": "b55273f2746f2f8d22b640861c42d39448ed6c5d",
+  "transport": "Actual OpenSSH SSH/SFTP to two aliases at 127.0.0.1, no remote hosts",
+  "logs": {
+    "first_ssh": {
+      "path": "target/quality/ssh-loopback-deploy.log",
+      "sha256": "3cc00185cfab87b1557d871aaefc53480e3e3cfe9cf1cccc609a43f7875e04f7"
+    },
+    "final_ssh": {
+      "path": "target/quality/ssh-loopback-deploy-final2.log",
+      "sha256": "3cc00185cfab87b1557d871aaefc53480e3e3cfe9cf1cccc609a43f7875e04f7"
+    },
+    "real_inference": {
+      "path": "target/quality/transferred-stories.log",
+      "sha256": "289f1055318f1507786d8503be8aad2c9688aa312c70f7449bf53ddcb91d67ed"
+    },
+    "first_deploy_detail": {
+      "path": "target/quality/ssh-loopback-deploy/deploy.log",
+      "sha256": "79737861a0c09c8e4aec5623aa23525816e85ff0735255786cec287c01ae1ea1"
+    },
+    "final_deploy_detail": {
+      "path": "target/quality/ssh-loopback-deploy-final2/deploy.log",
+      "sha256": "1229b5f16bb1286c7fe055e289567605e5b671dad1262d48105c03b4d7900755"
+    },
+    "failed_tmpfs": {
+      "path": "target/quality/ssh-loopback-deploy-final.log",
+      "sha256": "406c2ec08a5409b182271d88e0da9db506e1761367733cb4dd35983329513213"
+    },
+    "verified_final_ssh": {
+      "path": "target/quality/ssh-loopback-deploy-final3.log",
+      "sha256": "3cc00185cfab87b1557d871aaefc53480e3e3cfe9cf1cccc609a43f7875e04f7"
+    }
+  },
+  "stories_gguf": "target/bml-1.0/stories15M.gguf",
+  "stories_gguf_sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+  "manifest_sha256": "657b9767ac2c8a13bfd2afc20c2034fa0a92f4c9063763ad0cb7c617746f944d",
+  "test_command": "cargo test --release -p bml-worker --test symbolic_worker_contracts --locked transferred_stories_workers_match_native_logits -- --ignored --exact --nocapture",
+  "test_binary": "target/global-restart-build/release/deps/symbolic_worker_contracts-defcf3e6fc6c60d6",
+  "test_binary_sha256": "43a4ae79f26504780bf4aced8cc564ac097854d5c8a34f78d4d9bbd1be2ae1e5",
+  "measurement": "transferred_stories logits=32000 argmax=9038 native_argmax=9038 max_abs_error=0.000000016198153041102614",
+  "scope": "Two workers loaded packages produced by the first loopback transfer and compared one BOS token to native inference on the same GGUF. Final implementation was separately retested with OpenSSH loopback; both transfers had identical plan, manifest, descriptor, and payload hashes. This does not establish a cross-host network or benchmark.",
+  "retry": "Initial final transfer failed before connection because /tmp was full. A second attempt used TMPDIR on the workspace filesystem and completed.",
+  "current_source_sha256": {
+    "crates/cli/src/deployment.rs": "8dffb63eae69e184320880eb372c904f6c7f90c53628b2fa4e13a2545e6dd3a7",
+    "crates/cli/src/main.rs": "9935c4e0b4ea71eb9f05d7da70850f57a84557730d91713a74710ad2d581f79e",
+    "crates/cli/tests/symbolic_distributed_cli.rs": "2747ed466757d0735fc7be6d7307cad22bb9f3996d7e251755100adaae322dbb",
+    "crates/worker/tests/symbolic_worker_contracts.rs": "ecb6b5970dbf39cd5814cd195e03dfadce78cf5a85f33d7a9817b0e657c82131",
+    "crates/worker/src/main.rs": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+    "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c"
+  },
+  "post_transfer_source_change": "The final loopback transfer was repeated after strict duplicate-field plan parsing and partial-failure diagnostics. The numerical test used the first transfer; both transfers had matching plan, manifest, descriptor and payload hashes.",
+  "verified_final_binary": {
+    "path": "target/global-restart-build/debug/bml-cli",
+    "sha256": "ba6232bbc3156890958d6bd5fca90af3b22714926c483f2518f5ddff261c9c92"
+  }
+}

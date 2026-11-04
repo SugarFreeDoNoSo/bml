@@ -786,3 +786,159 @@ fn cli_prepares_source_free_shards_with_coordinator_partition() {
         assert_eq!(entry["layer_end"], index + 1);
     }
 }
+
+#[cfg(unix)]
+#[test]
+fn cli_deploys_validated_prepared_shards_to_distinct_nodes() {
+    use bml_compiler::{
+        symbolic_artifact::{checked_identity, compile_directory_bounded},
+        symbolic_bounded::BoundedProfile,
+        symbolic_kernels::KernelLimits,
+    };
+    use std::os::unix::fs::PermissionsExt;
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    let root = Directory(source.0.with_extension("cli-deploy-shards"));
+    std::fs::create_dir(&root.0).unwrap();
+    let artifact = root.0.join("model");
+    std::fs::create_dir(&artifact).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &artifact,
+        6,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let identity = checked_identity(&artifact, None).unwrap();
+    let prepared = root.0.join("prepared");
+    let prepare = Command::new(env!("CARGO_BIN_EXE_bml-cli"))
+        .args(["prepare-shards", "--model"])
+        .arg(&artifact)
+        .arg("--output")
+        .arg(&prepared)
+        .args(["--workers", "2", "--max-bytes", "1000000"])
+        .output()
+        .unwrap();
+    assert!(
+        prepare.status.success(),
+        "{}",
+        String::from_utf8_lossy(&prepare.stderr)
+    );
+    std::fs::write(
+        prepared.join("artifact/unrelated-private.txt"),
+        b"do not copy",
+    )
+    .unwrap();
+    std::fs::write(
+        prepared.join("shard-0/unrelated-private.txt"),
+        b"do not copy",
+    )
+    .unwrap();
+    let bin = root.0.join("bin");
+    std::fs::create_dir(&bin).unwrap();
+    let remote = root.0.join("remote");
+    std::fs::create_dir(&remote).unwrap();
+    let ssh = r##"#!/bin/sh
+printf 'ssh\n' >> "$BML_DEPLOY_TEST_ROOT/calls"
+[ "$4" != "$BML_DEPLOY_FAIL_HOST" ] || exit 1
+mkdir "$BML_DEPLOY_TEST_ROOT$7"
+"##;
+    let scp = r##"#!/bin/sh
+printf 'scp\n' >> "$BML_DEPLOY_TEST_ROOT/calls"
+[ "$BML_DEPLOY_FAIL_HOST" != "copy" ] || exit 1
+shift 3
+plan=$1; artifact=$2; shard=$3; destination=$4
+path=${destination#*:}
+cp -R "$plan" "$artifact" "$shard" "$BML_DEPLOY_TEST_ROOT$path"
+"##;
+    for (name, contents) in [("ssh", ssh), ("scp", scp)] {
+        let path = bin.join(name);
+        std::fs::write(&path, contents).unwrap();
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    let path = std::env::join_paths(
+        std::iter::once(bin.clone())
+            .chain(std::env::split_paths(&std::env::var_os("PATH").unwrap())),
+    )
+    .unwrap();
+    let deploy = |nodes: &[&str], fail: &str| {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_bml-cli"));
+        command
+            .args(["deploy-shards", "--prepared"])
+            .arg(&prepared)
+            .args(["--max-bytes", "1000000"])
+            .env("PATH", &path)
+            .env("BML_DEPLOY_TEST_ROOT", &remote)
+            .env("BML_DEPLOY_FAIL_HOST", fail);
+        for node in nodes {
+            command.args(["--node", node]);
+        }
+        command.output().unwrap()
+    };
+    let bad = deploy(&["host-a:/one;bad", "host-b:/two"], "");
+    assert!(!bad.status.success());
+    assert!(!remote.join("calls").exists());
+    let plan_path = prepared.join("plan.json");
+    let original_plan = std::fs::read_to_string(&plan_path).unwrap();
+    std::fs::write(
+        &plan_path,
+        original_plan.replacen('{', "{\"version\":1,", 1),
+    )
+    .unwrap();
+    assert!(!deploy(&["host-a:/one", "host-b:/two"], "").status.success());
+    assert!(!remote.join("calls").exists());
+    std::fs::write(&plan_path, original_plan).unwrap();
+    let shard_file = prepared.join("shard-1/weights.bin");
+    let original = std::fs::read(&shard_file).unwrap();
+    let mut corrupt = original.clone();
+    corrupt[0] ^= 1;
+    std::fs::write(&shard_file, corrupt).unwrap();
+    assert!(!deploy(&["host-a:/one", "host-b:/two"], "").status.success());
+    assert!(!remote.join("calls").exists());
+    std::fs::write(&shard_file, original).unwrap();
+    let result = deploy(&["host-a:/one", "host-b:/two"], "");
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    for (index, range) in [0..1, 1..3].into_iter().enumerate() {
+        let dir = remote.join(if index == 0 { "one" } else { "two" });
+        assert!(dir.join(format!("shard-{index}")).is_dir());
+        assert!(!dir.join(format!("shard-{}", 1 - index)).exists());
+        assert!(!dir.join("artifact/unrelated-private.txt").exists());
+        assert!(!dir
+            .join(format!("shard-{index}/unrelated-private.txt"))
+            .exists());
+        let plan: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(dir.join("plan.json")).unwrap()).unwrap();
+        let hash = plan["workers"][index]["shard_sha256"].as_str().unwrap();
+        let server = SymbolicLayerServer::new_authenticated(
+            &dir.join("artifact"),
+            &identity,
+            range,
+            SymbolicTransportLimits::default(),
+            &dir.join(format!("shard-{index}")),
+            hash,
+            1_000_000,
+        )
+        .unwrap();
+        assert_eq!(server.identity(), identity);
+    }
+    let duplicate = deploy(&["host-a:/one", "host-a:/one"], "");
+    assert!(!duplicate.status.success());
+    let calls = std::fs::read_to_string(remote.join("calls")).unwrap();
+    assert_eq!(calls.lines().count(), 4);
+    let partial = deploy(&["host-a:/three", "host-b:/four"], "host-b");
+    assert!(!partial.status.success());
+    assert!(String::from_utf8_lossy(&partial.stderr)
+        .contains("earlier workers may already be provisioned"));
+    assert!(remote.join("three/plan.json").exists());
+    assert!(!remote.join("four").exists());
+    let copy_failure = deploy(&["host-a:/five", "host-b:/six"], "copy");
+    assert!(!copy_failure.status.success());
+    assert!(String::from_utf8_lossy(&copy_failure.stderr)
+        .contains("remote directory host-a:/five remains"));
+    assert!(remote.join("five").is_dir());
+    assert!(!remote.join("six").exists());
+}

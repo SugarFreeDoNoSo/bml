@@ -14,6 +14,7 @@ bml-parser = { path = "../parser" }
 bml-model-weights = { path = "../model-weights", features = ["gguf-import"] }
 clap.workspace = true
 serde_json.workspace = true
+serde.workspace = true
 
 [lib]
 name = "bml_cli"

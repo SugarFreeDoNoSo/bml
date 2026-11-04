@@ -742,6 +742,7 @@ Then it rejects the request before expensive generation
     And historical incomplete distributed fragments cannot masquerade as successful inference
     And the CLI exports range-bound shards for source-free workers with externally trusted hashes
     And a prepared shard plan partitions layers identically to the coordinator and rejects partial output
+    And SSH provisioning verifies every local shard and destination before invoking its transport
     And explicit graph step budgets reject workloads that exceed them
 
   @C105

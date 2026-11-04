@@ -17,6 +17,7 @@ use bml_compiler::gguf_compiler::InferenceCompiler;
 use bml_compiler::sampler;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
+mod deployment;
 mod weights;
 
 #[derive(Parser, Debug)]
@@ -189,6 +190,18 @@ enum Command {
         #[arg(long = "max-bytes", default_value_t = 536_870_912, value_parser = clap::value_parser!(u64).range(1..))]
         max_bytes: u64,
     },
+    /// Copia los paquetes preparados a directorios nuevos por SSH.
+    DeployShards {
+        /// Directorio preparado cuyo plan fue recibido por canal confiable.
+        #[arg(long)]
+        prepared: PathBuf,
+        /// Destino host:/directorio/absoluto para cada worker, en orden.
+        #[arg(long = "node", required = true)]
+        nodes: Vec<String>,
+        /// Límite de bytes codificados para verificar cada paquete.
+        #[arg(long = "max-bytes", default_value_t = 536_870_912, value_parser = clap::value_parser!(u64).range(1..))]
+        max_bytes: u64,
+    },
     /// Distribuye fragmentos a nodos workers via TCP
     Distribute {
         /// Directorio AOT simbólico acotado con pesos GGUF enlazados
@@ -241,6 +254,13 @@ fn main() {
     match cli.command {
         Command::ConvertWeights(args) => weights::exit_on_error(weights::convert(args)),
         Command::InspectWeights(args) => weights::exit_on_error(weights::inspect(args)),
+        Command::DeployShards {
+            prepared,
+            nodes,
+            max_bytes,
+        } => {
+            inference_result(deployment::deploy(&prepared, &nodes, max_bytes));
+        }
         Command::PrepareShards {
             model,
             output,

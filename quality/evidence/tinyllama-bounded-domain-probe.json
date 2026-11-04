@@ -9,7 +9,7 @@
   "second_artifact": "target/quality/tinyllama-bounded-projection4/symbolic.bmlgraph.json",
   "second_artifact_sha256": "cc4901a39a87de00329c781ddd96e6ec46b0620bc84587c374db041b370a6f01",
   "second_profile": "RMS input/weight 1/1, projection input/weight 64/4",
-  "second_execution": "Started with 100M graph step budget; outcome is not asserted here. See target/quality/tinyllama-bounded-projection4-run.log and .exit after completion.",
+  "second_execution": "Terminal exit 1: started one BOS token after passing graph preflight, then rejected SwiGLU input index 0 as outside its bounded domain. No token was generated.",
   "retained_binary": "target/quality/tinyllama-bounded-cli-measured",
   "retained_binary_sha256": "3fb0521c98033aa81d6b06d55af73bdb0a7aa1b3dc7e41f574ce0c8d65804502",
   "source_hashes_recorded_during_second_execution": {
@@ -26,5 +26,10 @@
     "target/quality/tinyllama-bounded-diagnostic.log": "33118253a78bf0e958eb6a1295423488f4210145d4afe88722ed95a97721bfc9",
     "target/quality/tinyllama-bounded-projection4-compile.log": "00456928e396f11f25b924d379a32a97195da6a3844cc84310393f35bfdc45ce"
   },
-  "limitations": "Diagnostic results only; no TinyLlama token, numerical parity or performance claim until execution completes and is compared to an independent reference."
+  "limitations": "Diagnostic results only; no TinyLlama token, numerical parity or performance claim.",
+  "second_execution_log": {
+    "path": "target/quality/tinyllama-bounded-projection4-run.log",
+    "sha256": "db00e30c1777032a23154cfa1292127ebaff858dda48c6c0de4a034035556447",
+    "exit_code": 1
+  }
 }

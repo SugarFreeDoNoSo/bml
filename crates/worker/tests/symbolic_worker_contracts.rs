@@ -748,3 +748,98 @@ fn prepared_plan_starts_worker_and_rejects_invalid_or_conflicting_assignments() 
     std::fs::write(&plan_path, serde_json::to_vec(&plan).unwrap()).unwrap();
     assert!(!run(&["--worker-index", "0"]).status.success());
 }
+
+#[test]
+#[ignore = "requires BML_TEST_GGUF, BML_TEST_SYMBOLIC_ARTIFACT, BML_TEST_DEPLOYED_A and BML_TEST_DEPLOYED_B"]
+fn transferred_stories_workers_match_native_logits() {
+    let source = std::path::PathBuf::from(std::env::var_os("BML_TEST_GGUF").unwrap());
+    let artifact =
+        std::path::PathBuf::from(std::env::var_os("BML_TEST_SYMBOLIC_ARTIFACT").unwrap());
+    let deployed_a = std::path::PathBuf::from(std::env::var_os("BML_TEST_DEPLOYED_A").unwrap());
+    let deployed_b = std::path::PathBuf::from(std::env::var_os("BML_TEST_DEPLOYED_B").unwrap());
+    let identity = checked_identity(&artifact, Some(&source)).unwrap();
+    let reference = bml_compiler::gguf_compiler::InferenceCompiler::open_mapped(&source).unwrap();
+    let ids = reference.vocab().encode("").unwrap();
+    assert_eq!(ids, [1]);
+    let expected = reference.forward(&ids).unwrap();
+    let input = reference.get_embedding(ids[0]).unwrap();
+    let runtime = SymbolicLimits {
+        max_nodes: 0,
+        max_cached_ops: 4_000_000,
+        max_programs: 4096,
+        graph: bml_runtime::graph::GraphLimits {
+            max_ops: 2_000_000,
+            max_steps: 4_000_000,
+            max_values: 4_000_000,
+        },
+    };
+    let mut head = SymbolicCausalModel::open_artifact(&artifact, Some(&source), runtime).unwrap();
+    let open = |dir: &std::path::Path, index: &str| {
+        let mut process = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+            .args(["--port", "0", "--prepared"])
+            .arg(dir)
+            .args([
+                "--worker-index",
+                index,
+                "--symbolic-context",
+                "2",
+                "--symbolic-kv-bytes",
+                "1048576",
+                "--symbolic-large-budget",
+                "--symbolic-timeout-seconds",
+                "600",
+            ])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let mut line = String::new();
+        BufReader::new(process.stdout.take().unwrap())
+            .read_line(&mut line)
+            .unwrap();
+        if !line.starts_with("symbolic worker listening on ") {
+            use std::io::Read;
+            let mut error = String::new();
+            process
+                .stderr
+                .take()
+                .unwrap()
+                .read_to_string(&mut error)
+                .unwrap();
+            panic!("worker startup: {line} {error}");
+        }
+        let bound: SocketAddr = line.split_whitespace().nth(4).unwrap().parse().unwrap();
+        (
+            Worker(process),
+            SocketAddr::from(([127, 0, 0, 1], bound.port())),
+        )
+    };
+    let (_a, address_a) = open(&deployed_a, "0");
+    let (_b, address_b) = open(&deployed_b, "1");
+    let transport = SymbolicTransportLimits {
+        timeout: Duration::from_secs(600),
+        ..Default::default()
+    };
+    let mut a = SymbolicLayerClient::connect(address_a, &identity, 0..3, 2, transport).unwrap();
+    let mut b = SymbolicLayerClient::connect(address_b, &identity, 3..6, 2, transport).unwrap();
+    let intermediate = a.prepare(0, &input).unwrap();
+    let hidden = b.prepare(0, &intermediate).unwrap();
+    let actual = head.project_output(&hidden).unwrap();
+    assert_eq!(actual.len(), 32000);
+    assert_eq!(actual.len(), expected.len());
+    assert!(actual.iter().all(|x| x.is_finite()));
+    let max = actual
+        .iter()
+        .zip(&expected)
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0_f64, f64::max);
+    let selected = bml_compiler::sampler::sample(&actual, 0.0, 0).unwrap();
+    let native = bml_compiler::sampler::sample(&expected, 0.0, 0).unwrap();
+    assert!(max < 1e-4);
+    assert_eq!(selected, native);
+    a.commit(0).unwrap();
+    b.commit(0).unwrap();
+    a.close().unwrap();
+    b.close().unwrap();
+    println!("transferred_stories logits={} argmax={selected} native_argmax={native} max_abs_error={max}", actual.len());
+}
