@@ -26,6 +26,10 @@ fn run() -> Result<(), String> {
         1,
         512 * 1024 * 1024,
     )?;
+    // Mirror the native residual additions in their execution order. This is
+    // diagnostic bookkeeping, independent of the symbolic inference path.
+    let mut hidden = model.get_embedding(token)?;
+    let mut residuals = Vec::new();
     let mut projections = Vec::new();
     let logits = model.forward_cached_with_projection(&[token], &mut cache, &mut |input, name| {
         let input_abs = input.iter().fold(0.0_f64, |m, v| m.max(v.abs()));
@@ -40,12 +44,27 @@ fn run() -> Result<(), String> {
         })?;
         let (max_index, max_abs) = output.iter().enumerate().fold((0, 0.0_f64), |(i, max), (j, v)| if v.abs() > max { (j, v.abs()) } else { (i, max) });
         projections.push(json!({"tensor":name,"input_abs_max":input_abs,"weight_abs_max":weight_abs,"output_abs_max":max_abs,"output_max_index":max_index,"output_at_max":*output.get(max_index).ok_or("empty projection output")?}));
+        if name.ends_with(".attn_output.weight") || name.ends_with(".ffn_down.weight") {
+            if output.len() != hidden.len() {
+                return Err("residual dimensions differ".into());
+            }
+            let left_abs = hidden.iter().fold(0.0_f64, |m, value| m.max(value.abs()));
+            let left_at_output_max = hidden[max_index];
+            for (left, right) in hidden.iter_mut().zip(&output) {
+                *left += right;
+            }
+            if hidden.iter().any(|value| !value.is_finite()) {
+                return Err("non-finite mirrored residual".into());
+            }
+            let sum_abs = hidden.iter().fold(0.0_f64, |m, value| m.max(value.abs()));
+            residuals.push(json!({"tensor":name,"left_abs_max":left_abs,"right_abs_max":max_abs,"output_max_index":max_index,"left_at_output_max":left_at_output_max,"sum_at_output_max":hidden[max_index],"sum_abs_max":sum_abs}));
+        }
         Ok(output)
     })?;
     let argmax = bml_compiler::sampler::sample(&logits, 0.0, 0).ok_or("invalid logits")?;
     println!(
         "{}",
-        json!({"profile":"native-f64-f32kv", "input_id":token, "logits":logits.len(), "argmax":argmax, "projections":projections, "scope":"Observed native values for one token, not symbolic parity or a general bound"})
+        json!({"profile":"native-f64-f32kv", "input_id":token, "logits":logits.len(), "argmax":argmax, "projections":projections, "residuals":residuals, "scope":"Observed native values for one token, not symbolic parity or a general bound"})
     );
     Ok(())
 }
