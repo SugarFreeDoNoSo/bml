@@ -114,7 +114,20 @@ fn stored_causal_graphs_match_closed_form_and_incremental_native_inference() {
     assert_eq!(manifest.projections.len(), 8);
     assert_eq!(manifest.programs.len(), 1); // All fixture matrices have input width four.
     assert_eq!(std::fs::read_dir(&dir.0).unwrap().count(), 2); // No copied weight file.
-    let compiled = CompiledCausalModel::open(&dir.0, None).unwrap();
+    let bytes = std::fs::read(dir.0.join("program_0.bmlgraph")).unwrap();
+    let graph = BmlGraph::deserialize(&bytes, 32768).unwrap();
+    let exact_bytes = graph
+        .fragments
+        .iter()
+        .map(Fragment::byte_size)
+        .max()
+        .unwrap();
+    let too_small = Directory::new();
+    assert!(compile_directory(&source.0, &too_small.0, exact_bytes - 1).is_err());
+    assert!(std::fs::read_dir(&too_small.0).unwrap().next().is_none());
+    let exact = Directory::new();
+    compile_directory(&source.0, &exact.0, exact_bytes).unwrap();
+    let compiled = CompiledCausalModel::open(&exact.0, None).unwrap();
     let native = InferenceCompiler::open_mapped(&source.0).unwrap();
     assert_eq!(
         compiled.compiler().vocab().encode("A").unwrap(),

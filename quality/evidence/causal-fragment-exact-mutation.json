@@ -1,0 +1,12 @@
+{
+  "scope": "Exact inclusive AOT row-fragment budget with persisted execution and independent numerical oracle; focused replay, not full mutation campaign.",
+  "base_commit": "57f339284add3008b47726e8551f59fbd465f37d",
+  "test": "stored_causal_graphs_match_closed_form_and_incremental_native_inference",
+  "baseline": "passed: exact serialized row fragment limit accepted; one byte smaller rejected without publication",
+  "mutation": "fragment.byte_size() > fragment_bytes replaced by >=",
+  "mutation_exit_code": 101,
+  "logs": {
+    "target/quality/causal-fragment-exact-test.log": "45f60450c9f516000399e5f1a9b15a04949e2999a591db4b32ea8b2cdb52ec66",
+    "target/quality/causal-fragment-exact-mutant.log": "b7f8ec6ed34b377e30c06569c5113e181eee16e60c7569b1c484e9c0bb6acfa1"
+  }
+}
