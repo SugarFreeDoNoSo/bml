@@ -130,6 +130,7 @@ fn cache_allocation_budget_and_size_arithmetic_are_checked_before_allocating() {
 #[test]
 fn default_cache_budget_accepts_a_mib_and_rejects_payloads_above_512_mib() {
     use bml_compiler::kv_cache::DEFAULT_MAX_KV_BYTES;
+    assert_eq!(DEFAULT_MAX_KV_BYTES, 536_870_912);
     let cache = HashConsedKV::try_new(1, 1, 128, 1024, DEFAULT_MAX_KV_BYTES).unwrap();
     assert_eq!(cache.byte_size(), 1_048_576);
     // Rejection happens before allocating the oversized payload.
