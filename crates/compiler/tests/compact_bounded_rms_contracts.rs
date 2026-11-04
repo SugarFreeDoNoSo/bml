@@ -309,14 +309,13 @@ fn compact_rms_keeps_checked_failure_and_dynamic_context_semantics() {
     ));
 }
 
-#[test]
-fn compact_rms_large_input_bound_matches_independent_normalization() {
+fn check_rms_large_input_bound(weight_bound: f64) {
     let width = 2048;
     let epsilon = f64::from(1e-5_f32);
     let profile = BoundedProfile {
         rms: RmsBounds {
             input: 160.0,
-            weight: 1.0,
+            weight: weight_bound,
         },
         ..BoundedProfile::default()
     };
@@ -328,7 +327,9 @@ fn compact_rms_large_input_bound_matches_independent_normalization() {
         KernelLimits::default(),
     )
     .unwrap();
-    let weights: Vec<_> = (0..width).map(|i| ((i % 9) as f64 - 4.0) / 4.0).collect();
+    let weights: Vec<_> = (0..width)
+        .map(|i| ((i % 9) as f64 - 4.0) / 4.0 * weight_bound)
+        .collect();
     for case in 0..4 {
         let input: Vec<_> = (0..width)
             .map(|i| match case {
@@ -356,10 +357,20 @@ fn compact_rms_large_input_bound_matches_independent_normalization() {
             let expected = x / divisor * weight;
             max_error = max_error.max((observed - expected).abs());
             assert!(
-                (observed - expected).abs() < 2e-7,
+                (observed - expected).abs() < 2e-7 * weight_bound,
                 "case={case} index={index}: {observed} != {expected}"
             );
         }
-        eprintln!("case={case} max_abs_error={max_error}");
+        eprintln!("weight_bound={weight_bound} case={case} max_abs_error={max_error}");
     }
+}
+
+#[test]
+fn compact_rms_large_input_bound_matches_independent_normalization() {
+    check_rms_large_input_bound(1.0);
+}
+
+#[test]
+fn compact_rms_large_input_and_weight_bounds_match_independent_normalization() {
+    check_rms_large_input_bound(4.0);
 }

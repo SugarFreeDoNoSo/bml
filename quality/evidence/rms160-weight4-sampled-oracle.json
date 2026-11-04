@@ -1,0 +1,14 @@
+{
+  "scope": "Four synthetic 2048-wide samples for RMS input bound 160, weight bound 4 and epsilon 9.999999747378752e-6; not a uniform error bound or real-model parity.",
+  "base_commit": "a56c3e3ff160798f93ea22200c2b4a3f7b14afbd",
+  "test": "compact_rms_large_input_and_weight_bounds_match_independent_normalization",
+  "tolerance": 8e-07,
+  "max_abs_errors": {
+    "0": 1.9866206457663793e-09,
+    "1": 4.0903512399381725e-07,
+    "2": 6.991740519879386e-12,
+    "3": 9.877099138577705e-12
+  },
+  "log": "target/quality/rms160-weight4-oracle.log",
+  "log_sha256": "083f810eeac4f8dec372bec41ccbfbeaf92b016ee4561d37a75ffdc9987b76db"
+}

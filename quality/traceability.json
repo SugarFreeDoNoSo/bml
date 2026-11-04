@@ -876,7 +876,8 @@
       "compact_rms_storage_and_peak_stack_are_constant_with_exact_linear_step_budgets",
       "compact_rms_compilation_preserves_node_opcode_program_and_atomic_loop_limits",
       "compact_rms_keeps_checked_failure_and_dynamic_context_semantics",
-      "compact_rms_large_input_bound_matches_independent_normalization"
+      "compact_rms_large_input_bound_matches_independent_normalization",
+      "compact_rms_large_input_and_weight_bounds_match_independent_normalization"
     ]
   },
   "C91": {

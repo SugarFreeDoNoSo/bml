@@ -1,0 +1,239 @@
+{
+  "scope": "Decoded normalization weight vectors from one local TinyLlama Q4_0 model. Does not cover activations, future models, or symbolic execution accuracy.",
+  "model": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "source": "crates/gguf/examples/rms_weight_bounds.rs",
+  "source_sha256": "6b046b70c600049a9ad0eafe0042d5da1c4f1b636d233933854b9302c3184f0d",
+  "command": "cargo run --release -p bml-gguf --example rms_weight_bounds --locked -- MODEL.gguf 22",
+  "log": "target/quality/tinyllama-rms-weight-bounds.log",
+  "log_sha256": "a68b7c99662c2e6c1049a7aa942edbcc41e81b4c57dd4b62b32949495ca24fa6",
+  "tensors": [
+    {
+      "name": "blk.0.attn_norm.weight",
+      "max_abs": 0.76953125,
+      "index": 802
+    },
+    {
+      "name": "blk.0.ffn_norm.weight",
+      "max_abs": 0.73828125,
+      "index": 95
+    },
+    {
+      "name": "blk.1.attn_norm.weight",
+      "max_abs": 0.55078125,
+      "index": 624
+    },
+    {
+      "name": "blk.1.ffn_norm.weight",
+      "max_abs": 0.34960938,
+      "index": 485
+    },
+    {
+      "name": "blk.2.attn_norm.weight",
+      "max_abs": 0.67578125,
+      "index": 1117
+    },
+    {
+      "name": "blk.2.ffn_norm.weight",
+      "max_abs": 0.24023438,
+      "index": 485
+    },
+    {
+      "name": "blk.3.attn_norm.weight",
+      "max_abs": 0.64453125,
+      "index": 1110
+    },
+    {
+      "name": "blk.3.ffn_norm.weight",
+      "max_abs": 0.21972656,
+      "index": 485
+    },
+    {
+      "name": "blk.4.attn_norm.weight",
+      "max_abs": 0.74609375,
+      "index": 1086
+    },
+    {
+      "name": "blk.4.ffn_norm.weight",
+      "max_abs": 0.21972656,
+      "index": 119
+    },
+    {
+      "name": "blk.5.attn_norm.weight",
+      "max_abs": 0.75390625,
+      "index": 1110
+    },
+    {
+      "name": "blk.5.ffn_norm.weight",
+      "max_abs": 0.2421875,
+      "index": 1358
+    },
+    {
+      "name": "blk.6.attn_norm.weight",
+      "max_abs": 0.73828125,
+      "index": 365
+    },
+    {
+      "name": "blk.6.ffn_norm.weight",
+      "max_abs": 0.24804688,
+      "index": 1447
+    },
+    {
+      "name": "blk.7.attn_norm.weight",
+      "max_abs": 0.80078125,
+      "index": 1308
+    },
+    {
+      "name": "blk.7.ffn_norm.weight",
+      "max_abs": 0.26757813,
+      "index": 491
+    },
+    {
+      "name": "blk.8.attn_norm.weight",
+      "max_abs": 1.2734375,
+      "index": 738
+    },
+    {
+      "name": "blk.8.ffn_norm.weight",
+      "max_abs": 0.29492188,
+      "index": 330
+    },
+    {
+      "name": "blk.9.attn_norm.weight",
+      "max_abs": 0.8359375,
+      "index": 1110
+    },
+    {
+      "name": "blk.9.ffn_norm.weight",
+      "max_abs": 0.31640625,
+      "index": 953
+    },
+    {
+      "name": "blk.10.attn_norm.weight",
+      "max_abs": 0.8828125,
+      "index": 1110
+    },
+    {
+      "name": "blk.10.ffn_norm.weight",
+      "max_abs": 0.32226563,
+      "index": 953
+    },
+    {
+      "name": "blk.11.attn_norm.weight",
+      "max_abs": 0.98828125,
+      "index": 512
+    },
+    {
+      "name": "blk.11.ffn_norm.weight",
+      "max_abs": 0.36132813,
+      "index": 953
+    },
+    {
+      "name": "blk.12.attn_norm.weight",
+      "max_abs": 0.89453125,
+      "index": 512
+    },
+    {
+      "name": "blk.12.ffn_norm.weight",
+      "max_abs": 0.44335938,
+      "index": 953
+    },
+    {
+      "name": "blk.13.attn_norm.weight",
+      "max_abs": 0.984375,
+      "index": 566
+    },
+    {
+      "name": "blk.13.ffn_norm.weight",
+      "max_abs": 0.4375,
+      "index": 953
+    },
+    {
+      "name": "blk.14.attn_norm.weight",
+      "max_abs": 0.90625,
+      "index": 512
+    },
+    {
+      "name": "blk.14.ffn_norm.weight",
+      "max_abs": 0.40820313,
+      "index": 953
+    },
+    {
+      "name": "blk.15.attn_norm.weight",
+      "max_abs": 0.890625,
+      "index": 943
+    },
+    {
+      "name": "blk.15.ffn_norm.weight",
+      "max_abs": 0.44921875,
+      "index": 953
+    },
+    {
+      "name": "blk.16.attn_norm.weight",
+      "max_abs": 0.96875,
+      "index": 424
+    },
+    {
+      "name": "blk.16.ffn_norm.weight",
+      "max_abs": 0.51171875,
+      "index": 953
+    },
+    {
+      "name": "blk.17.attn_norm.weight",
+      "max_abs": 1.109375,
+      "index": 566
+    },
+    {
+      "name": "blk.17.ffn_norm.weight",
+      "max_abs": 0.47851563,
+      "index": 953
+    },
+    {
+      "name": "blk.18.attn_norm.weight",
+      "max_abs": 1.125,
+      "index": 424
+    },
+    {
+      "name": "blk.18.ffn_norm.weight",
+      "max_abs": 0.5234375,
+      "index": 953
+    },
+    {
+      "name": "blk.19.attn_norm.weight",
+      "max_abs": 1.21875,
+      "index": 1110
+    },
+    {
+      "name": "blk.19.ffn_norm.weight",
+      "max_abs": 0.55859375,
+      "index": 1358
+    },
+    {
+      "name": "blk.20.attn_norm.weight",
+      "max_abs": 1.2265625,
+      "index": 1110
+    },
+    {
+      "name": "blk.20.ffn_norm.weight",
+      "max_abs": 0.60546875,
+      "index": 1759
+    },
+    {
+      "name": "blk.21.attn_norm.weight",
+      "max_abs": 1.2265625,
+      "index": 1199
+    },
+    {
+      "name": "blk.21.ffn_norm.weight",
+      "max_abs": 0.73046875,
+      "index": 382
+    },
+    {
+      "name": "output_norm.weight",
+      "max_abs": 3.1875,
+      "index": 2022
+    }
+  ],
+  "max_abs": 3.1875,
+  "candidate_weight_bound": 4
+}

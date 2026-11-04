@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "failed_domain_bound",
   "started_at_utc": "2026-11-04T04:25:41.205479+00:00",
   "base_commit": "65346b268d285705f5a85a58b05358bc44575caf",
   "scope": "One BOS token, local symbolic execution; no parity or performance result.",
@@ -24,5 +24,9 @@
   "residual_bound": 160,
   "qualification": "Experimental declarations, not evidence all intermediate values are evaluable.",
   "pid": 1448596,
-  "observed_at_utc": "2026-11-04T04:26:35.299591+00:00"
+  "observed_at_utc": "2026-11-04T04:26:35.299591+00:00",
+  "completed_observed_at_utc": "2026-11-04T06:23:59.802848+00:00",
+  "exit_code": 1,
+  "log_sha256": "d55c2a54419e3b53a8ccd3af5d013eff50bd57d4f1986e0316b130d84d3cc88b",
+  "result": "rms_norm rejected weight index 35 as exceeding its declared bound 1. Diagnostic does not identify the tensor or the weight value. No token or parity result."
 }
