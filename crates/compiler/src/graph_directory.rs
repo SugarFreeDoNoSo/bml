@@ -68,13 +68,21 @@ fn read_file(path: &Path, budget: &mut usize) -> Result<Vec<u8>, String> {
     if !metadata.is_file() || declared > *budget {
         return Err("graph file exceeds remaining byte budget or is not a regular file".into());
     }
+    read_contents(&mut file, declared, budget)
+}
+
+fn read_contents(
+    reader: &mut impl Read,
+    declared: usize,
+    budget: &mut usize,
+) -> Result<Vec<u8>, String> {
     let mut bytes = Vec::new();
     bytes
         .try_reserve_exact(declared)
         .map_err(|_| "graph allocation failed")?;
     let mut chunk = [0; 8192];
     loop {
-        let count = file
+        let count = reader
             .read(&mut chunk)
             .map_err(|e| format!("graph read: {e}"))?;
         if count == 0 {
@@ -91,6 +99,28 @@ fn read_file(path: &Path, budget: &mut usize) -> Result<Vec<u8>, String> {
     }
     *budget -= bytes.len();
     Ok(bytes)
+}
+
+#[cfg(test)]
+mod bounded_read_tests {
+    use super::read_contents;
+    use std::io::Cursor;
+
+    #[test]
+    fn growth_after_metadata_is_bounded_and_failure_preserves_budget() {
+        let mut budget = 8193;
+        let mut input = Cursor::new(vec![0u8; 8194]);
+        let error = read_contents(&mut input, 1, &mut budget).unwrap_err();
+        assert!(error.contains("byte budget"));
+        assert_eq!(budget, 8193);
+
+        let mut input = Cursor::new(vec![0u8; 8193]);
+        assert_eq!(
+            read_contents(&mut input, 1, &mut budget).unwrap().len(),
+            8193
+        );
+        assert_eq!(budget, 0);
+    }
 }
 
 /// Load the legacy graph directory with default resource limits.
