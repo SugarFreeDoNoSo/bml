@@ -1032,7 +1032,8 @@
       "cli_stops_at_eos_and_emits_partial_utf8_bytes_without_replacement",
       "distributed_compile_rejects_partial_or_invalid_rms_bounds",
       "cli_exports_trusted_shards_for_source_free_workers_and_generates",
-      "symbolic_step_budget_is_explicit_and_enforced"
+      "symbolic_step_budget_is_explicit_and_enforced",
+      "cli_prepares_source_free_shards_with_coordinator_partition"
     ]
   },
   "C105": {

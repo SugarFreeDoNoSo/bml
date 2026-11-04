@@ -171,6 +171,24 @@ enum Command {
         #[arg(long = "max-bytes", default_value_t = 536_870_912, value_parser = clap::value_parser!(u64).range(1..))]
         max_bytes: u64,
     },
+    /// Prepara el artefacto y todos los paquetes para los workers indicados.
+    PrepareShards {
+        /// Directorio del artefacto simbólico compilado.
+        #[arg(short = 'm', long = "model")]
+        model: PathBuf,
+        /// Directorio nuevo para los paquetes y el plan.
+        #[arg(short = 'o', long = "output")]
+        output: PathBuf,
+        /// GGUF reubicado cuya identidad debe coincidir con el manifiesto.
+        #[arg(long = "weights")]
+        weights: Option<PathBuf>,
+        /// Número de workers; se limita al número de capas.
+        #[arg(long, value_parser = clap::value_parser!(u32).range(1..))]
+        workers: u32,
+        /// Límite de bytes codificados por paquete.
+        #[arg(long = "max-bytes", default_value_t = 536_870_912, value_parser = clap::value_parser!(u64).range(1..))]
+        max_bytes: u64,
+    },
     /// Distribuye fragmentos a nodos workers via TCP
     Distribute {
         /// Directorio AOT simbólico acotado con pesos GGUF enlazados
@@ -223,6 +241,22 @@ fn main() {
     match cli.command {
         Command::ConvertWeights(args) => weights::exit_on_error(weights::convert(args)),
         Command::InspectWeights(args) => weights::exit_on_error(weights::inspect(args)),
+        Command::PrepareShards {
+            model,
+            output,
+            weights,
+            workers,
+            max_bytes,
+        } => {
+            inference_result(prepare_shards(
+                &model,
+                weights.as_deref(),
+                &output,
+                workers,
+                max_bytes,
+            ));
+            println!("plan={}", output.join("plan.json").display());
+        }
         Command::ExportShard {
             model,
             output,
@@ -774,6 +808,82 @@ fn run_from_gguf(
     );
 }
 
+fn layer_ranges(layers: u32, workers: usize) -> Result<Vec<std::ops::Range<u32>>, String> {
+    let count = workers.min(layers as usize);
+    if count == 0 {
+        return Err("model layers and worker count must be positive".into());
+    }
+    Ok((0..count)
+        .map(|index| {
+            let start = (index as u64 * u64::from(layers) / count as u64) as u32;
+            let end = ((index as u64 + 1) * u64::from(layers) / count as u64) as u32;
+            start..end
+        })
+        .collect())
+}
+
+fn prepare_shards(
+    model: &std::path::Path,
+    source: Option<&std::path::Path>,
+    output: &std::path::Path,
+    workers: u32,
+    max_bytes: u64,
+) -> Result<(), String> {
+    use bml_compiler::symbolic_artifact::{
+        checked_identity, load_directory, load_directory_authenticated, BOUNDED_PROFILE, MANIFEST,
+    };
+    let identity = checked_identity(model, source)?;
+    let loaded = load_directory(model, source)?;
+    if loaded.manifest.profile != BOUNDED_PROFILE {
+        return Err("prepare-shards requires the bounded symbolic v4 profile".into());
+    }
+    let ranges = layer_ranges(loaded.manifest.config.n_layers, workers as usize)?;
+    let file_counts: Vec<_> = loaded
+        .manifest
+        .kernels
+        .iter()
+        .map(|kernel| kernel.programs.len())
+        .collect();
+    drop(loaded);
+    std::fs::create_dir(output).map_err(|e| format!("create output directory: {e}"))?;
+    let result = (|| -> Result<(), String> {
+        let artifact = output.join("artifact");
+        std::fs::create_dir(&artifact).map_err(|e| e.to_string())?;
+        std::fs::copy(model.join(MANIFEST), artifact.join(MANIFEST)).map_err(|e| e.to_string())?;
+        for (index, count) in file_counts.into_iter().enumerate() {
+            for program in 0..count {
+                let filename = format!("kernel_{index}_{program}.bmlgraph");
+                std::fs::copy(model.join(&filename), artifact.join(&filename))
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        load_directory_authenticated(&artifact, &identity)?;
+        let mut assignments = Vec::new();
+        for (index, range) in ranges.into_iter().enumerate() {
+            let name = format!("shard-{index}");
+            let hash = bml_compiler::symbolic_weight_shard::export_layer_weights(
+                model,
+                source,
+                range.clone(),
+                &output.join(&name),
+                max_bytes,
+            )?;
+            assignments.push(serde_json::json!({"index":index,"layer_start":range.start,"layer_end":range.end,"directory":name,"shard_sha256":hash}));
+        }
+        if checked_identity(model, source)? != identity {
+            return Err("artifact changed during shard preparation".into());
+        }
+        let plan = serde_json::json!({"version":1,"artifact":"artifact","artifact_sha256":identity,"workers":assignments});
+        let bytes = serde_json::to_vec_pretty(&plan).map_err(|e| e.to_string())?;
+        std::fs::write(output.join("plan.json"), bytes).map_err(|e| e.to_string())?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_dir_all(output);
+    }
+    result
+}
+
 /// Execute a persisted bounded symbolic artifact over configured workers.
 /// Legacy distributed fragments lack complete causal programs and are rejected.
 #[allow(clippy::too_many_arguments)]
@@ -828,15 +938,16 @@ fn distribute(
         return Err("el prompt y la generación exceden el contexto compilado".into());
     }
     let layers = model.compiler().config().n_layers;
-    let active = nodes.len().min(layers as usize);
+    let ranges = layer_ranges(layers, nodes.len())?;
+    let active = ranges.len();
     let mut clients = Vec::with_capacity(active);
     let transport_limits = SymbolicTransportLimits {
         timeout: std::time::Duration::from_secs(timeout_seconds),
         ..Default::default()
     };
-    for (index, node) in nodes.iter().take(active).enumerate() {
-        let start = (index as u64 * u64::from(layers) / active as u64) as u32;
-        let end = ((index as u64 + 1) * u64::from(layers) / active as u64) as u32;
+    for (node, range) in nodes.iter().zip(ranges) {
+        let start = range.start;
+        let end = range.end;
         clients.push(
             SymbolicLayerClient::connect(*node, &identity, start..end, context, transport_limits)
                 .map_err(|error| format!("worker {node} capas {start}..{end}: {error}"))?,

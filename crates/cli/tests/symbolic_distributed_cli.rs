@@ -644,3 +644,145 @@ fn symbolic_step_budget_is_explicit_and_enforced() {
         String::from_utf8_lossy(&accepted.stderr)
     );
 }
+
+#[test]
+fn cli_prepares_source_free_shards_with_coordinator_partition() {
+    use bml_compiler::{
+        symbolic_artifact::{
+            checked_identity, compile_directory_bounded, load_directory_authenticated,
+        },
+        symbolic_bounded::BoundedProfile,
+        symbolic_kernels::KernelLimits,
+        symbolic_weight_shard::verify_layer_weights,
+    };
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    let root = Directory(source.0.with_extension("cli-prepare-shards"));
+    std::fs::create_dir(&root.0).unwrap();
+    let artifact = root.0.join("model");
+    std::fs::create_dir(&artifact).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &artifact,
+        6,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let identity = checked_identity(&artifact, None).unwrap();
+    let prepared = root.0.join("prepared");
+    let run = |output: &std::path::Path, workers: &str, budget: &str| {
+        Command::new(env!("CARGO_BIN_EXE_bml-cli"))
+            .args(["prepare-shards", "--model"])
+            .arg(&artifact)
+            .arg("--output")
+            .arg(output)
+            .args(["--workers", workers, "--max-bytes", budget])
+            .output()
+            .unwrap()
+    };
+    let result = run(&prepared, "2", "1000000");
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let plan: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(prepared.join("plan.json")).unwrap()).unwrap();
+    assert_eq!(plan["artifact_sha256"], identity);
+    let copy = prepared.join(plan["artifact"].as_str().unwrap());
+    load_directory_authenticated(&copy, &identity).unwrap();
+    let workers = plan["workers"].as_array().unwrap();
+    assert_eq!(workers.len(), 2);
+    for (entry, range) in workers.iter().zip([0..1, 1..3]) {
+        assert_eq!(entry["layer_start"], range.start);
+        assert_eq!(entry["layer_end"], range.end);
+        let dir = prepared.join(entry["directory"].as_str().unwrap());
+        verify_layer_weights(
+            &dir,
+            entry["shard_sha256"].as_str().unwrap(),
+            &identity,
+            range,
+            1_000_000,
+        )
+        .unwrap();
+    }
+    let mut addresses = Vec::new();
+    let mut tasks = Vec::new();
+    for entry in workers {
+        let range = entry["layer_start"].as_u64().unwrap() as u32
+            ..entry["layer_end"].as_u64().unwrap() as u32;
+        let shard = prepared.join(entry["directory"].as_str().unwrap());
+        let server = Arc::new(
+            SymbolicLayerServer::new_authenticated(
+                &copy,
+                &identity,
+                range,
+                SymbolicTransportLimits::default(),
+                &shard,
+                entry["shard_sha256"].as_str().unwrap(),
+                1_000_000,
+            )
+            .unwrap(),
+        );
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        addresses.push(listener.local_addr().unwrap().to_string());
+        tasks.push(thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            server.serve_connection(stream).unwrap();
+        }));
+    }
+    let mut reference = SymbolicCausalModel::open_artifact(
+        &artifact,
+        None,
+        SymbolicLimits {
+            max_nodes: 0,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let vocab = reference.compiler().vocab().clone();
+    let logits = reference.forward(&vocab.encode("A").unwrap()).unwrap();
+    let token = bml_compiler::sampler::sample(&logits, 0.0, 0).unwrap();
+    assert_ne!(token, vocab.eos_token_id);
+    let expected = vocab.token_piece_bytes(token).unwrap();
+    let result = Command::new(env!("CARGO_BIN_EXE_bml-cli"))
+        .args(["distribute", "--model"])
+        .arg(&artifact)
+        .args([
+            "--nodes",
+            &addresses.join(","),
+            "--prompt",
+            "A",
+            "--num-tokens",
+            "1",
+            "--temp",
+            "0",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert_eq!(result.stdout, expected);
+    for task in tasks {
+        task.join().unwrap();
+    }
+    let existing = run(&prepared, "2", "1000000");
+    assert!(!existing.status.success());
+    assert!(prepared.join("plan.json").exists());
+    let insufficient = root.0.join("insufficient");
+    assert!(!run(&insufficient, "2", "1").status.success());
+    assert!(!insufficient.exists());
+    let extra = root.0.join("extra");
+    assert!(run(&extra, "8", "1000000").status.success());
+    let plan: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(extra.join("plan.json")).unwrap()).unwrap();
+    let workers = plan["workers"].as_array().unwrap();
+    assert_eq!(workers.len(), 3);
+    for (index, entry) in workers.iter().enumerate() {
+        assert_eq!(entry["layer_start"], index);
+        assert_eq!(entry["layer_end"], index + 1);
+    }
+}

@@ -315,6 +315,19 @@ una confirmación.
 
 ### Pesos por rango verificados
 
+Para preparar todos los rangos que usará el coordinador con dos workers:
+
+```sh
+bml-cli prepare-shards --model modelo.bmlgraph --output despliegue --workers 2
+```
+
+El directorio nuevo contiene `artifact/`, `shard-0/`, `shard-1/` y
+`plan.json`. El plan identifica los rangos, el hash del artefacto y los hashes
+de cada paquete. Si hay más workers que capas solo se preparan los rangos con
+capas. `--max-bytes` limita cada paquete y `--weights` permite reubicar el GGUF.
+Hay que copiar los archivos a los nodos y entregar el plan por un canal
+confiable; el comando no transfiere archivos por red.
+
 El comando siguiente exporta los tensores codificados de las capas `[0, 1)`
 desde un artefacto bounded v4 e imprime `artifact_sha256` y `shard_sha256`:
 

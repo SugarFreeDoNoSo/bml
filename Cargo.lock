@@ -206,6 +206,7 @@ dependencies = [
  "bml-parser",
  "bml-runtime",
  "clap",
+ "serde_json",
 ]
 
 [[package]]
