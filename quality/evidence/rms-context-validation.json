@@ -1,0 +1,16 @@
+{
+  "scope": "Diagnostic context for RMS errors without changing successful values or checked arithmetic; no model parity result.",
+  "test": "rms_bound_errors_identify_tensor_and_operand_maxima_without_committing",
+  "tests_cover": [
+    "local bounded construction",
+    "loaded persisted artifact with max_nodes=0",
+    "cache position unchanged after rejection"
+  ],
+  "checks": "canonical gate and strict OpenSpec passed",
+  "logs": {
+    "target/quality/rms-context-test.log": "326b5a781cd0068a40c1918ca75391d57f03b033210909f25c5b9cb3d2c79b2e",
+    "target/quality/rms-context-gate.log": "d168b75efb4697e48f3b31dded4bbce466499d2852b61e587c8a24cc886b3bfc"
+  },
+  "worker_audit": "quality/evidence/rms-context-hot-loop.json",
+  "running_old_binary": "quality/evidence/tinyllama-rms4-run.json"
+}

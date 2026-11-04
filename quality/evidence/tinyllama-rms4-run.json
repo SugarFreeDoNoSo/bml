@@ -25,5 +25,11 @@
   "residual_bound": 160,
   "qualification": "Experimental declarations and sampled numeric validation, not proof all intermediate values are evaluable.",
   "pid": 1709496,
-  "observed_at_utc": "2026-11-04T06:31:14.494432+00:00"
+  "observed_at_utc": "2026-11-04T06:31:14.494432+00:00",
+  "post_launch_source_changes": {
+    "crates/runtime/src/symbolic_causal.rs": {
+      "sha256": "fbf8f7c6644b34ed60f44f97706bfc3d471a35a83d7ce176aef4c3f816c75d08",
+      "description": "Error context for normalization changed after launch; the measured binary and the running computation use the source hashes at build."
+    }
+  }
 }

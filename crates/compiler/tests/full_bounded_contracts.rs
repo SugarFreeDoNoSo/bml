@@ -841,3 +841,40 @@ fn residual_bound_errors_identify_layer_element_and_operands_without_committing(
         assert_eq!(cache.current_pos(), 0);
     }
 }
+
+#[test]
+fn rms_bound_errors_identify_tensor_and_operand_maxima_without_committing() {
+    let source = symbolic_fixture::fixture(0.25);
+    let profile = BoundedProfile {
+        rms: bml_compiler::symbolic_kernels::RmsBounds {
+            input: 16.0,
+            weight: 1.0 / 256.0,
+        },
+        ..Default::default()
+    };
+    let directory = artifact(&source, profile);
+    let mut models = [
+        SymbolicCausalModel::open_bounded(&source.0, SymbolicLimits::default(), profile).unwrap(),
+        SymbolicCausalModel::open_artifact(
+            &directory.0,
+            None,
+            SymbolicLimits {
+                max_nodes: 0,
+                ..Default::default()
+            },
+        )
+        .unwrap(),
+    ];
+    for model in &mut models {
+        let mut cache = HashConsedKV::new(1, 1, 2, 8);
+        let error = model.forward_cached(&[69], &mut cache).unwrap_err();
+        assert!(
+            error.contains("blk.0.attn_norm.weight")
+                && error.contains("input max_abs")
+                && error.contains("weight max_abs")
+                && error.contains("bounded RMS weight"),
+            "{error}"
+        );
+        assert_eq!(cache.current_pos(), 0);
+    }
+}

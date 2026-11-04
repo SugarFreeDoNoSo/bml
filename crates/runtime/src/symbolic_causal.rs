@@ -602,34 +602,42 @@ impl SymbolicCausalModel {
         })
     }
     fn norm(&mut self, input: &[f64], name: &str) -> Result<Vec<f64>, String> {
-        if let Some(shard) = &self.shard {
+        let weights: Vec<f64> = if let Some(shard) = &self.shard {
             if shard.dimensions(name) != Some(&[input.len() as u64][..]) {
                 return Err("shard normalization dimension mismatch".into());
             }
-            let weights = shard
+            shard
                 .decode_row_f32(name, 0)?
                 .into_iter()
                 .map(f64::from)
-                .collect::<Vec<_>>();
-            return self.run(Operation::Norm, input.len(), input, &weights);
-        }
-        let start = *self
-            .compiler
-            .weight_offsets()
-            .get(name)
-            .ok_or("missing normalization weights")? as usize;
-        let end = start
-            .checked_add(input.len())
-            .ok_or("normalization range overflow")?;
-        let weights: Vec<_> = self
-            .compiler
-            .weight_pool()
-            .get(start..end)
-            .ok_or("invalid normalization range")?
-            .iter()
-            .map(|&v| f64::from(v))
-            .collect();
+                .collect()
+        } else {
+            let start = *self
+                .compiler
+                .weight_offsets()
+                .get(name)
+                .ok_or("missing normalization weights")? as usize;
+            let end = start
+                .checked_add(input.len())
+                .ok_or("normalization range overflow")?;
+            self.compiler
+                .weight_pool()
+                .get(start..end)
+                .ok_or("invalid normalization range")?
+                .iter()
+                .map(|&v| f64::from(v))
+                .collect()
+        };
         self.run(Operation::Norm, input.len(), input, &weights)
+            .map_err(|error| {
+                let input_max = input
+                    .iter()
+                    .fold(0.0_f64, |max, value| max.max(value.abs()));
+                let weight_max = weights
+                    .iter()
+                    .fold(0.0_f64, |max, value| max.max(value.abs()));
+                format!("{name}: input max_abs {input_max}, weight max_abs {weight_max}: {error}")
+            })
     }
     fn rotate(&mut self, input: &[f64], position: u32) -> Result<Vec<f64>, String> {
         let dim = self.compiler.head_dim() as usize;
