@@ -192,9 +192,10 @@ fn truncated_constant_pool_is_rejected_before_reservation() {
     let mut head = header(0, &[1.0f64.to_bits()]);
     head[45..53].copy_from_slice(&2u64.to_le_bytes());
     dir.put("header.bmlgraph", &head);
-    let error = load_from_dir(&dir.0)
-        .err()
-        .expect("truncated pool accepted");
+    let error = match load_from_dir(&dir.0) {
+        Ok(_) => panic!("truncated pool accepted"),
+        Err(error) => error,
+    };
     assert!(
         error.contains("constant count exceeds budget or available bytes"),
         "{error}"
