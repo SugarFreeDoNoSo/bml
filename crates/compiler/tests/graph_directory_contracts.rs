@@ -187,6 +187,21 @@ fn malformed_counts_version_utf8_and_opcodes_fail_without_large_allocations() {
 }
 
 #[test]
+fn truncated_constant_pool_is_rejected_before_reservation() {
+    let dir = Directory::new();
+    let mut head = header(0, &[1.0f64.to_bits()]);
+    head[45..53].copy_from_slice(&2u64.to_le_bytes());
+    dir.put("header.bmlgraph", &head);
+    let error = load_from_dir(&dir.0)
+        .err()
+        .expect("truncated pool accepted");
+    assert!(
+        error.contains("constant count exceeds budget or available bytes"),
+        "{error}"
+    );
+}
+
+#[test]
 fn directory_budgets_are_inclusive_and_accumulate_across_fragments() {
     let dir = Directory::new();
     let head = header(2, &[1.0f64.to_bits()]);
