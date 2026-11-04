@@ -440,6 +440,24 @@ fn compile_context_with_rms_bounds(
         encoded,
     })
 }
+/// Verify a complete artifact and return the SHA-256 of its exact manifest bytes.
+/// The manifest binds the source weights and every persisted kernel by hash.
+/// Files must remain unchanged while the returned identity is in use; this
+/// function rejects a manifest changed during validation.
+pub fn checked_identity(
+    directory: &Path,
+    source_override: Option<&Path>,
+) -> Result<String, String> {
+    let before = read_bounded(&directory.join(MANIFEST), MAX_MANIFEST)?;
+    let loaded = load_directory(directory, source_override)?;
+    drop(loaded);
+    let after = read_bounded(&directory.join(MANIFEST), MAX_MANIFEST)?;
+    if before != after {
+        return Err("symbolic manifest changed during identity validation".into());
+    }
+    Ok(hash(&before))
+}
+
 /// Load a bounded artifact and verify source, metadata, literal bindings, hashes
 /// and the complete operation plan. Runtime validation remains mandatory.
 pub fn load_directory(

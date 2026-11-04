@@ -97,6 +97,16 @@ class DispatcherAudit(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'direct call'):
             self.check(assembly=assembly.replace(name, 'core::panicking::other'), symbols=symbols)
 
+    def test_duplicate_demangled_direct_symbols_require_an_exact_entry_address(self):
+        name = '<alloc::raw_vec::RawVec<f64>>::grow_one'
+        symbols = self.symbols + f'400 10 t {name}\n500 10 t {name}\n'
+        for address in ('400', '500'):
+            assembly = self.assembly.replace(f'callq 0x100 <{HOT}>', f'callq 0x{address} <{name}>')
+            self.assertEqual(self.check(assembly=assembly, symbols=symbols)['calls'][1]['target'], name)
+        bad = self.assembly.replace(f'callq 0x100 <{HOT}>', f'callq 0x401 <{name}>')
+        with self.assertRaisesRegex(ValueError, 'direct call'):
+            self.check(assembly=bad, symbols=symbols)
+
     def test_relative_call_resolves_only_the_reviewed_local_trunc_leaf(self):
         helper = '''\n0000000000000400 <trunc>:
  400: movq %xmm0, %rax

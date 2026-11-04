@@ -26,10 +26,16 @@ pub fn fixture(embedding: f32) -> Fixture {
 
 #[allow(dead_code)]
 pub fn fixture_layers(embedding: f32, layers: u32) -> Fixture {
+    fixture_layers_with_output(embedding, layers, 69)
+}
+
+#[allow(dead_code)]
+pub fn fixture_layers_with_output(embedding: f32, layers: u32, output_token: usize) -> Fixture {
     assert!(layers > 0);
     let mut tokens = vec!["<unk>".into(), "<s>".into(), "</s>".into(), "▁".into()];
     tokens.extend((0..256).map(|b| format!("<0x{b:02X}>")));
     let vocab = tokens.len();
+    assert!(output_token < vocab);
     let mut meta = vec![
         ("general.architecture", 8u32, string("llama")),
         ("tokenizer.ggml.model", 8, string("llama")),
@@ -93,6 +99,10 @@ pub fn fixture_layers(embedding: f32, layers: u32) -> Fixture {
     let mut head = vec![0f32; 4 * vocab];
     for i in 0..4 {
         head[i * 4 + i] = 0.5;
+    }
+    if layers > 1 {
+        // The multi-layer integration fixture generates a real byte token.
+        head[output_token * 4] = 2.0;
     }
     let mut q = vec![0f32; 16];
     let mut k = vec![0f32; 8];

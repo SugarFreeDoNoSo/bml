@@ -918,7 +918,8 @@
       "indexed_layout_is_rejected_by_v1_v2_v3_and_unrelated_v4_families",
       "indexed_literal_counts_values_and_complete_prefix_plan_are_enforced",
       "indexed_missing_outputs_never_commit_cache_and_valid_replacement_is_executed",
-      "indexed_prefix_plan_storage_grows_linearly_without_omitting_any_prefix"
+      "indexed_prefix_plan_storage_grows_linearly_without_omitting_any_prefix",
+      "distributed_ranges_execute_replaced_valid_persisted_bytecode"
     ]
   },
   "C95": {
@@ -993,6 +994,41 @@
     "tests": [
       "persisted_sessions_prepare_abort_commit_and_reset_without_losing_causal_equivalence",
       "session_rejects_invalid_layout_budget_and_uncommitted_errors"
+    ]
+  },
+  "C102": {
+    "package": "bml-runtime",
+    "target": "symbolic_transport_contracts",
+    "tests": [
+      "two_tcp_ranges_match_persisted_causal_logits_and_keep_sessions_independent",
+      "handshake_rejects_wrong_identity_range_context_and_frame_limits",
+      "lost_commit_response_invalidates_client_and_is_not_retried",
+      "pipeline_invalidates_all_sessions_after_a_lost_commit_response",
+      "changing_a_valid_manifest_changes_identity_and_old_server_refuses_it",
+      "later_commit_loss_invalidates_pipeline_even_after_an_earlier_worker_acknowledges",
+      "oversized_frame_is_rejected_before_its_body_is_received",
+      "worker_admission_rejects_a_different_relocated_source_model"
+    ]
+  },
+  "C103": {
+    "package": "bml-worker",
+    "target": "symbolic_worker_contracts",
+    "tests": [
+      "real_worker_processes_execute_persisted_bml_ranges_with_independent_sessions",
+      "pipeline_covers_all_layers_on_one_two_or_extra_worker_processes",
+      "pipeline_rejects_gaps_and_duplicate_layer_assignments",
+      "loss_of_a_real_worker_invalidates_the_coordinator_without_advancing_it",
+      "pipeline_accepts_only_fresh_unprepared_worker_sessions"
+    ]
+  },
+  "C104": {
+    "package": "bml-cli",
+    "target": "symbolic_distributed_cli",
+    "tests": [
+      "cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weights",
+      "cli_rejects_missing_symbolic_artifact_before_using_legacy_fragments",
+      "cli_stops_at_eos_and_emits_partial_utf8_bytes_without_replacement",
+      "distributed_compile_rejects_partial_or_invalid_rms_bounds"
     ]
   }
 }

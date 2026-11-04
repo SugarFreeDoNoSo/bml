@@ -105,12 +105,17 @@ def audit(binary, assembly, symbols, relocations, variants):
     if variants != len(RPN_VARIANTS):
         raise ValueError('Unreviewed RpnOp variant count')
     sized = {}
+    addresses_by_name = {}
     for line in symbols.splitlines():
         fields = line.split(maxsplit=3)
         if len(fields) == 4 and fields[2].lower() == 't':
-            sized[fields[3]] = (int(fields[0], 16), int(fields[1], 16))
+            address, size = int(fields[0], 16), int(fields[1], 16)
+            sized[fields[3]] = (address, size)
+            addresses_by_name.setdefault(fields[3], set()).add(address)
     if HOT not in sized or 'bml_runtime::net::send_msg' not in sized:
         raise ValueError('Worker must retain both dispatcher and RPC sender symbols')
+    if len(addresses_by_name[HOT]) != 1:
+        raise ValueError('Ambiguous dispatcher symbol')
     start, size = sized[HOT]
     if not 0 < size < 32768:
         raise ValueError('Dispatcher size is missing or exceeds 32 KiB')
@@ -149,7 +154,7 @@ def audit(binary, assembly, symbols, relocations, variants):
                     raise ValueError('Unapproved indirect call target')
             else:
                 direct = re.match(r'0x([0-9a-f]+) <(.+)>$', args)
-                if direct is None or direct[2] not in DIRECT or sized.get(direct[2], (None,))[0] != int(direct[1], 16):
+                if direct is None or direct[2] not in DIRECT or int(direct[1], 16) not in addresses_by_name.get(direct[2], set()):
                     raise ValueError('Unapproved direct call target')
                 target = direct[2]
             calls.append({'address': address, 'target': target})

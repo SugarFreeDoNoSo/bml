@@ -92,6 +92,7 @@ impl Message {
 }
 
 /// Envía un mensaje por un TcpStream.
+#[inline(never)]
 pub fn send_msg(stream: &mut TcpStream, msg: &Message) -> io::Result<()> {
     u32::try_from(msg.payload.len())
         .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "message exceeds u32 framing"))?;

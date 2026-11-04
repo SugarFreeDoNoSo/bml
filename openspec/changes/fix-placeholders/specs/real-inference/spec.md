@@ -1,5 +1,25 @@
 ## ADDED Requirements
 
+### Requirement: Transporte causal simbólico distribuido
+El compilador CLI SHALL poder publicar un artefacto BML acotado con contexto explícito para workers; el coordinador SHALL cargar los programas persistidos sin construir nodos, verificar identidad y cubrir cada capa exactamente una vez. El tokenizer, embeddings, normalización final y cabeza SHALL proceder del modelo enlazado, y las conexiones SHALL mantener sesiones KV independientes.
+
+#### Scenario: Prefijo y generación con varias asignaciones
+- **WHEN** un modelo GQA de tres capas se ejecuta con uno, dos o tres workers y nodos adicionales sin asignar
+- **THEN** cada token pasa por todos los rangos en orden, los logits coinciden con el forward local y la CLI emite los bytes generados reales
+- **AND** cada worker valida el mismo manifiesto y hash de fuente, incluso si el GGUF se reubica
+- **AND** los kernels se cargan con presupuesto de construcción cero
+
+#### Scenario: Confirmación incierta
+- **WHEN** se pierde un worker o una respuesta de confirmación, incluso después de confirmar otro rango
+- **THEN** el coordinador conserva su posición local y se invalida sin reintentar el token ni afirmar rollback remoto
+- **AND** reiniciar requiere crear una sesión nueva o completar un reset explícito mientras todas las conexiones estén sanas
+
+#### Scenario: Persistencia y límites del transporte
+- **WHEN** se sustituye bytecode válido y se actualiza su hash en el manifiesto
+- **THEN** el resultado distribuido refleja el programa almacenado y no una recompilación o un camino nativo
+- **AND** rangos incompletos o duplicados, dimensiones, frames, identidad o presupuestos inválidos se rechazan
+- **AND** EOS detiene la generación y los bytes parciales UTF-8 se conservan sin sustitución
+
 ### Requirement: Fragmentos públicos completos con layout explícito
 Las APIs públicas de atención, MLP y composición de capa SHALL ejecutar sus operaciones completas con direcciones absolutas de entrada/pesos y slots de salida explícitos. Las declaraciones BML acotadas SHALL conservar sus dominios parciales, sin sustituirlas por aritmética nativa de datos ni afirmar rango IEEE universal. Los constructores configurables SHALL rechazar dimensiones y layouts incompatibles; las constantes por operación SHALL pertenecer al programa que las usa.
 

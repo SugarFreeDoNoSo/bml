@@ -1,0 +1,78 @@
+{
+  "base_commit": "aeb832ec52c4cb6711ffcb772744e97430bf3ab1",
+  "toolchain": "1.98.1 x86_64-unknown-linux-gnu",
+  "checks": {
+    "gate": {
+      "log": "target/quality/distributed-symbolic-gate-final-verified.log",
+      "sha256": "ae1ecb1f97f4e32a360a003f587546ae591913d580146e598e28cf4814dd7472",
+      "exit_code": 0
+    },
+    "all_features": {
+      "log": "target/quality/distributed-symbolic-all-features-final.log",
+      "sha256": "7c848dfa1f5b7fa2854a5112df4af1a7c8c90f10088c2e307fd3066e191a6bcb",
+      "exit_code": 0
+    },
+    "openspec": {
+      "log": "target/quality/distributed-symbolic-openspec-final.log",
+      "sha256": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7",
+      "exit_code": 0
+    },
+    "hot_loop": {
+      "log": "target/quality/distributed-symbolic-hot-loop.log",
+      "sha256": "0f848bc647b0f1e7597d690d28bcd6015a5b9f99b60fc311be35bc7eed7bf9c0",
+      "exit_code": 0
+    },
+    "stories": {
+      "log": "target/quality/distributed-stories-real.log",
+      "sha256": "801efb2bea7c95382d76bdf3d150aea254031e54d88d8315b36bc76733e8dd1f",
+      "exit_code": 0
+    }
+  },
+  "gate": {
+    "command": "./scripts/check.sh origin/master",
+    "rust_passed": 900,
+    "rust_ignored": 18,
+    "python_passed": 87,
+    "historical_contract_discrepancies": 0,
+    "traceability": "104/104",
+    "clippy_current": 56,
+    "clippy_baseline": 192,
+    "clippy_new": 0,
+    "worker_binary": "target/global-restart-build/debug/bml-worker"
+  },
+  "openspec": "11 passed, 0 failed",
+  "all_features_scope": "cargo check --workspace --all-features --locked; compilation only",
+  "stories_report": "quality/evidence/distributed-stories-real.json",
+  "hot_loop_report": "quality/evidence/distributed-symbolic-hot-loop.json",
+  "source_sha256": {
+    "crates/cli/src/main.rs": "8942267e09ab3917d8de81ccf93077eba97a897d3edeb7a3225a0a351d11fb08",
+    "crates/cli/tests/symbolic_distributed_cli.rs": "d40282c24ac1c9467f3135f89d87982137482dcf15f7a53050140614f7160f2d",
+    "crates/compiler/src/symbolic_artifact.rs": "697471780b93c8cf2287329f5dc838c230d4500264e9a0e89d03978554e9998b",
+    "crates/compiler/tests/indexed_buffer_artifact_contracts.rs": "1b0dd82b05f43dbcdeed3520c8673e8922226b782f8a1b09017752299faacbe0",
+    "crates/runtime/src/lib.rs": "8d88ce789213590d85f3833d687cffdcd4d16881d1afcd4953285b698c8f38cf",
+    "crates/runtime/src/net.rs": "dcb142231c8df4a13ee3608aa0b5e5573dbbfa86a1a3f94bc3904e0007559392",
+    "crates/runtime/src/symbolic_transport.rs": "5bcefaed36e3244da89223e9d364a47b29ab20065f9fdfdc788557a7e1b55913",
+    "crates/runtime/tests/support/symbolic_fixture.rs": "628c316441a5f0baf1c18bdb75ec43a3a44b1c688b42eb7d18631f7316c7162a",
+    "crates/runtime/tests/symbolic_transport_contracts.rs": "bb5d732bba3a3f9115f67f6cd99a54256dbf2a52cdbafe619da3419f5e391ea5",
+    "crates/worker/src/main.rs": "6de00f9ab3bf8ad8229f76b53f67c8438e3c652d8307fe57fefcfb76a58ea498",
+    "crates/worker/tests/symbolic_worker_contracts.rs": "74a137f4f9bf3cc7a915df4344d867d3916abbefe6d506b08dabde7232f7b311",
+    "tools/audit_hot_loop_binary.py": "c9368889b4bf469a5064746a4b53560b0f47a3894622fef29eee48a02756d0d8",
+    "tools/test_audit_hot_loop_binary.py": "942830d93c429475a5fd40a2a5806b7c40214980520e92699104f24ff7a4ef56",
+    "quality/contracts.feature": "93e9681863336836bbc52552c2386da88c29f5bc7763b53552b613ac021f5224",
+    "quality/traceability.json": "f5f4c893ffc0960510cf1869a88c2f294196299a734f3c6a70ea9e9a462dc291",
+    "Cargo.toml": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+    "Cargo.lock": "a76bdb0d79ca9fe1539694bf2549ff5a981b52a87c052c1bdb855063812cfc0f"
+  },
+  "prior_failures": {
+    "lint": "target/quality/distributed-symbolic-lint.log (three new style diagnostics fixed without changing the baseline)",
+    "audit_1": "target/quality/distributed-symbolic-hot-loop-attempt-1.log (sender symbol inlined; explicit boundary restored)",
+    "audit_2": "target/quality/distributed-symbolic-hot-loop-attempt-2.log (duplicate demangled symbol; exact-entry matching and regression test added)"
+  },
+  "limitations": [
+    "Stories15M one token and two workers only; not a performance benchmark or larger model validation",
+    "legacy public distributed constructors retain placeholders",
+    "each worker maps the full model and maintains full-model KV layout; physical sharding remains",
+    "transport has no authentication or encryption",
+    "additional prompts, models, hardware, PMU, stress, coverage and mutation work remain"
+  ]
+}

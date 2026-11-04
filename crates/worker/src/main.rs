@@ -47,6 +47,11 @@ fn main() {
     let mut port: u16 = 9999;
     let mut fragment_path: Option<PathBuf> = None;
     let mut max_payload_bytes = DEFAULT_MAX_PAYLOAD_BYTES;
+    let mut symbolic_path: Option<PathBuf> = None;
+    let mut symbolic_source: Option<PathBuf> = None;
+    let mut symbolic_start: Option<u32> = None;
+    let mut symbolic_end: Option<u32> = None;
+    let mut symbolic_limits = bml_runtime::symbolic_transport::SymbolicTransportLimits::default();
 
     let mut i = 1;
     while i < args.len() {
@@ -74,16 +79,134 @@ fn main() {
                         std::process::exit(2);
                     }) as usize;
             }
+            "--symbolic-artifact" | "--symbolic-source" => {
+                let option = args[i].clone();
+                i += 1;
+                let path = args.get(i).map(PathBuf::from).unwrap_or_else(|| {
+                    eprintln!("{option} requires a path");
+                    std::process::exit(2);
+                });
+                if option == "--symbolic-artifact" {
+                    symbolic_path = Some(path);
+                } else {
+                    symbolic_source = Some(path);
+                }
+            }
+            "--layer-start"
+            | "--layer-end"
+            | "--symbolic-context"
+            | "--symbolic-kv-bytes"
+            | "--symbolic-timeout-seconds" => {
+                let option = args[i].clone();
+                i += 1;
+                let value = args
+                    .get(i)
+                    .and_then(|v| v.parse::<usize>().ok())
+                    .unwrap_or_else(|| {
+                        eprintln!("{option} requires a nonnegative integer");
+                        std::process::exit(2);
+                    });
+                match option.as_str() {
+                    "--layer-start" => {
+                        symbolic_start = Some(u32::try_from(value).unwrap_or_else(|_| {
+                            eprintln!("layer start overflow");
+                            std::process::exit(2);
+                        }))
+                    }
+                    "--layer-end" => {
+                        symbolic_end = Some(u32::try_from(value).unwrap_or_else(|_| {
+                            eprintln!("layer end overflow");
+                            std::process::exit(2);
+                        }))
+                    }
+                    "--symbolic-context" => {
+                        symbolic_limits.context = u32::try_from(value).unwrap_or_else(|_| {
+                            eprintln!("context overflow");
+                            std::process::exit(2);
+                        })
+                    }
+                    "--symbolic-timeout-seconds" => {
+                        if value == 0 {
+                            eprintln!("timeout must be positive");
+                            std::process::exit(2);
+                        }
+                        symbolic_limits.timeout = std::time::Duration::from_secs(value as u64);
+                    }
+                    _ => symbolic_limits.kv_bytes = value,
+                }
+            }
+            "--symbolic-large-budget" => {
+                symbolic_limits.model.max_cached_ops = 4_000_000;
+                symbolic_limits.model.max_programs = 4096;
+                symbolic_limits.model.graph = bml_runtime::graph::GraphLimits {
+                    max_ops: 2_000_000,
+                    max_steps: 4_000_000,
+                    max_values: 4_000_000,
+                };
+            }
             "-h" | "--help" => {
                 println!("bml-worker [--port 9999] [--fragment /path/to/fragment_N.bmlgraph]");
                 println!("  --port N        Puerto TCP (default: 9999)");
                 println!("  --fragment PATH Fragmento .bmlgraph pre-cargado");
                 println!("  --max-message-bytes N Maximum incoming payload (default: 67108864)");
+                println!("  --symbolic-artifact PATH --layer-start N --layer-end N: serve persisted symbolic layer sessions");
+                println!("  --symbolic-source PATH --symbolic-context N --symbolic-kv-bytes N: source override and per-session budgets");
+                println!("  --symbolic-large-budget: allow larger persisted symbolic programs");
+                println!("  --symbolic-timeout-seconds N: per-connection read/write timeout");
                 std::process::exit(0);
             }
             _ => {}
         }
         i += 1;
+    }
+
+    if let Some(path) = symbolic_path {
+        if fragment_path.is_some() {
+            eprintln!("--fragment and --symbolic-artifact are mutually exclusive");
+            std::process::exit(2);
+        }
+        let (Some(start), Some(end)) = (symbolic_start, symbolic_end) else {
+            eprintln!("symbolic worker requires --layer-start and --layer-end");
+            std::process::exit(2);
+        };
+        symbolic_limits.frame_bytes = max_payload_bytes;
+        let service = match bml_runtime::symbolic_transport::SymbolicLayerServer::new(
+            &path,
+            symbolic_source.as_deref(),
+            start..end,
+            symbolic_limits,
+        ) {
+            Ok(service) => Arc::new(service),
+            Err(error) => {
+                eprintln!("Error loading symbolic artifact: {error}");
+                std::process::exit(1);
+            }
+        };
+        let listener = TcpListener::bind(("0.0.0.0", port)).unwrap_or_else(|error| {
+            eprintln!("Error binding symbolic worker: {error}");
+            std::process::exit(1);
+        });
+        println!(
+            "symbolic worker listening on {} for layers {}..{} identity {}",
+            listener.local_addr().unwrap(),
+            start,
+            end,
+            service.identity()
+        );
+        for stream in listener.incoming() {
+            match stream {
+                Ok(stream) => {
+                    let service = Arc::clone(&service);
+                    std::thread::spawn(move || {
+                        if let Err(error) = service.serve_connection(stream) {
+                            eprintln!("symbolic connection: {error}");
+                        }
+                    });
+                }
+                Err(error) => eprintln!("symbolic accept: {error}"),
+            }
+        }
+        return;
     }
 
     // Cargar fragmento si se especificó

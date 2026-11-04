@@ -29,6 +29,7 @@ pub mod scheduler;
 pub mod shm;
 pub mod symbolic_causal;
 pub mod symbolic_session;
+pub mod symbolic_transport;
 
 pub use hot_loop::HotLoop;
 pub use runtime::Runtime;

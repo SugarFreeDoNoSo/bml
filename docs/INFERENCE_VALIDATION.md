@@ -245,3 +245,62 @@ RAM del sistema y no se suma como VRAM adicional.
 El [runner Docker CPU](../docker/gguf-validation/README.md) permite inspección
 y comparación acotada de Q4_0 sin depender de WSL. Recibe el GGUF existente
 como montaje de solo lectura y conserva JSON/logs; no habilita inferencia Gemma4.
+
+## Sesiones BML distribuidas
+
+`bml-cli compile --distributed --context-size N` guarda el perfil causal BML
+acotado, los kernels y los bindings al GGUF; el contexto es explícito y se
+respetan los presupuestos de programas y pasos. Los fragmentos históricos no
+contienen un modelo causal completo y `distribute` los rechaza. La asignación
+se configura al iniciar los workers, no mediante `--layers-per-fragment`.
+
+Para un modelo de tres capas y dos workers:
+
+```sh
+bml-cli compile --distributed --context-size 8 --model modelo.gguf --output modelo.bmlgraph
+bml-worker --port 9001 --symbolic-artifact modelo.bmlgraph --layer-start 0 --layer-end 1
+bml-worker --port 9002 --symbolic-artifact modelo.bmlgraph --layer-start 1 --layer-end 3
+bml-cli distribute --model modelo.bmlgraph --nodes host1:9001,host2:9002 --prompt "Hola" --num-tokens 2 --temp 0
+```
+
+Cada worker debe poder leer una copia idéntica del artefacto y el GGUF asociado.
+Si se reubica el GGUF, usar `--symbolic-source` en el worker y `--weights` en
+la CLI. La identidad del manifiesto enlaza hashes de fuente y kernels; el
+handshake rechaza identidades o rangos diferentes. Con menos nodos se asignan
+rangos contiguos más grandes y con más nodos los sobrantes no se usan. Los
+rangos configurados en los workers deben coincidir con esa partición.
+
+El coordinador tokeniza, lee embeddings reales, prepara cada rango, ejecuta la
+normalización final y la cabeza guardadas, y solo entonces confirma la posición.
+Un fallo de transporte o una confirmación sin respuesta invalida el pipeline;
+no se reintenta ni se promete rollback distribuido. Cada conexión tiene su
+propia caché F32. Por ahora cada conexión mapea el modelo completo y reserva KV
+para todas sus capas, aunque solo ejecute su rango; `--symbolic-kv-bytes` limita
+ese payload. `--symbolic-large-budget` permite elevar los límites explícitos de
+programas, pasos y valores tanto en el worker como en el coordinador, sin
+eliminar prefijos ni modificar el límite del formato.
+
+Este transporte TCP no cifra ni autentica a los pares. La identidad verifica
+que el artefacto coincida; no es autenticación. Debe usarse en una red protegida
+por el operador. No modifica el protocolo legado del worker.
+
+Las pruebas actuales usan un fixture GQA de tres capas con pesos distintos,
+dos tokens generados y procesos worker locales; comprueban logits frente al
+modelo local y a la referencia nativa. También cubren EOS, bytes UTF-8 parciales,
+identidades alteradas, rangos ausentes/duplicados, bytecode persistido sustituido
+y pérdida de worker o confirmación. Esto no acredita todavía rendimiento ni
+la ejecución distribuida de un modelo grande. Las APIs públicas históricas de
+fragmentos distribuidos siguen pendientes de reparación o retiro explícito.
+
+Los límites de RMS por defecto no son válidos para cualquier ancho o modelo.
+Si los valores reales se han validado para otros límites, el compilador acepta
+ambos parámetros `--distributed-rms-input-bound` y
+`--distributed-rms-weight-bound`; rechaza parámetros incompletos o inválidos.
+No se recortan pesos ni se infieren límites a partir de activaciones observadas.
+
+El timeout de lectura/escritura por defecto es de 30 segundos. Para una
+operación simbólica que requiera más tiempo, configurar explícitamente
+`--symbolic-timeout-seconds` en cada worker y `--timeout-seconds` en la CLI.
+El timeout cubre también la espera mientras el coordinador evalúa la cabeza;
+una expiración invalida la conexión y no implica que el worker haya revertido
+una confirmación.

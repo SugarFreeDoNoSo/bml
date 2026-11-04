@@ -13,12 +13,8 @@
 //! bml-cli run -m modelo.gguf -p "Hello" -n 64
 //! ```
 
-use bml_compiler::distributed::{
-    compile_distributed, load_distributed_header, serialize_distributed,
-};
 use bml_compiler::gguf_compiler::InferenceCompiler;
 use bml_compiler::sampler;
-use bml_runtime::net::{recv_msg, send_msg, Message, MsgType, NodeHandle};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 mod weights;
@@ -58,7 +54,7 @@ enum Command {
         #[arg(long = "l3-threshold", default_value_t = 8388608)]
         l3_threshold: usize,
 
-        /// Compila en modo distribuido: un fragmento self-contained por capa
+        /// Compila un artefacto BML acotado para sesiones distribuidas
         #[arg(long = "distributed")]
         distributed: bool,
 
@@ -67,7 +63,7 @@ enum Command {
         symbolic: bool,
 
         /// Contexto máximo que cubrirá el artefacto AOT --symbolic.
-        #[arg(long = "context-size", requires = "symbolic")]
+        #[arg(long = "context-size")]
         context_size: Option<u32>,
 
         /// Perfil RMS acotado experimental: máximo absoluto de activaciones.
@@ -83,12 +79,19 @@ enum Command {
         bounded: bool,
 
         /// Presupuesto diagnóstico explícito: 2M nodos/ops por programa, 4M ops totales.
-        #[arg(long, requires = "symbolic")]
+        #[arg(long)]
         symbolic_large_budget: bool,
 
-        /// Capas por fragmento (solo --distributed, default: 1 = una capa por fragmento)
+        /// Parámetro histórico; los rangos se asignan al arrancar los workers
         #[arg(long = "layers-per-fragment", default_value_t = 1)]
         layers_per_fragment: u32,
+
+        /// Inclusive RMS input bound for the distributed bounded profile.
+        #[arg(long, requires_all = ["distributed", "distributed_rms_weight_bound"])]
+        distributed_rms_input_bound: Option<f64>,
+        /// Inclusive learned RMS weight bound for the distributed bounded profile.
+        #[arg(long, requires_all = ["distributed", "distributed_rms_input_bound"])]
+        distributed_rms_weight_bound: Option<f64>,
     },
 
     /// Ejecuta inferencia desde .bmlgraph, GGUF o BMLGGUF con evaluación explícita
@@ -140,13 +143,22 @@ enum Command {
 
     /// Distribuye fragmentos a nodos workers via TCP
     Distribute {
-        /// Directorio .bmlgraph distribuido (con fragmentos self-contained)
+        /// Directorio AOT simbólico acotado con pesos GGUF enlazados
         #[arg(short = 'm', long = "model")]
         model: PathBuf,
 
         /// Lista de nodos workers (host:port,host:port,...)
         #[arg(long = "nodes")]
         nodes: String,
+        /// Relocated GGUF weights; its hash must match the artifact.
+        #[arg(long = "weights")]
+        weights: Option<PathBuf>,
+        /// Use the explicit larger symbolic execution budgets on the coordinator.
+        #[arg(long)]
+        symbolic_large_budget: bool,
+        /// Read/write timeout for every worker connection in seconds.
+        #[arg(long = "timeout-seconds", default_value_t = 30, value_parser = clap::value_parser!(u64).range(1..))]
+        timeout_seconds: u64,
 
         /// Prompt para generar
         #[arg(short = 'p', long = "prompt")]
@@ -191,6 +203,8 @@ fn main() {
             bounded,
             symbolic_large_budget,
             layers_per_fragment,
+            distributed_rms_input_bound,
+            distributed_rms_weight_bound,
         } => {
             if !model.exists() {
                 eprintln!("Error: el archivo GGUF no existe: {}", model.display());
@@ -199,55 +213,47 @@ fn main() {
 
             println!("Compilando {} → {}", model.display(), output.display());
 
+            if context_size.is_some() && !distributed && !symbolic {
+                eprintln!("--context-size requiere --symbolic o --distributed");
+                std::process::exit(2);
+            }
+            if symbolic_large_budget && !distributed && !symbolic {
+                eprintln!("--symbolic-large-budget requiere --symbolic o --distributed");
+                std::process::exit(2);
+            }
             if distributed {
-                println!(
-                    "Modo distribuido: {} capas por fragmento",
-                    layers_per_fragment
-                );
-                println!("Leyendo pesos del GGUF (dequantizando)...");
-
-                let fragments = match compile_distributed(&model, layers_per_fragment, true) {
-                    Ok(f) => f,
-                    Err(e) => {
-                        eprintln!("Error compilando distribuido: {e}");
-                        std::process::exit(1);
-                    }
+                let Some(context) = context_size else {
+                    eprintln!("--distributed requiere --context-size explícito");
+                    std::process::exit(2);
                 };
-
-                let config = &fragments[0].config;
-                println!(
-                    "Modelo: {} ({} capas, {} heads, {} embd, {} vocab)",
-                    config.architecture,
-                    config.n_layers,
-                    config.n_heads,
-                    config.n_embd,
-                    config.vocab_size,
-                );
-                println!("Fragmentos: {}", fragments.len());
-
-                let total_weights: usize = fragments.iter().map(|f| f.weights.len()).sum();
-                println!(
-                    "Total pesos: {} ({:.1} MB)",
-                    total_weights,
-                    total_weights as f64 * 4.0 / (1024.0 * 1024.0),
-                );
-
-                for frag in &fragments {
-                    let weight_mb = frag.weights.len() as f64 * 4.0 / (1024.0 * 1024.0);
-                    println!(
-                        "  fragmento {} (capas {}-{}): {} tensores, {:.1} MB",
-                        frag.fragment_id,
-                        frag.layer_start,
-                        frag.layer_end,
-                        frag.tensors.len(),
-                        weight_mb,
-                    );
+                if layers_per_fragment != 1 {
+                    eprintln!("--layers-per-fragment es histórico; configure rangos al arrancar los workers");
+                    std::process::exit(2);
                 }
-
-                if let Err(e) = serialize_distributed(&fragments, &output) {
-                    eprintln!("Error serializando: {e}");
-                    std::process::exit(1);
+                let mut limits = bml_compiler::symbolic_kernels::KernelLimits {
+                    fragment_bytes: l1_threshold,
+                    ..Default::default()
+                };
+                if symbolic_large_budget {
+                    limits.max_nodes = 2_000_000;
+                    limits.max_ops = 4_000_000;
+                    limits.max_output_ops = 2_000_000;
+                    limits.max_programs = 4096;
                 }
+                let mut profile = bml_compiler::symbolic_bounded::BoundedProfile::default();
+                if let Some(input) = distributed_rms_input_bound {
+                    profile.rms.input = input;
+                    profile.rms.weight =
+                        distributed_rms_weight_bound.expect("clap requires both RMS bounds");
+                }
+                let manifest =
+                    inference_result(bml_compiler::symbolic_artifact::compile_directory_bounded(
+                        &model, &output, context, profile, limits,
+                    ));
+                println!(
+                    "Artefacto distribuido simbólico: {} (contexto {})",
+                    manifest.profile, context
+                );
             } else if symbolic {
                 let mut limits = bml_compiler::symbolic_kernels::KernelLimits {
                     fragment_bytes: l1_threshold,
@@ -419,11 +425,26 @@ fn main() {
         Command::Distribute {
             model,
             nodes,
+            weights,
+            symbolic_large_budget,
+            timeout_seconds,
             prompt,
             num_tokens,
             temp,
         } => {
-            distribute(&model, &nodes, &prompt, num_tokens, temp);
+            if let Err(error) = distribute(
+                &model,
+                weights.as_deref(),
+                &nodes,
+                &prompt,
+                num_tokens,
+                temp,
+                symbolic_large_budget,
+                timeout_seconds,
+            ) {
+                eprintln!("Error de inferencia distribuida: {error}");
+                std::process::exit(1);
+            }
         }
     }
 }
@@ -658,298 +679,103 @@ fn run_from_gguf(
     );
 }
 
-/// Distribuye fragmentos a nodos workers y coordina la inferencia.
-///
-/// # Flujo
-///
-/// 1. Carga el header del .bmlgraph distribuido (config + n_fragments)
-/// 2. Conecta a cada nodo worker via TCP
-/// 3. Envía cada fragmento a un nodo (ExecuteFragment)
-/// 4. Para cada token a generar:
-///    a. Tokeniza el prompt → token_ids
-///    b. Embedding lookup → hidden state
-///    c. Envía hidden al primer nodo (BatchRequest)
-///    d. Cada nodo ejecuta sus capas y pasa hidden al siguiente
-///    e. El último nodo produce logits
-///    f. Sampling → next token
-/// 5. Repite hasta EOS o num_tokens
+/// Execute a persisted bounded symbolic artifact over configured workers.
+/// Legacy distributed fragments lack complete causal programs and are rejected.
+#[allow(clippy::too_many_arguments)]
 fn distribute(
-    bmlgraph_dir: &std::path::Path,
-    nodes_str: &str,
+    directory: &std::path::Path,
+    source: Option<&std::path::Path>,
+    nodes: &str,
     prompt: &str,
     num_tokens: u32,
-    temp: f64,
-) {
-    if !bmlgraph_dir.is_dir() {
-        eprintln!(
-            "Error: {} no es un directorio .bmlgraph",
-            bmlgraph_dir.display()
+    temperature: f64,
+    large_budget: bool,
+    timeout_seconds: u64,
+) -> Result<(), String> {
+    use bml_runtime::symbolic_causal::{SymbolicCausalModel, SymbolicLimits};
+    use bml_runtime::symbolic_transport::{
+        SymbolicLayerClient, SymbolicPipeline, SymbolicTransportLimits,
+    };
+    use std::io::Write;
+    if !temperature.is_finite() || temperature < 0.0 {
+        return Err("temperatura inválida".into());
+    }
+    if !directory
+        .join(bml_compiler::symbolic_artifact::MANIFEST)
+        .is_file()
+    {
+        return Err("se requiere un artefacto simbólico persistido; los fragmentos distribuidos históricos están incompletos".into());
+    }
+    let nodes: Vec<_> = nodes.split(',').map(str::trim).collect();
+    if nodes.is_empty() || nodes.iter().any(|node| node.is_empty()) {
+        return Err("lista de nodos inválida".into());
+    }
+    let limits = SymbolicLimits {
+        max_nodes: 0,
+        ..symbolic_limits(large_budget)
+    };
+    let identity = bml_compiler::symbolic_artifact::checked_identity(directory, source)?;
+    let model = SymbolicCausalModel::open_artifact(directory, source, limits)?;
+    let vocab = model.compiler().vocab().clone();
+    let ids = vocab
+        .encode(prompt)
+        .map_err(|error| format!("tokenización: {error}"))?;
+    if ids.is_empty() {
+        return Err("el prompt no produce tokens".into());
+    }
+    let required = ids
+        .len()
+        .checked_add(num_tokens.saturating_sub(1) as usize)
+        .ok_or("contexto desbordado")?;
+    let context = u32::try_from(required).map_err(|_| "contexto desbordado")?;
+    if context > model.context_limit() {
+        return Err("el prompt y la generación exceden el contexto compilado".into());
+    }
+    let layers = model.compiler().config().n_layers;
+    let active = nodes.len().min(layers as usize);
+    let mut clients = Vec::with_capacity(active);
+    let transport_limits = SymbolicTransportLimits {
+        timeout: std::time::Duration::from_secs(timeout_seconds),
+        ..Default::default()
+    };
+    for (index, node) in nodes.iter().take(active).enumerate() {
+        let start = (index as u64 * u64::from(layers) / active as u64) as u32;
+        let end = ((index as u64 + 1) * u64::from(layers) / active as u64) as u32;
+        clients.push(
+            SymbolicLayerClient::connect(*node, &identity, start..end, context, transport_limits)
+                .map_err(|error| format!("worker {node} capas {start}..{end}: {error}"))?,
         );
-        std::process::exit(1);
     }
-
-    let (config, n_fragments) = match load_distributed_header(bmlgraph_dir) {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("Error cargando header: {e}");
-            std::process::exit(1);
-        }
-    };
-
-    println!(
-        "Modelo: {} ({} capas, {} heads, {} embd)",
-        config.architecture, config.n_layers, config.n_heads, config.n_embd,
-    );
-    println!("Fragmentos: {}", n_fragments);
-
-    let nodes: Vec<&str> = nodes_str.split(',').map(|s| s.trim()).collect();
-    println!("Nodos: {:?}", nodes);
-
-    if nodes.len() != n_fragments {
-        eprintln!(
-            "Warning: {} nodos para {} fragmentos — algunos nodos recibiran multiples fragmentos",
-            nodes.len(),
-            n_fragments,
-        );
+    drop(model);
+    let mut pipeline = SymbolicPipeline::open(directory, source, context, clients, limits)?;
+    if num_tokens == 0 {
+        pipeline.close()?;
+        return Ok(());
     }
-
-    // Conectar a cada nodo y enviar fragmentos
-    let mut node_handles: Vec<NodeHandle> = Vec::new();
-
-    for (i, node_addr) in nodes.iter().enumerate() {
-        let frag_id = if i < n_fragments {
-            i as u32
-        } else {
-            (i % n_fragments) as u32
-        };
-        let frag_path = bmlgraph_dir.join(format!("fragment_{}.bmlgraph", frag_id));
-
-        if !frag_path.exists() {
-            eprintln!("Error: fragmento {} no existe", frag_path.display());
-            std::process::exit(1);
-        }
-
-        let frag_bytes = match std::fs::read(&frag_path) {
-            Ok(b) => b,
-            Err(e) => {
-                eprintln!("Error leyendo {}: {e}", frag_path.display());
-                std::process::exit(1);
-            }
-        };
-
-        let weight_mb = frag_bytes.len() as f64 / (1024.0 * 1024.0);
-        println!("Conectando a {node_addr} (fragmento {frag_id}, {weight_mb:.1} MB)...");
-
-        let mut handle = match NodeHandle::connect(node_addr) {
-            Ok(h) => h,
-            Err(e) => {
-                eprintln!("Error conectando a {node_addr}: {e}");
-                std::process::exit(1);
-            }
-        };
-
-        // Health check
-        match handle.health_check() {
-            Ok(true) => {}
-            Ok(false) => {
-                eprintln!("Error: {node_addr} no está healthy");
-                std::process::exit(1);
-            }
-            Err(e) => {
-                eprintln!("Error health check {node_addr}: {e}");
-                std::process::exit(1);
-            }
-        }
-
-        // Enviar fragmento via TCP raw (ExecuteFragment)
-        match send_msg(
-            &mut handle.stream_mut(),
-            &Message::new(MsgType::ExecuteFragment, frag_bytes),
-        ) {
-            Ok(_) => {}
-            Err(e) => {
-                eprintln!("Error enviando fragmento a {node_addr}: {e}");
-                std::process::exit(1);
-            }
-        }
-
-        // Esperar confirmación
-        match recv_msg(handle.stream_mut()) {
-            Ok(msg) => {
-                if msg.msg_type == MsgType::ReportResult {
-                    let result = f64::from_le_bytes(
-                        msg.payload
-                            .get(0..8)
-                            .unwrap_or(&[0; 8])
-                            .try_into()
-                            .unwrap_or([0; 8]),
-                    );
-                    if result.is_finite() && result > 0.0 {
-                        println!("  {node_addr}: fragmento cargado OK");
-                    } else {
-                        eprintln!("  {node_addr}: error cargando fragmento");
-                        std::process::exit(1);
-                    }
-                }
-            }
-            Err(e) => {
-                eprintln!("Error recibiendo confirmación de {node_addr}: {e}");
-                std::process::exit(1);
-            }
-        }
-
-        node_handles.push(handle);
+    let mut logits = Vec::new();
+    for id in ids {
+        logits = pipeline.forward(id)?;
     }
-
-    println!(
-        "Todos los fragmentos distribuidos. {} nodos conectados.",
-        node_handles.len()
-    );
-    println!("Prompt: {}", prompt);
-    println!("Generando {} tokens (temp={})...\n", num_tokens, temp);
-
-    // Necesitamos el vocabulario para tokenizar/sampling.
-    // Lo cargamos desde el GGUF original (el .bmlgraph distribuido no lo tiene).
-    // En una implementación completa, el vocab iría en el header.
-    // Por ahora, usamos el InferenceCompiler solo para el vocab.
-    let gguf_candidates = [
-        bmlgraph_dir.with_extension("gguf"),
-        bmlgraph_dir
-            .parent()
-            .unwrap_or(std::path::Path::new("."))
-            .join(format!("{}.gguf", config.architecture)),
-    ];
-    let vocab = if let Some(gguf_path) = gguf_candidates.iter().find(|p| p.exists()) {
-        match InferenceCompiler::open_mapped(gguf_path) {
-            Ok(c) => Some(c.vocab().clone()),
-            Err(_) => None,
-        }
-    } else {
-        None
-    };
-
-    let vocab = match vocab {
-        Some(v) => v,
-        None => {
-            eprintln!("Warning: no se pudo cargar vocabulario. Output sin decode.");
-            eprintln!("  Coloca el GGUF junto al .bmlgraph/ para enable decode.");
-            // Sin vocab, solo podemos ejecutar el forward pass sin generar texto.
-            eprintln!("Ejecutando forward pass distribuido (sin decode)...");
-            let n_embd = config.n_embd as usize;
-            let mut hidden = vec![0.0_f64; n_embd];
-
-            // Pasar hidden por cada nodo en secuencia
-            for (i, handle) in node_handles.iter_mut().enumerate() {
-                let mut payload = Vec::with_capacity(4 + n_embd * 8);
-                payload.extend_from_slice(&(n_embd as u32).to_le_bytes());
-                for v in &hidden {
-                    payload.extend_from_slice(&v.to_le_bytes());
-                }
-
-                send_msg(
-                    &mut handle.stream_mut(),
-                    &Message::new(MsgType::BatchRequest, payload),
-                )
-                .ok();
-                let response = recv_msg(handle.stream_mut()).ok();
-
-                if let Some(msg) = response {
-                    if msg.msg_type == MsgType::BatchResult && msg.payload.len() >= 4 {
-                        let n = u32::from_le_bytes(msg.payload[0..4].try_into().unwrap()) as usize;
-                        hidden.clear();
-                        for j in 0..n.min(msg.payload.len() / 8 - 1) {
-                            let offset = 4 + j * 8;
-                            if offset + 8 <= msg.payload.len() {
-                                hidden.push(f64::from_le_bytes(
-                                    msg.payload[offset..offset + 8].try_into().unwrap(),
-                                ));
-                            }
-                        }
-                        println!(
-                            "  Nodo {i}: hidden[0..3] = {:?}",
-                            &hidden[..hidden.len().min(3)]
-                        );
-                    }
-                }
-            }
-
-            println!("\nForward pass distribuido completo.");
-            println!("Hidden state final: {} dimensiones", hidden.len());
-            return;
-        }
-    };
-
-    // Pipeline autoregresivo con vocabulario
-    let prompt_ids = encode_prompt(&vocab, prompt);
-    println!("Tokenizado: {} tokens", prompt_ids.len());
-
-    let mut sequence = prompt_ids.clone();
-    let n_embd = config.n_embd as usize;
-
+    let mut output = std::io::stdout().lock();
     for step in 0..num_tokens {
-        // Embedding lookup (en el coordinador, liviano)
-        let mut hidden = vec![0.0_f64; n_embd];
-        for &tid in &sequence {
-            // Placeholder: en implementación completa, usar embedding del último fragmento
-            for (i, v) in hidden.iter_mut().enumerate() {
-                *v += (tid as f64) * 0.001 / (i as f64 + 1.0);
-            }
-        }
-        let scale = 1.0 / (sequence.len() as f64).sqrt();
-        for v in &mut hidden {
-            *v *= scale;
-        }
-
-        // Pasar hidden por cada nodo en secuencia
-        for (_i, handle) in node_handles.iter_mut().enumerate() {
-            let mut payload = Vec::with_capacity(4 + n_embd * 8);
-            payload.extend_from_slice(&(n_embd as u32).to_le_bytes());
-            for v in &hidden {
-                payload.extend_from_slice(&v.to_le_bytes());
-            }
-
-            send_msg(
-                &mut handle.stream_mut(),
-                &Message::new(MsgType::BatchRequest, payload),
-            )
-            .ok();
-            let response = recv_msg(handle.stream_mut()).ok();
-
-            if let Some(msg) = response {
-                if msg.msg_type == MsgType::BatchResult && msg.payload.len() >= 4 {
-                    let n = u32::from_le_bytes(msg.payload[0..4].try_into().unwrap()) as usize;
-                    hidden.clear();
-                    for j in 0..n.min((msg.payload.len() - 4) / 8) {
-                        let offset = 4 + j * 8;
-                        if offset + 8 <= msg.payload.len() {
-                            hidden.push(f64::from_le_bytes(
-                                msg.payload[offset..offset + 8].try_into().unwrap(),
-                            ));
-                        }
-                    }
-                }
-            }
-        }
-
-        // El último hidden son los logits (simplificado)
-        let logits = &hidden;
-        let next_id = sampler::sample(logits, temp, step as u64).unwrap_or(vocab.eos_token_id);
-
-        sequence.push(next_id);
-        if next_id != vocab.eos_token_id {
-            emit_token(&vocab, next_id);
-        }
-        if next_id == vocab.eos_token_id {
-            println!("\n[EOS]");
+        let token =
+            sampler::sample(&logits, temperature, u64::from(step)).ok_or("sampling inválido")?;
+        if token == vocab.eos_token_id {
             break;
         }
+        let piece = vocab
+            .token_piece_bytes(token)
+            .map_err(|error| format!("detokenización: {error}"))?;
+        output
+            .write_all(&piece)
+            .and_then(|_| output.flush())
+            .map_err(|error| error.to_string())?;
+        if step + 1 < num_tokens {
+            logits = pipeline.forward(token)?;
+        }
     }
-
-    println!(
-        "\n\nDistribuido: {} tokens generados desde {} nodos",
-        sequence.len() - prompt_ids.len(),
-        node_handles.len(),
-    );
+    pipeline.close()?;
+    Ok(())
 }
 
 /// Ejecuta inferencia desde GGUF usando building blocks BML.

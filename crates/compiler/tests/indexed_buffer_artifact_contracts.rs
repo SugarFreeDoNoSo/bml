@@ -614,3 +614,50 @@ fn indexed_prefix_plan_storage_grows_linearly_without_omitting_any_prefix() {
         }
     }
 }
+
+#[test]
+fn distributed_ranges_execute_replaced_valid_persisted_bytecode() {
+    use bml_runtime::symbolic_transport::{
+        SymbolicLayerClient, SymbolicLayerServer, SymbolicPipeline, SymbolicTransportLimits,
+    };
+    use std::{net::TcpListener, sync::Arc, thread};
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    let directory = artifact(&source, 3);
+    let mut original =
+        SymbolicCausalModel::open_artifact(&directory.0, None, no_construction()).unwrap();
+    let baseline = original.forward(&[69]).unwrap();
+    drop(original);
+    let manifest = directory.manifest();
+    let index = manifest
+        .kernels
+        .iter()
+        .position(|k| k.operation == Operation::Norm && k.width == 4)
+        .unwrap();
+    directory.replace_ops(index, store_ones(4));
+    let limits = SymbolicTransportLimits::default();
+    let mut clients = Vec::new();
+    let mut tasks = Vec::new();
+    for range in [0..1, 1..3] {
+        let server =
+            Arc::new(SymbolicLayerServer::new(&directory.0, None, range.clone(), limits).unwrap());
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let identity = server.identity().to_owned();
+        tasks.push(thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            server.serve_connection(stream).unwrap();
+        }));
+        clients.push(SymbolicLayerClient::connect(address, &identity, range, 3, limits).unwrap());
+    }
+    let mut pipeline =
+        SymbolicPipeline::open(&directory.0, None, 3, clients, no_construction()).unwrap();
+    let modified = pipeline.forward(69).unwrap();
+    assert!(modified
+        .iter()
+        .zip(&baseline)
+        .any(|(a, b)| (a - b).abs() > 1e-6));
+    pipeline.close().unwrap();
+    for task in tasks {
+        task.join().unwrap();
+    }
+}
