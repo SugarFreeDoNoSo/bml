@@ -1,0 +1,136 @@
+{
+  "scope": "All gate/up pairs from native projections of one TinyLlama BOS token, checked through the compiled BML operation against an independent scalar formula. Not complete symbolic model inference, full-logit parity, future prompts, or a performance result.",
+  "base_commit": "347bedc1119c94b12621e07f09851b2e1df4e295",
+  "model": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "test": "tinyllama_real_swiglu_inputs_match_checked_bml_oracle",
+  "command": "BML_TEST_GGUF=MODEL cargo test -p bml-compiler --test full_bounded_contracts --locked -- --ignored --exact tinyllama_real_swiglu_inputs_match_checked_bml_oracle --nocapture",
+  "test_binary": "target/quality/tinyllama-real-swiglu-test-binary",
+  "test_binary_sha256": "7ee6fb0154bd775b81e233f8150d5db9a370ee4b7cd90daafcfc24711d7efaa0",
+  "source_sha256": {
+    "crates/compiler/tests/full_bounded_contracts.rs": "3bbd5113ea2abe3cbfb4f8e1d565897b551717b6e5f6aabd9c7c703a7b7c2d97",
+    "crates/compiler/src/symbolic_bounded.rs": "f84a23903e5ae5e5c8ea7a09167ef6a33c60f8ff5763e2551d422e68fbb67fe6",
+    "crates/domain/src/transformer/bounded_ops.rs": "ee7b5e406263a6e22d604bbb4a01c23090362a0d7ff6cb696668c44dc2f7b202",
+    "crates/runtime/src/graph.rs": "7af83e2bd5b5e91db69ac05d235a57266350d2611bcb70bf626b1688ad2b3666",
+    "crates/compiler/src/gguf_compiler.rs": "42ddd4f8cbcba87ec7ae8d3c8b187af8bb384fbbfb2ab2a8af3a70b5f7dc0bcd",
+    "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c"
+  },
+  "layers": 22,
+  "pairs": 123904,
+  "absolute_tolerance": 3e-08,
+  "max_abs_error": 1.2980769237280754e-11,
+  "per_layer": [
+    {
+      "tensor": "blk.0.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1525540938306378e-11
+    },
+    {
+      "tensor": "blk.1.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1477772725310142e-11
+    },
+    {
+      "tensor": "blk.2.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.205041622043268e-11
+    },
+    {
+      "tensor": "blk.3.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1446682120042086e-11
+    },
+    {
+      "tensor": "blk.4.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1624828703815648e-11
+    },
+    {
+      "tensor": "blk.5.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1522540734054676e-11
+    },
+    {
+      "tensor": "blk.6.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1764170367023485e-11
+    },
+    {
+      "tensor": "blk.7.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1733182567891243e-11
+    },
+    {
+      "tensor": "blk.8.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1744803697297246e-11
+    },
+    {
+      "tensor": "blk.9.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.144514604617397e-11
+    },
+    {
+      "tensor": "blk.10.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1641804274070688e-11
+    },
+    {
+      "tensor": "blk.11.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1733517152681672e-11
+    },
+    {
+      "tensor": "blk.12.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.14063367041492e-11
+    },
+    {
+      "tensor": "blk.13.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1529270160098859e-11
+    },
+    {
+      "tensor": "blk.14.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1471149551078863e-11
+    },
+    {
+      "tensor": "blk.15.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.159938811667871e-11
+    },
+    {
+      "tensor": "blk.16.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1733855206919053e-11
+    },
+    {
+      "tensor": "blk.17.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1568029520403478e-11
+    },
+    {
+      "tensor": "blk.18.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1445244925412101e-11
+    },
+    {
+      "tensor": "blk.19.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1717239158104409e-11
+    },
+    {
+      "tensor": "blk.20.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.1434232033424863e-11
+    },
+    {
+      "tensor": "blk.21.ffn_gate.weight",
+      "pairs": 5632,
+      "max_abs_error": 1.2980769237280754e-11
+    }
+  ],
+  "log": "target/quality/tinyllama-real-swiglu-test.log",
+  "log_sha256": "1eadab688f920a9070147a0ba481334d07928ffb8d8e07256bfd003959fd8d0d"
+}

@@ -878,3 +878,105 @@ fn rms_bound_errors_identify_tensor_and_operand_maxima_without_committing() {
         assert_eq!(cache.current_pos(), 0);
     }
 }
+
+/// Requires a local TinyLlama GGUF; this checks SwiGLU on native projection
+/// values for one token, not full symbolic inference or model parity.
+#[test]
+#[ignore = "requires BML_TEST_GGUF pointing to a local TinyLlama Q4_0 model"]
+fn tinyllama_real_swiglu_inputs_match_checked_bml_oracle() {
+    use bml_compiler::gguf_compiler::InferenceCompiler;
+    let source = std::env::var_os("BML_TEST_GGUF").expect("BML_TEST_GGUF is required");
+    let model = InferenceCompiler::open_mapped(std::path::Path::new(&source)).unwrap();
+    let mut cache = HashConsedKV::try_new(
+        model.config().n_layers,
+        model.n_kv_heads(),
+        model.head_dim(),
+        1,
+        512 * 1024 * 1024,
+    )
+    .unwrap();
+    let mut pending: Option<(String, Vec<f64>)> = None;
+    let mut samples = Vec::new();
+    let logits = model
+        .forward_cached_with_projection(&[1], &mut cache, &mut |input, name| {
+            let output = model.project_rows(input, name, |x, weights| {
+                Ok(x.iter()
+                    .zip(weights)
+                    .map(|(&value, &weight)| value * f64::from(weight))
+                    .sum())
+            })?;
+            if name.ends_with(".ffn_gate.weight") {
+                if pending
+                    .replace((name.to_string(), output.clone()))
+                    .is_some()
+                {
+                    return Err("overlapping gate projections".into());
+                }
+            } else if name.ends_with(".ffn_up.weight") {
+                let (gate_name, gate) = pending.take().ok_or("up projection without gate")?;
+                if gate_name.replace(".ffn_gate.weight", ".ffn_up.weight") != name
+                    || gate.len() != output.len()
+                {
+                    return Err("gate/up projection mismatch".into());
+                }
+                samples.push((gate_name, gate, output.clone()));
+            }
+            Ok(output)
+        })
+        .unwrap();
+    assert!(pending.is_none());
+    assert_eq!(samples.len(), model.config().n_layers as usize);
+    assert_eq!(logits.len(), 32000);
+    let profile = BoundedProfile {
+        gate: 18.0,
+        up: 16.0,
+        ..Default::default()
+    };
+    let kernel = compile_operation(
+        Operation::Swiglu,
+        1,
+        model.rms_norm_epsilon(),
+        profile,
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let graph = validate(&kernel, graph_limits()).unwrap();
+    let mut buffer = ResultBuffer::new(0, 0);
+    let mut total = 0usize;
+    let mut global_max = 0.0_f64;
+    for (name, gates, ups) in samples {
+        let mut max_error = 0.0_f64;
+        for (index, (&gate, &up)) in gates.iter().zip(&ups).enumerate() {
+            profile
+                .validate_values(
+                    Operation::Swiglu,
+                    1,
+                    model.rms_norm_epsilon(),
+                    &[gate, up],
+                    &[],
+                )
+                .unwrap_or_else(|e| panic!("{name}[{index}]: {e}"));
+            let observed = graph
+                .execute_indexed_symbolic_with_constants(
+                    &[gate, up],
+                    &kernel.signature.fixed,
+                    &mut buffer,
+                )
+                .unwrap_or_else(|e| panic!("{name}[{index}]: {e}"));
+            let expected = gate / (1.0 + (-gate).exp()) * up;
+            let error = (observed - expected).abs();
+            max_error = max_error.max(error);
+            assert!(
+                error < 3e-8,
+                "{name}[{index}] error={error}: {observed} != {expected}"
+            );
+            total += 1;
+        }
+        global_max = global_max.max(max_error);
+        eprintln!("{name} pairs={} max_abs_error={max_error}", gates.len());
+    }
+    eprintln!(
+        "swiglu_layers={} pairs={total} max_abs_error={global_max}",
+        model.config().n_layers
+    );
+}

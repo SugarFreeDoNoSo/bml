@@ -390,3 +390,14 @@ BML_TEST_GGUF=/ruta/tinyllama-q4_0.gguf cargo test -p bml-compiler --test compac
 La prueba usa activaciones reconstruidas por la ruta nativa; no demuestra
 paridad de logits ni de inferencia simbólica completa. El registro de la muestra
 local está en `quality/evidence/tinyllama-real-rms-oracle.json`.
+
+Para comprobar todos los pares gate/up nativos del mismo token con el kernel
+SwiGLU BML, ejecutar la prueba optativa exacta:
+
+```sh
+BML_TEST_GGUF=/ruta/tinyllama-q4_0.gguf cargo test -p bml-compiler --test full_bounded_contracts --locked -- --ignored --exact tinyllama_real_swiglu_inputs_match_checked_bml_oracle --nocapture
+```
+
+Esta prueba contrasta la activación para valores de la ruta nativa; no prueba
+paridad de logits ni ejecución simbólica del modelo completo. La evidencia de
+la muestra local está en `quality/evidence/tinyllama-real-swiglu-oracle.json`.
