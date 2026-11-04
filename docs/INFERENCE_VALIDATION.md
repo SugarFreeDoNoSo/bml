@@ -314,5 +314,7 @@ confiable. El worker acepta `--symbolic-shard PATH` y
 `--symbolic-shard-sha256 HASH`, opcionalmente con
 `--symbolic-shard-bytes N`; ambos primeros argumentos son obligatorios juntos.
 La copia autenticada de cada conexión se usa para las operaciones de capa y
-sigue limitada por el presupuesto. La carga inicial y cada sesión aún validan
-el artefacto contra el GGUF completo: el paquete no elimina esa dependencia.
+sigue limitada por el presupuesto. Con `--symbolic-artifact-sha256 HASH` el worker usa la identidad confiable
+del manifiesto y abre el artefacto y el shard sin el GGUF. Ambos hashes deben
+provenir de una exportación previamente validada y viajar por un canal confiable.
+El coordinador que tokeniza y proyecta logits todavía necesita el modelo completo.

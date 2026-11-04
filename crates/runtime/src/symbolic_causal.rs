@@ -335,6 +335,13 @@ impl SymbolicCausalModel {
         limits: SymbolicLimits,
     ) -> Result<Self, String> {
         let artifact = bml_compiler::symbolic_artifact::load_directory(directory, source_override)?;
+        Self::from_loaded_artifact(artifact, limits)
+    }
+
+    fn from_loaded_artifact(
+        artifact: bml_compiler::symbolic_artifact::LoadedArtifact,
+        limits: SymbolicLimits,
+    ) -> Result<Self, String> {
         let mut kernels = BTreeMap::new();
         let mut cached_ops = 0usize;
         let mut cached_programs = 0usize;
@@ -382,6 +389,36 @@ impl SymbolicCausalModel {
             rms_bounds: artifact.manifest.rms_bounds,
             bounded_profile: artifact.manifest.bounded_profile,
         })
+    }
+
+    /// Open a previously validated artifact and its layer shard using trusted
+    /// manifest and shard hashes, without access to the source GGUF.
+    pub fn open_authenticated_shard(
+        directory: &Path,
+        expected_artifact: &str,
+        limits: SymbolicLimits,
+        shard_directory: &Path,
+        expected_shard: &str,
+        layers: std::ops::Range<u32>,
+        max_shard_bytes: u64,
+    ) -> Result<Self, String> {
+        let shard = bml_compiler::symbolic_weight_shard::VerifiedLayerWeights::open(
+            shard_directory,
+            expected_shard,
+            expected_artifact,
+            layers.clone(),
+            max_shard_bytes,
+        )?;
+        let artifact = bml_compiler::symbolic_artifact::load_directory_authenticated(
+            directory,
+            expected_artifact,
+        )?;
+        if layers.start >= layers.end || layers.end > artifact.compiler.config().n_layers {
+            return Err("invalid symbolic shard layer range".into());
+        }
+        let mut model = Self::from_loaded_artifact(artifact, limits)?;
+        model.shard = Some(shard);
+        Ok(model)
     }
 
     /// Open a validated artifact and use an authenticated layer shard for layer

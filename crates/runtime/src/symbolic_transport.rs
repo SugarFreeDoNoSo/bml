@@ -136,6 +136,7 @@ pub struct SymbolicLayerServer {
     directory: PathBuf,
     source_override: Option<PathBuf>,
     shard: Option<(PathBuf, String, u64)>,
+    source_free: bool,
     identity: String,
     layers: Range<u32>,
     width: usize,
@@ -179,12 +180,64 @@ impl SymbolicLayerServer {
             directory: directory.into(),
             source_override: source_override.map(Path::to_owned),
             shard: None,
+            source_free: false,
             identity,
             layers,
             width,
             limits,
         })
     }
+    /// Admit a worker using externally trusted artifact and shard identities.
+    /// No GGUF is opened; hashes must come from a previously validated export.
+    pub fn new_authenticated(
+        directory: &Path,
+        expected_identity: &str,
+        layers: Range<u32>,
+        limits: SymbolicTransportLimits,
+        shard_directory: &Path,
+        expected_shard: &str,
+        max_shard_bytes: u64,
+    ) -> Result<Self, String> {
+        if limits.frame_bytes < 81
+            || limits.frame_bytes > u32::MAX as usize
+            || limits.context == 0
+            || limits.timeout.is_zero()
+        {
+            return Err("invalid symbolic transport limits".into());
+        }
+        let model = SymbolicCausalModel::open_authenticated_shard(
+            directory,
+            expected_identity,
+            limits.model,
+            shard_directory,
+            expected_shard,
+            layers.clone(),
+            max_shard_bytes,
+        )?;
+        let width = model.compiler().config().n_embd as usize;
+        if width
+            .checked_mul(8)
+            .and_then(|n| n.checked_add(9))
+            .is_none_or(|n| n > limits.frame_bytes)
+        {
+            return Err("symbolic vector exceeds frame budget".into());
+        }
+        Ok(Self {
+            directory: directory.into(),
+            source_override: None,
+            shard: Some((
+                shard_directory.into(),
+                expected_shard.into(),
+                max_shard_bytes,
+            )),
+            source_free: true,
+            identity: expected_identity.into(),
+            layers,
+            width,
+            limits,
+        })
+    }
+
     /// Configure authenticated shard execution; the GGUF is still required
     /// for artifact admission until source-independent loading is available.
     pub fn with_weight_shard(
@@ -251,6 +304,17 @@ impl SymbolicLayerServer {
             return Ok(());
         }
         let opened = match &self.shard {
+            Some((directory, hash, budget)) if self.source_free => {
+                SymbolicCausalModel::open_authenticated_shard(
+                    &self.directory,
+                    &self.identity,
+                    self.limits.model,
+                    directory,
+                    hash,
+                    self.layers.clone(),
+                    *budget,
+                )
+            }
             Some((directory, hash, budget)) => SymbolicCausalModel::open_artifact_with_shard(
                 &self.directory,
                 self.source_override.as_deref(),
@@ -277,9 +341,10 @@ impl SymbolicLayerServer {
                 return Ok(());
             }
         };
-        if checked_identity(&self.directory, self.source_override.as_deref())
-            .map_err(|e| invalid(&e))?
-            != self.identity
+        if !self.source_free
+            && checked_identity(&self.directory, self.source_override.as_deref())
+                .map_err(|e| invalid(&e))?
+                != self.identity
         {
             return Err(invalid("symbolic artifact identity changed"));
         }

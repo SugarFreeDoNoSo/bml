@@ -726,6 +726,8 @@ Then it rejects the request before expensive generation
     And sessions on the same worker interleave without sharing their committed positions
     And a new coordinator rejects worker sessions that have pending or previously committed rows
     And terminating a real worker invalidates the coordinator without advancing its local position
+    And authenticated worker processes execute their assigned shards without access to the source GGUF
+
 
   @C104
   Scenario: Distributed CLI uses real bounded programs, weights, vocabulary and output head

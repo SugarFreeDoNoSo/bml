@@ -464,7 +464,28 @@ pub fn load_directory(
     directory: &Path,
     source_override: Option<&Path>,
 ) -> Result<LoadedArtifact, String> {
+    load_directory_inner(directory, source_override, None)
+}
+
+/// Load a bounded worker artifact using a manifest hash obtained from a trusted
+/// coordinator. The hash must identify an artifact previously validated against
+/// its complete source; this method does not revalidate source model contents.
+pub fn load_directory_authenticated(
+    directory: &Path,
+    expected_identity: &str,
+) -> Result<LoadedArtifact, String> {
+    load_directory_inner(directory, None, Some(expected_identity))
+}
+
+fn load_directory_inner(
+    directory: &Path,
+    source_override: Option<&Path>,
+    trusted_identity: Option<&str>,
+) -> Result<LoadedArtifact, String> {
     let bytes = read_bounded(&directory.join(MANIFEST), MAX_MANIFEST)?;
+    if trusted_identity.is_some_and(|expected| hash(&bytes) != expected) {
+        return Err("symbolic manifest identity mismatch".into());
+    }
     let manifest: Manifest =
         serde_json::from_slice(&bytes).map_err(|e| format!("symbolic manifest: {e}"))?;
     let shared_outputs = match (
@@ -494,18 +515,25 @@ pub fn load_directory(
     if count > MAX_PROGRAMS {
         return Err("symbolic program count exceeds budget".into());
     }
-    let parser =
-        GgufParser::open(source_override.unwrap_or(&manifest.source)).map_err(|e| e.to_string())?;
-    if hash(parser.bytes()) != manifest.source_sha256 {
-        return Err("referenced GGUF identity mismatch".into());
-    }
-    let tokenizer = TokenizerSpec::from_gguf(&parser).map_err(|e| e.to_string())?;
-    if serde_json::to_vec(&tokenizer).map_err(|e| e.to_string())?
-        != serde_json::to_vec(&manifest.tokenizer).map_err(|e| e.to_string())?
-    {
-        return Err("symbolic tokenizer differs from source".into());
-    }
-    let mut compiler = InferenceCompiler::from_mapped_parser(parser)?;
+    let mut compiler = if trusted_identity.is_some() {
+        if manifest.version != 4 || manifest.profile != BOUNDED_PROFILE {
+            return Err("source-free workers require bounded profile v4".into());
+        }
+        InferenceCompiler::from_authenticated_manifest(&manifest)?
+    } else {
+        let parser = GgufParser::open(source_override.unwrap_or(&manifest.source))
+            .map_err(|e| e.to_string())?;
+        if hash(parser.bytes()) != manifest.source_sha256 {
+            return Err("referenced GGUF identity mismatch".into());
+        }
+        let tokenizer = TokenizerSpec::from_gguf(&parser).map_err(|e| e.to_string())?;
+        if serde_json::to_vec(&tokenizer).map_err(|e| e.to_string())?
+            != serde_json::to_vec(&manifest.tokenizer).map_err(|e| e.to_string())?
+        {
+            return Err("symbolic tokenizer differs from source".into());
+        }
+        InferenceCompiler::from_mapped_parser(parser)?
+    };
     if let Some(profile) = manifest.bounded_profile {
         profile.validate(
             compiler.config().n_embd as usize,
@@ -526,13 +554,28 @@ pub fn load_directory(
         return Err("symbolic numerical configuration differs from source".into());
     }
     compiler.use_artifact_vocabulary(Vocabulary::from_spec(manifest.tokenizer.clone())?);
-    let required = required_kernels(
-        &compiler,
-        manifest.context_length,
-        MAX_PROGRAMS,
-        shared_outputs,
-        manifest.bounded_profile.is_some(),
-    )?;
+    let required = if trusted_identity.is_some() {
+        if manifest.context_length == 0
+            || manifest.context_length > compiler.config().context_length
+        {
+            return Err("invalid symbolic artifact context".into());
+        }
+        let mut keys = BTreeSet::new();
+        for descriptor in &manifest.kernels {
+            if descriptor.width == 0 || !keys.insert((descriptor.operation, descriptor.width)) {
+                return Err("invalid symbolic operation plan".into());
+            }
+        }
+        keys.into_iter().collect::<Vec<_>>()
+    } else {
+        required_kernels(
+            &compiler,
+            manifest.context_length,
+            MAX_PROGRAMS,
+            shared_outputs,
+            manifest.bounded_profile.is_some(),
+        )?
+    };
     if required.len() != manifest.kernels.len() {
         return Err("symbolic operation plan mismatch".into());
     }

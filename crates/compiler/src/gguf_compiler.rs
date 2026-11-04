@@ -319,6 +319,45 @@ pub struct InferenceCompiler {
 }
 
 impl InferenceCompiler {
+    /// Build metadata-only state from a separately authenticated symbolic manifest.
+    /// This has no embedding or projection weights and is only for shard workers.
+    pub(crate) fn from_authenticated_manifest(
+        manifest: &crate::symbolic_artifact::Manifest,
+    ) -> Result<Self, String> {
+        let config = manifest.config.clone();
+        if config.architecture != "llama"
+            || config.n_layers == 0
+            || config.n_heads == 0
+            || config.n_embd == 0
+            || config.context_length == 0
+            || !config.n_embd.is_multiple_of(config.n_heads)
+            || manifest.kv_heads == 0
+            || !config.n_heads.is_multiple_of(manifest.kv_heads)
+            || !manifest.rms_norm_epsilon.is_finite()
+            || manifest.rms_norm_epsilon <= 0.0
+            || !manifest.rope_frequency_base.is_finite()
+            || manifest.rope_frequency_base <= 0.0
+        {
+            return Err("invalid authenticated symbolic model metadata".into());
+        }
+        let vocab = Vocabulary::from_spec(manifest.tokenizer.clone())?;
+        if config.vocab_size != 0 && vocab.len() != config.vocab_size as usize {
+            return Err("symbolic vocabulary size mismatch".into());
+        }
+        Ok(Self {
+            head_dim: config.n_embd / config.n_heads,
+            config,
+            vocab,
+            weight_pool: Vec::new(),
+            mapped_weights: None,
+            weight_offsets: HashMap::new(),
+            tensor_dims: HashMap::new(),
+            n_kv_heads: manifest.kv_heads,
+            rms_norm_eps: manifest.rms_norm_epsilon,
+            rope_freq_base: manifest.rope_frequency_base,
+        })
+    }
+
     /// Load autonomous BML weights under an explicitly selected numeric policy.
     /// No source GGUF or weight synthesis is used. The cap bounds total expanded
     /// weights; evaluation may fail even for a structurally valid container.
@@ -896,7 +935,7 @@ impl InferenceCompiler {
             .weight_offsets
             .get("token_embd.weight")
             .copied()
-            .unwrap_or(0);
+            .ok_or("embedding weights are unavailable")?;
         let (emb_dim, vocab_sz) = self
             .tensor_dims
             .get("token_embd.weight")

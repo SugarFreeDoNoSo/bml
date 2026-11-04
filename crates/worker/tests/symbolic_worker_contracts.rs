@@ -38,15 +38,18 @@ fn worker_with_shard(
     path: &std::path::Path,
     start: u32,
     end: u32,
-    shard: Option<(&std::path::Path, &str)>,
+    shard: Option<(&std::path::Path, &str, Option<&str>)>,
 ) -> (Worker, SocketAddr) {
     let mut command = Command::new(env!("CARGO_BIN_EXE_bml-worker"));
-    if let Some((dir, hash)) = shard {
+    if let Some((dir, hash, identity)) = shard {
+        if let Some(identity) = identity {
+            command.args(["--symbolic-artifact-sha256", identity]);
+        }
         command.arg("--symbolic-shard").arg(dir).args([
             "--symbolic-shard-sha256",
             hash,
             "--symbolic-shard-bytes",
-            "1000000",
+            "536870912",
         ]);
     }
     let mut process = command
@@ -57,10 +60,13 @@ fn worker_with_shard(
             &start.to_string(),
             "--layer-end",
             &end.to_string(),
+            "--symbolic-large-budget",
+            "--symbolic-timeout-seconds",
+            "600",
             "--symbolic-context",
             "3",
             "--symbolic-kv-bytes",
-            "4096",
+            "1048576",
         ])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -70,10 +76,17 @@ fn worker_with_shard(
     BufReader::new(process.stdout.take().unwrap())
         .read_line(&mut line)
         .unwrap();
-    assert!(
-        line.starts_with("symbolic worker listening on "),
-        "unexpected worker startup: {line}"
-    );
+    if !line.starts_with("symbolic worker listening on ") {
+        use std::io::Read;
+        let mut error = String::new();
+        process
+            .stderr
+            .take()
+            .unwrap()
+            .read_to_string(&mut error)
+            .unwrap();
+        panic!("unexpected worker startup: {line}; stderr: {error}");
+    }
     let bound: SocketAddr = line.split_whitespace().nth(4).unwrap().parse().unwrap();
     (
         Worker(process),
@@ -112,8 +125,10 @@ fn real_worker_processes_execute_persisted_bml_ranges_with_independent_sessions(
         1_000_000,
     )
     .unwrap();
-    let (_worker_a, address_a) = worker_with_shard(&directory.0, 0, 1, Some((&shard_a, &hash_a)));
-    let (_worker_b, address_b) = worker_with_shard(&directory.0, 1, 3, Some((&shard_b, &hash_b)));
+    let (_worker_a, address_a) =
+        worker_with_shard(&directory.0, 0, 1, Some((&shard_a, &hash_a, None)));
+    let (_worker_b, address_b) =
+        worker_with_shard(&directory.0, 1, 3, Some((&shard_b, &hash_b, None)));
     let limits = SymbolicTransportLimits {
         timeout: Duration::from_secs(10),
         ..Default::default()
@@ -404,4 +419,212 @@ fn pipeline_accepts_only_fresh_unprepared_worker_sessions() {
     .unwrap();
     pipeline.forward(69).unwrap();
     pipeline.close().unwrap();
+}
+
+#[test]
+fn source_free_worker_executes_with_only_authenticated_artifact_and_shard() {
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    let directory = Directory(source.0.with_extension("source-free-worker"));
+    std::fs::create_dir(&directory.0).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &directory.0,
+        3,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let identity = checked_identity(&directory.0, None).unwrap();
+    let shard_a = directory.0.join("shard-a");
+    let shard_b = directory.0.join("shard-b");
+    let hash_a = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &directory.0,
+        None,
+        0..1,
+        &shard_a,
+        1_000_000,
+    )
+    .unwrap();
+    let hash_b = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &directory.0,
+        None,
+        1..3,
+        &shard_b,
+        1_000_000,
+    )
+    .unwrap();
+    let limits = SymbolicLimits {
+        max_nodes: 0,
+        ..Default::default()
+    };
+    let mut reference = SymbolicCausalModel::open_artifact(&directory.0, None, limits).unwrap();
+    let mut head = SymbolicCausalModel::open_artifact(&directory.0, None, limits).unwrap();
+    let inputs = [69, 70, 69].map(|id| reference.compiler().get_embedding(id).unwrap());
+    let mut cache = HashConsedKV::new(3, 1, 2, 3);
+    let expected = [69, 70, 69].map(|id| reference.forward_cached(&[id], &mut cache).unwrap());
+    let hidden_source = source.0.with_extension("temporarily-unavailable");
+    struct Restore(std::path::PathBuf, std::path::PathBuf);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            let _ = std::fs::rename(&self.0, &self.1);
+        }
+    }
+    std::fs::rename(&source.0, &hidden_source).unwrap();
+    let _restore = Restore(hidden_source, source.0.clone());
+    assert!(!source.0.exists());
+    assert!(SymbolicCausalModel::open_authenticated_shard(
+        &directory.0,
+        &"0".repeat(64),
+        limits,
+        &shard_a,
+        &hash_a,
+        0..1,
+        1_000_000
+    )
+    .is_err());
+    let shard_model = SymbolicCausalModel::open_authenticated_shard(
+        &directory.0,
+        &identity,
+        limits,
+        &shard_a,
+        &hash_a,
+        0..1,
+        1_000_000,
+    )
+    .unwrap();
+    assert!(shard_model.compiler().get_embedding(69).is_err());
+    let (_worker_a, address_a) = worker_with_shard(
+        &directory.0,
+        0,
+        1,
+        Some((&shard_a, &hash_a, Some(&identity))),
+    );
+    let (_worker_b, address_b) = worker_with_shard(
+        &directory.0,
+        1,
+        3,
+        Some((&shard_b, &hash_b, Some(&identity))),
+    );
+    let mut a = SymbolicLayerClient::connect(
+        address_a,
+        &identity,
+        0..1,
+        3,
+        SymbolicTransportLimits::default(),
+    )
+    .unwrap();
+    let mut b = SymbolicLayerClient::connect(
+        address_b,
+        &identity,
+        1..3,
+        3,
+        SymbolicTransportLimits::default(),
+    )
+    .unwrap();
+    for (position, (input, expected)) in inputs.iter().zip(expected).enumerate() {
+        let partial = a.prepare(position as u32, input).unwrap();
+        let hidden = b.prepare(position as u32, &partial).unwrap();
+        let actual = head.project_output(&hidden).unwrap();
+        assert_eq!(
+            actual.iter().map(|x| x.to_bits()).collect::<Vec<_>>(),
+            expected.iter().map(|x| x.to_bits()).collect::<Vec<_>>()
+        );
+        a.commit(position as u32).unwrap();
+        b.commit(position as u32).unwrap();
+    }
+    a.close().unwrap();
+    b.close().unwrap();
+    let kernel = directory.0.join("kernel_0_0.bmlgraph");
+    let mut bytes = std::fs::read(&kernel).unwrap();
+    bytes[0] ^= 1;
+    std::fs::write(&kernel, bytes).unwrap();
+    assert!(SymbolicCausalModel::open_authenticated_shard(
+        &directory.0,
+        &identity,
+        limits,
+        &shard_a,
+        &hash_a,
+        0..1,
+        1_000_000
+    )
+    .is_err());
+}
+
+#[test]
+#[ignore = "requires BML_TEST_GGUF and BML_TEST_SYMBOLIC_ARTIFACT"]
+fn source_free_stories15m_workers_match_native_logits() {
+    let source = std::path::PathBuf::from(std::env::var_os("BML_TEST_GGUF").unwrap());
+    let artifact =
+        std::path::PathBuf::from(std::env::var_os("BML_TEST_SYMBOLIC_ARTIFACT").unwrap());
+    let directory =
+        Directory(std::env::temp_dir().join(format!("bml-stories-shards-{}", std::process::id())));
+    std::fs::create_dir(&directory.0).unwrap();
+    let identity = checked_identity(&artifact, Some(&source)).unwrap();
+    let shard_a = directory.0.join("a");
+    let shard_b = directory.0.join("b");
+    let hash_a = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &artifact,
+        Some(&source),
+        0..3,
+        &shard_a,
+        536_870_912,
+    )
+    .unwrap();
+    let hash_b = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &artifact,
+        Some(&source),
+        3..6,
+        &shard_b,
+        536_870_912,
+    )
+    .unwrap();
+    let reference = bml_compiler::gguf_compiler::InferenceCompiler::open_mapped(&source).unwrap();
+    let ids = reference.vocab().encode("").unwrap();
+    assert_eq!(ids, [1]);
+    let expected = reference.forward(&ids).unwrap();
+    let runtime = SymbolicLimits {
+        max_nodes: 0,
+        max_cached_ops: 4_000_000,
+        max_programs: 4096,
+        graph: bml_runtime::graph::GraphLimits {
+            max_ops: 2_000_000,
+            max_steps: 4_000_000,
+            max_values: 4_000_000,
+        },
+    };
+    let mut head = SymbolicCausalModel::open_artifact(&artifact, Some(&source), runtime).unwrap();
+    let input = reference.get_embedding(ids[0]).unwrap();
+    let (_worker_a, addr_a) =
+        worker_with_shard(&artifact, 0, 3, Some((&shard_a, &hash_a, Some(&identity))));
+    let (_worker_b, addr_b) =
+        worker_with_shard(&artifact, 3, 6, Some((&shard_b, &hash_b, Some(&identity))));
+    let transport = SymbolicTransportLimits {
+        timeout: Duration::from_secs(600),
+        ..Default::default()
+    };
+    let mut a = SymbolicLayerClient::connect(addr_a, &identity, 0..3, 2, transport).unwrap();
+    let mut b = SymbolicLayerClient::connect(addr_b, &identity, 3..6, 2, transport).unwrap();
+    let partial = a.prepare(0, &input).unwrap();
+    let hidden = b.prepare(0, &partial).unwrap();
+    let logits = head.project_output(&hidden).unwrap();
+    assert_eq!(logits.len(), expected.len());
+    assert_eq!(logits.len(), 32000);
+    assert!(logits.iter().all(|v| v.is_finite()));
+    let max = logits
+        .iter()
+        .zip(&expected)
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0_f64, f64::max);
+    let x = bml_compiler::sampler::sample(&logits, 0.0, 0).unwrap();
+    let y = bml_compiler::sampler::sample(&expected, 0.0, 0).unwrap();
+    assert!(max < 1e-4);
+    assert_eq!(x, y);
+    a.commit(0).unwrap();
+    b.commit(0).unwrap();
+    a.close().unwrap();
+    b.close().unwrap();
+    println!(
+        "source_free_stories15m logits={} argmax={x} native_argmax={y} max_abs_error={max}",
+        logits.len()
+    );
 }

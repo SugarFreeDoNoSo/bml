@@ -1018,7 +1018,8 @@
       "pipeline_covers_all_layers_on_one_two_or_extra_worker_processes",
       "pipeline_rejects_gaps_and_duplicate_layer_assignments",
       "loss_of_a_real_worker_invalidates_the_coordinator_without_advancing_it",
-      "pipeline_accepts_only_fresh_unprepared_worker_sessions"
+      "pipeline_accepts_only_fresh_unprepared_worker_sessions",
+      "source_free_worker_executes_with_only_authenticated_artifact_and_shard"
     ]
   },
   "C104": {

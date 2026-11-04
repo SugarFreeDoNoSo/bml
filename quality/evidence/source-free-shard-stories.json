@@ -1,0 +1,27 @@
+{
+  "base_commit": "8b780f0a520ebc77d947c2050558ded01cc9c791",
+  "command": "cargo test --release -p bml-worker --test symbolic_worker_contracts --locked source_free_stories15m_workers_match_native_logits -- --ignored --exact --nocapture",
+  "source": "target/bml-1.0/stories15M.gguf",
+  "source_sha256": "61b50d457809a5194818fd22e6724b456cd7bb9a6264c52c8110684c53f3704a",
+  "manifest_sha256": "657b9767ac2c8a13bfd2afc20c2034fa0a92f4c9063763ad0cb7c617746f944d",
+  "test_binary": "target/global-restart-build/release/deps/symbolic_worker_contracts-defcf3e6fc6c60d6",
+  "test_binary_sha256": "a35b5470c258b5df6ecd34f46a774a0de0281cb179b2dde0562ca44aba802d8a",
+  "worker_binary": "target/global-restart-build/release/bml-worker",
+  "worker_binary_sha256": "91f00dfd90d5edc4eae30cc6f65d628b5837365dabd94ef1714fcf5e5021a4a3",
+  "log": "target/quality/source-free-stories-final.log",
+  "log_sha256": "8b988f192d652a9d96714464f165f598b257c52138f9adec022b745e646b018a",
+  "measurement_line": "source_free_stories15m logits=32000 argmax=9038 native_argmax=9038 max_abs_error=0.000000016198153041102614",
+  "scope": "One BOS token; two real workers opened artifact and assigned weight shards using trusted hashes without GGUF loading. The source remained available to the coordinator for embedding and final projection. This is not a speed benchmark.",
+  "fixture_scope": "Separate test renames the source away before launching two real worker processes and compares three tokens bitwise; it also rejects bad manifest identity and a tampered kernel.",
+  "source_hashes_recorded_after_run": {
+    "crates/compiler/src/gguf_compiler.rs": "42ddd4f8cbcba87ec7ae8d3c8b187af8bb384fbbfb2ab2a8af3a70b5f7dc0bcd",
+    "crates/compiler/src/symbolic_artifact.rs": "5aac1531e7de7704ccc317d1281da797d1f4b91c66b9734844f9dbff36ae93ed",
+    "crates/compiler/src/symbolic_weight_shard.rs": "2e64019d2f61cbfdb1886567f03c0d69692d0a538a8d2c3333efec5063f91cdd",
+    "crates/runtime/src/symbolic_causal.rs": "c90070a0e064e7e309b75afb1f65a53b77e81e6ca450dec19ec7eed358b82723",
+    "crates/runtime/src/symbolic_transport.rs": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+    "crates/worker/src/main.rs": "1684d47b5d6b2940fa41769c52031ffb595df12f477bf10b701061476b5c4c4c",
+    "crates/worker/tests/symbolic_worker_contracts.rs": "47d0cce23c806a84e0d59120d541e0af9ba52cf9a736cc5c27f8c39db7e32419",
+    "Cargo.lock": "c5d875714d0d0914385037cc178e7480650cd6d518974aa43c141c8d38426e56"
+  },
+  "history": "First attempt did not capture worker stderr; retry found optional vocab_size=0 and failed; both preserved in target/quality/source-free-stories.log and source-free-stories-retry.log. The successful run followed the metadata and unavailable-embedding fixes. The test helper KV budget was increased while release compilation was in progress; successful workers required the larger budget."
+}
