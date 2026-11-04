@@ -374,3 +374,109 @@ fn compact_rms_large_input_bound_matches_independent_normalization() {
 fn compact_rms_large_input_and_weight_bounds_match_independent_normalization() {
     check_rms_large_input_bound(4.0);
 }
+
+/// Requires a local TinyLlama GGUF; compares sampled normalization operations,
+/// not a complete symbolic model or reference-model parity.
+#[test]
+#[ignore = "requires BML_TEST_GGUF pointing to a local TinyLlama Q4_0 model"]
+fn tinyllama_real_rms_inputs_match_checked_bml_oracle() {
+    use bml_compiler::{gguf_compiler::InferenceCompiler, HashConsedKV};
+    let source = std::env::var_os("BML_TEST_GGUF").expect("BML_TEST_GGUF is required");
+    let model = InferenceCompiler::open_mapped(std::path::Path::new(&source)).unwrap();
+    let width = model.config().n_embd as usize;
+    assert_eq!(width, 2048);
+    let mut cache = HashConsedKV::try_new(
+        model.config().n_layers,
+        model.n_kv_heads(),
+        model.head_dim(),
+        1,
+        512 * 1024 * 1024,
+    )
+    .unwrap();
+    let mut hidden = model.get_embedding(1).unwrap();
+    let mut samples: Vec<(String, Vec<f64>)> = Vec::new();
+    let logits = model
+        .forward_cached_with_projection(&[1], &mut cache, &mut |input, name| {
+            let normalization = if name.ends_with(".attn_q.weight") {
+                Some(name.replace(".attn_q.weight", ".attn_norm.weight"))
+            } else if name.ends_with(".ffn_gate.weight") {
+                Some(name.replace(".ffn_gate.weight", ".ffn_norm.weight"))
+            } else if name == model.output_weight_name() {
+                Some("output_norm.weight".to_string())
+            } else {
+                None
+            };
+            if let Some(normalization) = normalization {
+                samples.push((normalization, hidden.clone()));
+            }
+            let output = model.project_rows(input, name, |x, weights| {
+                Ok(x.iter().zip(weights).map(|(&v, &w)| v * f64::from(w)).sum())
+            })?;
+            if name.ends_with(".attn_output.weight") || name.ends_with(".ffn_down.weight") {
+                if hidden.len() != output.len() {
+                    return Err("residual dimension mismatch".into());
+                }
+                for (left, right) in hidden.iter_mut().zip(&output) {
+                    *left += right;
+                }
+            }
+            Ok(output)
+        })
+        .unwrap();
+    assert_eq!(logits.len(), 32000);
+    assert_eq!(samples.len(), model.config().n_layers as usize * 2 + 1);
+    let epsilon = model.rms_norm_epsilon();
+    let profile = BoundedProfile {
+        rms: RmsBounds {
+            input: 160.0,
+            weight: 4.0,
+        },
+        ..Default::default()
+    };
+    let kernel = compile_operation(
+        Operation::Norm,
+        width,
+        epsilon,
+        profile,
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let mut global_max = 0.0_f64;
+    for (name, input) in samples {
+        let start = usize::try_from(
+            *model
+                .weight_offsets()
+                .get(&name)
+                .expect("missing RMS weight"),
+        )
+        .unwrap();
+        let weights: Vec<f64> = model.weight_pool()[start..start + width]
+            .iter()
+            .map(|&v| f64::from(v))
+            .collect();
+        profile
+            .validate_values(Operation::Norm, width, epsilon, &input, &weights)
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+        let actual = execute(&kernel, &input, &weights, true);
+        let denominator =
+            (input.iter().map(|x| x * x).sum::<f64>() / width as f64 + epsilon).sqrt();
+        let mut max_error = 0.0_f64;
+        for (index, ((&observed, &x), &weight)) in
+            actual.iter().zip(&input).zip(&weights).enumerate()
+        {
+            let expected = x / denominator * weight;
+            let error = (observed - expected).abs();
+            max_error = max_error.max(error);
+            assert!(
+                error < 1e-6,
+                "{name}[{index}] error={error}: {observed} != {expected}"
+            );
+        }
+        global_max = global_max.max(max_error);
+        eprintln!("{name} max_abs_error={max_error}");
+    }
+    eprintln!(
+        "rms_samples={} max_abs_error={global_max}",
+        model.config().n_layers as usize * 2 + 1
+    );
+}

@@ -379,3 +379,14 @@ bml-worker --symbolic-artifact modelo.bmlgraph \
 conserva la copia verificada y no abre el GGUF en este modo. Los hashes deben
 proceder de una exportación previamente validada. El coordinador que tokeniza
 y proyecta logits todavía necesita el modelo completo.
+
+Para contrastar las 45 normalizaciones del token BOS de TinyLlama contra el
+kernel RMS comprobado, sin descargar modelos, ejecutar la prueba optativa exacta:
+
+```sh
+BML_TEST_GGUF=/ruta/tinyllama-q4_0.gguf cargo test -p bml-compiler --test compact_bounded_rms_contracts --locked -- --ignored --exact tinyllama_real_rms_inputs_match_checked_bml_oracle --nocapture
+```
+
+La prueba usa activaciones reconstruidas por la ruta nativa; no demuestra
+paridad de logits ni de inferencia simbólica completa. El registro de la muestra
+local está en `quality/evidence/tinyllama-real-rms-oracle.json`.
