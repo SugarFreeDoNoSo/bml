@@ -17,6 +17,26 @@ fn mapped_tensor_dimensions_include_vector_and_matrix_weights() {
     assert_eq!(dims.get("blk.0.attn_k.weight"), Some(&(4, 2)));
 }
 
+#[test]
+fn nondivisible_grouped_query_heads_are_rejected_for_both_loaders() {
+    let file = fixture(false);
+    let mut bytes = std::fs::read(&file.0).unwrap();
+    let key = b"llama.attention.head_count_kv";
+    let offset = bytes.windows(key.len()).position(|w| w == key).unwrap() + key.len();
+    assert_eq!(&bytes[offset..offset + 4], &4u32.to_le_bytes());
+    bytes[offset + 4..offset + 8].copy_from_slice(&3u32.to_le_bytes());
+    std::fs::write(&file.0, bytes).unwrap();
+    for mapped in [false, true] {
+        let result = if mapped {
+            InferenceCompiler::open_mapped(&file.0)
+        } else {
+            InferenceCompiler::open(&file.0)
+        };
+        let error = result.err().expect("nondivisible KV heads were accepted");
+        assert!(error.contains("head"), "mapped={mapped}: {error}");
+    }
+}
+
 fn expected(actual: &[f64], hidden: [f64; 4]) {
     let denominator = (hidden.iter().map(|x| x * x).sum::<f64>() / 4.0 + 3.0).sqrt();
     for i in 0..4 {
