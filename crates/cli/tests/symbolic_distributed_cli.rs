@@ -878,9 +878,10 @@ mkdir "$BML_DEPLOY_TEST_ROOT$7"
 "##;
     let scp = r##"#!/bin/sh
 printf 'scp\n' >> "$BML_DEPLOY_TEST_ROOT/calls"
-[ "$BML_DEPLOY_FAIL_HOST" != "copy" ] || exit 1
 shift 3
 plan=$1; artifact=$2; shard=$3; destination=$4
+printf '%s\n' "${plan%/*}" >> "$BML_DEPLOY_TEST_ROOT/staging-paths"
+[ "$BML_DEPLOY_FAIL_HOST" != "copy" ] || exit 1
 path=${destination#*:}
 cp -R "$plan" "$artifact" "$shard" "$BML_DEPLOY_TEST_ROOT$path"
 "##;
@@ -902,6 +903,7 @@ cp -R "$plan" "$artifact" "$shard" "$BML_DEPLOY_TEST_ROOT$path"
             .args(["--max-bytes", "1000000"])
             .env("PATH", &path)
             .env("BML_DEPLOY_TEST_ROOT", &remote)
+            .env("TMPDIR", &root.0)
             .env("BML_DEPLOY_FAIL_HOST", fail);
         for node in nodes {
             command.args(["--node", node]);
@@ -985,6 +987,21 @@ cp -R "$plan" "$artifact" "$shard" "$BML_DEPLOY_TEST_ROOT$path"
         .contains("remote directory host-a:/five remains"));
     assert!(remote.join("five").is_dir());
     assert!(!remote.join("six").exists());
+    let staged_paths = std::fs::read_to_string(remote.join("staging-paths")).unwrap();
+    assert_eq!(staged_paths.lines().count(), 4);
+    for path in staged_paths.lines() {
+        let path = std::path::Path::new(path);
+        assert!(
+            path.starts_with(&root.0),
+            "unexpected staging path: {}",
+            path.display()
+        );
+        assert!(
+            !path.exists(),
+            "staging directory was not removed: {}",
+            path.display()
+        );
+    }
 }
 
 #[test]

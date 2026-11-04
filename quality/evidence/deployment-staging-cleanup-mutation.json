@@ -1,0 +1,13 @@
+{
+  "scope": "Focused replay of temporary deployment snapshot cleanup; not a complete mutation campaign.",
+  "base_commit": "82f395bba250302295a2518249e840276f2ddb63",
+  "test": "cli_deploys_validated_prepared_shards_to_distinct_nodes",
+  "baseline": "passed: staging removed after successful deployment, partial failure and SCP failure",
+  "mutation": "Snapshot::drop does not remove the staging directory",
+  "mutation_exit_code": 101,
+  "detected_by": "a staged directory remained after deployment",
+  "logs": {
+    "target/quality/deployment-staging-cleanup-test.log": "5b0f49e187ea635c288f68211330e69c8682336c4f9ede86be66b5565baf9a59",
+    "target/quality/deployment-staging-cleanup-mutant.log": "f580f968b6aa4d297380f0399f22ec40c3149b40de22f7089f264f7692e4028c"
+  }
+}
