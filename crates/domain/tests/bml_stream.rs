@@ -38,6 +38,25 @@ fn stream_header_uses_little_endian_u64_fields_across_byte_boundary() {
 }
 
 #[test]
+fn oversized_stream_headers_fail_before_payload_allocation() {
+    let mut bytes = Bml::encode_stream(&[], StreamLimits::default()).unwrap();
+    let limits = StreamLimits {
+        max_bits: usize::MAX,
+        max_terms: usize::MAX,
+        max_depth: usize::MAX,
+    };
+    bytes[16..24].copy_from_slice(&u64::MAX.to_le_bytes());
+    assert_eq!(Bml::decode_stream(&bytes, limits), Err(StreamError::Limit));
+
+    bytes[16..24].copy_from_slice(&0u64.to_le_bytes());
+    bytes[8..16].copy_from_slice(&u64::MAX.to_le_bytes());
+    assert!(matches!(
+        Bml::decode_stream(&bytes, limits),
+        Err(StreamError::Length | StreamError::Limit)
+    ));
+}
+
+#[test]
 fn fixed_width_exports_never_truncate() {
     let mut value = Bml::one();
     for operators in 0..=64 {
