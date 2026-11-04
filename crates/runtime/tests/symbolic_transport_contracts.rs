@@ -380,3 +380,60 @@ fn worker_admission_rejects_a_different_relocated_source_model() {
     let other = symbolic_fixture::fixture_layers(0.75, 3);
     assert!(SymbolicLayerServer::new(&artifact.0, Some(&other.0), 0..1, limits()).is_err());
 }
+
+#[test]
+fn source_free_sessions_keep_verified_bytes_and_reject_replaced_shards() {
+    let (_source, artifact) = artifact();
+    let identity = bml_compiler::symbolic_artifact::checked_identity(&artifact.0, None).unwrap();
+    let shard = artifact.0.join("replacement-shard");
+    let hash = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &artifact.0,
+        None,
+        0..1,
+        &shard,
+        1_000_000,
+    )
+    .unwrap();
+    let mut reference = SymbolicCausalModel::open_artifact(
+        &artifact.0,
+        None,
+        SymbolicLimits {
+            max_nodes: 0,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let input = reference.compiler().get_embedding(69).unwrap();
+    let mut cache = HashConsedKV::new(3, 1, 2, 3);
+    let expected = reference
+        .forward_layer_range(&input, 0, &mut cache, 0..1)
+        .unwrap();
+    let server = Arc::new(
+        SymbolicLayerServer::new_authenticated(
+            &artifact.0,
+            &identity,
+            0..1,
+            limits(),
+            &shard,
+            &hash,
+            1_000_000,
+        )
+        .unwrap(),
+    );
+    let (address, task) = listener(server, 2);
+    let mut established =
+        SymbolicLayerClient::connect(address, &identity, 0..1, 3, limits()).unwrap();
+    let payload_path = shard.join("weights.bin");
+    let mut payload = std::fs::read(&payload_path).unwrap();
+    payload[0] ^= 1;
+    std::fs::write(&payload_path, payload).unwrap();
+    assert!(SymbolicLayerClient::connect(address, &identity, 0..1, 3, limits()).is_err());
+    let actual = established.prepare(0, &input).unwrap();
+    assert_eq!(
+        actual.iter().map(|x| x.to_bits()).collect::<Vec<_>>(),
+        expected.iter().map(|x| x.to_bits()).collect::<Vec<_>>()
+    );
+    established.commit(0).unwrap();
+    established.close().unwrap();
+    task.join().unwrap();
+}

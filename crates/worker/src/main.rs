@@ -35,6 +35,81 @@ use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PreparedPlan {
+    version: u32,
+    artifact: String,
+    artifact_sha256: String,
+    workers: Vec<PreparedWorker>,
+}
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PreparedWorker {
+    index: usize,
+    layer_start: u32,
+    layer_end: u32,
+    directory: String,
+    shard_sha256: String,
+}
+fn read_prepared_plan(
+    directory: &std::path::Path,
+    selected: usize,
+) -> Result<(PathBuf, String, PathBuf, String, u32, u32), String> {
+    use std::io::Read;
+    const MAX_PLAN: u64 = 1024 * 1024;
+    let file = std::fs::File::open(directory.join("plan.json")).map_err(|e| e.to_string())?;
+    if !file.metadata().map_err(|e| e.to_string())?.is_file() {
+        return Err("plan must be a regular file".into());
+    }
+    let mut data = Vec::new();
+    file.take(MAX_PLAN + 1)
+        .read_to_end(&mut data)
+        .map_err(|e| e.to_string())?;
+    if data.len() as u64 > MAX_PLAN {
+        return Err("plan exceeds byte budget".into());
+    }
+    let plan: PreparedPlan =
+        serde_json::from_slice(&data).map_err(|e| format!("invalid plan: {e}"))?;
+    let digest = |value: &str| {
+        value.len() == 64
+            && value
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    };
+    if plan.version != 1
+        || plan.artifact != "artifact"
+        || !digest(&plan.artifact_sha256)
+        || plan.workers.is_empty()
+    {
+        return Err("invalid plan header".into());
+    }
+    let mut next = 0u32;
+    for (index, worker) in plan.workers.iter().enumerate() {
+        if worker.index != index
+            || worker.layer_start != next
+            || worker.layer_end <= next
+            || worker.directory != format!("shard-{index}")
+            || !digest(&worker.shard_sha256)
+        {
+            return Err("invalid plan assignment".into());
+        }
+        next = worker.layer_end;
+    }
+    let worker = plan
+        .workers
+        .get(selected)
+        .ok_or("worker index outside plan")?;
+    Ok((
+        directory.join(&plan.artifact),
+        plan.artifact_sha256,
+        directory.join(&worker.directory),
+        worker.shard_sha256.clone(),
+        worker.layer_start,
+        worker.layer_end,
+    ))
+}
+
 struct WorkerState {
     /// Fragmento cargado (si --fragment fue especificado).
     fragment: Option<DistributedFragment>,
@@ -52,6 +127,8 @@ fn main() {
     let mut shard_path: Option<PathBuf> = None;
     let mut shard_hash: Option<String> = None;
     let mut artifact_hash: Option<String> = None;
+    let mut prepared_directory: Option<PathBuf> = None;
+    let mut prepared_index: Option<usize> = None;
     let mut shard_bytes: u64 = 512 * 1024 * 1024;
     let mut symbolic_start: Option<u32> = None;
     let mut symbolic_end: Option<u32> = None;
@@ -95,6 +172,22 @@ fn main() {
                     symbolic_path = Some(path);
                 } else {
                     symbolic_source = Some(path);
+                }
+            }
+            "--prepared" | "--worker-index" => {
+                let option = args[i].clone();
+                i += 1;
+                let value = args.get(i).unwrap_or_else(|| {
+                    eprintln!("{option} requires a value");
+                    std::process::exit(2);
+                });
+                if option == "--prepared" {
+                    prepared_directory = Some(PathBuf::from(value));
+                } else {
+                    prepared_index = Some(value.parse().unwrap_or_else(|_| {
+                        eprintln!("invalid worker index");
+                        std::process::exit(2);
+                    }));
                 }
             }
             "--symbolic-shard"
@@ -186,6 +279,7 @@ fn main() {
                 println!("  --max-message-bytes N Maximum incoming payload (default: 67108864)");
                 println!("  --symbolic-artifact PATH --layer-start N --layer-end N: serve persisted symbolic layer sessions");
                 println!("  --symbolic-source PATH --symbolic-context N --symbolic-kv-bytes N: source override and per-session budgets");
+                println!("  --prepared DIR --worker-index N: launch from a trusted prepared plan");
                 println!("  --symbolic-artifact-sha256 HASH: trust artifact identity and open without GGUF");
                 println!("  --symbolic-shard PATH --symbolic-shard-sha256 HASH --symbolic-shard-bytes N: authenticated layer weights");
                 println!("  --symbolic-large-budget: allow larger persisted symbolic programs");
@@ -198,6 +292,38 @@ fn main() {
         i += 1;
     }
 
+    match (prepared_directory, prepared_index) {
+        (Some(directory), Some(index)) => {
+            if symbolic_path.is_some()
+                || symbolic_source.is_some()
+                || shard_path.is_some()
+                || shard_hash.is_some()
+                || artifact_hash.is_some()
+                || symbolic_start.is_some()
+                || symbolic_end.is_some()
+                || fragment_path.is_some()
+            {
+                eprintln!("prepared plan conflicts with explicit artifact, shard or range options");
+                std::process::exit(2);
+            }
+            let (artifact, identity, shard, hash, start, end) =
+                read_prepared_plan(&directory, index).unwrap_or_else(|error| {
+                    eprintln!("invalid prepared plan: {error}");
+                    std::process::exit(1);
+                });
+            symbolic_path = Some(artifact);
+            artifact_hash = Some(identity);
+            shard_path = Some(shard);
+            shard_hash = Some(hash);
+            symbolic_start = Some(start);
+            symbolic_end = Some(end);
+        }
+        (None, None) => {}
+        _ => {
+            eprintln!("--prepared and --worker-index must be supplied together");
+            std::process::exit(2);
+        }
+    }
     if let Some(steps) = symbolic_max_steps {
         symbolic_limits.model.graph.max_steps = steps;
     }

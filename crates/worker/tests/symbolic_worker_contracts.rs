@@ -657,3 +657,94 @@ fn worker_explicit_step_budget_is_enforced_regardless_of_argument_order() {
         assert!(String::from_utf8_lossy(&result.stderr).contains("resource limit"));
     }
 }
+
+#[test]
+fn prepared_plan_starts_worker_and_rejects_invalid_or_conflicting_assignments() {
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    let root = Directory(source.0.with_extension("worker-prepared"));
+    std::fs::create_dir(&root.0).unwrap();
+    let artifact = root.0.join("artifact");
+    std::fs::create_dir(&artifact).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &artifact,
+        3,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let identity = checked_identity(&artifact, None).unwrap();
+    let shard = root.0.join("shard-0");
+    let hash = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &artifact,
+        None,
+        0..3,
+        &shard,
+        1_000_000,
+    )
+    .unwrap();
+    let mut plan = serde_json::json!({"version":1,"artifact":"artifact","artifact_sha256":identity,"workers":[{"index":0,"layer_start":0,"layer_end":3,"directory":"shard-0","shard_sha256":hash}]});
+    let plan_path = root.0.join("plan.json");
+    std::fs::write(&plan_path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    let mut reference = SymbolicCausalModel::open_artifact(
+        &artifact,
+        None,
+        SymbolicLimits {
+            max_nodes: 0,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let input = reference.compiler().get_embedding(69).unwrap();
+    let mut cache = HashConsedKV::new(3, 1, 2, 3);
+    let expected = reference
+        .forward_layer_range(&input, 0, &mut cache, 0..3)
+        .unwrap();
+    let mut child = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+        .args(["--port", "0", "--prepared"])
+        .arg(&root.0)
+        .args(["--worker-index", "0", "--symbolic-context", "3"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut line = String::new();
+    BufReader::new(child.stdout.take().unwrap())
+        .read_line(&mut line)
+        .unwrap();
+    assert!(line.starts_with("symbolic worker listening on "), "{line}");
+    let bound: SocketAddr = line.split_whitespace().nth(4).unwrap().parse().unwrap();
+    let _worker = Worker(child);
+    let address = SocketAddr::from(([127, 0, 0, 1], bound.port()));
+    let mut client = SymbolicLayerClient::connect(
+        address,
+        &identity,
+        0..3,
+        3,
+        SymbolicTransportLimits::default(),
+    )
+    .unwrap();
+    let actual = client.prepare(0, &input).unwrap();
+    assert_eq!(
+        actual.iter().map(|x| x.to_bits()).collect::<Vec<_>>(),
+        expected.iter().map(|x| x.to_bits()).collect::<Vec<_>>()
+    );
+    client.abort(0).unwrap();
+    client.close().unwrap();
+    let run = |extra: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+            .arg("--prepared")
+            .arg(&root.0)
+            .args(extra)
+            .output()
+            .unwrap()
+    };
+    assert!(!run(&["--worker-index", "1"]).status.success());
+    assert!(!run(&["--worker-index", "0", "--layer-start", "0"])
+        .status
+        .success());
+    assert!(!run(&[]).status.success());
+    plan["workers"][0]["directory"] = "../escape".into();
+    std::fs::write(&plan_path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    assert!(!run(&["--worker-index", "0"]).status.success());
+}

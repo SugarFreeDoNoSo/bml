@@ -1007,7 +1007,8 @@
       "changing_a_valid_manifest_changes_identity_and_old_server_refuses_it",
       "later_commit_loss_invalidates_pipeline_even_after_an_earlier_worker_acknowledges",
       "oversized_frame_is_rejected_before_its_body_is_received",
-      "worker_admission_rejects_a_different_relocated_source_model"
+      "worker_admission_rejects_a_different_relocated_source_model",
+      "source_free_sessions_keep_verified_bytes_and_reject_replaced_shards"
     ]
   },
   "C103": {
@@ -1020,7 +1021,8 @@
       "loss_of_a_real_worker_invalidates_the_coordinator_without_advancing_it",
       "pipeline_accepts_only_fresh_unprepared_worker_sessions",
       "source_free_worker_executes_with_only_authenticated_artifact_and_shard",
-      "worker_explicit_step_budget_is_enforced_regardless_of_argument_order"
+      "worker_explicit_step_budget_is_enforced_regardless_of_argument_order",
+      "prepared_plan_starts_worker_and_rejects_invalid_or_conflicting_assignments"
     ]
   },
   "C104": {

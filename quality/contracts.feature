@@ -717,6 +717,8 @@ Then it rejects the request before expensive generation
     Then identity, range, context and frame budgets are enforced and each connection owns its KV state
     And changed manifests cannot impersonate the admitted artifact
     And a lost commit response invalidates the entire coordinator without advancing its confirmed position
+    And replacing a shard rejects new sessions while an established session retains verified bytes
+
 
   @C103
   Scenario: Real symbolic worker processes execute complete causal layer ranges
@@ -727,6 +729,7 @@ Then it rejects the request before expensive generation
     And a new coordinator rejects worker sessions that have pending or previously committed rows
     And terminating a real worker invalidates the coordinator without advancing its local position
     And authenticated worker processes execute their assigned shards without access to the source GGUF
+    And a trusted prepared plan selects the matching range and rejects malformed or conflicting assignments
     And an explicit worker graph step budget is enforced regardless of argument order
 
 
