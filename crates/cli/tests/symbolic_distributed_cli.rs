@@ -920,7 +920,18 @@ cp -R "$plan" "$artifact" "$shard" "$BML_DEPLOY_TEST_ROOT$path"
     .unwrap();
     assert!(!deploy(&["host-a:/one", "host-b:/two"], "").status.success());
     assert!(!remote.join("calls").exists());
-    std::fs::write(&plan_path, original_plan).unwrap();
+    // A valid plan may contain whitespace up to the documented 1 MiB limit.
+    // Reject oversize input before opening an SSH connection.
+    let mut padded_plan = original_plan.into_bytes();
+    padded_plan.resize(4096, b' ');
+    let mut oversize_plan = padded_plan.clone();
+    oversize_plan.resize(1024 * 1024 + 1, b' ');
+    std::fs::write(&plan_path, oversize_plan).unwrap();
+    let oversized = deploy(&["host-a:/one", "host-b:/two"], "");
+    assert!(!oversized.status.success());
+    assert!(String::from_utf8_lossy(&oversized.stderr).contains("plan exceeds byte budget"));
+    assert!(!remote.join("calls").exists());
+    std::fs::write(&plan_path, padded_plan).unwrap();
     let shard_file = prepared.join("shard-1/weights.bin");
     let original = std::fs::read(&shard_file).unwrap();
     let mut corrupt = original.clone();

@@ -1,0 +1,13 @@
+{
+  "scope": "Focused replay of a plan-size mutation; not a complete mutation campaign.",
+  "base_commit": "65346b268d285705f5a85a58b05358bc44575caf",
+  "test": "cli_deploys_validated_prepared_shards_to_distinct_nodes",
+  "baseline": "passed: valid 4096-byte plan accepted, >1 MiB plan rejected before SSH",
+  "mutation": "MAX_PLAN 1024 * 1024 replaced by 1024 + 1024",
+  "mutation_exit_code": 101,
+  "detected_by": "valid 4096-byte plan incorrectly rejected",
+  "logs": {
+    "target/quality/deployment-plan-budget-test.log": "c4e2d40a431221b80ffe86fcff39bda48f06d2b82eb8646c1d541f457e527916",
+    "target/quality/deployment-plan-mutant.log": "0bed638605271fbc34996d46b6c4e02752fbb57239762e9baa750fc022d7f1af"
+  }
+}
