@@ -1,0 +1,42 @@
+{
+  "scope": "All decoded Q4_0 ffn_down weight values in the 22 layers of this local model; no activation bound or inference parity claim.",
+  "model": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "decoder": "bml-gguf decode_f32 Q4_0",
+  "command": "cargo run -p bml-gguf --example ffn_weight_bounds --locked --release -- MODEL 22",
+  "source": "crates/gguf/examples/ffn_weight_bounds.rs",
+  "source_sha256": "647a91efe016f04a6aab2b4044c4ff00478f3bead32fee7558053061e5aae34d",
+  "log": "target/quality/tinyllama-ffn-weight-bounds.log",
+  "log_sha256": "cc642251637b91f800f426d2092bd363168c4d8399eedcd17936fff25b6da6b3",
+  "max_abs": 1.015625,
+  "per_layer_max_abs": {
+    "0": 0.5234375,
+    "1": 0.57421875,
+    "2": 0.8359375,
+    "3": 0.62890625,
+    "4": 0.5546875,
+    "5": 0.6953125,
+    "6": 0.609375,
+    "7": 1.015625,
+    "8": 0.6640625,
+    "9": 0.4765625,
+    "10": 0.59765625,
+    "11": 0.50390625,
+    "12": 0.8046875,
+    "13": 0.796875,
+    "14": 0.64453125,
+    "15": 0.59765625,
+    "16": 0.671875,
+    "17": 0.62109375,
+    "18": 0.62890625,
+    "19": 0.5390625,
+    "20": 0.71875,
+    "21": 0.69140625
+  },
+  "candidate_bounds": {
+    "input": 256,
+    "weight": 1.5,
+    "product": 384,
+    "qualification": "Weight bound covers this model scan, not a proof that all activations fit input bound or that role-specific persisted kernels exist."
+  }
+}
