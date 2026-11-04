@@ -5,6 +5,18 @@ use bml_compiler::{gguf_compiler::InferenceCompiler, HashConsedKV};
 mod causal_fixture;
 use causal_fixture::fixture;
 
+#[test]
+fn mapped_tensor_dimensions_include_vector_and_matrix_weights() {
+    let file = fixture(false);
+    let model = InferenceCompiler::open_mapped(&file.0).unwrap();
+    let dims = model.tensor_dims();
+    assert_eq!(dims.get("output_norm.weight"), Some(&(4, 1)));
+    assert_eq!(dims.get("blk.0.attn_norm.weight"), Some(&(4, 1)));
+    assert_eq!(dims.get("blk.0.ffn_norm.weight"), Some(&(4, 1)));
+    assert_eq!(dims.get("blk.0.attn_q.weight"), Some(&(4, 4)));
+    assert_eq!(dims.get("blk.0.attn_k.weight"), Some(&(4, 2)));
+}
+
 fn expected(actual: &[f64], hidden: [f64; 4]) {
     let denominator = (hidden.iter().map(|x| x * x).sum::<f64>() / 4.0 + 3.0).sqrt();
     for i in 0..4 {
