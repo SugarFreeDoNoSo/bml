@@ -27,6 +27,17 @@ fn wire_format_preserves_leaves_and_empty_streams() {
 }
 
 #[test]
+fn stream_header_uses_little_endian_u64_fields_across_byte_boundary() {
+    let values = vec![Bml::one(); 256];
+    let limits = StreamLimits::default();
+    let bytes = Bml::encode_stream(&values, limits).unwrap();
+    assert_eq!(&bytes[8..16], &256u64.to_le_bytes());
+    assert_eq!(&bytes[16..24], &256u64.to_le_bytes());
+    assert_eq!(&bytes[24..], &[0; 32]);
+    assert_eq!(Bml::decode_stream(&bytes, limits).unwrap(), values);
+}
+
+#[test]
 fn fixed_width_exports_never_truncate() {
     let mut value = Bml::one();
     for operators in 0..=64 {
