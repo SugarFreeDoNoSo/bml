@@ -1105,3 +1105,125 @@ fn tinyllama_real_projection_rows_match_checked_bml_oracle() {
     assert_eq!(sampled, tensors * 3 + 2);
     eprintln!("projection_tensors={tensors} sampled_rows={sampled} max_abs_error={global_max}");
 }
+
+/// Checks RoPE on native Q/K values for two positions, not full symbolic inference.
+#[test]
+#[ignore = "requires BML_TEST_GGUF pointing to a local TinyLlama Q4_0 model"]
+fn tinyllama_real_rope_inputs_match_checked_bml_oracle() {
+    use bml_compiler::gguf_compiler::InferenceCompiler;
+    let source = std::env::var_os("BML_TEST_GGUF").expect("BML_TEST_GGUF is required");
+    let model = InferenceCompiler::open_mapped(std::path::Path::new(&source)).unwrap();
+    let mut cache = HashConsedKV::try_new(
+        model.config().n_layers,
+        model.n_kv_heads(),
+        model.head_dim(),
+        2,
+        512 * 1024 * 1024,
+    )
+    .unwrap();
+    let mut samples = Vec::new();
+    let mut token = 1u32;
+    for position in 0..2u32 {
+        let logits = model
+            .forward_cached_with_projection(&[token], &mut cache, &mut |input, name| {
+                let output = model.project_rows(input, name, |x, weights| {
+                    Ok(x.iter()
+                        .zip(weights)
+                        .map(|(&value, &weight)| value * f64::from(weight))
+                        .sum())
+                })?;
+                if name.ends_with(".attn_q.weight") || name.ends_with(".attn_k.weight") {
+                    samples.push((position, name.to_string(), output.clone()));
+                }
+                Ok(output)
+            })
+            .unwrap();
+        assert_eq!(logits.len(), 32000);
+        if position == 0 {
+            token = bml_compiler::sampler::sample(&logits, 0.0, 0).unwrap();
+            assert_eq!(token, 29958);
+        }
+    }
+    assert_eq!(samples.len(), model.config().n_layers as usize * 4);
+    let input_max = samples
+        .iter()
+        .flat_map(|(_, _, input)| input.iter())
+        .fold(0.0_f64, |max, value| max.max(value.abs()));
+    eprintln!("rope_input_max_abs={input_max}");
+    let violations_16 = samples
+        .iter()
+        .flat_map(|(_, _, input)| input.as_chunks::<2>().0.iter())
+        .filter(|pair| pair.iter().any(|value| value.abs() > 16.0))
+        .count();
+    assert!(
+        violations_16 > 0,
+        "expected this two-token model sample to exceed the historical RoPE bound"
+    );
+    eprintln!("rope_pairs_over_16={violations_16}");
+    let profile = BoundedProfile {
+        rope: 32.0,
+        ..Default::default()
+    };
+    let epsilon = model.rms_norm_epsilon();
+    let kernel = compile_operation(
+        Operation::Rope,
+        2,
+        epsilon,
+        profile,
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let graph = validate(&kernel, graph_limits()).unwrap();
+    let head_dim = model.head_dim() as usize;
+    assert!(head_dim > 0 && head_dim.is_multiple_of(2));
+    let mut total = 0usize;
+    let mut global_max = 0.0_f64;
+    let mut rotated_max = 0.0_f64;
+    for (position, name, input) in samples {
+        assert_eq!(input.len() % head_dim, 0);
+        let mut max_error = 0.0_f64;
+        for (index, pair) in input.as_chunks::<2>().0.iter().enumerate() {
+            let within = (index % (head_dim / 2)) * 2;
+            let angle = position as f64
+                / model
+                    .rope_frequency_base()
+                    .powf(within as f64 / head_dim as f64);
+            let (sine, cosine) = angle.sin_cos();
+            profile
+                .validate_values(Operation::Rope, 2, epsilon, pair, &[cosine, sine])
+                .unwrap_or_else(|e| {
+                    panic!("{name} position={position} pair={index} input={pair:?}: {e}")
+                });
+            let mut constants = kernel.signature.fixed.clone();
+            constants.extend([cosine, sine]);
+            let mut buffer = ResultBuffer::new(1, 2);
+            graph
+                .execute_indexed_symbolic_with_constants(pair, &constants, &mut buffer)
+                .unwrap_or_else(|e| panic!("{name} position={position} pair={index}: {e}"));
+            let expected = [
+                pair[0] * cosine - pair[1] * sine,
+                pair[0] * sine + pair[1] * cosine,
+            ];
+            rotated_max = rotated_max.max(expected[0].abs()).max(expected[1].abs());
+            for (&actual, &expected) in buffer.slot(0).iter().zip(&expected) {
+                let error = (actual - expected).abs();
+                max_error = max_error.max(error);
+                assert!(
+                    error < 2e-8,
+                    "{name} position={position} pair={index}: {actual} != {expected}"
+                );
+            }
+            total += 1;
+        }
+        global_max = global_max.max(max_error);
+        eprintln!(
+            "position={position} {name} pairs={} max_abs_error={max_error}",
+            input.len() / 2
+        );
+    }
+    eprintln!("rope_rotated_max_abs={rotated_max}");
+    eprintln!(
+        "rope_samples={} pairs={total} max_abs_error={global_max}",
+        model.config().n_layers as usize * 4
+    );
+}

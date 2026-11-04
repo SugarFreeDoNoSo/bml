@@ -100,6 +100,12 @@ enum Command {
         #[arg(long, requires_all = ["distributed", "distributed_projection_input_bound"])]
         distributed_projection_weight_bound: Option<f64>,
         /// Inclusive SwiGLU gate bound for the distributed profile.
+        /// Absolute operand bound for rotary embedding.
+        #[arg(long, requires = "distributed")]
+        distributed_rope_bound: Option<f64>,
+        /// Absolute operand bound for attention query/key products.
+        #[arg(long, requires = "distributed")]
+        distributed_attention_bound: Option<f64>,
         /// Absolute operand bound for each residual addition.
         #[arg(long, requires = "distributed")]
         distributed_residual_bound: Option<f64>,
@@ -352,6 +358,8 @@ fn main() {
             distributed_rms_weight_bound,
             distributed_projection_input_bound,
             distributed_projection_weight_bound,
+            distributed_rope_bound,
+            distributed_attention_bound,
             distributed_residual_bound,
             distributed_down_input_bound,
             distributed_down_weight_bound,
@@ -402,6 +410,12 @@ fn main() {
                     profile.projection_input = input;
                     profile.projection_weight = distributed_projection_weight_bound
                         .expect("clap requires both projection bounds");
+                }
+                if let Some(bound) = distributed_rope_bound {
+                    profile.rope = bound;
+                }
+                if let Some(bound) = distributed_attention_bound {
+                    profile.attention = bound;
                 }
                 if let Some(bound) = distributed_residual_bound {
                     profile.residual = bound;

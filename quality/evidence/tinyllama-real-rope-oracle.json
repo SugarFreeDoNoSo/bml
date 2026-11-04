@@ -1,0 +1,565 @@
+{
+  "scope": "All Q/K pairs from native projections for BOS and its next native greedy token, tested at positions zero and one. Not full symbolic inference, full-logit parity, or a future-prompt guarantee.",
+  "base_commit": "4122e47f1ed0e872239014587f6277100207795f",
+  "model": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "tokens": [
+    1,
+    29958
+  ],
+  "test": "tinyllama_real_rope_inputs_match_checked_bml_oracle",
+  "command": "BML_TEST_GGUF=MODEL cargo test --release -p bml-compiler --test full_bounded_contracts --locked -- --ignored --exact tinyllama_real_rope_inputs_match_checked_bml_oracle --nocapture",
+  "test_binary": "target/quality/tinyllama-real-rope-test-binary",
+  "test_binary_sha256": "6488e7997c679106a205ac855f98701307143b7ede16ac8528dd8b84ff6a3876",
+  "source_sha256": {
+    "crates/compiler/tests/full_bounded_contracts.rs": "4d95ae2da591094c1c960db14b8e70c3df736ef8072876f0b3d5ef5b55bc229c",
+    "crates/compiler/src/symbolic_bounded.rs": "f84a23903e5ae5e5c8ea7a09167ef6a33c60f8ff5763e2551d422e68fbb67fe6",
+    "crates/domain/src/transformer/bounded_ops.rs": "ee7b5e406263a6e22d604bbb4a01c23090362a0d7ff6cb696668c44dc2f7b202",
+    "crates/runtime/src/graph.rs": "7af83e2bd5b5e91db69ac05d235a57266350d2611bcb70bf626b1688ad2b3666",
+    "crates/compiler/src/gguf_compiler.rs": "42ddd4f8cbcba87ec7ae8d3c8b187af8bb384fbbfb2ab2a8af3a70b5f7dc0bcd",
+    "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c"
+  },
+  "samples": 88,
+  "pairs": 50688,
+  "input_bound": 32,
+  "prior_bound": 16,
+  "pairs_over_prior_bound": 6,
+  "input_max_abs": 18.35790340143494,
+  "rotated_max_abs": 18.357674656338,
+  "absolute_tolerance": 2e-08,
+  "max_abs_error": 3.1683822232508874e-12,
+  "prior_rejection_log": "target/quality/tinyllama-rope16-observed-rejection.log",
+  "prior_rejection_log_sha256": "50b9ee44b9bb8a3ef05437d75857871162c0bebbcaebd229adab79214868a33f",
+  "per_tensor": [
+    {
+      "position": 0,
+      "tensor": "blk.0.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.2872606586510358e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.0.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.2362597884573177e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.1.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.522093645040968e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.1.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.253974784593993e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.2.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.3617774402850955e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.2.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.3308924235188044e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.3.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.369077156672006e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.3.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.0585616544721574e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.4.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.383870878475136e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.4.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.3387264347363157e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.5.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.342515070807849e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.5.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.1603413502546687e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.6.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.374087038070627e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.6.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.110048247239149e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.7.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.525854525536886e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.7.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.190081449526815e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.8.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.339291954589484e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.8.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.334576976181779e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.9.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.3644697311198115e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.9.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.414088026703176e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.10.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.3258617254384717e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.10.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.056882442147412e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.11.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.3618745847997502e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.11.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.2598867222001218e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.12.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.3382962233142734e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.12.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.2013623562910922e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.13.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.3684249006450386e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.13.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.1850993237038097e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.14.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.4694690736737357e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.14.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.2908183596598297e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.15.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.3292479056635784e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.15.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.2493816705104752e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.16.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.3814283878209608e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.16.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.2785939801650557e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.17.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.3593627052065358e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.17.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.2758323003913006e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.18.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.2908897001627793e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.18.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.238585402117299e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.19.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.400635246146976e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.19.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.0466857375556202e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.20.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.369660023759934e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.20.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.3233359680574495e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.21.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.381039809762342e-12
+    },
+    {
+      "position": 0,
+      "tensor": "blk.21.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.0138959944127066e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.0.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.7609026176378393e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.0.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.313482738713901e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.1.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.5375257450832578e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.1.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.5701663020072374e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.2.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.773337115513641e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.2.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.1331825195147758e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.3.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.5413005033669833e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.3.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.1623813850624174e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.4.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.427946732552755e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.4.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.265188037142707e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.5.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.780220498266317e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.5.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.4698021405811232e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.6.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.4702462297909733e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.6.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.3021584638627246e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.7.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.7215452114148775e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.7.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.00273131412132e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.8.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.76711986657574e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.8.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.524647157997606e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.9.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.584710223629827e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.9.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.4420465649654943e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.10.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.844835478299501e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.10.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.2937207688755734e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.11.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.6640911698905256e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.11.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.0938806244430452e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.12.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.7236546351616653e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.12.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.4812374377347624e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.13.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.3285817718488033e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.13.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.2907231667090855e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.14.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.484096262023172e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.14.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.4347190930029683e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.15.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 3.1683822232508874e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.15.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.3492319201068312e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.16.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.580602398438714e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.16.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.27018404075352e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.17.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.608580018659268e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.17.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.375433183487985e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.18.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.896238804339646e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.18.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.4599766668131906e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.19.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.4045765378843953e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.19.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.3557267248008884e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.20.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.687627898012579e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.20.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.749488137165912e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.21.attn_q.weight",
+      "pairs": 1024,
+      "max_abs_error": 2.701075474398351e-12
+    },
+    {
+      "position": 1,
+      "tensor": "blk.21.attn_k.weight",
+      "pairs": 128,
+      "max_abs_error": 2.339239912885205e-12
+    }
+  ],
+  "log": "target/quality/tinyllama-real-rope-test.log",
+  "log_sha256": "426ea9488cfa550350922f3a024deb2dae3d249d67c8b2c67f0558f951b48c05"
+}

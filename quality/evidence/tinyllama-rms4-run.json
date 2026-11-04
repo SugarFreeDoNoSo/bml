@@ -30,6 +30,10 @@
     "crates/runtime/src/symbolic_causal.rs": {
       "sha256": "fbf8f7c6644b34ed60f44f97706bfc3d471a35a83d7ce176aef4c3f816c75d08",
       "description": "Error context for normalization changed after launch; the measured binary and the running computation use the source hashes at build."
+    },
+    "crates/cli/src/main.rs": {
+      "sha256": "23f24d7076011a9648d1452378bb7f299514af06b2d1bcc9baa76f6b19a5d8a8",
+      "description": "CLI options for explicit RoPE and attention bounds added after launch; the active process uses its recorded binary and build-time source."
     }
   }
 }

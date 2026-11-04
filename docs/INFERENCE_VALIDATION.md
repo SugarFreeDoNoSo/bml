@@ -303,6 +303,9 @@ Las proyecciones `ffn_down` pueden declarar límites independientes mediante
 `--distributed-down-input-bound` y `--distributed-down-weight-bound`; sin ellos
 usan las cotas de proyección generales. Los artefactos con este perfil requieren
 una versión que reconozca el kernel `down_dot`. Las cotas limitan entradas, pero no garantizan evaluabilidad: con entrada ±256 y peso del mismo signo ±1,5, el grafo comprobado rechazó los extremos por rango numérico (`quality/evidence/down-projection-validation.json`).
+Las cotas de RoPE y de los productos query/key pueden declararse con
+`--distributed-rope-bound` y `--distributed-attention-bound`; se validan
+contra los límites numéricos del perfil antes de publicar el artefacto.
 La cota absoluta de cada operando residual puede declararse con
 `--distributed-residual-bound`; el perfil comprueba su rango permitido.
 Las cotas de SwiGLU se declaran juntas con `--distributed-gate-bound` y
@@ -412,3 +415,13 @@ BML_TEST_GGUF=/ruta/tinyllama-q4_0.gguf cargo test --release -p bml-compiler --t
 La muestra cubre tres filas por tensor y dos filas de interés; no demuestra
 paridad de todos los logits ni del modelo simbólico completo. El registro local
 está en `quality/evidence/tinyllama-real-projection-oracle.json`.
+
+Para contrastar todos los pares Q/K nativos de dos posiciones con RoPE BML,
+ejecutar la prueba optativa exacta:
+
+```sh
+BML_TEST_GGUF=/ruta/tinyllama-q4_0.gguf cargo test --release -p bml-compiler --test full_bounded_contracts --locked -- --ignored --exact tinyllama_real_rope_inputs_match_checked_bml_oracle --nocapture
+```
+
+La muestra usa proyecciones nativas y no demuestra paridad de inferencia
+simbólica completa. Evidencia: `quality/evidence/tinyllama-real-rope-oracle.json`.

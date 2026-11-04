@@ -132,6 +132,10 @@ fn cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weig
             "4",
             "--distributed-projection-weight-bound",
             "4",
+            "--distributed-rope-bound",
+            "32",
+            "--distributed-attention-bound",
+            "20",
             "--distributed-residual-bound",
             "64",
             "--distributed-down-input-bound",
@@ -166,6 +170,7 @@ fn cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weig
     );
     assert_eq!((bounds.gate, bounds.up), (18.0, 16.0));
     assert_eq!(bounds.residual, 64.0);
+    assert_eq!((bounds.rope, bounds.attention), (32.0, 20.0));
     let down = bounds.down_projection.unwrap();
     assert_eq!((down.input, down.weight), (256.0, 1.5));
     assert!(manifest
@@ -385,6 +390,8 @@ fn distributed_compile_rejects_partial_or_invalid_rms_bounds() {
         vec!["--distributed-rms-input-bound", "4"],
         vec!["--distributed-down-input-bound", "256"],
         vec!["--distributed-residual-bound", "241"],
+        vec!["--distributed-rope-bound", "241"],
+        vec!["--distributed-attention-bound", "22"],
         vec![
             "--distributed-down-input-bound",
             "256",
