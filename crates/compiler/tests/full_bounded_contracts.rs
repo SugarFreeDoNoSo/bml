@@ -1227,3 +1227,234 @@ fn tinyllama_real_rope_inputs_match_checked_bml_oracle() {
         model.config().n_layers as usize * 4
     );
 }
+
+/// Checks attention arithmetic on native Q/K values and F32 keys for two positions.
+#[test]
+#[ignore = "requires BML_TEST_GGUF pointing to a local TinyLlama Q4_0 model"]
+fn tinyllama_real_attention_inputs_match_checked_bml_oracle() {
+    use bml_compiler::gguf_compiler::InferenceCompiler;
+    use std::collections::BTreeMap;
+    let source = std::env::var_os("BML_TEST_GGUF").expect("BML_TEST_GGUF is required");
+    let model = InferenceCompiler::open_mapped(std::path::Path::new(&source)).unwrap();
+    let heads = model.config().n_heads as usize;
+    let kv_heads = model.n_kv_heads() as usize;
+    let dim = model.head_dim() as usize;
+    assert_eq!(
+        (model.config().n_layers, heads, kv_heads, dim),
+        (22, 32, 4, 64)
+    );
+    let mut cache = HashConsedKV::try_new(
+        model.config().n_layers,
+        model.n_kv_heads(),
+        model.head_dim(),
+        2,
+        512 * 1024 * 1024,
+    )
+    .unwrap();
+    let mut samples = BTreeMap::new();
+    let mut token = 1u32;
+    for position in 0..2u32 {
+        let logits = model
+            .forward_cached_with_projection(&[token], &mut cache, &mut |input, name| {
+                let output = model.project_rows(input, name, |x, weights| {
+                    Ok(x.iter()
+                        .zip(weights)
+                        .map(|(&value, &weight)| value * f64::from(weight))
+                        .sum())
+                })?;
+                if (name.ends_with(".attn_q.weight") || name.ends_with(".attn_k.weight"))
+                    && samples
+                        .insert((position, name.to_string()), output.clone())
+                        .is_some()
+                {
+                    return Err("duplicate attention projection".into());
+                }
+                Ok(output)
+            })
+            .unwrap();
+        assert_eq!(logits.len(), 32000);
+        if position == 0 {
+            token = bml_compiler::sampler::sample(&logits, 0.0, 0).unwrap();
+            assert_eq!(token, 29958);
+        }
+    }
+    assert_eq!(samples.len(), 88);
+    let rotate = |input: &[f64], position: u32| -> Vec<f64> {
+        assert!(input.len().is_multiple_of(dim));
+        let mut output = Vec::with_capacity(input.len());
+        for (index, pair) in input.as_chunks::<2>().0.iter().enumerate() {
+            let within = (index % (dim / 2)) * 2;
+            let angle =
+                position as f64 / model.rope_frequency_base().powf(within as f64 / dim as f64);
+            let (sine, cosine) = angle.sin_cos();
+            output.extend([
+                pair[0] * cosine - pair[1] * sine,
+                pair[0] * sine + pair[1] * cosine,
+            ]);
+        }
+        output
+    };
+    let profile = BoundedProfile {
+        attention: 20.0,
+        rope: 32.0,
+        ..Default::default()
+    };
+    let epsilon = model.rms_norm_epsilon();
+    let dot = compile_operation(
+        Operation::AttentionDot,
+        dim,
+        epsilon,
+        profile,
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let dot_graph = validate(&dot, graph_limits()).unwrap();
+    let scale = compile_operation(
+        Operation::Scale,
+        1,
+        epsilon,
+        profile,
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let scale_graph = validate(&scale, graph_limits()).unwrap();
+    let softmax: Vec<_> = (1..=2)
+        .map(|width| {
+            let kernel = compile_operation(
+                Operation::Softmax,
+                width,
+                epsilon,
+                profile,
+                KernelLimits::default(),
+            )
+            .unwrap();
+            let graph = validate(&kernel, graph_limits()).unwrap();
+            (kernel, graph)
+        })
+        .collect();
+    let mut dot_count = 0usize;
+    let mut group_count = 0usize;
+    let mut dot_max = 0.0_f64;
+    let mut scale_max = 0.0_f64;
+    let mut softmax_max = 0.0_f64;
+    let mut operand_max = 0.0_f64;
+    let mut score_max = 0.0_f64;
+    for layer in 0..model.config().n_layers {
+        let mut layer_dot = 0.0_f64;
+        let mut layer_scale = 0.0_f64;
+        let mut layer_softmax = 0.0_f64;
+        let keys: Vec<_> = (0..2u32)
+            .map(|position| {
+                let name = format!("blk.{layer}.attn_k.weight");
+                rotate(samples.get(&(position, name)).unwrap(), position)
+                    .into_iter()
+                    .map(|value| f64::from(value as f32))
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        for position in 0..2u32 {
+            let name = format!("blk.{layer}.attn_q.weight");
+            let query = rotate(samples.get(&(position, name)).unwrap(), position);
+            for head in 0..heads {
+                let q = &query[head * dim..(head + 1) * dim];
+                let kv_head = head / (heads / kv_heads);
+                let mut bml_scores = Vec::new();
+                let mut native_scores = Vec::new();
+                for (key_position, key_values) in
+                    keys.iter().take(position as usize + 1).enumerate()
+                {
+                    let key = &key_values[kv_head * dim..(kv_head + 1) * dim];
+                    operand_max = q
+                        .iter()
+                        .chain(key)
+                        .fold(operand_max, |max, value| max.max(value.abs()));
+                    profile
+                        .validate_values(Operation::AttentionDot, dim, epsilon, q, key)
+                        .unwrap();
+                    let mut constants = dot.signature.fixed.clone();
+                    constants.extend_from_slice(key);
+                    let actual_dot = dot_graph
+                        .execute_indexed_symbolic_with_constants(
+                            q,
+                            &constants,
+                            &mut ResultBuffer::new(0, 0),
+                        )
+                        .unwrap();
+                    let expected_dot: f64 = q.iter().zip(key).map(|(&a, &b)| a * b).sum();
+                    let dot_error = (actual_dot - expected_dot).abs();
+                    assert!(dot_error < 3e-8, "layer={layer} pos={position} head={head} key={key_position}: dot error {dot_error}");
+                    layer_dot = layer_dot.max(dot_error);
+                    let scale_value = 1.0 / (dim as f64).sqrt();
+                    profile
+                        .validate_values(
+                            Operation::Scale,
+                            1,
+                            epsilon,
+                            &[actual_dot, scale_value],
+                            &[],
+                        )
+                        .unwrap();
+                    let actual_score = scale_graph
+                        .execute_indexed_symbolic_with_constants(
+                            &[actual_dot, scale_value],
+                            &scale.signature.fixed,
+                            &mut ResultBuffer::new(0, 0),
+                        )
+                        .unwrap();
+                    let expected_score = expected_dot * scale_value;
+                    score_max = score_max.max(expected_score.abs());
+                    let scale_error = (actual_score - expected_score).abs();
+                    assert!(
+                        scale_error < 3e-8,
+                        "layer={layer} pos={position} head={head}: scale error {scale_error}"
+                    );
+                    layer_scale = layer_scale.max(scale_error);
+                    bml_scores.push(actual_score);
+                    native_scores.push(expected_score);
+                    dot_count += 1;
+                }
+                let maximum = bml_scores.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+                let mut context = bml_scores.clone();
+                context.push(maximum);
+                let (kernel, graph) = &softmax[bml_scores.len() - 1];
+                profile
+                    .validate_values(Operation::Softmax, bml_scores.len(), epsilon, &context, &[])
+                    .unwrap();
+                let mut buffer = ResultBuffer::new(1, bml_scores.len());
+                graph
+                    .execute_indexed_symbolic_with_constants(
+                        &context,
+                        &kernel.signature.fixed,
+                        &mut buffer,
+                    )
+                    .unwrap();
+                let native_max = native_scores
+                    .iter()
+                    .copied()
+                    .fold(f64::NEG_INFINITY, f64::max);
+                let exp: Vec<_> = native_scores
+                    .iter()
+                    .map(|score| (score - native_max).exp())
+                    .collect();
+                let sum: f64 = exp.iter().sum();
+                for (&actual, &value) in buffer.slot(0).iter().zip(&exp) {
+                    let error = (actual - value / sum).abs();
+                    assert!(
+                        error < 2e-8,
+                        "layer={layer} pos={position} head={head}: softmax error {error}"
+                    );
+                    layer_softmax = layer_softmax.max(error);
+                }
+                group_count += 1;
+            }
+        }
+        dot_max = dot_max.max(layer_dot);
+        scale_max = scale_max.max(layer_scale);
+        softmax_max = softmax_max.max(layer_softmax);
+        eprintln!("layer={layer} dot_max_error={layer_dot} scale_max_error={layer_scale} softmax_max_error={layer_softmax}");
+    }
+    assert_eq!(dot_count, 2112);
+    assert_eq!(group_count, 1408);
+    eprintln!("attention_operand_max_abs={operand_max} attention_score_max_abs={score_max}");
+    eprintln!("attention_groups={group_count} dots={dot_count} dot_max_error={dot_max} scale_max_error={scale_max} softmax_max_error={softmax_max}");
+}
