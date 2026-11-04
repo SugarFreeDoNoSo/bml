@@ -1,0 +1,29 @@
+{
+  "scope": "Focused replays of file-copy preflight mutants; not a complete mutation campaign.",
+  "base_commit": "22a5e78b37cba04fa527a1c7eb49047807a73e79",
+  "test": "deployment::tests::bounded_copy_accepts_exact_limit_and_rejects_invalid_inputs_before_creating_output",
+  "baseline": "passed",
+  "replays": [
+    {
+      "mutation": "replace || with && in source metadata preflight",
+      "exit_code": 101,
+      "detected_by": "oversized input created destination"
+    },
+    {
+      "mutation": "replace > with >= in source metadata preflight",
+      "exit_code": 101,
+      "detected_by": "exact limit rejected"
+    },
+    {
+      "mutation": "replace > with == in source metadata preflight",
+      "exit_code": 101,
+      "detected_by": "exact limit rejected"
+    }
+  ],
+  "logs": {
+    "target/quality/deployment-copy-bounds-test.log": "b952fd50724aaa29e9ab5b27b23622abb38a40460fcd153df31bc4f9d0519dbe",
+    "target/quality/deploy-copy-mutant-and.log": "d3b17e6f86bb46cc37f0b2f4816efa4d2e5defb7c5c392110beff1958c8a3c7a",
+    "target/quality/deploy-copy-mutant-ge.log": "0bbe0d73a8c58347ded72ca01ac5d8085ebd5a98b7b022346a3fee709b2fa094",
+    "target/quality/deploy-copy-mutant-eq.log": "72ca31ea76f12421f9f741913798643579aa4aa21a4240f5056cec79db55f4eb"
+  }
+}

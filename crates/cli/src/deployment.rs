@@ -239,3 +239,38 @@ pub fn deploy(prepared: &Path, nodes: &[String], max_bytes: u64) -> Result<(), S
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::copy_bounded;
+
+    #[test]
+    fn bounded_copy_accepts_exact_limit_and_rejects_invalid_inputs_before_creating_output() {
+        let root = std::env::temp_dir().join(format!("bml-bounded-copy-{}", std::process::id()));
+        std::fs::create_dir(&root).unwrap();
+        struct Cleanup(std::path::PathBuf);
+        impl Drop for Cleanup {
+            fn drop(&mut self) {
+                let _ = std::fs::remove_dir_all(&self.0);
+            }
+        }
+        let _cleanup = Cleanup(root.clone());
+        let source = root.join("source");
+        let destination = root.join("destination");
+        std::fs::write(&source, b"12345678").unwrap();
+        copy_bounded(&source, &destination, 8).unwrap();
+        assert_eq!(std::fs::read(&destination).unwrap(), b"12345678");
+        assert!(copy_bounded(&source, &destination, 8).is_err());
+        assert_eq!(std::fs::read(&destination).unwrap(), b"12345678");
+        std::fs::write(&source, b"123456789").unwrap();
+        let oversized = root.join("oversized");
+        assert!(copy_bounded(&source, &oversized, 8).is_err());
+        assert!(!oversized.exists());
+        let directory_copy = root.join("directory-copy");
+        assert!(copy_bounded(&root, &directory_copy, u64::MAX).is_err());
+        assert!(!directory_copy.exists());
+        let missing_copy = root.join("missing-copy");
+        assert!(copy_bounded(&root.join("missing"), &missing_copy, 8).is_err());
+        assert!(!missing_copy.exists());
+    }
+}

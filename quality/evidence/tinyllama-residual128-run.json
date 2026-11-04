@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "failed_domain_bound",
   "started_at_utc": "2026-11-04T03:40:35.763368+00:00",
   "base_commit": "d702c5ca5eb55b0d2c9a49950f5d0fc57e8f1572",
   "scope": "One BOS token, local symbolic execution; no parity or performance result.",
@@ -22,5 +22,9 @@
   "graph_max_steps": 100000000,
   "residual_bound": 128,
   "pid": 1360386,
-  "observed_at_utc": "2026-11-04T03:42:24.154752+00:00"
+  "observed_at_utc": "2026-11-04T03:42:24.154752+00:00",
+  "completed_observed_at_utc": "2026-11-04T04:24:16.368980+00:00",
+  "exit_code": 1,
+  "log_sha256": "0518f9899ba233ca48883a0f4d9f81c5d94e46b1716b5cc846625f265f228a0e",
+  "result": "blk.2.ffn residual element 624, left -0.4222931677150541, right -141.36924246256888, exceeded the declared residual bound 128. No token or parity result."
 }
