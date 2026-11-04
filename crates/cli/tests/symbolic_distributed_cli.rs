@@ -954,3 +954,34 @@ cp -R "$plan" "$artifact" "$shard" "$BML_DEPLOY_TEST_ROOT$path"
     assert!(remote.join("five").is_dir());
     assert!(!remote.join("six").exists());
 }
+
+#[test]
+fn symbolic_compile_honors_the_fragment_byte_limit() {
+    let source = symbolic_fixture::fixture_layers(0.25, 1);
+    for mode in ["--symbolic", "--distributed"] {
+        let output = Directory(source.0.with_extension(format!("limit-{mode}")));
+        let result = Command::new(env!("CARGO_BIN_EXE_bml-cli"))
+            .args([
+                "compile",
+                mode,
+                "--context-size",
+                "2",
+                "--l1-threshold",
+                "1",
+                "--model",
+            ])
+            .arg(&source.0)
+            .arg("--output")
+            .arg(&output.0)
+            .output()
+            .unwrap();
+        assert!(
+            !result.status.success(),
+            "{mode} ignored the fragment byte limit"
+        );
+        assert!(
+            !output.0.join("symbolic.bmlgraph.json").exists(),
+            "{mode} published an artifact despite the invalid limit"
+        );
+    }
+}

@@ -1,6 +1,6 @@
 {
   "base_commit": "5b6afda45c2d5f51335f8e48685853aac43f6fe7",
-  "status": "running",
+  "status": "failed_domain_bound",
   "scope": "One BOS token of TinyLlama Q4_0 through local symbolic v4; not yet a parity or performance result.",
   "source": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
   "source_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
@@ -41,5 +41,10 @@
       "sha256": "ee7b5e406263a6e22d604bbb4a01c23090362a0d7ff6cb696668c44dc2f7b202",
       "description": "Documentation comments corrected after launch; executable statements unchanged."
     }
-  }
+  },
+  "completed_observed_at_utc": "2026-11-04T02:20:31.505277+00:00",
+  "exit_code": 1,
+  "execution_log_sha256": "a84c5091d78b06cb9ec44153c462abffd4023fb1a30881a592e5a4f0fcedadce",
+  "result": "At blk.2.ffn_down.weight row 0, bounded dot input 167.62117617412673 exceeded declared projection input bound 64. No token or parity result.",
+  "next_constraint": "A single global projection input bound above 167.62 with weight bound 4 exceeds the current product bound 480; a sound fix requires a wider checked product or distinct, justified role-specific declarations."
 }

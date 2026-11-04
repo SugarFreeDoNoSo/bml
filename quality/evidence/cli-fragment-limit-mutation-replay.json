@@ -1,0 +1,25 @@
+{
+  "scope": "Focused replay of CLI fragment limit mutations; does not replace the active campaign.",
+  "base_commit": "3a78de7c8335e5464a3905ed2a85c4f4d5c06cbb",
+  "test": "symbolic_compile_honors_the_fragment_byte_limit",
+  "baseline": "passed",
+  "replays": [
+    {
+      "mode": "distributed",
+      "change": "remove fragment_bytes: l1_threshold",
+      "exit_code": 101,
+      "assertion": "--distributed ignored the fragment byte limit"
+    },
+    {
+      "mode": "symbolic",
+      "change": "remove fragment_bytes: l1_threshold",
+      "exit_code": 101,
+      "assertion": "--symbolic ignored the fragment byte limit"
+    }
+  ],
+  "logs": {
+    "target/quality/cli-fragment-limit-test.log": "3444613f76082268dd2fece8baf96c1b53861d7ba3adf3cec97dfa91b7abc6d6",
+    "target/quality/fragment-limit-mutant.log": "d5e9f6a9e1211378b75f3e5984484aa9ffca7a84be14b6db0fae27847d4aa124",
+    "target/quality/fragment-limit-symbolic-mutant.log": "aa749752943f7e8b8517090bbc0789171b7dd2759d6fe2293fcd212786b4710a"
+  }
+}
