@@ -20,5 +20,23 @@
     "target/quality/down-projection-gate.log": "1657aa97dd1f87536c38624d326538770182565648083acd60e6144dbe78fe48"
   },
   "real_model_run": "quality/evidence/tinyllama-down256-run.json",
-  "worker_audit": "quality/evidence/down-projection-hot-loop.json"
+  "worker_audit": "quality/evidence/down-projection-hot-loop.json",
+  "endpoint_samples": {
+    "pairs": 35,
+    "matching_finite_products": 33,
+    "checked_numerical_rejections": [
+      [
+        -256.0,
+        -1.5
+      ],
+      [
+        256.0,
+        1.5
+      ]
+    ],
+    "tolerance": 1e-07,
+    "log": "target/quality/down-projection-endpoints-checked.log",
+    "log_sha256": "382273de0cb845ff0303c2a46a96fceee053af881161818f769d798ffbba0897",
+    "qualification": "Operand bound validation does not guarantee that every intermediate is representable; numerical errors are reported."
+  }
 }

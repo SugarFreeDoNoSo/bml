@@ -85,9 +85,16 @@ fn validate(kernel: &CompiledKernel, limits: GraphLimits) -> Result<ValidatedGra
     )
 }
 fn execute(kernel: &CompiledKernel, input: &[f64], external: &[f64]) -> Vec<f64> {
+    execute_checked(kernel, input, external).unwrap()
+}
+fn execute_checked(
+    kernel: &CompiledKernel,
+    input: &[f64],
+    external: &[f64],
+) -> Result<Vec<f64>, GraphError> {
     assert_eq!(input.len(), kernel.signature.inputs);
     assert_eq!(external.len(), kernel.signature.external);
-    let graph = validate(kernel, graph_limits()).unwrap();
+    let graph = validate(kernel, graph_limits())?;
     let mut constants = kernel.signature.fixed.clone();
     constants.extend_from_slice(external);
     let mut buffer = if kernel.layout.uses_buffer() {
@@ -100,14 +107,12 @@ fn execute(kernel: &CompiledKernel, input: &[f64], external: &[f64]) -> Vec<f64>
     } else {
         ResultBuffer::new(0, 0)
     };
-    let value = graph
-        .execute_indexed_symbolic_with_constants(input, &constants, &mut buffer)
-        .unwrap();
-    if kernel.layout.uses_buffer() {
+    let value = graph.execute_indexed_symbolic_with_constants(input, &constants, &mut buffer)?;
+    Ok(if kernel.layout.uses_buffer() {
         buffer.into_vec()
     } else {
         vec![value]
-    }
+    })
 }
 fn close(actual: &[f64], expected: &[f64], tolerance: f64) {
     assert_eq!(actual.len(), expected.len());
@@ -758,6 +763,37 @@ fn persisted_down_projection_has_independent_bounds_and_checked_execution() {
         .is_err());
     let actual = execute(kernel, &input, &weights)[0];
     assert!((actual - input[0]).abs() < 1e-7, "{actual}");
+    for value in [
+        -256.0,
+        -167.621_176_174_126_73,
+        -1.0,
+        0.0,
+        1.0,
+        167.621_176_174_126_73,
+        256.0,
+    ] {
+        for weight in [-1.5, -0.5, 0.0, 0.5, 1.5] {
+            input[0] = value;
+            weights[0] = weight;
+            profile
+                .validate_values(Operation::DownDot, kernel.width, 0.5, &input, &weights)
+                .unwrap();
+            let result = execute_checked(kernel, &input, &weights);
+            if value.abs() == 256.0 && value * weight == 384.0 {
+                assert!(
+                    matches!(result, Err(GraphError::Numerical)),
+                    "input={value} weight={weight}: {result:?}"
+                );
+                continue;
+            }
+            let actual = result.unwrap()[0];
+            let expected = value * weight;
+            assert!(
+                (actual - expected).abs() < 1e-7,
+                "input={value} weight={weight}: {actual} != {expected}"
+            );
+        }
+    }
     weights[0] = 1.5001;
     assert!(profile
         .validate_values(Operation::DownDot, kernel.width, 0.5, &input, &weights)

@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "failed_domain_bound",
   "started_at_utc": "2026-11-04T02:46:06.552668+00:00",
   "base_commit": "bb57fe7189fdd1d91a4835e8d94c8e2af626c71f",
   "scope": "One BOS token, local symbolic execution, not a parity or throughput result.",
@@ -25,5 +25,10 @@
     "weight": 1.5
   },
   "observed_at_utc": "2026-11-04T02:47:35.947052+00:00",
-  "pid": 1238576
+  "pid": 1238576,
+  "completed_observed_at_utc": "2026-11-04T03:29:20.142721+00:00",
+  "exit_code": 1,
+  "log_sha256": "04db7de36735a993119b32f7e8a0af7f2d517832e502176605216dd523032883",
+  "result": "residual_add rejected input index 1 as exceeding its declaration. The diagnostic does not expose the operand value or layer; no token or parity result.",
+  "declared_residual_bound": 32
 }
