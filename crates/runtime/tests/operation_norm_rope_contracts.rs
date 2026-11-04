@@ -173,6 +173,32 @@ fn configured_rms_scale_supports_inverse_above_one_and_checks_operands() {
         .validate_values(&input, &[1.0, f64::NAN, 1.0])
         .is_err());
     assert!(compiled.validate_values(&[], &[]).is_err());
+    for (x, w) in [
+        (&input[..2], &weight[..]),
+        (&input[..], &weight[..2]),
+        (&input[..0], &weight[..]),
+        (&input[..], &weight[..0]),
+    ] {
+        assert_eq!(
+            compiled.validate_values(x, w).unwrap_err(),
+            "RMS scale operand shape mismatch"
+        );
+    }
+    for (x, w) in [
+        (f64::NAN, 0.0),
+        (f64::INFINITY, 0.0),
+        (0.5001, 0.0),
+        (0.0, f64::NAN),
+        (0.0, f64::INFINITY),
+        (0.0, 8.0001),
+    ] {
+        assert_eq!(
+            compiled
+                .validate_values(&[0.0, x, 0.0], &[0.0, w, 0.0])
+                .unwrap_err(),
+            "RMS scale operand bound at index 1"
+        );
+    }
     for reciprocal in [0.0, -1.0, 4.1, f64::INFINITY, f64::NAN] {
         assert!(bml_rmsnorm_scale_program_checked(3, 20, 3, reciprocal, 3, bounds).is_err());
     }

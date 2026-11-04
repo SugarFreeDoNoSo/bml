@@ -1,0 +1,23 @@
+{
+  "scope": "Focused RMS scale validation mutation replays; not a complete mutation campaign.",
+  "base_commit": "f52ed4d8d90d11eb299a1f85eb45e5287e1f6e7e",
+  "test": "configured_rms_scale_supports_inverse_above_one_and_checks_operands",
+  "baseline": "passed",
+  "replays": [
+    {
+      "mutation": "shape mismatch OR replaced by AND",
+      "exit_code": 101,
+      "detected_by": "single mismatched operand accepted"
+    },
+    {
+      "mutation": "weight bound OR replaced by AND",
+      "exit_code": 101,
+      "detected_by": "operand rejected only during BML evaluation rather than preflight"
+    }
+  ],
+  "logs": {
+    "target/quality/rms-scale-shape-test.log": "550b0e8600bdd3d0222267f9a5b0f51b2ce83d987664fbe3b07a6ea4f08e275f",
+    "target/quality/rms-scale-mutant-shape.log": "9239381580428da872ae33107dc12ce280f00893c44927d891121fb90426173a",
+    "target/quality/rms-scale-mutant-weight.log": "eb805084f4785aa0a10ef1c46c8709bec2af28ece9fcdc26aa8fab5aefd3bfe0"
+  }
+}
