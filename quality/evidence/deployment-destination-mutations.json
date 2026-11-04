@@ -1,0 +1,31 @@
+{
+  "scope": "Focused destination-validation mutation replays; not a complete campaign.",
+  "base_commit": "b3d6dcfc1e1f43bce7c4f7bdea0dc68ec3d1f43c",
+  "test": "deployment::tests::ssh_destinations_accept_safe_user_host_and_reject_ambiguous_paths",
+  "baseline": "passed",
+  "replays": [
+    {
+      "mutation": "at_ge",
+      "exit_code": 101
+    },
+    {
+      "mutation": "at_eq",
+      "exit_code": 101
+    },
+    {
+      "mutation": "empty_and",
+      "exit_code": 101
+    },
+    {
+      "mutation": "root_and",
+      "exit_code": 101
+    }
+  ],
+  "logs": {
+    "target/quality/deployment-destinations-test.log": "8d1833f6c83783dbb4109cddd042413848f41cacb9b1617cbd1cadf440a57611",
+    "target/quality/deployment-destination-mutant-at_ge.log": "70228b31a007452d4a5a98a86166fa07ec512812ae31d034c204e4bbc7304773",
+    "target/quality/deployment-destination-mutant-at_eq.log": "e6baa9621f2327003b820a2749f44bc4ee4f7c6e12e1822dad2acf43162b399e",
+    "target/quality/deployment-destination-mutant-empty_and.log": "29be5240447dc3ce8fefd4abf6520e5ea7b2dfd4d36dc8d98ea058e6d7cd5e74",
+    "target/quality/deployment-destination-mutant-root_and.log": "36e3017b931253293de244bdafcfd788727a4e834da712f170f37f7deb0e22f4"
+  }
+}

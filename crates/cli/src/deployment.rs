@@ -242,7 +242,45 @@ pub fn deploy(prepared: &Path, nodes: &[String], max_bytes: u64) -> Result<(), S
 
 #[cfg(test)]
 mod tests {
-    use super::copy_bounded;
+    use super::{copy_bounded, destination};
+
+    #[test]
+    fn ssh_destinations_accept_safe_user_host_and_reject_ambiguous_paths() {
+        for (text, expected) in [
+            ("host:/srv/model", ("host", "/srv/model")),
+            (
+                "user@node.example:/srv/model-1_v2",
+                ("user@node.example", "/srv/model-1_v2"),
+            ),
+            ("node-1:/a.b/c", ("node-1", "/a.b/c")),
+        ] {
+            assert_eq!(destination(text).unwrap(), expected);
+        }
+        for text in [
+            ":/srv/model",
+            "-host:/srv/model",
+            "@host:/srv/model",
+            "user@:/srv/model",
+            "a@b@c:/srv/model",
+            "host;cmd:/srv/model",
+            "host:/",
+            "host:relative",
+            "host:/srv/",
+            "host:/srv//model",
+            "host:/srv/./model",
+            "host:/srv/../model",
+            "host:/srv/model;cmd",
+            "host:/srv/model with space",
+            "host:/srv/model\ncmd",
+            "host",
+            "host:/srv:model",
+        ] {
+            assert!(
+                destination(text).is_err(),
+                "accepted unsafe destination: {text:?}"
+            );
+        }
+    }
 
     #[test]
     fn bounded_copy_accepts_exact_limit_and_rejects_invalid_inputs_before_creating_output() {
