@@ -426,12 +426,12 @@ BML_TEST_GGUF=/ruta/tinyllama-q4_0.gguf cargo test --release -p bml-compiler --t
 La muestra usa proyecciones nativas y no demuestra paridad de inferencia
 simbólica completa. Evidencia: `quality/evidence/tinyllama-real-rope-oracle.json`.
 
-Para contrastar dots, escala y softmax de atención de dos posiciones con Q/K
-nativos y claves F32, ejecutar la prueba optativa exacta:
+Para contrastar dots, escala, softmax y sumas ponderadas de V en dos
+posiciones con Q/K/V nativos y caché F32, ejecutar la prueba optativa exacta:
 
 ```sh
 BML_TEST_GGUF=/ruta/tinyllama-q4_0.gguf cargo test --release -p bml-compiler --test full_bounded_contracts --locked -- --ignored --exact tinyllama_real_attention_inputs_match_checked_bml_oracle --nocapture
 ```
 
-La muestra no cubre las sumas ponderadas de V ni demuestra paridad del modelo
-simbólico completo. Evidencia: `quality/evidence/tinyllama-real-attention-oracle.json`.
+La muestra no demuestra paridad del modelo simbólico completo. Evidencia:
+`quality/evidence/tinyllama-real-weighted-attention-oracle.json`.

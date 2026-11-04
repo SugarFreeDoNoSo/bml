@@ -1262,7 +1262,9 @@ fn tinyllama_real_attention_inputs_match_checked_bml_oracle() {
                         .map(|(&value, &weight)| value * f64::from(weight))
                         .sum())
                 })?;
-                if (name.ends_with(".attn_q.weight") || name.ends_with(".attn_k.weight"))
+                if (name.ends_with(".attn_q.weight")
+                    || name.ends_with(".attn_k.weight")
+                    || name.ends_with(".attn_v.weight"))
                     && samples
                         .insert((position, name.to_string()), output.clone())
                         .is_some()
@@ -1278,7 +1280,7 @@ fn tinyllama_real_attention_inputs_match_checked_bml_oracle() {
             assert_eq!(token, 29958);
         }
     }
-    assert_eq!(samples.len(), 88);
+    assert_eq!(samples.len(), 132);
     let rotate = |input: &[f64], position: u32| -> Vec<f64> {
         assert!(input.len().is_multiple_of(dim));
         let mut output = Vec::with_capacity(input.len());
@@ -1332,6 +1334,23 @@ fn tinyllama_real_attention_inputs_match_checked_bml_oracle() {
             (kernel, graph)
         })
         .collect();
+    let weighted: Vec<_> = (1..=2)
+        .map(|width| {
+            let kernel = compile_operation(
+                Operation::WeightedSum,
+                width,
+                epsilon,
+                profile,
+                KernelLimits::default(),
+            )
+            .unwrap();
+            let graph = validate(&kernel, graph_limits()).unwrap();
+            (kernel, graph)
+        })
+        .collect();
+    let mut weighted_count = 0usize;
+    let mut weighted_max = 0.0_f64;
+    let mut value_max = 0.0_f64;
     let mut dot_count = 0usize;
     let mut group_count = 0usize;
     let mut dot_max = 0.0_f64;
@@ -1343,12 +1362,24 @@ fn tinyllama_real_attention_inputs_match_checked_bml_oracle() {
         let mut layer_dot = 0.0_f64;
         let mut layer_scale = 0.0_f64;
         let mut layer_softmax = 0.0_f64;
+        let mut layer_weighted = 0.0_f64;
         let keys: Vec<_> = (0..2u32)
             .map(|position| {
                 let name = format!("blk.{layer}.attn_k.weight");
                 rotate(samples.get(&(position, name)).unwrap(), position)
                     .into_iter()
                     .map(|value| f64::from(value as f32))
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        let values: Vec<_> = (0..2u32)
+            .map(|position| {
+                let name = format!("blk.{layer}.attn_v.weight");
+                samples
+                    .get(&(position, name))
+                    .unwrap()
+                    .iter()
+                    .map(|&value| f64::from(value as f32))
                     .collect::<Vec<_>>()
             })
             .collect();
@@ -1445,16 +1476,58 @@ fn tinyllama_real_attention_inputs_match_checked_bml_oracle() {
                     );
                     layer_softmax = layer_softmax.max(error);
                 }
+                let probabilities = buffer.slot(0);
+                let (weighted_kernel, weighted_graph) = &weighted[bml_scores.len() - 1];
+                for component in 0..dim {
+                    let channel_values: Vec<_> = values
+                        .iter()
+                        .take(position as usize + 1)
+                        .map(|value| value[kv_head * dim + component])
+                        .collect();
+                    value_max = channel_values
+                        .iter()
+                        .fold(value_max, |max, value| max.max(value.abs()));
+                    profile
+                        .validate_values(
+                            Operation::WeightedSum,
+                            bml_scores.len(),
+                            epsilon,
+                            probabilities,
+                            &channel_values,
+                        )
+                        .unwrap();
+                    let mut constants = weighted_kernel.signature.fixed.clone();
+                    constants.extend_from_slice(&channel_values);
+                    let actual = weighted_graph
+                        .execute_indexed_symbolic_with_constants(
+                            probabilities,
+                            &constants,
+                            &mut ResultBuffer::new(0, 0),
+                        )
+                        .unwrap();
+                    let expected: f64 = exp
+                        .iter()
+                        .zip(&channel_values)
+                        .map(|(&p, &value)| p / sum * value)
+                        .sum();
+                    let error = (actual - expected).abs();
+                    assert!(error < 2e-8, "layer={layer} pos={position} head={head} component={component}: weighted error {error}");
+                    layer_weighted = layer_weighted.max(error);
+                    weighted_count += 1;
+                }
                 group_count += 1;
             }
         }
         dot_max = dot_max.max(layer_dot);
         scale_max = scale_max.max(layer_scale);
         softmax_max = softmax_max.max(layer_softmax);
-        eprintln!("layer={layer} dot_max_error={layer_dot} scale_max_error={layer_scale} softmax_max_error={layer_softmax}");
+        weighted_max = weighted_max.max(layer_weighted);
+        eprintln!("layer={layer} dot_max_error={layer_dot} scale_max_error={layer_scale} softmax_max_error={layer_softmax} weighted_max_error={layer_weighted}");
     }
     assert_eq!(dot_count, 2112);
     assert_eq!(group_count, 1408);
+    assert_eq!(weighted_count, 90112);
+    eprintln!("attention_value_max_abs={value_max} weighted_values={weighted_count} weighted_max_error={weighted_max}");
     eprintln!("attention_operand_max_abs={operand_max} attention_score_max_abs={score_max}");
     eprintln!("attention_groups={group_count} dots={dot_count} dot_max_error={dot_max} scale_max_error={scale_max} softmax_max_error={softmax_max}");
 }

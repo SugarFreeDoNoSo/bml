@@ -1,0 +1,194 @@
+{
+  "scope": "Native Q/K/V projection values for two TinyLlama tokens, with keys and values rounded to F32. Checks BML dot, scale, softmax and weighted V sums; not full symbolic inference, full-logit parity, future prompts or performance.",
+  "base_commit": "fe8bb91a87fc58066775b47dfb76b3969396dfba",
+  "model": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "tokens": [
+    1,
+    29958
+  ],
+  "test": "tinyllama_real_attention_inputs_match_checked_bml_oracle",
+  "command": "BML_TEST_GGUF=MODEL cargo test --release -p bml-compiler --test full_bounded_contracts --locked -- --ignored --exact tinyllama_real_attention_inputs_match_checked_bml_oracle --nocapture",
+  "test_binary": "target/quality/tinyllama-real-weighted-attention-test-binary",
+  "test_binary_sha256": "1121c21afca5564cd6df228a76a247248b2b4e2e1062e5d2d522f74b7aa10f1a",
+  "source_sha256": {
+    "crates/compiler/tests/full_bounded_contracts.rs": "be0b947b4d43605c84031c4b7d4c534b4db813407665c41e5e36981409c96d06",
+    "crates/compiler/src/symbolic_bounded.rs": "f84a23903e5ae5e5c8ea7a09167ef6a33c60f8ff5763e2551d422e68fbb67fe6",
+    "crates/compiler/src/symbolic_bounded_softmax.rs": "fb454b6941573255fd89bba8f4da191318d328179d49e571a22ebec52f8eb44e",
+    "crates/domain/src/transformer/bounded_ops.rs": "ee7b5e406263a6e22d604bbb4a01c23090362a0d7ff6cb696668c44dc2f7b202",
+    "crates/runtime/src/graph.rs": "7af83e2bd5b5e91db69ac05d235a57266350d2611bcb70bf626b1688ad2b3666",
+    "crates/compiler/src/gguf_compiler.rs": "42ddd4f8cbcba87ec7ae8d3c8b187af8bb384fbbfb2ab2a8af3a70b5f7dc0bcd",
+    "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c"
+  },
+  "layers": 22,
+  "heads": 32,
+  "kv_heads": 4,
+  "head_dim": 64,
+  "groups": 1408,
+  "dots": 2112,
+  "weighted_values": 90112,
+  "value_max_abs": 2.0021207332611084,
+  "weighted_max_abs_error": 9.780454224284085e-12,
+  "weighted_absolute_tolerance": 2e-08,
+  "dot_max_abs_error": 2.2795276777287654e-10,
+  "scale_max_abs_error": 3.326183772855984e-11,
+  "softmax_max_abs_error": 6.2607141693149515e-12,
+  "per_layer": [
+    {
+      "layer": 0,
+      "dot_max_error": 1.687574524567026e-10,
+      "scale_max_error": 1.8817392088976703e-11,
+      "softmax_max_error": 6.2607141693149515e-12,
+      "weighted_max_error": 1.3373841964425814e-12
+    },
+    {
+      "layer": 1,
+      "dot_max_error": 1.694289153419959e-10,
+      "scale_max_error": 2.3299584483993385e-11,
+      "softmax_max_error": 5.243250278397227e-12,
+      "weighted_max_error": 1.3878013321866334e-12
+    },
+    {
+      "layer": 2,
+      "dot_max_error": 1.9683632501710235e-10,
+      "scale_max_error": 2.548916633315912e-11,
+      "softmax_max_error": 5.506040068326001e-12,
+      "weighted_max_error": 1.7033804922128581e-12
+    },
+    {
+      "layer": 3,
+      "dot_max_error": 1.606568211798276e-10,
+      "scale_max_error": 2.0595775085396895e-11,
+      "softmax_max_error": 1.2521095271722515e-12,
+      "weighted_max_error": 1.4180739915659046e-12
+    },
+    {
+      "layer": 4,
+      "dot_max_error": 1.8132051415875594e-10,
+      "scale_max_error": 2.8093610771051658e-11,
+      "softmax_max_error": 1.7948142971846437e-12,
+      "weighted_max_error": 1.359407378331845e-12
+    },
+    {
+      "layer": 5,
+      "dot_max_error": 2.2795276777287654e-10,
+      "scale_max_error": 3.326183772855984e-11,
+      "softmax_max_error": 5.570766070661648e-12,
+      "weighted_max_error": 3.790176505980014e-12
+    },
+    {
+      "layer": 6,
+      "dot_max_error": 1.4416690063967508e-10,
+      "scale_max_error": 2.2570306734692736e-11,
+      "softmax_max_error": 3.403277659685955e-12,
+      "weighted_max_error": 2.3531038229052115e-12
+    },
+    {
+      "layer": 7,
+      "dot_max_error": 1.4409451409846952e-10,
+      "scale_max_error": 2.2646107211699018e-11,
+      "softmax_max_error": 5.93980420404705e-12,
+      "weighted_max_error": 2.7922109069322687e-12
+    },
+    {
+      "layer": 8,
+      "dot_max_error": 1.6390955259737439e-10,
+      "scale_max_error": 2.0963321356592957e-11,
+      "softmax_max_error": 2.6597613000944875e-12,
+      "weighted_max_error": 2.6674773501156324e-12
+    },
+    {
+      "layer": 9,
+      "dot_max_error": 1.6847823136600937e-10,
+      "scale_max_error": 2.5304203177256568e-11,
+      "softmax_max_error": 3.3186231540582867e-12,
+      "weighted_max_error": 2.7371716004864766e-12
+    },
+    {
+      "layer": 10,
+      "dot_max_error": 2.0453594373748274e-10,
+      "scale_max_error": 2.8647195726705377e-11,
+      "softmax_max_error": 4.437838985182907e-12,
+      "weighted_max_error": 2.746705640710445e-12
+    },
+    {
+      "layer": 11,
+      "dot_max_error": 1.6245182976604156e-10,
+      "scale_max_error": 2.2934543153496634e-11,
+      "softmax_max_error": 2.1050106102649124e-12,
+      "weighted_max_error": 2.965627743378718e-12
+    },
+    {
+      "layer": 12,
+      "dot_max_error": 1.6215606635228141e-10,
+      "scale_max_error": 2.4419077870874162e-11,
+      "softmax_max_error": 4.994671343183654e-12,
+      "weighted_max_error": 2.332883886069226e-12
+    },
+    {
+      "layer": 13,
+      "dot_max_error": 1.702957774796232e-10,
+      "scale_max_error": 2.3734791909646447e-11,
+      "softmax_max_error": 2.397637643980488e-12,
+      "weighted_max_error": 2.7989693895946743e-12
+    },
+    {
+      "layer": 14,
+      "dot_max_error": 1.3884360328120238e-10,
+      "scale_max_error": 2.0915047471703474e-11,
+      "softmax_max_error": 3.0419555763216977e-12,
+      "weighted_max_error": 2.5254243141148436e-12
+    },
+    {
+      "layer": 15,
+      "dot_max_error": 1.8527446243865597e-10,
+      "scale_max_error": 2.8868518686664402e-11,
+      "softmax_max_error": 4.057004732160863e-12,
+      "weighted_max_error": 3.640365786594657e-12
+    },
+    {
+      "layer": 16,
+      "dot_max_error": 1.6114753975671192e-10,
+      "scale_max_error": 2.2438495506094114e-11,
+      "softmax_max_error": 3.093025835454455e-12,
+      "weighted_max_error": 4.8452908352203394e-12
+    },
+    {
+      "layer": 17,
+      "dot_max_error": 1.3843148849446152e-10,
+      "scale_max_error": 2.420548483872409e-11,
+      "softmax_max_error": 4.004019338310627e-12,
+      "weighted_max_error": 2.957634137601417e-12
+    },
+    {
+      "layer": 18,
+      "dot_max_error": 1.5463763602951985e-10,
+      "scale_max_error": 2.4811541710079155e-11,
+      "softmax_max_error": 3.1915581288899375e-12,
+      "weighted_max_error": 4.356293104024189e-12
+    },
+    {
+      "layer": 19,
+      "dot_max_error": 1.6787993217803887e-10,
+      "scale_max_error": 2.3497814805040207e-11,
+      "softmax_max_error": 4.431843780849931e-12,
+      "weighted_max_error": 5.860756324693739e-12
+    },
+    {
+      "layer": 20,
+      "dot_max_error": 1.9763035652431427e-10,
+      "scale_max_error": 2.497024809144932e-11,
+      "softmax_max_error": 4.6347370386001785e-12,
+      "weighted_max_error": 4.139355525012434e-12
+    },
+    {
+      "layer": 21,
+      "dot_max_error": 1.925974935090835e-10,
+      "scale_max_error": 2.4625412820000747e-11,
+      "softmax_max_error": 5.133449221261799e-12,
+      "weighted_max_error": 9.780454224284085e-12
+    }
+  ],
+  "log": "target/quality/tinyllama-real-weighted-attention-test.log",
+  "log_sha256": "b36a8641b91b572b112096caed5e1e9d99530876e15331ac50cdb0aa4e4c78d6"
+}
