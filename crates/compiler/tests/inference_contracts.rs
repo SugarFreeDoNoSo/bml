@@ -309,10 +309,19 @@ fn malformed_or_unsupported_explicit_head_cannot_fall_back_to_embeddings() {
     let embeddings = [0u8; 24];
     for (dtype, dims) in [(0, [3, 2]), (3, [2, 3])] {
         let fixture = embedding_with_head(2, 3, 0, &embeddings, Some((dtype, &dims, &[0; 24])));
-        let error = InferenceCompiler::open(&fixture.0)
-            .err()
-            .expect("invalid head was accepted");
-        assert!(error.contains("output.weight"), "{error}");
+        for mapped in [false, true] {
+            let result = if mapped {
+                InferenceCompiler::open_mapped(&fixture.0)
+            } else {
+                InferenceCompiler::open(&fixture.0)
+            };
+            let error = result.err().expect("invalid head was accepted");
+            assert!(
+                error.contains("output.weight")
+                    || (mapped && dtype == 3 && error.contains("UnsupportedDataType")),
+                "mapped={mapped}: {error}"
+            );
+        }
     }
 }
 
