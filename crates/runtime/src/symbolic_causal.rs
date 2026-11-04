@@ -618,7 +618,7 @@ impl SymbolicCausalModel {
     /// Execute one token through a nonempty contiguous range of layers.
     ///
     /// The caller supplies the hidden state, the current absolute position and
-    /// the complete model-layout F32 KV cache. Earlier rows must have been
+    /// an F32 KV cache covering the selected layers. Earlier rows must have been
     /// populated for these layers. The cache position is not advanced: only
     /// the coordinator may commit after every shard and the output head succeed.
     /// A numerical error may overwrite the uncommitted row; retries replace it.
@@ -641,8 +641,8 @@ impl SymbolicCausalModel {
                     .capacity()
                     .min(config.context_length)
                     .min(self.compiled_context.unwrap_or(config.context_length))
-            || !cache.matches_layout(
-                config.n_layers,
+            || !cache.covers_layers(
+                layers.clone(),
                 self.compiler.n_kv_heads(),
                 self.compiler.head_dim(),
             )

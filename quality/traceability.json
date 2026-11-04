@@ -992,7 +992,8 @@
     "target": "symbolic_session_contracts",
     "tests": [
       "persisted_sessions_prepare_abort_commit_and_reset_without_losing_causal_equivalence",
-      "session_rejects_invalid_layout_budget_and_uncommitted_errors"
+      "session_rejects_invalid_layout_budget_and_uncommitted_errors",
+      "range_cache_uses_global_layer_indices_and_enforces_its_budget"
     ]
   },
   "C102": {

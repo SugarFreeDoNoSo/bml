@@ -40,8 +40,8 @@ fn persisted_sessions_prepare_abort_commit_and_reset_without_losing_causal_equiv
         )
         .unwrap()
     };
-    let mut first = SymbolicLayerSession::new(open(), 0..1, 3, 4096).unwrap();
-    let mut second = SymbolicLayerSession::new(open(), 1..3, 3, 4096).unwrap();
+    let mut first = SymbolicLayerSession::new(open(), 0..1, 3, 48).unwrap();
+    let mut second = SymbolicLayerSession::new(open(), 1..3, 3, 96).unwrap();
     let mut head = open();
     let mut complete = open();
     let mut cache = HashConsedKV::new(3, 1, 2, 3);
@@ -99,7 +99,8 @@ fn session_rejects_invalid_layout_budget_and_uncommitted_errors() {
     assert!(SymbolicLayerSession::new(open(), 0..0, 3, 4096).is_err());
     assert!(SymbolicLayerSession::new(open(), 0..4, 3, 4096).is_err());
     assert!(SymbolicLayerSession::new(open(), 0..1, 0, 4096).is_err());
-    assert!(SymbolicLayerSession::new(open(), 0..1, 3, 1).is_err());
+    assert!(SymbolicLayerSession::new(open(), 0..1, 3, 47).is_err());
+    assert!(SymbolicLayerSession::new(open(), 1..3, 3, 95).is_err());
     let mut session = SymbolicLayerSession::new(open(), 0..1, 1, 4096).unwrap();
     assert!(session.abort(0).is_err());
     assert!(session.commit(0).is_err());
@@ -115,4 +116,24 @@ fn session_rejects_invalid_layout_budget_and_uncommitted_errors() {
     session.prepare(0, &input).unwrap();
     session.commit(0).unwrap();
     assert!(session.prepare(1, &input).is_err());
+}
+
+#[test]
+fn range_cache_uses_global_layer_indices_and_enforces_its_budget() {
+    let mut cache = HashConsedKV::try_new_layer_range(2..4, 1, 2, 3, 96).unwrap();
+    assert_eq!(cache.byte_size(), 96);
+    assert!(cache.covers_layers(2..4, 1, 2));
+    assert!(cache.covers_layers(3..4, 1, 2));
+    assert!(!cache.covers_layers(1..3, 1, 2));
+    assert!(!cache.covers_layers(2..5, 1, 2));
+    assert!(!cache.matches_layout(2, 1, 2));
+    cache.store_k(2, 1, 0, &[1.0, 2.0]);
+    cache.store_v(3, 1, 0, &[3.0, 4.0]);
+    assert_eq!(cache.load_k(2, 1, 0), [1.0, 2.0]);
+    assert_eq!(cache.load_v(3, 1, 0), [3.0, 4.0]);
+    assert!(HashConsedKV::try_new_layer_range(2..4, 1, 2, 3, 95).is_err());
+    assert!(
+        HashConsedKV::try_new_layer_range(std::ops::Range { start: 4, end: 2 }, 1, 2, 3, 96)
+            .is_err()
+    );
 }

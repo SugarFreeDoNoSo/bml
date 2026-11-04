@@ -707,6 +707,7 @@ Then it rejects the request before expensive generation
     Then composed logits preserve the full causal forward bits across a three-layer GQA model
     And invalid ranges, budgets, positions and pending-state transitions reject without advancing committed state
     And each session owns independent cache state and reset starts a fresh prefix
+    And its KV budget covers only assigned layers addressed by global layer index
 
 
   @C102

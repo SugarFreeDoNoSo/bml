@@ -20,9 +20,7 @@ pub struct SymbolicLayerSession {
 }
 
 impl SymbolicLayerSession {
-    /// Admit a range and allocate bounded KV for the complete model layout.
-    /// Only the selected layers are executed; the present cache representation
-    /// still reserves rows for every model layer and charges them to the budget.
+    /// Admit a range and allocate bounded KV only for its layers.
     pub fn new(
         model: SymbolicCausalModel,
         layers: Range<u32>,
@@ -36,7 +34,7 @@ impl SymbolicLayerSession {
         {
             return Err("invalid symbolic layer session range or context".into());
         }
-        let cache = Self::allocate(&model, context, max_kv_bytes)?;
+        let cache = Self::allocate(&model, layers.clone(), context, max_kv_bytes)?;
         Ok(Self {
             model,
             cache,
@@ -49,11 +47,12 @@ impl SymbolicLayerSession {
 
     fn allocate(
         model: &SymbolicCausalModel,
+        layers: Range<u32>,
         context: u32,
         max_kv_bytes: usize,
     ) -> Result<HashConsedKV, String> {
-        HashConsedKV::try_new(
-            model.compiler().config().n_layers,
+        HashConsedKV::try_new_layer_range(
+            layers,
             model.compiler().n_kv_heads(),
             model.compiler().head_dim(),
             context,
@@ -118,7 +117,12 @@ impl SymbolicLayerSession {
 
     /// Replace all KV state with a fresh empty cache, preserving the loaded model.
     pub fn reset(&mut self) -> Result<(), String> {
-        let fresh = Self::allocate(&self.model, self.context, self.max_kv_bytes)?;
+        let fresh = Self::allocate(
+            &self.model,
+            self.layers.clone(),
+            self.context,
+            self.max_kv_bytes,
+        )?;
         self.cache = fresh;
         self.prepared = false;
         Ok(())

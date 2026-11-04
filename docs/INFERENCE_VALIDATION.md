@@ -275,8 +275,8 @@ El coordinador tokeniza, lee embeddings reales, prepara cada rango, ejecuta la
 normalización final y la cabeza guardadas, y solo entonces confirma la posición.
 Un fallo de transporte o una confirmación sin respuesta invalida el pipeline;
 no se reintenta ni se promete rollback distribuido. Cada conexión tiene su
-propia caché F32. Por ahora cada conexión mapea el modelo completo y reserva KV
-para todas sus capas, aunque solo ejecute su rango; `--symbolic-kv-bytes` limita
+propia caché F32. Cada conexión mapea el modelo completo y reserva KV solo
+para las capas de su rango; `--symbolic-kv-bytes` limita
 ese payload. `--symbolic-large-budget` permite elevar los límites explícitos de
 programas, pasos y valores tanto en el worker como en el coordinador, sin
 eliminar prefijos ni modificar el límite del formato.

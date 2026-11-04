@@ -30,7 +30,7 @@ pub struct SymbolicTransportLimits {
     pub frame_bytes: usize,
     /// Maximum admitted token context.
     pub context: u32,
-    /// Maximum F32 KV payload per connection, for the complete model layout.
+    /// Maximum F32 KV payload per connection, for its assigned layer range.
     pub kv_bytes: usize,
     /// Socket read and write timeout.
     pub timeout: Duration,

@@ -57,7 +57,7 @@ cargo test -p bml-compiler --test indexed_buffer_artifact_contracts --locked dis
 ```
 
 La validación es de un fixture local, no de TinyLlama ni de velocidad o L1. Cada
-worker aún requiere acceso al modelo entero y reserva KV para todas las capas;
+worker aún requiere acceso al modelo entero, pero reserva KV solo para su rango;
 no existe transferencia automática de pesos por shard. Los constructores
 públicos históricos `compile_distributed` y `compile_distributed_bml` están
 retirados y devuelven un error explícito de migración; la CLI rechaza sus
@@ -94,3 +94,13 @@ dos símbolos con el mismo nombre desambiguado: el auditor ahora acepta solo
 direcciones exactas presentes en la tabla de símbolos y una prueba negativa
 comprueba que una dirección intermedia sigue siendo rechazada. No se relajó la
 lista de destinos permitidos.
+
+## KV por rango
+
+Cada sesión asigna solo las capas que ejecuta y conserva índices globales. Las
+pruebas de tres capas verifican el presupuesto exacto, ejecución causal bit a bit,
+abort, commit y reset. La repetición con Stories15M y dos procesos release
+produjo 32.000 logits finitos, argmax 9038 igual al nativo y error máximo
+1.6198153041102614e-8; `layer-local-kv-stories.json` conserva la instantánea y
+el comando. Después de medir solo cambió la expresión de una prueba de rango
+invertido para satisfacer Clippy. No es una medición de rendimiento.

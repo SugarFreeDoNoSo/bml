@@ -29,6 +29,7 @@ pub struct HashConsedKV {
     v_buffers: Vec<Vec<f32>>,
 
     n_layers: u32,
+    layer_start: u32,
     head_dim: u32,
     max_seq_len: u32,
     stride: usize,
@@ -65,6 +66,21 @@ impl HashConsedKV {
         max_seq_len: u32,
         max_bytes: usize,
     ) -> Result<Self, String> {
+        Self::try_new_layer_range(0..n_layers, n_kv_heads, head_dim, max_seq_len, max_bytes)
+    }
+
+    /// Allocate only the specified global layer range while preserving global indices.
+    pub fn try_new_layer_range(
+        layers: std::ops::Range<u32>,
+        n_kv_heads: u32,
+        head_dim: u32,
+        max_seq_len: u32,
+        max_bytes: usize,
+    ) -> Result<Self, String> {
+        let n_layers = layers
+            .end
+            .checked_sub(layers.start)
+            .ok_or("invalid KV layer range")?;
         if n_kv_heads == 0 || head_dim == 0 || max_seq_len == 0 {
             return Err("zero KV cache dimension".into());
         }
@@ -105,6 +121,7 @@ impl HashConsedKV {
             k_buffers,
             v_buffers,
             n_layers,
+            layer_start: layers.start,
             head_dim,
             max_seq_len,
             stride,
@@ -126,7 +143,7 @@ impl HashConsedKV {
         let pos_idx = (pos % self.max_seq_len) as usize;
         let start = pos_idx * self.stride + kv_head as usize * self.head_dim as usize;
         let len = self.head_dim as usize;
-        let dst = &mut self.k_buffers[layer as usize][start..start + len];
+        let dst = &mut self.k_buffers[(layer - self.layer_start) as usize][start..start + len];
         dst.copy_from_slice(&data[..len.min(data.len())]);
         self.n_total_k += 1;
     }
@@ -138,7 +155,7 @@ impl HashConsedKV {
         let pos_idx = (pos % self.max_seq_len) as usize;
         let start = pos_idx * self.stride + kv_head as usize * self.head_dim as usize;
         let len = self.head_dim as usize;
-        let dst = &mut self.v_buffers[layer as usize][start..start + len];
+        let dst = &mut self.v_buffers[(layer - self.layer_start) as usize][start..start + len];
         dst.copy_from_slice(&data[..len.min(data.len())]);
         self.n_total_v += 1;
     }
@@ -155,7 +172,7 @@ impl HashConsedKV {
         let pos_idx = (pos % self.max_seq_len) as usize;
         let start = pos_idx * self.stride + kv_head as usize * self.head_dim as usize;
         let len = self.head_dim as usize;
-        self.k_buffers[layer as usize][start..start + len].to_vec()
+        self.k_buffers[(layer - self.layer_start) as usize][start..start + len].to_vec()
     }
 
     /// Carga V[layer][pos][kv_head] como Vec<f32> desde el buffer plano.
@@ -163,7 +180,7 @@ impl HashConsedKV {
         let pos_idx = (pos % self.max_seq_len) as usize;
         let start = pos_idx * self.stride + kv_head as usize * self.head_dim as usize;
         let len = self.head_dim as usize;
-        self.v_buffers[layer as usize][start..start + len].to_vec()
+        self.v_buffers[(layer - self.layer_start) as usize][start..start + len].to_vec()
     }
 
     // -----------------------------------------------------------------------
@@ -178,7 +195,7 @@ impl HashConsedKV {
         let pos_idx = (pos % self.max_seq_len) as usize;
         let start = pos_idx * self.stride + kv_head as usize * self.head_dim as usize;
         let len = self.head_dim as usize;
-        let k = &self.k_buffers[layer as usize][start..start + len];
+        let k = &self.k_buffers[(layer - self.layer_start) as usize][start..start + len];
         q.iter().zip(k.iter()).map(|(&a, &b)| a * b).sum()
     }
 
@@ -218,7 +235,20 @@ impl HashConsedKV {
 
     /// Check layer, KV-head and head-dimension compatibility before causal writes.
     pub fn matches_layout(&self, layers: u32, heads: u32, dimension: u32) -> bool {
-        self.n_layers == layers
+        self.layer_start == 0
+            && self.n_layers == layers
+            && self.head_dim == dimension
+            && (heads as usize).checked_mul(dimension as usize) == Some(self.stride)
+    }
+
+    /// Check whether a contiguous global range is present with the specified head layout.
+    pub fn covers_layers(&self, layers: std::ops::Range<u32>, heads: u32, dimension: u32) -> bool {
+        layers.start < layers.end
+            && layers.start >= self.layer_start
+            && self
+                .layer_start
+                .checked_add(self.n_layers)
+                .is_some_and(|end| layers.end <= end)
             && self.head_dim == dimension
             && (heads as usize).checked_mul(dimension as usize) == Some(self.stride)
     }
