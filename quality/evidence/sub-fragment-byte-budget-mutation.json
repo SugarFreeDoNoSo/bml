@@ -1,0 +1,22 @@
+{
+  "scope": "Distributed sub-fragment serialized-byte accounting for all 17 RPN encodings; exact 30 KiB payload remains one fragment, one additional byte splits without reordering. This does not establish instruction-cache residency or program execution validity. Focused replay, not full mutation campaign.",
+  "base_commit": "5b9d2ca1db1a20101c51243d948c92147793bd41",
+  "test": "sub_fragment_budgets_match_serialized_opcode_bytes",
+  "independent_oracle": "Serialized BmlGraph byte length minus its empty-container framing",
+  "baseline_exit_code": 0,
+  "mutation": "replace op_size body with constant 1",
+  "mutation_exit_code": 101,
+  "logs": {
+    "target/quality/sub-fragment-byte-budget-test.log": "c3ac7d6b41efb67e82ca94a3ad4b2b3f9aa24a37bbb621a3505e65328d7c07c5",
+    "target/quality/sub-fragment-byte-budget-mutant.log": "fc643d2b2078017b311111a79f99eaa463538ac891c6c85f60e64648560fcca4",
+    "target/quality/sub-fragment-byte-budget-gate.log": "95d2cc81da0b09b83c553db1cbd032d5504a4991fcede800edf5fb5f3ba789ac",
+    "target/quality/sub-fragment-byte-budget-openspec.log": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7"
+  },
+  "verification": {
+    "workspace_gate": "passed: scripts/check.sh origin/master",
+    "historical_contract_discrepancies": 0,
+    "traceability": "105/105",
+    "new_static_diagnostics": 0,
+    "openspec_strict": "11 passed, 0 failed"
+  }
+}

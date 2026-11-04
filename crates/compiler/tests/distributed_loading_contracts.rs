@@ -3,7 +3,7 @@ use bml_compiler::distributed::{
     TensorMeta,
 };
 use bml_compiler::gguf_compiler::ModelConfig;
-use bml_compiler::RpnOp;
+use bml_compiler::{BmlGraph, Fragment, RpnOp};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -110,6 +110,68 @@ fn distributed_roundtrip_restores_header_configuration_and_all_opcode_encodings(
             "fragment cut={cut}"
         );
     }
+}
+
+#[test]
+fn sub_fragment_budgets_match_serialized_opcode_bytes() {
+    use bml_compiler::distributed::{sub_fragment, sub_fragment_with_threshold, L1I_TARGET_SIZE};
+    let encoded = |ops: &[RpnOp]| {
+        BmlGraph {
+            fragments: vec![Fragment { ops: ops.to_vec() }],
+            const_pool: vec![],
+            threshold: 32768,
+        }
+        .serialize()
+        .len()
+    };
+    let framing = encoded(&[]);
+    let payload = |ops: &[RpnOp]| encoded(ops) - framing;
+    let mut fragment = fixture();
+    for op in [
+        RpnOp::One,
+        RpnOp::Zero,
+        RpnOp::Bml,
+        RpnOp::Dup,
+        RpnOp::FAdd,
+        RpnOp::FMul,
+        RpnOp::FMax,
+        RpnOp::Drop,
+        RpnOp::Swap,
+        RpnOp::Var(u32::MAX),
+        RpnOp::Const(u32::MAX),
+        RpnOp::VarIndexed { base: u32::MAX },
+        RpnOp::ContextVarIndexed { base: u32::MAX },
+        RpnOp::ContextConstIndexed { base: u32::MAX },
+        RpnOp::StoreResult { slot: u32::MAX },
+        RpnOp::Pick { depth: u32::MAX },
+        RpnOp::Loop {
+            count: u32::MAX,
+            body_len: 0,
+        },
+    ] {
+        fragment.ops = vec![op];
+        let pieces = sub_fragment_with_threshold(&fragment, 9);
+        assert_eq!(pieces.len(), 1);
+        assert_eq!(pieces[0].bytecode_size(), payload(&fragment.ops), "{op:?}");
+    }
+    // Container byte budgets do not establish executable instruction-cache
+    // residency. Use actual encoded payload sizes, not opcode counts, here.
+    fragment.ops = vec![RpnOp::Var(7); L1I_TARGET_SIZE / 5];
+    assert_eq!(payload(&fragment.ops), L1I_TARGET_SIZE);
+    let exact = sub_fragment(&fragment);
+    assert_eq!(exact.len(), 1);
+    assert_eq!(exact[0].bytecode_size(), L1I_TARGET_SIZE);
+    fragment.ops.push(RpnOp::One);
+    let pieces = sub_fragment(&fragment);
+    assert_eq!(pieces.len(), 2);
+    for piece in &pieces {
+        assert_eq!(piece.bytecode_size(), payload(&piece.ops));
+        assert!(payload(&piece.ops) <= L1I_TARGET_SIZE);
+    }
+    assert_eq!(
+        pieces.into_iter().flat_map(|p| p.ops).collect::<Vec<_>>(),
+        fragment.ops
+    );
 }
 
 #[test]
