@@ -147,7 +147,23 @@ impl BoundedProfile {
         }
         self.config(op, width)?
             .validate_values(inputs, external)
-            .map_err(|e| e.to_string())
+            .map_err(|error| {
+                if op == Operation::Swiglu {
+                    if let bml_domain::transformer::BoundedBuildError::Input(index) = error {
+                        if let Some(value) = inputs.get(index) {
+                            let (role, bound) = if index == 0 {
+                                ("gate", self.gate)
+                            } else {
+                                ("up", self.up)
+                            };
+                            return format!(
+                                "{error}: {role} value {value} exceeds declaration {bound}"
+                            );
+                        }
+                    }
+                }
+                error.to_string()
+            })
     }
     /// Canonical dimensions and literals, independent of stored bytecode.
     pub fn base_signature(

@@ -792,7 +792,8 @@
       "full_bounded_v4_artifacts_match_independent_causal_oracle_without_recompilation",
       "full_bounded_runtime_rejects_each_dot_role_without_committing_cache",
       "full_bounded_artifacts_reject_malformed_profile_literals_layout_and_roles",
-      "bounded_v3_artifacts_remain_separate_from_the_new_indexed_profile"
+      "bounded_v3_artifacts_remain_separate_from_the_new_indexed_profile",
+      "swiglu_domain_error_identifies_layer_operand_and_preserves_position"
     ]
   },
   "C84": {

@@ -722,8 +722,11 @@ impl SymbolicCausalModel {
             let gate = self.project(&normalized, &format!("{prefix}.ffn_gate.weight"))?;
             let up = self.project(&normalized, &format!("{prefix}.ffn_up.weight"))?;
             let mut activated = Vec::with_capacity(gate.len());
-            for (&g, &u) in gate.iter().zip(&up) {
-                activated.push(self.run(Operation::Swiglu, 1, &[g, u], &[])?[0]);
+            for (index, (&g, &u)) in gate.iter().zip(&up).enumerate() {
+                activated.push(
+                    self.run(Operation::Swiglu, 1, &[g, u], &[])
+                        .map_err(|error| format!("{prefix}.ffn_swiglu index {index}: {error}"))?[0],
+                );
             }
             let down = self.project(&activated, &format!("{prefix}.ffn_down.weight"))?;
             hidden = self.residual(&hidden, &down)?;

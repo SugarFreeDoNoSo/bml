@@ -626,3 +626,36 @@ fn bounded_v3_artifacts_remain_separate_from_the_new_indexed_profile() {
         2e-7,
     );
 }
+
+#[test]
+fn swiglu_domain_error_identifies_layer_operand_and_preserves_position() {
+    let source = symbolic_fixture::fixture(0.25);
+    for (profile, role) in [
+        (
+            BoundedProfile {
+                gate: 1.0 / 256.0,
+                ..Default::default()
+            },
+            "gate value",
+        ),
+        (
+            BoundedProfile {
+                up: 1.0 / 256.0,
+                ..Default::default()
+            },
+            "up value",
+        ),
+    ] {
+        let mut model =
+            SymbolicCausalModel::open_bounded(&source.0, SymbolicLimits::default(), profile)
+                .unwrap();
+        let mut cache = HashConsedKV::new(1, 1, 2, 8);
+        let error = model.forward_cached(&[69], &mut cache).unwrap_err();
+        assert!(error.contains("blk.0.ffn_swiglu index "), "{error}");
+        assert!(
+            error.contains(role) && error.contains("exceeds declaration"),
+            "{error}"
+        );
+        assert_eq!(cache.current_pos(), 0);
+    }
+}

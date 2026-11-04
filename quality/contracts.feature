@@ -553,6 +553,7 @@ Then it rejects the request before expensive generation
     When artifacts execute causal prefill and decode with zero construction budget and relocated sources
     Then outputs match an independent GQA, nonidentity RoPE and nonzero MLP oracle
     And every dot role rejects exceeded bounds without advancing committed KV state
+    And a SwiGLU domain failure identifies the layer and operand without committing KV state
     And profile, literals, layouts and role mismatches reject while floating-point literals survive JSON roundtrip exactly
     And v3 artifacts retain their separate profile and nonindexed bytecode
 

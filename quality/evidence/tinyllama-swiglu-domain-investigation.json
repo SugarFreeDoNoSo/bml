@@ -1,0 +1,54 @@
+{
+  "base_commit": "a059c5a37441251dfc1c89022cc9cf1532dea6fe",
+  "model": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "native_command": "cargo run --release -p bml-compiler --example projection_bounds_probe --locked -- target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf 1",
+  "native_log": "target/quality/tinyllama-native-bounds-final.log",
+  "native_log_sha256": "f7c7746df751182d34392215f106b91abd0a2cda9711fa5152d5762bc0d9e1b7",
+  "native_binary": "target/global-restart-build/release/examples/projection_bounds_probe",
+  "native_binary_sha256": "00d2df540571d53e775770f94aafb6d3a4b3ee56e802967d776ab654f423cfa9",
+  "native_peak_gate": {
+    "input_abs_max": 1.7907519924042528,
+    "output_abs_max": 17.196898568148562,
+    "output_at_max": 17.196898568148562,
+    "output_max_index": 5475,
+    "tensor": "blk.2.ffn_gate.weight",
+    "weight_abs_max": 1.1640625
+  },
+  "native_argmax": 29958,
+  "native_logits": 32000,
+  "native_scope": "One BOS token, native F64 projections and F32 KV; observations do not establish symbolic values or future prompt bounds.",
+  "experiments": [
+    {
+      "name": "raise gate cap to 18 without other changes",
+      "result": "failed absolute tolerance 1e-7 at gate -2.4, up -16",
+      "log": "target/quality/swiglu18-experiment.log",
+      "sha256": "cc669797037bbe91abcec01ac51e2471c736c773515147418412f12c2ccdaede"
+    },
+    {
+      "name": "cap exponential shift at 16, retain positive addition constant 2",
+      "result": "failed BML real-domain validation due to negative intermediate",
+      "log": "target/quality/swiglu18-scaled.log",
+      "sha256": "091e14d6723427d425354c2a778ad1faff9453cea9c5e32b2a2889345d1fe97e"
+    },
+    {
+      "name": "cap shift at 16 and use the wider addition shift",
+      "result": "finite on tested 18,005 pairs; maximum absolute error 7.495073219843107e-7, exceeds 1e-7 threshold",
+      "log": "target/quality/swiglu18-scaled-safe-shift.log",
+      "sha256": "9a8e055871e7f4aa3985b1753d1a83bffb23b59fa80252facee26e8a267e7336",
+      "patch_sha256": "cb6ea8ac54a331b64a1d5b0af0e8c5b51a67e7f232e3b3032430bac91af5e361",
+      "patch_base64": "ZGlmZiAtLWdpdCBhL2NyYXRlcy9kb21haW4vc3JjL3RyYW5zZm9ybWVyL2JvdW5kZWRfb3BzLnJzIGIvY3JhdGVzL2RvbWFpbi9zcmMvdHJhbnNmb3JtZXIvYm91bmRlZF9vcHMucnMKaW5kZXggNWNjNmMwOS4uNWZiMGU2ZSAxMDA2NDQKLS0tIGEvY3JhdGVzL2RvbWFpbi9zcmMvdHJhbnNmb3JtZXIvYm91bmRlZF9vcHMucnMKKysrIGIvY3JhdGVzL2RvbWFpbi9zcmMvdHJhbnNmb3JtZXIvYm91bmRlZF9vcHMucnMKQEAgLTEwMSw3ICsxMDEsNyBAQCBpbXBsIEJvdW5kZWRPcENvbmZpZyB7CiAgICAgLy8vIGFib3ZlIGBleHAoLWdhdGVfYm91bmQpYCB3aXRob3V0IGV2YWx1YXRpbmcgdGhlIHVuc3RhYmxlIGBleHAoLWdhdGUpYC4KICAgICBwdWIgZm4gc3dpZ2x1KGdhdGVfYm91bmQ6IGY2NCwgdXBfYm91bmQ6IGY2NCkgLT4gUmVzdWx0PFNlbGYsIEJvdW5kZWRCdWlsZEVycm9yPiB7CiAgICAgICAgIGxldCBtdXQgY29uZmlnID0gU2VsZjo6cHJvZHVjdChnYXRlX2JvdW5kLCB1cF9ib3VuZCk/OwotICAgICAgICBpZiBnYXRlX2JvdW5kID4gMTYuMCB7CisgICAgICAgIGlmIGdhdGVfYm91bmQgPiAxOC4wIHsKICAgICAgICAgICAgIHJldHVybiBFcnIoQm91bmRlZEJ1aWxkRXJyb3I6OlBhcmFtZXRlcigic2lnbW9pZF9yYW5nZSIpKTsKICAgICAgICAgfQogICAgICAgICBjb25maWcua2luZCA9IEtpbmQ6OlN3aWdsdTsKQEAgLTE4MCwxMCArMTgwLDExIEBAIGltcGwgQm91bmRlZE9wQ29uZmlnIHsKICAgICAgICAgICAgICAgICB2YWx1ZXMucHVzaCgyLjAgKiBzZWxmLmxlZnQpOwogICAgICAgICAgICAgfQogICAgICAgICAgICAgS2luZDo6U3dpZ2x1ID0+IHsKKyAgICAgICAgICAgICAgICBsZXQgc2hpZnQgPSBzZWxmLmxlZnQubWluKDE2LjApOwogICAgICAgICAgICAgICAgIHZhbHVlcy5leHRlbmQoWwotICAgICAgICAgICAgICAgICAgICAtc2VsZi5sZWZ0LAorICAgICAgICAgICAgICAgICAgICAtc2hpZnQsCiAgICAgICAgICAgICAgICAgICAgIDIuMCAqIHNlbGYubGVmdCwKLSAgICAgICAgICAgICAgICAgICAgKC1zZWxmLmxlZnQpLmV4cCgpLAorICAgICAgICAgICAgICAgICAgICAoLXNoaWZ0KS5leHAoKSwKICAgICAgICAgICAgICAgICAgICAgc3RkOjpmNjQ6OmNvbnN0czo6TE9HMl9FLAogICAgICAgICAgICAgICAgIF0pOwogICAgICAgICAgICAgICAgIHByb2R1Y3QoJm11dCB2YWx1ZXMsIDIuMCAqIHNlbGYubGVmdCwgMi4wKTsKQEAgLTQ2Nyw3ICs0NjgsNyBAQCBpbXBsIEJNTFRyYW5zZm9ybWVyIHsKICAgICAgICAgICAgICAgICBsZXQgc2hpZnRlZCA9IHNlbGYuYm91bmRlZF9hZGQoaW5wdXRzWzBdLCBjWzJdLCBjWzNdKTsKICAgICAgICAgICAgICAgICBsZXQgZXhwb25lbnQgPSBzZWxmLnByb2R1Y3Rfd2l0aF9saXRlcmFscyhzaGlmdGVkLCBjWzVdLCAmY1suLjJdLCAmY1s2Li4xMl0pOwogICAgICAgICAgICAgICAgIGxldCBudW1lcmF0b3IgPSBzZWxmLmV4cDIoZXhwb25lbnQpOwotICAgICAgICAgICAgICAgIGxldCBkZW5vbWluYXRvciA9IHNlbGYuYm91bmRlZF9wb3NpdGl2ZV9hZGQoY1s0XSwgbnVtZXJhdG9yLCBjWzFdKTsKKyAgICAgICAgICAgICAgICBsZXQgZGVub21pbmF0b3IgPSBzZWxmLmJvdW5kZWRfcG9zaXRpdmVfYWRkKGNbNF0sIG51bWVyYXRvciwgaWYgY29uZmlnLmxlZnQgPiAxNi4wIHsgY1szXSB9IGVsc2UgeyBjWzFdIH0pOwogICAgICAgICAgICAgICAgIGxldCBsb2dfZGVub21pbmF0b3IgPSBzZWxmLmxvZzIoZGVub21pbmF0b3IpOwogICAgICAgICAgICAgICAgIGxldCBtaW51c19sb2cgPSBzZWxmLmJvdW5kZWRfbmVnKGxvZ19kZW5vbWluYXRvciwgY1swXSk7CiAgICAgICAgICAgICAgICAgbGV0IGludmVyc2UgPSBzZWxmLmV4cDIobWludXNfbG9nKTsKZGlmZiAtLWdpdCBhL2NyYXRlcy9kb21haW4vdGVzdHMvYm91bmRlZF9vcGVyYXRpb25fY29udHJhY3RzLnJzIGIvY3JhdGVzL2RvbWFpbi90ZXN0cy9ib3VuZGVkX29wZXJhdGlvbl9jb250cmFjdHMucnMKaW5kZXggZmI3NGZhZi4uMGM3NmE5MSAxMDA2NDQKLS0tIGEvY3JhdGVzL2RvbWFpbi90ZXN0cy9ib3VuZGVkX29wZXJhdGlvbl9jb250cmFjdHMucnMKKysrIGIvY3JhdGVzL2RvbWFpbi90ZXN0cy9ib3VuZGVkX29wZXJhdGlvbl9jb250cmFjdHMucnMKQEAgLTE3NSw2ICsxNzUsMjQgQEAgZm4gYm91bmRlZF9zd2lnbHVfY292ZXJzX2dhdGVfc2lnbnNfZXh0cmVtZXNfYW5kX3plcm8oKSB7CiAgICAgfQogfQogCisjW3Rlc3RdCitmbiBleHBlcmltZW50YWxfc3dpZ2x1XzE4KCkgeworICAgIGxldCBjb25maWcgPSBCb3VuZGVkT3BDb25maWc6OnN3aWdsdSgxOC4wLCAxNi4wKS51bndyYXAoKTsKKyAgICBsZXQgKGJ1aWxkZXIsIHJvb3RzKSA9IGJ1aWxkKCZjb25maWcpOworICAgIGxldCBtdXQgbWF4X2FicyA9IDAuMF9mNjQ7CisgICAgZm9yIHN0ZXAgaW4gMC4uPTM2MDAgeworICAgICAgICBsZXQgZ2F0ZSA9IC0xOC4wICsgZjY0Ojpmcm9tKHN0ZXApIC8gMTAwLjA7CisgICAgICAgIGZvciB1cCBpbiBbLTE2LjAsIC0xLjAsIDAuMCwgMS4wLCAxNi4wXSB7CisgICAgICAgICAgICBjb25maWcudmFsaWRhdGVfdmFsdWVzKCZbZ2F0ZSwgdXBdLCAmW10pLnVud3JhcCgpOworICAgICAgICAgICAgbGV0IHJlc3VsdCA9IGV2YWx1YXRlKCZidWlsZGVyLCAmcm9vdHMsICZbZ2F0ZSwgdXBdLCAmW10pLnVud3JhcF9vcl9lbHNlKHxlfCBwYW5pYyEoImdhdGU9e2dhdGV9IHVwPXt1cH06IHtlfSIpKVswXTsKKyAgICAgICAgICAgIGxldCBleHBlY3RlZCA9IGdhdGUgLyAoMS4wICsgKC1nYXRlKS5leHAoKSkgKiB1cDsKKyAgICAgICAgICAgIG1heF9hYnMgPSBtYXhfYWJzLm1heCgocmVzdWx0IC0gZXhwZWN0ZWQpLmFicygpKTsKKyAgICAgICAgfQorICAgIH0KKyAgICBwcmludGxuISgibWF4X2Ficz17bWF4X2Fic30iKTsKKyAgICBhc3NlcnQhKG1heF9hYnMgPCAxZS03KTsKK30KKwogI1t0ZXN0XQogZm4gYm91bmRlZF9zb2Z0bWF4X3VzZXNfc2VsZWN0ZWRfbWF4aW11bV9mb3JfbmVnYXRpdmVfZXh0cmVtZXNfYW5kX3Blcm11dGF0aW9ucygpIHsKICAgICBmb3Igc2NvcmVzIGluIFsK",
+      "patch_encoding": "base64-encoded git diff, apply after decoding"
+    }
+  ],
+  "current_source_sha256": {
+    "crates/compiler/examples/projection_bounds_probe.rs": "2950385025d63489799f8f5fcb49d66faedd02da9957f04a4d2a3fc16db46491",
+    "crates/compiler/src/symbolic_bounded.rs": "c013beb491687f8ff7b53e97d501cec64bbd35dc70a9ba287cc6bfce36d60ac9",
+    "crates/runtime/src/symbolic_causal.rs": "913e996762d42355cfb8e53edf555d13c5f66bac833c676b54f52c643dc868f3",
+    "crates/compiler/tests/full_bounded_contracts.rs": "6292316537f31eb3475c66a3d8370bd42e6b43f0d45b86a1dce645cec6203c07",
+    "crates/domain/src/transformer/bounded_ops.rs": "65fd660670e7d2b47d21cf2d9fc4f2a55e30596bc67d936e2cca209528c8be4f",
+    "crates/domain/tests/bounded_operation_contracts.rs": "30dbac2ac5fd8608557a5a48d7df01b62d54f7bae95e65485064d4517832dd02",
+    "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c"
+  },
+  "limitations": "Finite sampling does not prove an entire domain. No experimental extension was merged; max gate remains 16. No TinyLlama symbolic token or parity established."
+}
