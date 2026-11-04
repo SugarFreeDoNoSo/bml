@@ -1,0 +1,54 @@
+{
+  "status": "completed",
+  "scope": "Current committed workspace coverage; no ignored model tests, branch instrumentation, doctest coverage or completed mutation campaign claim.",
+  "revision": "9efc9221512ae60483fcdb0101f7e5f424eaff5f",
+  "observed_at_utc": "2026-11-04T13:42:34.860039+00:00",
+  "exec_session": 25337,
+  "pid": 2654745,
+  "tool": "cargo-llvm-cov 0.9.1",
+  "toolchain": "rustc 1.98.1",
+  "cargo_locked": true,
+  "target_directory": "target/coverage-current-9efc922",
+  "source_manifest": "target/quality/coverage-9efc922-source-sha256.json",
+  "source_manifest_sha256": "ea09c8251ccbff4d7faa6dc99a95aea134bcc1b767a05eb8544224604b494e7d",
+  "source_files": 291,
+  "coverage_baseline_sha256": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5",
+  "floors": {
+    "lines": 52.0,
+    "functions": 60.0
+  },
+  "report": "target/quality/coverage-9efc922.json",
+  "log": "target/quality/coverage-9efc922.log",
+  "exit_file": "target/quality/coverage-9efc922.exit",
+  "gate_exit_file": "target/quality/coverage-9efc922-gate.exit",
+  "completed_at_utc": "2026-11-04T13:46:01.683500+00:00",
+  "exit_code": 0,
+  "floor_gate_exit_code": 0,
+  "totals": {
+    "lines": {
+      "count": 28384,
+      "covered": 25535,
+      "percent": 89.96265501691093
+    },
+    "functions": {
+      "count": 2779,
+      "covered": 2251,
+      "percent": 81.00035984166966
+    }
+  },
+  "report_files": 105,
+  "report_sha256": "7e373882e927b137de74ba8a0300393a1dfb5b4ab0b82e8b55b9ba16abba8f2a",
+  "log_sha256": "73e3acd6547b57f24dae8f9e9881940c6809e92a0850dcd1b83ada0867608751",
+  "source_unchanged_at_completion": true,
+  "baseline_unchanged": true,
+  "canonical_source_gate": {
+    "status": "passed before coverage; source unchanged",
+    "log": "target/quality/sub-fragment-byte-budget-gate.log",
+    "sha256": "95d2cc81da0b09b83c553db1cbd032d5504a4991fcede800edf5fb5f3ba789ac"
+  },
+  "openspec_strict": {
+    "status": "11 passed, 0 failed",
+    "log": "target/quality/coverage-9efc922-openspec.log",
+    "sha256": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7"
+  }
+}
