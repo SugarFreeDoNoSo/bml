@@ -401,3 +401,14 @@ BML_TEST_GGUF=/ruta/tinyllama-q4_0.gguf cargo test -p bml-compiler --test full_b
 Esta prueba contrasta la activación para valores de la ruta nativa; no prueba
 paridad de logits ni ejecución simbólica del modelo completo. La evidencia de
 la muestra local está en `quality/evidence/tinyllama-real-swiglu-oracle.json`.
+
+Para contrastar filas seleccionadas de cada proyección nativa contra los dots
+BML comprobados, ejecutar la prueba optativa exacta:
+
+```sh
+BML_TEST_GGUF=/ruta/tinyllama-q4_0.gguf cargo test --release -p bml-compiler --test full_bounded_contracts --locked -- --ignored --exact tinyllama_real_projection_rows_match_checked_bml_oracle --nocapture
+```
+
+La muestra cubre tres filas por tensor y dos filas de interés; no demuestra
+paridad de todos los logits ni del modelo simbólico completo. El registro local
+está en `quality/evidence/tinyllama-real-projection-oracle.json`.

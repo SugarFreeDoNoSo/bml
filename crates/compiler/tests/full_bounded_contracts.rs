@@ -980,3 +980,128 @@ fn tinyllama_real_swiglu_inputs_match_checked_bml_oracle() {
         model.config().n_layers
     );
 }
+
+/// Checks selected rows of every native TinyLlama projection for one BOS token.
+/// This is not complete symbolic inference or full-logit parity.
+#[test]
+#[ignore = "requires BML_TEST_GGUF pointing to a local TinyLlama Q4_0 model"]
+fn tinyllama_real_projection_rows_match_checked_bml_oracle() {
+    use bml_compiler::{gguf_compiler::InferenceCompiler, symbolic_bounded::ProjectionBounds};
+    use std::collections::BTreeMap;
+    let source = std::env::var_os("BML_TEST_GGUF").expect("BML_TEST_GGUF is required");
+    let model = InferenceCompiler::open_mapped(std::path::Path::new(&source)).unwrap();
+    let profile = BoundedProfile {
+        projection_input: 64.0,
+        projection_weight: 4.0,
+        down_projection: Some(ProjectionBounds {
+            input: 256.0,
+            weight: 1.5,
+        }),
+        ..Default::default()
+    };
+    let epsilon = model.rms_norm_epsilon();
+    let mut kernels = BTreeMap::new();
+    for (name, &(width, _)) in model.tensor_dims() {
+        if name.ends_with(".attn_q.weight")
+            || name.ends_with(".attn_k.weight")
+            || name.ends_with(".attn_v.weight")
+            || name.ends_with(".attn_output.weight")
+            || name.ends_with(".ffn_gate.weight")
+            || name.ends_with(".ffn_up.weight")
+            || name.ends_with(".ffn_down.weight")
+            || name == model.output_weight_name()
+        {
+            let op = if name.ends_with(".ffn_down.weight") {
+                Operation::DownDot
+            } else {
+                Operation::Dot
+            };
+            if let std::collections::btree_map::Entry::Vacant(entry) = kernels.entry((op, width)) {
+                let kernel =
+                    compile_operation(op, width, epsilon, profile, KernelLimits::default())
+                        .unwrap();
+                let graph = validate(
+                    &kernel,
+                    GraphLimits {
+                        max_steps: 100_000_000,
+                        ..graph_limits()
+                    },
+                )
+                .unwrap();
+                entry.insert((kernel, graph));
+            }
+        }
+    }
+    let mut cache = HashConsedKV::try_new(
+        model.config().n_layers,
+        model.n_kv_heads(),
+        model.head_dim(),
+        1,
+        512 * 1024 * 1024,
+    )
+    .unwrap();
+    let mut sampled = 0usize;
+    let mut tensors = 0usize;
+    let mut global_max = 0.0_f64;
+    let logits = model
+        .forward_cached_with_projection(&[1], &mut cache, &mut |input, name| {
+            let &(width, rows) = model
+                .tensor_dims()
+                .get(name)
+                .ok_or("missing projection dimensions")?;
+            if width != input.len() || rows < 3 {
+                return Err("unexpected projection shape".into());
+            }
+            let op = if name.ends_with(".ffn_down.weight") {
+                Operation::DownDot
+            } else {
+                Operation::Dot
+            };
+            let (kernel, graph) = kernels.get(&(op, width)).ok_or("missing checked kernel")?;
+            let mut row = 0usize;
+            let mut max_error = 0.0_f64;
+            let output = model.project_rows(input, name, |x, weights| {
+                let index = row;
+                row += 1;
+                let expected: f64 = x.iter().zip(weights).map(|(&v, &w)| v * f64::from(w)).sum();
+                let selected = index == 0
+                    || index == rows / 2
+                    || index == rows - 1
+                    || (name == "blk.2.ffn_gate.weight" && index == 5475)
+                    || (name == "blk.2.ffn_down.weight" && index == 624);
+                if selected {
+                    let external: Vec<f64> = weights.iter().map(|&v| f64::from(v)).collect();
+                    profile
+                        .validate_values(op, width, epsilon, x, &external)
+                        .map_err(|e| format!("{name} row {index}: {e}"))?;
+                    let mut constants = kernel.signature.fixed.clone();
+                    constants.extend_from_slice(&external);
+                    let mut buffer = ResultBuffer::new(0, 0);
+                    let actual = graph
+                        .execute_indexed_symbolic_with_constants(x, &constants, &mut buffer)
+                        .map_err(|e| format!("{name} row {index}: {e}"))?;
+                    let error = (actual - expected).abs();
+                    if error >= 3e-7 {
+                        return Err(format!(
+                            "{name} row {index}: error {error}, {actual} != {expected}"
+                        ));
+                    }
+                    max_error = max_error.max(error);
+                    sampled += 1;
+                }
+                Ok(expected)
+            })?;
+            if row != rows {
+                return Err("projection row count mismatch".into());
+            }
+            tensors += 1;
+            global_max = global_max.max(max_error);
+            eprintln!("{name} rows={rows} max_abs_error={max_error}");
+            Ok(output)
+        })
+        .unwrap();
+    assert_eq!(logits.len(), 32000);
+    assert_eq!(tensors, model.config().n_layers as usize * 7 + 1);
+    assert_eq!(sampled, tensors * 3 + 2);
+    eprintln!("projection_tensors={tensors} sampled_rows={sampled} max_abs_error={global_max}");
+}
