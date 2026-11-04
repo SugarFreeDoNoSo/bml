@@ -49,6 +49,9 @@ fn main() {
     let mut max_payload_bytes = DEFAULT_MAX_PAYLOAD_BYTES;
     let mut symbolic_path: Option<PathBuf> = None;
     let mut symbolic_source: Option<PathBuf> = None;
+    let mut shard_path: Option<PathBuf> = None;
+    let mut shard_hash: Option<String> = None;
+    let mut shard_bytes: u64 = 512 * 1024 * 1024;
     let mut symbolic_start: Option<u32> = None;
     let mut symbolic_end: Option<u32> = None;
     let mut symbolic_limits = bml_runtime::symbolic_transport::SymbolicTransportLimits::default();
@@ -90,6 +93,24 @@ fn main() {
                     symbolic_path = Some(path);
                 } else {
                     symbolic_source = Some(path);
+                }
+            }
+            "--symbolic-shard" | "--symbolic-shard-sha256" | "--symbolic-shard-bytes" => {
+                let option = args[i].clone();
+                i += 1;
+                let value = args.get(i).unwrap_or_else(|| {
+                    eprintln!("{option} requires a value");
+                    std::process::exit(2);
+                });
+                match option.as_str() {
+                    "--symbolic-shard" => shard_path = Some(PathBuf::from(value)),
+                    "--symbolic-shard-sha256" => shard_hash = Some(value.clone()),
+                    _ => {
+                        shard_bytes = value.parse().unwrap_or_else(|_| {
+                            eprintln!("invalid shard byte budget");
+                            std::process::exit(2);
+                        })
+                    }
                 }
             }
             "--layer-start"
@@ -151,6 +172,7 @@ fn main() {
                 println!("  --max-message-bytes N Maximum incoming payload (default: 67108864)");
                 println!("  --symbolic-artifact PATH --layer-start N --layer-end N: serve persisted symbolic layer sessions");
                 println!("  --symbolic-source PATH --symbolic-context N --symbolic-kv-bytes N: source override and per-session budgets");
+                println!("  --symbolic-shard PATH --symbolic-shard-sha256 HASH --symbolic-shard-bytes N: authenticated layer weights");
                 println!("  --symbolic-large-budget: allow larger persisted symbolic programs");
                 println!("  --symbolic-timeout-seconds N: per-connection read/write timeout");
                 std::process::exit(0);
@@ -160,6 +182,10 @@ fn main() {
         i += 1;
     }
 
+    if symbolic_path.is_none() && (shard_path.is_some() || shard_hash.is_some()) {
+        eprintln!("symbolic shard requires --symbolic-artifact");
+        std::process::exit(2);
+    }
     if let Some(path) = symbolic_path {
         if fragment_path.is_some() {
             eprintln!("--fragment and --symbolic-artifact are mutually exclusive");
@@ -170,12 +196,18 @@ fn main() {
             std::process::exit(2);
         };
         symbolic_limits.frame_bytes = max_payload_bytes;
-        let service = match bml_runtime::symbolic_transport::SymbolicLayerServer::new(
+        let server = bml_runtime::symbolic_transport::SymbolicLayerServer::new(
             &path,
             symbolic_source.as_deref(),
             start..end,
             symbolic_limits,
-        ) {
+        )
+        .and_then(|service| match (&shard_path, &shard_hash) {
+            (Some(path), Some(hash)) => service.with_weight_shard(path, hash, shard_bytes),
+            (None, None) => Ok(service),
+            _ => Err("shard path and trusted hash must be supplied together".into()),
+        });
+        let service = match server {
             Ok(service) => Arc::new(service),
             Err(error) => {
                 eprintln!("Error loading symbolic artifact: {error}");

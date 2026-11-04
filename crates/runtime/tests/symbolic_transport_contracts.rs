@@ -67,8 +67,36 @@ fn listener(
 #[test]
 fn two_tcp_ranges_match_persisted_causal_logits_and_keep_sessions_independent() {
     let (_source, artifact) = artifact();
-    let server_a = Arc::new(SymbolicLayerServer::new(&artifact.0, None, 0..1, limits()).unwrap());
-    let server_b = Arc::new(SymbolicLayerServer::new(&artifact.0, None, 1..3, limits()).unwrap());
+    let shard_a = artifact.0.join("shard_a");
+    let shard_b = artifact.0.join("shard_b");
+    let hash_a = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &artifact.0,
+        None,
+        0..1,
+        &shard_a,
+        1_000_000,
+    )
+    .unwrap();
+    let hash_b = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &artifact.0,
+        None,
+        1..3,
+        &shard_b,
+        1_000_000,
+    )
+    .unwrap();
+    let server_a = Arc::new(
+        SymbolicLayerServer::new(&artifact.0, None, 0..1, limits())
+            .unwrap()
+            .with_weight_shard(&shard_a, &hash_a, 1_000_000)
+            .unwrap(),
+    );
+    let server_b = Arc::new(
+        SymbolicLayerServer::new(&artifact.0, None, 1..3, limits())
+            .unwrap()
+            .with_weight_shard(&shard_b, &hash_b, 1_000_000)
+            .unwrap(),
+    );
     assert_eq!(server_a.identity(), server_b.identity());
     let (address_a, task_a) = listener(Arc::clone(&server_a), 2);
     let (address_b, task_b) = listener(Arc::clone(&server_b), 1);

@@ -31,7 +31,25 @@ impl Drop for Worker {
     }
 }
 fn worker(path: &std::path::Path, start: u32, end: u32) -> (Worker, SocketAddr) {
-    let mut process = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+    worker_with_shard(path, start, end, None)
+}
+
+fn worker_with_shard(
+    path: &std::path::Path,
+    start: u32,
+    end: u32,
+    shard: Option<(&std::path::Path, &str)>,
+) -> (Worker, SocketAddr) {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_bml-worker"));
+    if let Some((dir, hash)) = shard {
+        command.arg("--symbolic-shard").arg(dir).args([
+            "--symbolic-shard-sha256",
+            hash,
+            "--symbolic-shard-bytes",
+            "1000000",
+        ]);
+    }
+    let mut process = command
         .args(["--port", "0", "--symbolic-artifact"])
         .arg(path)
         .args([
@@ -76,8 +94,26 @@ fn real_worker_processes_execute_persisted_bml_ranges_with_independent_sessions(
     )
     .unwrap();
     let identity = checked_identity(&directory.0, None).unwrap();
-    let (_worker_a, address_a) = worker(&directory.0, 0, 1);
-    let (_worker_b, address_b) = worker(&directory.0, 1, 3);
+    let shard_a = directory.0.join("shard-a");
+    let shard_b = directory.0.join("shard-b");
+    let hash_a = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &directory.0,
+        None,
+        0..1,
+        &shard_a,
+        1_000_000,
+    )
+    .unwrap();
+    let hash_b = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &directory.0,
+        None,
+        1..3,
+        &shard_b,
+        1_000_000,
+    )
+    .unwrap();
+    let (_worker_a, address_a) = worker_with_shard(&directory.0, 0, 1, Some((&shard_a, &hash_a)));
+    let (_worker_b, address_b) = worker_with_shard(&directory.0, 1, 3, Some((&shard_b, &hash_b)));
     let limits = SymbolicTransportLimits {
         timeout: Duration::from_secs(10),
         ..Default::default()

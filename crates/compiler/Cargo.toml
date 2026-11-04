@@ -9,6 +9,7 @@ repository.workspace = true
 [dependencies]
 bml-domain = { path = "../domain" }
 bml-parser = { path = "../parser" }
+bml-gguf = { path = "../gguf" }
 bml-inference = { path = "../inference" }
 bml-model-weights = { path = "../model-weights" }
 serde.workspace = true

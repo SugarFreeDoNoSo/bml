@@ -213,6 +213,7 @@ name = "bml-compiler"
 version = "0.1.0"
 dependencies = [
  "bml-domain",
+ "bml-gguf",
  "bml-inference",
  "bml-model-weights",
  "bml-parser",

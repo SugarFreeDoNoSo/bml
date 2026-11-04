@@ -305,3 +305,14 @@ operación simbólica que requiera más tiempo, configurar explícitamente
 El timeout cubre también la espera mientras el coordinador evalúa la cabeza;
 una expiración invalida la conexión y no implica que el worker haya revertido
 una confirmación.
+
+### Pesos por rango verificados
+
+`symbolic_weight_shard::export_layer_weights` exporta tensores codificados de
+un rango y devuelve el hash del descriptor, que debe distribuirse por un canal
+confiable. El worker acepta `--symbolic-shard PATH` y
+`--symbolic-shard-sha256 HASH`, opcionalmente con
+`--symbolic-shard-bytes N`; ambos primeros argumentos son obligatorios juntos.
+La copia autenticada de cada conexión se usa para las operaciones de capa y
+sigue limitada por el presupuesto. La carga inicial y cada sesión aún validan
+el artefacto contra el GGUF completo: el paquete no elimina esa dependencia.

@@ -221,6 +221,7 @@ impl Kernel {
 /// A mapped model executed through budgeted BML-only arithmetic templates.
 /// This experimental profile may reject inputs that native inference accepts.
 pub struct SymbolicCausalModel {
+    shard: Option<bml_compiler::symbolic_weight_shard::VerifiedLayerWeights>,
     compiler: InferenceCompiler,
     kernels: BTreeMap<(Operation, usize), Kernel>,
     limits: SymbolicLimits,
@@ -248,6 +249,7 @@ impl SymbolicCausalModel {
         let compiler =
             InferenceCompiler::from_bmlgguf(&mut reader, max_evaluated_weights, evaluation)?;
         Ok(Self {
+            shard: None,
             compiler,
             kernels: BTreeMap::new(),
             limits,
@@ -305,6 +307,7 @@ impl SymbolicCausalModel {
             )?;
         }
         Ok(Self {
+            shard: None,
             compiler,
             kernels: BTreeMap::new(),
             limits,
@@ -368,6 +371,7 @@ impl SymbolicCausalModel {
             );
         }
         Ok(Self {
+            shard: None,
             compiler: artifact.compiler,
             kernels,
             limits,
@@ -378,6 +382,36 @@ impl SymbolicCausalModel {
             rms_bounds: artifact.manifest.rms_bounds,
             bounded_profile: artifact.manifest.bounded_profile,
         })
+    }
+
+    /// Open a validated artifact and use an authenticated layer shard for layer
+    /// weights. The complete source is still required for artifact validation.
+    pub fn open_artifact_with_shard(
+        directory: &Path,
+        source_override: Option<&Path>,
+        limits: SymbolicLimits,
+        shard_directory: &Path,
+        expected_shard: &str,
+        layers: std::ops::Range<u32>,
+        max_shard_bytes: u64,
+    ) -> Result<Self, String> {
+        let identity =
+            bml_compiler::symbolic_artifact::checked_identity(directory, source_override)?;
+        let shard = bml_compiler::symbolic_weight_shard::VerifiedLayerWeights::open(
+            shard_directory,
+            expected_shard,
+            &identity,
+            layers,
+            max_shard_bytes,
+        )?;
+        let mut model = Self::open_artifact(directory, source_override, limits)?;
+        if bml_compiler::symbolic_artifact::checked_identity(directory, source_override)?
+            != identity
+        {
+            return Err("symbolic artifact changed during shard admission".into());
+        }
+        model.shard = Some(shard);
+        Ok(model)
     }
 
     /// Read-only source configuration and tokenizer.
@@ -484,6 +518,33 @@ impl SymbolicCausalModel {
             .kernels
             .get_mut(&(Operation::Dot, width))
             .expect("kernel inserted");
+        if let Some(shard) = &self.shard {
+            let dims = shard.dimensions(name).ok_or("missing shard projection")?;
+            if dims.len() != 2 || dims[0] != width as u64 {
+                return Err("shard projection dimension mismatch".into());
+            }
+            let rows = usize::try_from(dims[1]).map_err(|_| "shard row count overflow")?;
+            let mut output = Vec::new();
+            output
+                .try_reserve_exact(rows)
+                .map_err(|_| "shard projection allocation failed")?;
+            for row in 0..rows {
+                let weights = shard
+                    .decode_row_f32(name, row)?
+                    .into_iter()
+                    .map(f64::from)
+                    .collect::<Vec<_>>();
+                if let Some(profile) = profile {
+                    profile.validate_values(Operation::Dot, width, epsilon, input, &weights)?;
+                }
+                let value = kernel.execute(input, &weights)?[0];
+                if !value.is_finite() {
+                    return Err("non-finite shard projection".into());
+                }
+                output.push(value);
+            }
+            return Ok(output);
+        }
         self.compiler.project_rows(input, name, |x, row| {
             let weights: Vec<_> = row.iter().map(|&v| f64::from(v)).collect();
             if let Some(profile) = profile {
@@ -493,6 +554,17 @@ impl SymbolicCausalModel {
         })
     }
     fn norm(&mut self, input: &[f64], name: &str) -> Result<Vec<f64>, String> {
+        if let Some(shard) = &self.shard {
+            if shard.dimensions(name) != Some(&[input.len() as u64][..]) {
+                return Err("shard normalization dimension mismatch".into());
+            }
+            let weights = shard
+                .decode_row_f32(name, 0)?
+                .into_iter()
+                .map(f64::from)
+                .collect::<Vec<_>>();
+            return self.run(Operation::Norm, input.len(), input, &weights);
+        }
         let start = *self
             .compiler
             .weight_offsets()
@@ -631,7 +703,9 @@ impl SymbolicCausalModel {
         layers: std::ops::Range<u32>,
     ) -> Result<Vec<f64>, String> {
         let config = self.compiler.config();
-        if layers.start >= layers.end
+        if self.shard.as_ref().is_some_and(|shard| {
+            layers.start < shard.layers().start || layers.end > shard.layers().end
+        }) || layers.start >= layers.end
             || layers.end > config.n_layers
             || hidden.len() != config.n_embd as usize
             || hidden.iter().any(|x| !x.is_finite())

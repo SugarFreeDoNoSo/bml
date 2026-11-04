@@ -150,56 +150,136 @@ pub fn verify_layer_weights(
     layers: Range<u32>,
     max_bytes: u64,
 ) -> Result<(), String> {
-    let descriptor_path = directory.join("weights.json");
-    let bytes = crate::causal_artifact::read_bounded(&descriptor_path, MAX_DESCRIPTOR as usize)?;
-    if hash(&bytes) != expected_descriptor {
-        return Err("shard descriptor identity mismatch".into());
-    }
-    let d: Descriptor = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
-    if d.version != 1
-        || d.artifact_sha256 != expected_artifact
-        || d.start != layers.start
-        || d.end != layers.end
-        || layers.start >= layers.end
-        || d.payload_length > max_bytes
-    {
-        return Err("shard identity, range or budget mismatch".into());
-    }
-    let expected_count = usize::try_from(layers.end - layers.start)
-        .ok()
-        .and_then(|count| count.checked_mul(TENSORS.len()))
-        .ok_or("shard tensor count overflow")?;
-    if d.tensors.len() != expected_count {
-        return Err("shard tensor count mismatch".into());
-    }
-    let payload = crate::causal_artifact::read_bounded(
-        &directory.join("weights.bin"),
-        usize::try_from(max_bytes).unwrap_or(usize::MAX),
-    )?;
-    if payload.len() as u64 != d.payload_length || hash(&payload) != d.payload_sha256 {
-        return Err("shard payload identity mismatch".into());
-    }
-    let mut offset = 0usize;
-    for (i, entry) in d.tensors.iter().enumerate() {
-        let layer = layers.start + (i / TENSORS.len()) as u32;
-        if entry.name != format!("blk.{layer}.{}", TENSORS[i % TENSORS.len()])
-            || entry.offset != offset as u64
-            || entry.dims.is_empty()
-            || entry.dims.contains(&0)
+    VerifiedLayerWeights::open(
+        directory,
+        expected_descriptor,
+        expected_artifact,
+        layers,
+        max_bytes,
+    )
+    .map(|_| ())
+}
+
+/// Owned, authenticated encoded weights. Retaining the verified bytes prevents
+/// a file replacement between integrity validation and decoding.
+pub struct VerifiedLayerWeights {
+    descriptor: Descriptor,
+    payload: Vec<u8>,
+}
+
+impl VerifiedLayerWeights {
+    /// Load and authenticate one range under an explicit encoded-byte budget.
+    pub fn open(
+        directory: &Path,
+        expected_descriptor: &str,
+        expected_artifact: &str,
+        layers: Range<u32>,
+        max_bytes: u64,
+    ) -> Result<Self, String> {
+        let descriptor_path = directory.join("weights.json");
+        let bytes =
+            crate::causal_artifact::read_bounded(&descriptor_path, MAX_DESCRIPTOR as usize)?;
+        if hash(&bytes) != expected_descriptor {
+            return Err("shard descriptor identity mismatch".into());
+        }
+        let d: Descriptor = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        if d.version != 1
+            || d.artifact_sha256 != expected_artifact
+            || d.start != layers.start
+            || d.end != layers.end
+            || layers.start >= layers.end
+            || d.payload_length > max_bytes
         {
-            return Err("invalid shard tensor layout".into());
+            return Err("shard identity, range or budget mismatch".into());
         }
-        let end = offset
-            .checked_add(usize::try_from(entry.length).map_err(|_| "tensor length overflow")?)
-            .ok_or("tensor length overflow")?;
-        let data = payload.get(offset..end).ok_or("truncated shard tensor")?;
-        if hash(data) != entry.sha256 {
-            return Err("shard tensor identity mismatch".into());
+        let expected_count = usize::try_from(layers.end - layers.start)
+            .ok()
+            .and_then(|count| count.checked_mul(TENSORS.len()))
+            .ok_or("shard tensor count overflow")?;
+        if d.tensors.len() != expected_count {
+            return Err("shard tensor count mismatch".into());
         }
-        offset = end;
+        let payload = crate::causal_artifact::read_bounded(
+            &directory.join("weights.bin"),
+            usize::try_from(max_bytes).unwrap_or(usize::MAX),
+        )?;
+        if payload.len() as u64 != d.payload_length || hash(&payload) != d.payload_sha256 {
+            return Err("shard payload identity mismatch".into());
+        }
+        let mut offset = 0usize;
+        for (i, entry) in d.tensors.iter().enumerate() {
+            let layer = layers.start + (i / TENSORS.len()) as u32;
+            if entry.name != format!("blk.{layer}.{}", TENSORS[i % TENSORS.len()])
+                || entry.offset != offset as u64
+                || entry.dims.is_empty()
+                || entry.dims.contains(&0)
+            {
+                return Err("invalid shard tensor layout".into());
+            }
+            let end = offset
+                .checked_add(usize::try_from(entry.length).map_err(|_| "tensor length overflow")?)
+                .ok_or("tensor length overflow")?;
+            let data = payload.get(offset..end).ok_or("truncated shard tensor")?;
+            if hash(data) != entry.sha256 {
+                return Err("shard tensor identity mismatch".into());
+            }
+            offset = end;
+        }
+        if offset != payload.len() {
+            return Err("trailing shard bytes".into());
+        }
+        Ok(Self {
+            descriptor: d,
+            payload,
+        })
     }
-    if offset != payload.len() {
-        return Err("trailing shard bytes".into());
+
+    /// The global layer range included in this verified payload.
+    pub fn layers(&self) -> Range<u32> {
+        self.descriptor.start..self.descriptor.end
     }
-    Ok(())
+
+    /// Shape in GGML axis order; axis zero is contiguous.
+    pub fn dimensions(&self, name: &str) -> Option<&[u64]> {
+        self.descriptor
+            .tensors
+            .iter()
+            .find(|entry| entry.name == name)
+            .map(|entry| entry.dims.as_slice())
+    }
+
+    /// Decode one contiguous GGML row with the independent GGUF codecs.
+    pub fn decode_row_f32(&self, name: &str, row: usize) -> Result<Vec<f32>, String> {
+        let entry = self
+            .descriptor
+            .tensors
+            .iter()
+            .find(|entry| entry.name == name)
+            .ok_or("missing shard tensor")?;
+        let (&columns, outer) = entry
+            .dims
+            .split_first()
+            .ok_or("missing tensor dimensions")?;
+        let columns = usize::try_from(columns).map_err(|_| "tensor dimension overflow")?;
+        let rows = outer.iter().try_fold(1usize, |n, &dimension| {
+            n.checked_mul(usize::try_from(dimension).map_err(|_| "tensor dimension overflow")?)
+                .ok_or("tensor dimension overflow")
+        })?;
+        let length = usize::try_from(entry.length).map_err(|_| "tensor length overflow")?;
+        if columns == 0 || rows == 0 || row >= rows || !length.is_multiple_of(rows) {
+            return Err("invalid shard row layout".into());
+        }
+        let stride = length / rows;
+        let start = usize::try_from(entry.offset)
+            .map_err(|_| "tensor offset overflow")?
+            .checked_add(row.checked_mul(stride).ok_or("tensor row overflow")?)
+            .ok_or("tensor row overflow")?;
+        let end = start.checked_add(stride).ok_or("tensor row overflow")?;
+        let data = self
+            .payload
+            .get(start..end)
+            .ok_or("tensor row outside payload")?;
+        let dtype = bml_gguf::GgufDataType::from_u32(entry.dtype).ok_or("unknown tensor dtype")?;
+        bml_gguf::decode_f32(dtype, data, columns).map_err(|error| error.to_string())
+    }
 }

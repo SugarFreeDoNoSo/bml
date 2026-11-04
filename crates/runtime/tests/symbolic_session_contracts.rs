@@ -137,3 +137,69 @@ fn range_cache_uses_global_layer_indices_and_enforces_its_budget() {
             .is_err()
     );
 }
+
+#[test]
+fn verified_weight_shards_execute_layer_ranges_with_identical_logits() {
+    use bml_compiler::symbolic_weight_shard::export_layer_weights;
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    struct Directory(std::path::PathBuf);
+    impl Drop for Directory {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let dir = Directory(source.0.with_extension("sharded-execution"));
+    std::fs::create_dir(&dir.0).unwrap();
+    let artifact = dir.0.join("artifact");
+    std::fs::create_dir(&artifact).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &artifact,
+        3,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let shard0 = dir.0.join("shard0");
+    let shard1 = dir.0.join("shard1");
+    let hash0 = export_layer_weights(&artifact, None, 0..1, &shard0, 1_000_000).unwrap();
+    let hash1 = export_layer_weights(&artifact, None, 1..3, &shard1, 1_000_000).unwrap();
+    let limits = SymbolicLimits {
+        max_nodes: 0,
+        ..Default::default()
+    };
+    assert!(SymbolicCausalModel::open_artifact_with_shard(
+        &artifact,
+        None,
+        limits,
+        &shard0,
+        "wrong",
+        0..1,
+        1_000_000
+    )
+    .is_err());
+    let open = |path: &std::path::Path, hash: &str, range| {
+        SymbolicCausalModel::open_artifact_with_shard(
+            &artifact, None, limits, path, hash, range, 1_000_000,
+        )
+        .unwrap()
+    };
+    let mut a = SymbolicLayerSession::new(open(&shard0, &hash0, 0..1), 0..1, 3, 48).unwrap();
+    let mut b = SymbolicLayerSession::new(open(&shard1, &hash1, 1..3), 1..3, 3, 96).unwrap();
+    let mut local = SymbolicCausalModel::open_artifact(&artifact, None, limits).unwrap();
+    let mut head = SymbolicCausalModel::open_artifact(&artifact, None, limits).unwrap();
+    let mut kv = HashConsedKV::new(3, 1, 2, 3);
+    for (pos, id) in [69, 70, 69].into_iter().enumerate() {
+        let input = local.compiler().get_embedding(id).unwrap();
+        let partial = a.prepare(pos as u32, &input).unwrap();
+        let result = b.prepare(pos as u32, &partial).unwrap();
+        let logits = head.project_output(&result).unwrap();
+        let expected = local.forward_cached(&[id], &mut kv).unwrap();
+        assert_eq!(
+            logits.iter().map(|x| x.to_bits()).collect::<Vec<_>>(),
+            expected.iter().map(|x| x.to_bits()).collect::<Vec<_>>()
+        );
+        a.commit(pos as u32).unwrap();
+        b.commit(pos as u32).unwrap();
+    }
+}

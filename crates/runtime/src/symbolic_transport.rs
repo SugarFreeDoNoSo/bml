@@ -135,6 +135,7 @@ fn vectors(bytes: &[u8], width: usize) -> io::Result<(u32, Vec<f64>)> {
 pub struct SymbolicLayerServer {
     directory: PathBuf,
     source_override: Option<PathBuf>,
+    shard: Option<(PathBuf, String, u64)>,
     identity: String,
     layers: Range<u32>,
     width: usize,
@@ -177,12 +178,34 @@ impl SymbolicLayerServer {
         Ok(Self {
             directory: directory.into(),
             source_override: source_override.map(Path::to_owned),
+            shard: None,
             identity,
             layers,
             width,
             limits,
         })
     }
+    /// Configure authenticated shard execution; the GGUF is still required
+    /// for artifact admission until source-independent loading is available.
+    pub fn with_weight_shard(
+        mut self,
+        directory: &Path,
+        expected_sha256: &str,
+        max_bytes: u64,
+    ) -> Result<Self, String> {
+        SymbolicCausalModel::open_artifact_with_shard(
+            &self.directory,
+            self.source_override.as_deref(),
+            self.limits.model,
+            directory,
+            expected_sha256,
+            self.layers.clone(),
+            max_bytes,
+        )?;
+        self.shard = Some((directory.to_owned(), expected_sha256.to_owned(), max_bytes));
+        Ok(self)
+    }
+
     /// SHA-256 of the validated manifest binding all persisted graph and source hashes.
     pub fn identity(&self) -> &str {
         &self.identity
@@ -227,11 +250,23 @@ impl SymbolicLayerServer {
             )?;
             return Ok(());
         }
-        let model = match SymbolicCausalModel::open_artifact(
-            &self.directory,
-            self.source_override.as_deref(),
-            self.limits.model,
-        ) {
+        let opened = match &self.shard {
+            Some((directory, hash, budget)) => SymbolicCausalModel::open_artifact_with_shard(
+                &self.directory,
+                self.source_override.as_deref(),
+                self.limits.model,
+                directory,
+                hash,
+                self.layers.clone(),
+                *budget,
+            ),
+            None => SymbolicCausalModel::open_artifact(
+                &self.directory,
+                self.source_override.as_deref(),
+                self.limits.model,
+            ),
+        };
+        let model = match opened {
             Ok(model) => model,
             Err(error) => {
                 write_frame(
