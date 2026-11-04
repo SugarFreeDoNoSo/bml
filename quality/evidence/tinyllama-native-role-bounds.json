@@ -1,0 +1,134 @@
+{
+  "observed_at_utc": "2026-11-04T05:41:37.366104+00:00",
+  "scope": "Post-processing of a previously completed native F64/F32-KV BOS-token projection log. These data are not a symbolic run, do not cover residual sums, RMS inputs, attention intermediate ranges, or other prompts, and do not prove the chosen declarations are sufficient.",
+  "source_log": "target/quality/tinyllama-native-bounds-final.log",
+  "source_log_sha256": "f7c7746df751182d34392215f106b91abd0a2cda9711fa5152d5762bc0d9e1b7",
+  "model": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "model_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "input_token_id": 1,
+  "projection_records": 155,
+  "argmax": 29958,
+  "per_role": {
+    "attn_k": {
+      "tensor_count": 22,
+      "input_abs_max": {
+        "value": 6.346870767826128,
+        "tensor": "blk.20.attn_k.weight"
+      },
+      "output_abs_max": {
+        "value": 6.167818935407427,
+        "tensor": "blk.2.attn_k.weight"
+      },
+      "weight_abs_max": {
+        "value": 3.109375,
+        "tensor": "blk.0.attn_k.weight"
+      }
+    },
+    "attn_output": {
+      "tensor_count": 22,
+      "input_abs_max": {
+        "value": 0.8092557787895203,
+        "tensor": "blk.21.attn_output.weight"
+      },
+      "output_abs_max": {
+        "value": 1.5731236567295726,
+        "tensor": "blk.21.attn_output.weight"
+      },
+      "weight_abs_max": {
+        "value": 0.69140625,
+        "tensor": "blk.8.attn_output.weight"
+      }
+    },
+    "attn_q": {
+      "tensor_count": 22,
+      "input_abs_max": {
+        "value": 6.346870767826128,
+        "tensor": "blk.20.attn_q.weight"
+      },
+      "output_abs_max": {
+        "value": 4.695865295474938,
+        "tensor": "blk.1.attn_q.weight"
+      },
+      "weight_abs_max": {
+        "value": 1.5859375,
+        "tensor": "blk.0.attn_q.weight"
+      }
+    },
+    "attn_v": {
+      "tensor_count": 22,
+      "input_abs_max": {
+        "value": 6.346870767826128,
+        "tensor": "blk.20.attn_v.weight"
+      },
+      "output_abs_max": {
+        "value": 0.8092557536296985,
+        "tensor": "blk.21.attn_v.weight"
+      },
+      "weight_abs_max": {
+        "value": 0.287109375,
+        "tensor": "blk.19.attn_v.weight"
+      }
+    },
+    "ffn_down": {
+      "tensor_count": 22,
+      "input_abs_max": {
+        "value": 167.62117393207168,
+        "tensor": "blk.2.ffn_down.weight"
+      },
+      "output_abs_max": {
+        "value": 141.36923624202046,
+        "tensor": "blk.2.ffn_down.weight"
+      },
+      "weight_abs_max": {
+        "value": 1.015625,
+        "tensor": "blk.7.ffn_down.weight"
+      }
+    },
+    "ffn_gate": {
+      "tensor_count": 22,
+      "input_abs_max": {
+        "value": 13.110598476987777,
+        "tensor": "blk.21.ffn_gate.weight"
+      },
+      "output_abs_max": {
+        "value": 17.196898568148562,
+        "tensor": "blk.2.ffn_gate.weight"
+      },
+      "weight_abs_max": {
+        "value": 1.1640625,
+        "tensor": "blk.2.ffn_gate.weight"
+      }
+    },
+    "ffn_up": {
+      "tensor_count": 22,
+      "input_abs_max": {
+        "value": 13.110598476987777,
+        "tensor": "blk.21.ffn_up.weight"
+      },
+      "output_abs_max": {
+        "value": 9.747174990128254,
+        "tensor": "blk.2.ffn_up.weight"
+      },
+      "weight_abs_max": {
+        "value": 0.6796875,
+        "tensor": "blk.21.ffn_up.weight"
+      }
+    },
+    "output": {
+      "tensor_count": 1,
+      "input_abs_max": {
+        "value": 39.919590569168435,
+        "tensor": "output.weight"
+      },
+      "output_abs_max": {
+        "value": 7.135698036812604,
+        "tensor": "output.weight"
+      },
+      "weight_abs_max": {
+        "value": 0.4706573486328125,
+        "tensor": "output.weight"
+      }
+    }
+  },
+  "current_symbolic_run": "quality/evidence/tinyllama-residual160-run.json"
+}
