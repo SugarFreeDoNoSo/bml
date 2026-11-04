@@ -425,3 +425,157 @@ fn real_stories15m_distributed_token_matches_native_reference() {
     pipeline.close().unwrap();
     println!("stories15m input_ids={ids:?} logits={} native_argmax={expected_token} symbolic_argmax={token} max_abs_error={max_error} rms_error={rms_error} elapsed_seconds={}", actual.len(), start.elapsed().as_secs_f64());
 }
+
+#[test]
+fn cli_exports_trusted_shards_for_source_free_workers_and_generates() {
+    use bml_compiler::{
+        symbolic_artifact::{checked_identity, compile_directory_bounded},
+        symbolic_bounded::BoundedProfile,
+        symbolic_kernels::KernelLimits,
+    };
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    let directory = Directory(source.0.with_extension("cli-shard-export"));
+    std::fs::create_dir(&directory.0).unwrap();
+    let artifact = directory.0.join("artifact");
+    std::fs::create_dir(&artifact).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &artifact,
+        6,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let identity = checked_identity(&artifact, None).unwrap();
+    let mut addresses = Vec::new();
+    let mut tasks = Vec::new();
+    for range in [0..1, 1..3] {
+        let shard = directory.0.join(format!("shard-{}", range.start));
+        let output = Command::new(env!("CARGO_BIN_EXE_bml-cli"))
+            .args(["export-shard", "--model"])
+            .arg(&artifact)
+            .arg("--output")
+            .arg(&shard)
+            .args([
+                "--layer-start",
+                &range.start.to_string(),
+                "--layer-end",
+                &range.end.to_string(),
+                "--max-bytes",
+                "1000000",
+            ])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let text = String::from_utf8(output.stdout).unwrap();
+        let get = |key: &str| {
+            text.lines()
+                .find_map(|line| line.strip_prefix(key))
+                .unwrap()
+                .to_owned()
+        };
+        assert_eq!(get("artifact_sha256="), identity);
+        let hash = get("shard_sha256=");
+        let server = Arc::new(
+            SymbolicLayerServer::new_authenticated(
+                &artifact,
+                &identity,
+                range,
+                SymbolicTransportLimits::default(),
+                &shard,
+                &hash,
+                1_000_000,
+            )
+            .unwrap(),
+        );
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        addresses.push(listener.local_addr().unwrap().to_string());
+        tasks.push(thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            server.serve_connection(stream).unwrap();
+        }));
+    }
+    let mut reference = SymbolicCausalModel::open_artifact(
+        &artifact,
+        None,
+        SymbolicLimits {
+            max_nodes: 0,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let vocab = reference.compiler().vocab().clone();
+    let mut cache = bml_compiler::HashConsedKV::new(3, 1, 2, 6);
+    let mut logits = reference
+        .forward_cached(&vocab.encode("A").unwrap(), &mut cache)
+        .unwrap();
+    let mut expected = Vec::new();
+    for step in 0..2 {
+        let token = bml_compiler::sampler::sample(&logits, 0.0, step).unwrap();
+        assert_ne!(token, vocab.eos_token_id);
+        expected.extend(vocab.token_piece_bytes(token).unwrap());
+        if step == 0 {
+            logits = reference.forward_cached(&[token], &mut cache).unwrap();
+        }
+    }
+    let result = Command::new(env!("CARGO_BIN_EXE_bml-cli"))
+        .args(["distribute", "--model"])
+        .arg(&artifact)
+        .args([
+            "--nodes",
+            &addresses.join(","),
+            "--prompt",
+            "A",
+            "--num-tokens",
+            "2",
+            "--temp",
+            "0",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert_eq!(result.stdout, expected);
+    for task in tasks {
+        task.join().unwrap();
+    }
+    let absent = directory.0.join("budget-error");
+    let rejected = Command::new(env!("CARGO_BIN_EXE_bml-cli"))
+        .args(["export-shard", "--model"])
+        .arg(&artifact)
+        .arg("--output")
+        .arg(&absent)
+        .args(["--layer-start", "0", "--layer-end", "1", "--max-bytes", "1"])
+        .output()
+        .unwrap();
+    assert!(!rejected.status.success());
+    assert!(!absent.exists());
+    let legacy = directory.0.join("legacy-symbolic");
+    std::fs::create_dir(&legacy).unwrap();
+    bml_compiler::symbolic_artifact::compile_directory(
+        &source.0,
+        &legacy,
+        2,
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let unsupported = directory.0.join("unsupported-profile");
+    let result = Command::new(env!("CARGO_BIN_EXE_bml-cli"))
+        .args(["export-shard", "--model"])
+        .arg(&legacy)
+        .arg("--output")
+        .arg(&unsupported)
+        .args(["--layer-start", "0", "--layer-end", "1"])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    assert!(String::from_utf8_lossy(&result.stderr).contains("bounded symbolic v4"));
+    assert!(!unsupported.exists());
+}

@@ -308,13 +308,27 @@ una confirmación.
 
 ### Pesos por rango verificados
 
-`symbolic_weight_shard::export_layer_weights` exporta tensores codificados de
-un rango y devuelve el hash del descriptor, que debe distribuirse por un canal
-confiable. El worker acepta `--symbolic-shard PATH` y
-`--symbolic-shard-sha256 HASH`, opcionalmente con
-`--symbolic-shard-bytes N`; ambos primeros argumentos son obligatorios juntos.
-La copia autenticada de cada conexión se usa para las operaciones de capa y
-sigue limitada por el presupuesto. Con `--symbolic-artifact-sha256 HASH` el worker usa la identidad confiable
-del manifiesto y abre el artefacto y el shard sin el GGUF. Ambos hashes deben
-provenir de una exportación previamente validada y viajar por un canal confiable.
-El coordinador que tokeniza y proyecta logits todavía necesita el modelo completo.
+El comando siguiente exporta los tensores codificados de las capas `[0, 1)`
+desde un artefacto bounded v4 e imprime `artifact_sha256` y `shard_sha256`:
+
+```sh
+bml-cli export-shard --model modelo.bmlgraph --output shard-0 \
+  --layer-start 0 --layer-end 1
+```
+
+Se puede indicar `--weights` para un GGUF reubicado y `--max-bytes` para limitar
+el paquete. La API equivalente es `symbolic_weight_shard::export_layer_weights`.
+Copiar el artefacto y el paquete al worker, y transmitir ambos hashes por un
+canal confiable. Con los valores recibidos, arrancar el worker con:
+
+```sh
+bml-worker --symbolic-artifact modelo.bmlgraph \
+  --symbolic-artifact-sha256 HASH_ARTEFACTO \
+  --symbolic-shard shard-0 --symbolic-shard-sha256 HASH_SHARD \
+  --layer-start 0 --layer-end 1
+```
+
+`--symbolic-shard-bytes` limita los bytes codificados por conexión. El worker
+conserva la copia verificada y no abre el GGUF en este modo. Los hashes deben
+proceder de una exportación previamente validada. El coordinador que tokeniza
+y proyecta logits todavía necesita el modelo completo.

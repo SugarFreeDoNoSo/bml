@@ -1029,7 +1029,8 @@
       "cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weights",
       "cli_rejects_missing_symbolic_artifact_before_using_legacy_fragments",
       "cli_stops_at_eos_and_emits_partial_utf8_bytes_without_replacement",
-      "distributed_compile_rejects_partial_or_invalid_rms_bounds"
+      "distributed_compile_rejects_partial_or_invalid_rms_bounds",
+      "cli_exports_trusted_shards_for_source_free_workers_and_generates"
     ]
   },
   "C105": {

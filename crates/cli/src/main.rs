@@ -141,6 +141,27 @@ enum Command {
         symbolic_large_budget: bool,
     },
 
+    /// Exporta los pesos codificados de un rango para workers sin GGUF.
+    ExportShard {
+        /// Directorio del artefacto simbólico compilado.
+        #[arg(short = 'm', long = "model")]
+        model: PathBuf,
+        /// Directorio nuevo para el paquete de pesos.
+        #[arg(short = 'o', long = "output")]
+        output: PathBuf,
+        /// GGUF reubicado cuya identidad debe coincidir con el manifiesto.
+        #[arg(long = "weights")]
+        weights: Option<PathBuf>,
+        /// Primera capa incluida.
+        #[arg(long = "layer-start")]
+        layer_start: u32,
+        /// Límite exclusivo de las capas.
+        #[arg(long = "layer-end")]
+        layer_end: u32,
+        /// Máximo de bytes codificados en el paquete.
+        #[arg(long = "max-bytes", default_value_t = 536_870_912, value_parser = clap::value_parser!(u64).range(1..))]
+        max_bytes: u64,
+    },
     /// Distribuye fragmentos a nodos workers via TCP
     Distribute {
         /// Directorio AOT simbólico acotado con pesos GGUF enlazados
@@ -190,6 +211,48 @@ fn main() {
     match cli.command {
         Command::ConvertWeights(args) => weights::exit_on_error(weights::convert(args)),
         Command::InspectWeights(args) => weights::exit_on_error(weights::inspect(args)),
+        Command::ExportShard {
+            model,
+            output,
+            weights,
+            layer_start,
+            layer_end,
+            max_bytes,
+        } => {
+            let before = inference_result(bml_compiler::symbolic_artifact::checked_identity(
+                &model,
+                weights.as_deref(),
+            ));
+            let loaded = inference_result(bml_compiler::symbolic_artifact::load_directory(
+                &model,
+                weights.as_deref(),
+            ));
+            if loaded.manifest.profile != bml_compiler::symbolic_artifact::BOUNDED_PROFILE {
+                eprintln!("export-shard requires the bounded symbolic v4 profile");
+                std::process::exit(1);
+            }
+
+            let shard =
+                inference_result(bml_compiler::symbolic_weight_shard::export_layer_weights(
+                    &model,
+                    weights.as_deref(),
+                    layer_start..layer_end,
+                    &output,
+                    max_bytes,
+                ));
+            let after = inference_result(bml_compiler::symbolic_artifact::checked_identity(
+                &model,
+                weights.as_deref(),
+            ));
+            if before != after {
+                eprintln!("artifact changed while exporting shard; discard the output");
+                std::process::exit(1);
+            }
+            println!("artifact_sha256={before}");
+            println!("shard_sha256={shard}");
+            println!("layers={layer_start}..{layer_end}");
+        }
+
         Command::Compile {
             model,
             output,
