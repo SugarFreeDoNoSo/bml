@@ -186,6 +186,33 @@ fn cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weig
     let native = bml_compiler::gguf_compiler::InferenceCompiler::open_mapped(&moved.0).unwrap();
     let vocab = reference.compiler().vocab().clone();
     let ids = vocab.encode("A").unwrap();
+    let request = |nodes: &str, temperature: &str, count: usize| {
+        Command::new(env!("CARGO_BIN_EXE_bml-cli"))
+            .args(["distribute", "--model"])
+            .arg(&directory.0)
+            .arg("--weights")
+            .arg(&moved.0)
+            .args(["--nodes", nodes, "--prompt", "A", "--num-tokens"])
+            .arg(count.to_string())
+            .arg(format!("--temp={temperature}"))
+            .output()
+            .unwrap()
+    };
+    for temperature in ["-1", "NaN"] {
+        let result = request("127.0.0.1:0", temperature, 1);
+        assert!(!result.status.success());
+        assert!(String::from_utf8_lossy(&result.stderr).contains("temperatura inválida"));
+    }
+    let empty_nodes = request(",", "0", 1);
+    assert!(!empty_nodes.status.success());
+    assert!(String::from_utf8_lossy(&empty_nodes.stderr).contains("lista de nodos inválida"));
+    let at_limit = 6usize - ids.len() + 1;
+    let over = request("127.0.0.1:0", "0", at_limit + 1);
+    assert!(!over.status.success());
+    assert!(String::from_utf8_lossy(&over.stderr).contains("exceden el contexto compilado"));
+    let exact = request("127.0.0.1:0", "0", at_limit);
+    assert!(!exact.status.success());
+    assert!(String::from_utf8_lossy(&exact.stderr).contains("worker 127.0.0.1:0"));
     let mut cache = bml_compiler::HashConsedKV::new(3, 1, 2, 6);
     let mut native_cache = bml_compiler::HashConsedKV::new(3, 1, 2, 6);
     let mut logits = reference.forward_cached(&ids, &mut cache).unwrap();

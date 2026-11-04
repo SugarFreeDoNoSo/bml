@@ -1,0 +1,26 @@
+{
+  "scope": "Focused distributed CLI preflight mutation replays; no complete mutation campaign result.",
+  "base_commit": "6bad2247bcd0a803f381ad7e82778691e873db8f",
+  "test": "cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weights",
+  "baseline": "passed: invalid temperature, empty nodes, exact and exceeding context bounds",
+  "replays": [
+    {
+      "mutation": "temp_and",
+      "exit_code": 101
+    },
+    {
+      "mutation": "context_eq",
+      "exit_code": 101
+    },
+    {
+      "mutation": "context_ge",
+      "exit_code": 101
+    }
+  ],
+  "logs": {
+    "target/quality/distributed-preflight-test.log": "82daf3c6a58a3bd1eb7ea046b3a9b3ec039eba8f5d1ca97fa0d6c97cdea82e55",
+    "target/quality/distributed-preflight-mutant-temp_and.log": "68527cdc939e7d5acb502acfe9df2d3940387f49bc504df9481e6aee13b6fa76",
+    "target/quality/distributed-preflight-mutant-context_eq.log": "4e45aaefd8970255488085962366b8a5d1a26420e1fbe6d4e21704cf805a4add",
+    "target/quality/distributed-preflight-mutant-context_ge.log": "d1f4e1dbcd5018e7d1fdb841282489448bc88c35938dd2745e0a9ee8c91e7deb"
+  }
+}
