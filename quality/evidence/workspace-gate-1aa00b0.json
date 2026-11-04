@@ -1,0 +1,15 @@
+{
+  "tested_revision": "1aa00b0f898de6c70e747c9a2bb161d8daf7c35b",
+  "base_revision": "66357cb4527361a021bab8a0a1d69d2abdd748bb",
+  "command": "./scripts/check.sh 66357cb",
+  "exit_code": 0,
+  "log_path": "target/quality/check-1aa00b0.log",
+  "log_sha256": "28073a7fc9f345015fb684c858fbba9768eaee8bac14f6e40ddd7c4a99261695",
+  "historical_contract_discrepancies": 0,
+  "traceability_registered_scenarios": 105,
+  "traceability_total_scenarios": 105,
+  "clippy_diagnostics": 54,
+  "clippy_baseline": 192,
+  "new_clippy_diagnostics": 0,
+  "scope": "Local gate for the tested revision; mutation and real-model diagnostics are separate and still running. Log is a local target artifact."
+}
