@@ -1,0 +1,30 @@
+{
+  "base_commit": "00d5c2a12d0f936a536d0b71d3a89bc83df1a101",
+  "source": "target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf",
+  "source_sha256": "da3087fb14aede55fde6eb81a0e55e886810e43509ec82ecdc7aa5d62a03b556",
+  "compile_profile": "bounded v4, context 2, RMS input/weight 1/1",
+  "first_artifact": "target/quality/tinyllama-bounded-v4/symbolic.bmlgraph.json",
+  "first_artifact_sha256": "7c25acda0f5bb1c0aedfda3ba756dec1a989308315c3083c9e2d52b6a7908082",
+  "first_inference": "4M graph-step budget rejected preflight; 100M passed preflight but layer 0 attn_k row 174 rejected weight -3.109375 against declared bound 2. No token generated.",
+  "second_artifact": "target/quality/tinyllama-bounded-projection4/symbolic.bmlgraph.json",
+  "second_artifact_sha256": "cc4901a39a87de00329c781ddd96e6ec46b0620bc84587c374db041b370a6f01",
+  "second_profile": "RMS input/weight 1/1, projection input/weight 64/4",
+  "second_execution": "Started with 100M graph step budget; outcome is not asserted here. See target/quality/tinyllama-bounded-projection4-run.log and .exit after completion.",
+  "retained_binary": "target/quality/tinyllama-bounded-cli-measured",
+  "retained_binary_sha256": "3fb0521c98033aa81d6b06d55af73bdb0a7aa1b3dc7e41f574ce0c8d65804502",
+  "source_hashes_recorded_during_second_execution": {
+    "crates/cli/src/main.rs": "05fc90db1bee9a009b206d174e0e3fae66d2b95481af261047673282bbb344f0",
+    "crates/compiler/src/symbolic_bounded.rs": "af8880a1a3f8f957cee42f013574fa93f164d2add6fdb9a5962ab88ab322c145",
+    "crates/runtime/src/symbolic_causal.rs": "bcbce61ccb0b6c52750065756169d3d16ec0ad942fb9e4ce0fae5e3b4cd9172d",
+    "crates/worker/src/main.rs": "6a97fdfb1392d9de33d28caf55722753f087537fc6c700ca1208c7edc2e4e06c",
+    "Cargo.lock": "c5d875714d0d0914385037cc178e7480650cd6d518974aa43c141c8d38426e56"
+  },
+  "logs": {
+    "target/quality/tinyllama-bounded-compile.log": "1ba1c8bd644e3c0207533a050da9aa88e4d78b4b5fe229620a00cf591db7e8f0",
+    "target/quality/tinyllama-bounded-inference.log": "d07938ba861e39abd9fb6ad621ec6a1bc3f0821c4cb740a2dd97ed5a263b84aa",
+    "target/quality/tinyllama-bounded-100m.log": "2be629c24f4c4e6de4a9461cc7975d7e6df0d9819187b91b03eac9749ffd6abb",
+    "target/quality/tinyllama-bounded-diagnostic.log": "33118253a78bf0e958eb6a1295423488f4210145d4afe88722ed95a97721bfc9",
+    "target/quality/tinyllama-bounded-projection4-compile.log": "00456928e396f11f25b924d379a32a97195da6a3844cc84310393f35bfdc45ce"
+  },
+  "limitations": "Diagnostic results only; no TinyLlama token, numerical parity or performance claim until execution completes and is compared to an independent reference."
+}

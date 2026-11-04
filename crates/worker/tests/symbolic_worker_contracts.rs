@@ -628,3 +628,32 @@ fn source_free_stories15m_workers_match_native_logits() {
         logits.len()
     );
 }
+
+#[test]
+fn worker_explicit_step_budget_is_enforced_regardless_of_argument_order() {
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    let directory = Directory(source.0.with_extension("worker-step-budget"));
+    std::fs::create_dir(&directory.0).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &directory.0,
+        3,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    for args in [
+        ["--symbolic-large-budget", "--symbolic-max-steps", "1"],
+        ["--symbolic-max-steps", "1", "--symbolic-large-budget"],
+    ] {
+        let result = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+            .args(["--symbolic-artifact"])
+            .arg(&directory.0)
+            .args(["--layer-start", "0", "--layer-end", "3"])
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(!result.status.success());
+        assert!(String::from_utf8_lossy(&result.stderr).contains("resource limit"));
+    }
+}

@@ -727,6 +727,7 @@ Then it rejects the request before expensive generation
     And a new coordinator rejects worker sessions that have pending or previously committed rows
     And terminating a real worker invalidates the coordinator without advancing its local position
     And authenticated worker processes execute their assigned shards without access to the source GGUF
+    And an explicit worker graph step budget is enforced regardless of argument order
 
 
   @C104
@@ -737,6 +738,7 @@ Then it rejects the request before expensive generation
     And relocated weights retain hash verification, EOS terminates and partial UTF-8 bytes are preserved
     And historical incomplete distributed fragments cannot masquerade as successful inference
     And the CLI exports range-bound shards for source-free workers with externally trusted hashes
+    And explicit graph step budgets reject workloads that exceed them
 
   @C105
   Scenario: Reject retired placeholder-producing distributed compilers

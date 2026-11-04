@@ -297,11 +297,18 @@ Los límites de RMS por defecto no son válidos para cualquier ancho o modelo.
 Si los valores reales se han validado para otros límites, el compilador acepta
 ambos parámetros `--distributed-rms-input-bound` y
 `--distributed-rms-weight-bound`; rechaza parámetros incompletos o inválidos.
+Las cotas de proyección se configuran en pareja mediante
+`--distributed-projection-input-bound` y `--distributed-projection-weight-bound`.
+El compilador valida las cotas y el producto permitido antes de publicar.
 No se recortan pesos ni se infieren límites a partir de activaciones observadas.
 
 El timeout de lectura/escritura por defecto es de 30 segundos. Para una
 operación simbólica que requiera más tiempo, configurar explícitamente
 `--symbolic-timeout-seconds` en cada worker y `--timeout-seconds` en la CLI.
+Para ampliar explícitamente el máximo de pasos de cada programa, usar
+`--symbolic-large-budget --symbolic-max-steps N` en la CLI y
+`--symbolic-max-steps N` en cada worker. El límite sigue verificándose antes
+de ejecutar; aumentarlo no certifica los límites numéricos de las activaciones.
 El timeout cubre también la espera mientras el coordinador evalúa la cabeza;
 una expiración invalida la conexión y no implica que el worker haya revertido
 una confirmación.

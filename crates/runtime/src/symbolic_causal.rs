@@ -572,7 +572,9 @@ impl SymbolicCausalModel {
                     .map(f64::from)
                     .collect::<Vec<_>>();
                 if let Some(profile) = profile {
-                    profile.validate_values(Operation::Dot, width, epsilon, input, &weights)?;
+                    profile
+                        .validate_values(Operation::Dot, width, epsilon, input, &weights)
+                        .map_err(|e| format!("{name} row {row}: {e}"))?;
                 }
                 let value = kernel.execute(input, &weights)?[0];
                 if !value.is_finite() {
@@ -582,10 +584,15 @@ impl SymbolicCausalModel {
             }
             return Ok(output);
         }
+        let mut row_index = 0usize;
         self.compiler.project_rows(input, name, |x, row| {
+            let index = row_index;
+            row_index += 1;
             let weights: Vec<_> = row.iter().map(|&v| f64::from(v)).collect();
             if let Some(profile) = profile {
-                profile.validate_values(Operation::Dot, width, epsilon, x, &weights)?;
+                profile
+                    .validate_values(Operation::Dot, width, epsilon, x, &weights)
+                    .map_err(|e| format!("{name} row {index}: {e}"))?;
             }
             Ok(kernel.execute(x, &weights)?[0])
         })

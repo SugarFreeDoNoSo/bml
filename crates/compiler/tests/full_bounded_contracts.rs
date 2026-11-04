@@ -448,7 +448,7 @@ fn full_bounded_v4_artifacts_match_independent_causal_oracle_without_recompilati
 #[test]
 fn full_bounded_runtime_rejects_each_dot_role_without_committing_cache() {
     let source = symbolic_fixture::fixture(0.25);
-    for profile in [
+    for (role, profile) in [
         BoundedProfile {
             projection_input: 1.0 / 256.0,
             ..Default::default()
@@ -465,7 +465,10 @@ fn full_bounded_runtime_rejects_each_dot_role_without_committing_cache() {
             value: 1.0 / 256.0,
             ..Default::default()
         },
-    ] {
+    ]
+    .into_iter()
+    .enumerate()
+    {
         let directory = artifact(&source, profile);
         let mut models = [
             SymbolicCausalModel::open_bounded(&source.0, SymbolicLimits::default(), profile)
@@ -484,6 +487,13 @@ fn full_bounded_runtime_rejects_each_dot_role_without_committing_cache() {
             let mut cache = HashConsedKV::new(1, 1, 2, 8);
             let error = model.forward_cached(&[69], &mut cache).unwrap_err();
             assert!(error.contains("bounded dot operand"), "{error}");
+            if role < 2 {
+                let expected = if role == 0 { "input" } else { "weight" };
+                assert!(
+                    error.contains(expected) && error.contains("blk.0.") && error.contains("row "),
+                    "{error}"
+                );
+            }
             assert_eq!(cache.current_pos(), 0);
         }
     }

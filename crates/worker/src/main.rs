@@ -55,6 +55,7 @@ fn main() {
     let mut shard_bytes: u64 = 512 * 1024 * 1024;
     let mut symbolic_start: Option<u32> = None;
     let mut symbolic_end: Option<u32> = None;
+    let mut symbolic_max_steps: Option<usize> = None;
     let mut symbolic_limits = bml_runtime::symbolic_transport::SymbolicTransportLimits::default();
 
     let mut i = 1;
@@ -122,6 +123,7 @@ fn main() {
             | "--layer-end"
             | "--symbolic-context"
             | "--symbolic-kv-bytes"
+            | "--symbolic-max-steps"
             | "--symbolic-timeout-seconds" => {
                 let option = args[i].clone();
                 i += 1;
@@ -150,6 +152,13 @@ fn main() {
                             eprintln!("context overflow");
                             std::process::exit(2);
                         })
+                    }
+                    "--symbolic-max-steps" => {
+                        if value == 0 {
+                            eprintln!("symbolic max steps must be positive");
+                            std::process::exit(2);
+                        }
+                        symbolic_max_steps = Some(value);
                     }
                     "--symbolic-timeout-seconds" => {
                         if value == 0 {
@@ -180,6 +189,7 @@ fn main() {
                 println!("  --symbolic-artifact-sha256 HASH: trust artifact identity and open without GGUF");
                 println!("  --symbolic-shard PATH --symbolic-shard-sha256 HASH --symbolic-shard-bytes N: authenticated layer weights");
                 println!("  --symbolic-large-budget: allow larger persisted symbolic programs");
+                println!("  --symbolic-max-steps N: explicit graph execution step budget");
                 println!("  --symbolic-timeout-seconds N: per-connection read/write timeout");
                 std::process::exit(0);
             }
@@ -188,6 +198,9 @@ fn main() {
         i += 1;
     }
 
+    if let Some(steps) = symbolic_max_steps {
+        symbolic_limits.model.graph.max_steps = steps;
+    }
     if symbolic_path.is_none()
         && (shard_path.is_some() || shard_hash.is_some() || artifact_hash.is_some())
     {

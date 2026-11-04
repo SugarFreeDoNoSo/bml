@@ -1019,7 +1019,8 @@
       "pipeline_rejects_gaps_and_duplicate_layer_assignments",
       "loss_of_a_real_worker_invalidates_the_coordinator_without_advancing_it",
       "pipeline_accepts_only_fresh_unprepared_worker_sessions",
-      "source_free_worker_executes_with_only_authenticated_artifact_and_shard"
+      "source_free_worker_executes_with_only_authenticated_artifact_and_shard",
+      "worker_explicit_step_budget_is_enforced_regardless_of_argument_order"
     ]
   },
   "C104": {
@@ -1030,7 +1031,8 @@
       "cli_rejects_missing_symbolic_artifact_before_using_legacy_fragments",
       "cli_stops_at_eos_and_emits_partial_utf8_bytes_without_replacement",
       "distributed_compile_rejects_partial_or_invalid_rms_bounds",
-      "cli_exports_trusted_shards_for_source_free_workers_and_generates"
+      "cli_exports_trusted_shards_for_source_free_workers_and_generates",
+      "symbolic_step_budget_is_explicit_and_enforced"
     ]
   },
   "C105": {

@@ -133,10 +133,15 @@ impl BoundedProfile {
                 Operation::AttentionDot => (self.attention, self.attention),
                 _ => (1.0, self.value),
             };
-            if inputs.iter().any(|x| !x.is_finite() || x.abs() > left)
-                || external.iter().any(|x| !x.is_finite() || x.abs() > right)
-            {
-                return Err("bounded dot operand exceeds its declaration".into());
+            if let Some(value) = inputs.iter().find(|x| !x.is_finite() || x.abs() > left) {
+                return Err(format!(
+                    "bounded dot operand input {value} exceeds declaration {left}"
+                ));
+            }
+            if let Some(value) = external.iter().find(|x| !x.is_finite() || x.abs() > right) {
+                return Err(format!(
+                    "bounded dot operand weight {value} exceeds declaration {right}"
+                ));
             }
             return Ok(());
         }

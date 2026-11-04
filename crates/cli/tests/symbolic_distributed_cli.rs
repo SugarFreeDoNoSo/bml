@@ -128,6 +128,10 @@ fn cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weig
             "4",
             "--distributed-rms-weight-bound",
             "4",
+            "--distributed-projection-input-bound",
+            "4",
+            "--distributed-projection-weight-bound",
+            "4",
             "--model",
         ])
         .arg(&source.0)
@@ -145,6 +149,11 @@ fn cli_generates_from_persisted_model_over_two_worker_ranges_with_relocated_weig
         .manifest;
     let rms = manifest.bounded_profile.unwrap().rms;
     assert_eq!((rms.input, rms.weight), (4.0, 4.0));
+    let bounds = manifest.bounded_profile.unwrap();
+    assert_eq!(
+        (bounds.projection_input, bounds.projection_weight),
+        (4.0, 4.0)
+    );
     let moved = symbolic_fixture::Fixture(source.0.with_extension("moved.gguf"));
     std::fs::rename(&source.0, &moved.0).unwrap();
     let mut reference = SymbolicCausalModel::open_artifact(
@@ -329,6 +338,13 @@ fn distributed_compile_rejects_partial_or_invalid_rms_bounds() {
     let directory = Directory(source.0.with_extension("bad-rms-profile"));
     for args in [
         vec!["--distributed-rms-input-bound", "4"],
+        vec!["--distributed-projection-weight-bound", "4"],
+        vec![
+            "--distributed-projection-input-bound",
+            "128",
+            "--distributed-projection-weight-bound",
+            "4",
+        ],
         vec![
             "--distributed-rms-input-bound",
             "4",
@@ -578,4 +594,53 @@ fn cli_exports_trusted_shards_for_source_free_workers_and_generates() {
     assert!(!result.status.success());
     assert!(String::from_utf8_lossy(&result.stderr).contains("bounded symbolic v4"));
     assert!(!unsupported.exists());
+}
+
+#[test]
+fn symbolic_step_budget_is_explicit_and_enforced() {
+    use bml_compiler::{
+        symbolic_artifact::compile_directory_bounded, symbolic_bounded::BoundedProfile,
+        symbolic_kernels::KernelLimits,
+    };
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    let directory = Directory(source.0.with_extension("cli-step-budget"));
+    std::fs::create_dir(&directory.0).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &directory.0,
+        3,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let run = |steps: &str, large: bool| {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_bml-cli"));
+        command.args(["run", "--model"]).arg(&directory.0).args([
+            "--prompt",
+            "A",
+            "--num-tokens",
+            "1",
+            "--context-size",
+            "3",
+            "--temp",
+            "0",
+            "--symbolic-max-steps",
+            steps,
+        ]);
+        if large {
+            command.arg("--symbolic-large-budget");
+        }
+        command.output().unwrap()
+    };
+    let rejected = run("1", true);
+    assert!(!rejected.status.success());
+    assert!(String::from_utf8_lossy(&rejected.stderr).contains("resource limit"));
+    let missing_flag = run("1000000", false);
+    assert!(!missing_flag.status.success());
+    let accepted = run("1000000", true);
+    assert!(
+        accepted.status.success(),
+        "{}",
+        String::from_utf8_lossy(&accepted.stderr)
+    );
 }

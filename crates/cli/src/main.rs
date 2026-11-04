@@ -92,6 +92,12 @@ enum Command {
         /// Inclusive learned RMS weight bound for the distributed bounded profile.
         #[arg(long, requires_all = ["distributed", "distributed_rms_input_bound"])]
         distributed_rms_weight_bound: Option<f64>,
+        /// Inclusive projection input bound for the distributed profile.
+        #[arg(long, requires_all = ["distributed", "distributed_projection_weight_bound"])]
+        distributed_projection_input_bound: Option<f64>,
+        /// Inclusive projection weight bound for the distributed profile.
+        #[arg(long, requires_all = ["distributed", "distributed_projection_input_bound"])]
+        distributed_projection_weight_bound: Option<f64>,
     },
 
     /// Ejecuta inferencia desde .bmlgraph, GGUF o BMLGGUF con evaluación explícita
@@ -139,6 +145,9 @@ enum Command {
         /// Presupuesto simbólico diagnóstico: 2M ops por programa y 4M pasos/valores.
         #[arg(long)]
         symbolic_large_budget: bool,
+        /// Límite explícito de pasos del grafo para modelos grandes.
+        #[arg(long, requires = "symbolic_large_budget", value_parser = clap::value_parser!(u64).range(1..))]
+        symbolic_max_steps: Option<u64>,
     },
 
     /// Exporta los pesos codificados de un rango para workers sin GGUF.
@@ -177,6 +186,9 @@ enum Command {
         /// Use the explicit larger symbolic execution budgets on the coordinator.
         #[arg(long)]
         symbolic_large_budget: bool,
+        /// Límite explícito de pasos del grafo del coordinador.
+        #[arg(long, requires = "symbolic_large_budget", value_parser = clap::value_parser!(u64).range(1..))]
+        symbolic_max_steps: Option<u64>,
         /// Read/write timeout for every worker connection in seconds.
         #[arg(long = "timeout-seconds", default_value_t = 30, value_parser = clap::value_parser!(u64).range(1..))]
         timeout_seconds: u64,
@@ -268,6 +280,8 @@ fn main() {
             layers_per_fragment,
             distributed_rms_input_bound,
             distributed_rms_weight_bound,
+            distributed_projection_input_bound,
+            distributed_projection_weight_bound,
         } => {
             if !model.exists() {
                 eprintln!("Error: el archivo GGUF no existe: {}", model.display());
@@ -308,6 +322,11 @@ fn main() {
                     profile.rms.input = input;
                     profile.rms.weight =
                         distributed_rms_weight_bound.expect("clap requires both RMS bounds");
+                }
+                if let Some(input) = distributed_projection_input_bound {
+                    profile.projection_input = input;
+                    profile.projection_weight = distributed_projection_weight_bound
+                        .expect("clap requires both projection bounds");
                 }
                 let manifest =
                     inference_result(bml_compiler::symbolic_artifact::compile_directory_bounded(
@@ -400,6 +419,7 @@ fn main() {
             context_size,
             bml,
             symbolic_large_budget,
+            symbolic_max_steps,
         } => {
             if symbolic_large_budget
                 && weight_evaluation.is_none()
@@ -412,7 +432,7 @@ fn main() {
                 );
                 std::process::exit(1);
             }
-            let symbolic_limits = symbolic_limits(symbolic_large_budget);
+            let symbolic_limits = symbolic_limits(symbolic_large_budget, symbolic_max_steps);
             if weights.is_some()
                 && !model
                     .join(bml_compiler::causal_artifact::MANIFEST)
@@ -490,6 +510,7 @@ fn main() {
             nodes,
             weights,
             symbolic_large_budget,
+            symbolic_max_steps,
             timeout_seconds,
             prompt,
             num_tokens,
@@ -503,6 +524,7 @@ fn main() {
                 num_tokens,
                 temp,
                 symbolic_large_budget,
+                symbolic_max_steps,
                 timeout_seconds,
             ) {
                 eprintln!("Error de inferencia distribuida: {error}");
@@ -516,8 +538,11 @@ enum TextArtifact {
     Native(Box<bml_runtime::causal_artifact::CompiledCausalModel>),
     Symbolic(Box<bml_runtime::symbolic_causal::SymbolicCausalModel>),
 }
-fn symbolic_limits(large: bool) -> bml_runtime::symbolic_causal::SymbolicLimits {
-    if large {
+fn symbolic_limits(
+    large: bool,
+    max_steps: Option<u64>,
+) -> bml_runtime::symbolic_causal::SymbolicLimits {
+    let mut limits = if large {
         bml_runtime::symbolic_causal::SymbolicLimits {
             max_nodes: 2_000_000,
             max_cached_ops: 4_000_000,
@@ -530,7 +555,14 @@ fn symbolic_limits(large: bool) -> bml_runtime::symbolic_causal::SymbolicLimits 
         }
     } else {
         Default::default()
+    };
+    if let Some(steps) = max_steps {
+        limits.graph.max_steps = usize::try_from(steps).unwrap_or_else(|_| {
+            eprintln!("symbolic step budget overflow");
+            std::process::exit(2);
+        });
     }
+    limits
 }
 impl TextArtifact {
     fn open(
@@ -753,6 +785,7 @@ fn distribute(
     num_tokens: u32,
     temperature: f64,
     large_budget: bool,
+    max_steps: Option<u64>,
     timeout_seconds: u64,
 ) -> Result<(), String> {
     use bml_runtime::symbolic_causal::{SymbolicCausalModel, SymbolicLimits};
@@ -775,7 +808,7 @@ fn distribute(
     }
     let limits = SymbolicLimits {
         max_nodes: 0,
-        ..symbolic_limits(large_budget)
+        ..symbolic_limits(large_budget, max_steps)
     };
     let identity = bml_compiler::symbolic_artifact::checked_identity(directory, source)?;
     let model = SymbolicCausalModel::open_artifact(directory, source, limits)?;
