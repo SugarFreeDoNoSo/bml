@@ -1,0 +1,21 @@
+{
+  "scope": "Inclusive 16 MiB compiler-produced causal manifest and loader round trip; focused replay, not full mutation campaign.",
+  "base_commit": "3ba9bf53dc6c688a3c1541b6bb8498c3fded1d5d",
+  "test": "compiled_manifest_accepts_16_mib_and_rejects_one_more_byte",
+  "baseline": "passed: exact 16 MiB manifest compiled and loaded against its GGUF; one byte more rejected before artifact publication",
+  "mutation": "bytes.len() > MAX_MANIFEST replaced by >= in compile_directory",
+  "mutation_exit_code": 101,
+  "logs": {
+    "target/quality/causal-manifest-exact-test.log": "f96aceedc241b7c5d4cd27b5bc77ca25da810ddb0316a6738ad39ae787f932f8",
+    "target/quality/causal-manifest-exact-mutant.log": "ed3b0d15c280efc37501abefc9c5e069f78dacd0ae0be3b830a1304fb1f2093b",
+    "target/quality/causal-manifest-exact-gate.log": "691382eccf7c186b4c422a6040bed28b6b9a34ebd37886ba65d832a8c90a0afc",
+    "target/quality/causal-manifest-exact-openspec.log": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7"
+  },
+  "verification": {
+    "workspace_gate": "passed: scripts/check.sh origin/master",
+    "historical_contract_discrepancies": 0,
+    "traceability": "105/105",
+    "new_static_diagnostics": 0,
+    "openspec_strict": "11 passed, 0 failed"
+  }
+}

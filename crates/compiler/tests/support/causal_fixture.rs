@@ -21,17 +21,24 @@ fn array(kind: u32, values: Vec<Vec<u8>>) -> Vec<u8> {
     bytes
 }
 pub fn fixture(overflow_scores: bool) -> Fixture {
-    build(overflow_scores, false)
+    build(overflow_scores, false, 0)
+}
+
+/// Enlarge a normal vocabulary spelling without changing the tensor contract.
+#[allow(dead_code)] // Shared by integration targets with different contracts.
+pub fn padded_vocabulary_fixture(padding: usize) -> Fixture {
+    build(false, false, padding)
 }
 
 /// Two rotary pairs, with identity Q/K/V and nonzero entries in both pairs.
 #[allow(dead_code)] // The fixture module is shared by several integration targets.
 pub fn wide_rope_fixture() -> Fixture {
-    build(false, true)
+    build(false, true, 0)
 }
 
-fn build(overflow_scores: bool, wide_rope: bool) -> Fixture {
-    let mut tokens = vec!["<unk>".into(), "<s>".into(), "</s>".into(), "▁".into()];
+fn build(overflow_scores: bool, wide_rope: bool, padding: usize) -> Fixture {
+    let mut tokens: Vec<String> = vec!["<unk>".into(), "<s>".into(), "</s>".into(), "▁".into()];
+    tokens[3].push_str(&"a".repeat(padding));
     tokens.extend((0..256).map(|b| format!("<0x{b:02X}>")));
     let vocab = tokens.len();
     let mut meta = vec![

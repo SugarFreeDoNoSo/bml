@@ -52,6 +52,35 @@ impl Drop for Directory {
 }
 
 #[test]
+fn compiled_manifest_accepts_16_mib_and_rejects_one_more_byte() {
+    use bml_compiler::causal_artifact::load_directory;
+
+    let source = causal_fixture::fixture(false);
+    let initial = Directory::new();
+    compile_directory(&source.0, &initial.0, 32768).unwrap();
+    let initial_size = std::fs::metadata(initial.0.join(MANIFEST)).unwrap().len() as usize;
+    let budget = 16 * 1024 * 1024;
+    for extra in [0, 1] {
+        let padded = causal_fixture::padded_vocabulary_fixture(budget - initial_size + extra);
+        // Keep the canonical source locator identical to the sizing pass.
+        std::fs::rename(&padded.0, &source.0).unwrap();
+        let output = Directory::new();
+        let result = compile_directory(&source.0, &output.0, 32768);
+        if extra == 0 {
+            result.expect("inclusive 16 MiB compiled-manifest budget");
+            assert_eq!(
+                std::fs::metadata(output.0.join(MANIFEST)).unwrap().len(),
+                budget as u64
+            );
+            load_directory(&output.0, None).expect("compiler output must also be loadable");
+        } else {
+            assert_eq!(result.unwrap_err(), "compiled manifest exceeds byte budget");
+            assert_eq!(std::fs::read_dir(&output.0).unwrap().count(), 0);
+        }
+    }
+}
+
+#[test]
 fn stored_program_byte_budget_accepts_64_kib_and_rejects_one_more_byte() {
     use bml_compiler::causal_artifact::load_directory;
 
