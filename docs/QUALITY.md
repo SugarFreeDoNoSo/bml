@@ -319,3 +319,14 @@ unchanged throughout the campaign. Job success and downloaded artifact checks
 are required before crediting task 7.4; creating this workflow is not a completed
 ARM measurement. Hosted-runner wall times are workload-specific measurements,
 not hardware-counter or instruction-cache-residency evidence.
+
+
+The first completed native run is
+[41853147652](https://github.com/SugarFreeDoNoSo/bml/actions/runs/41853147652)
+on revision `6d15db6`. Both hosted native VMs passed eight all-feature tests;
+ARM64 exercised Scalar/NEON and x86-64 exercised Scalar/AVX2. Downloaded ZIP
+checksums, every reported file hash, ELF machine types and all captured source
+hashes were independently verified. Full CPU metadata and all measured samples
+are retained in `quality/evidence/native-kernels-41853147652.json`. These results
+complete the native comparison-kernel campaign; they do not establish PMU/L1
+residency or numerical/inference speedups.

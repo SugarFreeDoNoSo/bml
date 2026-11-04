@@ -1,0 +1,1210 @@
+{
+  "scope": "Native GitHub-hosted x86-64 and ARM64 VM functional and structural-code comparison campaigns. No emulation, inference throughput, numerical BML SIMD or PMU/cache-residency claim.",
+  "run_id": 41853147652,
+  "run_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41853147652",
+  "revision": "6d15db6cd3e72f1ad97dbf5e74bbbd97962429e1",
+  "observed_at_utc": "2026-11-04T15:05:40.050699+00:00",
+  "architectures": {
+    "aarch64": {
+      "job_id": 126654555746,
+      "job_conclusion": "success",
+      "artifact_id": 13336925016,
+      "artifact_zip_sha256": "68f5e76588985be318c16f84ec2f9349bbeb6b85d893c4fef7eecffad2188de2",
+      "manifest_sha256": "e6a74777b5062f9d40b51090b94728d33ee1d97a0305fe1fee654de2e5e35bec",
+      "elf_machine": 183,
+      "tests_passed": 8,
+      "local_artifact_directory": "target/quality/native-kernels-run-41853147652/aarch64",
+      "median_batch_nanoseconds": {
+        "equal-long": {
+          "Scalar": 1986809,
+          "Neon": 1934412
+        },
+        "late-difference": {
+          "Scalar": 1959091,
+          "Neon": 1917037
+        },
+        "short-mixed": {
+          "Scalar": 269999,
+          "Neon": 273800
+        }
+      },
+      "manifest": {
+        "scope": "Native structural-code comparison experiment; no BML numerical or inference throughput claim.",
+        "execution": "native ELF executed directly with taskset; no Cargo runner override",
+        "measured_at_utc": "2026-11-04T15:00:13.434816+00:00",
+        "revision": "6d15db6cd3e72f1ad97dbf5e74bbbd97962429e1",
+        "worktree_dirty": false,
+        "architecture": "aarch64",
+        "expected_backend": "Neon",
+        "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8",
+        "runner_arch": "ARM64",
+        "runner_os": "Linux",
+        "github_run_id": "41853147652",
+        "github_run_attempt": "1",
+        "cpu": {
+          "lscpu": [
+            {
+              "field": "Architecture:",
+              "data": "aarch64"
+            },
+            {
+              "field": "CPU op-mode(s):",
+              "data": "32-bit, 64-bit"
+            },
+            {
+              "field": "Byte Order:",
+              "data": "Little Endian"
+            },
+            {
+              "field": "CPU(s):",
+              "data": "4"
+            },
+            {
+              "field": "On-line CPU(s) list:",
+              "data": "0-3"
+            },
+            {
+              "field": "Vendor ID:",
+              "data": "ARM"
+            },
+            {
+              "field": "Model name:",
+              "data": "Neoverse-N2"
+            },
+            {
+              "field": "Model:",
+              "data": "0"
+            },
+            {
+              "field": "Thread(s) per core:",
+              "data": "1"
+            },
+            {
+              "field": "Core(s) per socket:",
+              "data": "4"
+            },
+            {
+              "field": "Socket(s):",
+              "data": "1"
+            },
+            {
+              "field": "Stepping:",
+              "data": "r0p0"
+            },
+            {
+              "field": "BogoMIPS:",
+              "data": "2000.00"
+            },
+            {
+              "field": "Flags:",
+              "data": "fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16"
+            },
+            {
+              "field": "L1d cache:",
+              "data": "256 KiB (4 instances)"
+            },
+            {
+              "field": "L1i cache:",
+              "data": "256 KiB (4 instances)"
+            },
+            {
+              "field": "L2 cache:",
+              "data": "4 MiB (4 instances)"
+            },
+            {
+              "field": "L3 cache:",
+              "data": "128 MiB (1 instance)"
+            },
+            {
+              "field": "NUMA node(s):",
+              "data": "1"
+            },
+            {
+              "field": "NUMA node0 CPU(s):",
+              "data": "0-3"
+            },
+            {
+              "field": "Vulnerability Gather data sampling:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Ghostwrite:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Indirect target selection:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Itlb multihit:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability L1tf:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Mds:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Meltdown:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Mmio stale data:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Old microcode:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Reg file data sampling:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Retbleed:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Spec rstack overflow:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Spec store bypass:",
+              "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+            },
+            {
+              "field": "Vulnerability Spectre v1:",
+              "data": "Mitigation; __user pointer sanitization"
+            },
+            {
+              "field": "Vulnerability Spectre v2:",
+              "data": "Mitigation; CSV2, BHB"
+            },
+            {
+              "field": "Vulnerability Srbds:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Tsa:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Tsx async abort:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Vmscape:",
+              "data": "Not affected"
+            }
+          ]
+        },
+        "uname": "Linux runnervmkb2gk 7.0.0-1017-azure #17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 19:06:39 UTC 2026 aarch64 aarch64 aarch64 GNU/Linux",
+        "allowed_cpus": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "benchmark_cpu": 0,
+        "source_sha256": {
+          "Cargo.toml": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+          "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1",
+          "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c",
+          "crates/domain/Cargo.toml": "ab5553ea1a83d4cb7fa5705c43d91c5c4e57495bb6a969acd54b5667bdfecd34",
+          "crates/kernels/Cargo.toml": "ef943b48a6ffbf7755ae2d775e0f36f60e27ceeb08f43f1e1b0aeee11183ea65",
+          "crates/kernels/tests/code_comparison.rs": "7f3e33cedc7057ad6305c16686cf7cfd14be4930d5f6790a36d17f5ef677e4ac",
+          "crates/kernels/tests/tensor_simd.rs": "292caf87c4bca681ea057017764d7b124c0b0ee0b3521ead6a2bc425fe51e760",
+          "crates/kernels/examples/code_compare_bench.rs": "a82ba8d2eda2a5d24ae2ab63aa24e2f0e6c9821563859929ed5b2c1802e02f37",
+          "tools/native_kernel_campaign.py": "bbe56cbc195fc3c4ed3b369a9f012ad40ab9533329ddd01ea07aaea808fd3424",
+          ".github/workflows/native-kernels.yml": "c8a2e621072d78f7f28686c8bdc17f119d77b6c112b2b61bf31f2e26d553b6ce",
+          "crates/domain/src/ast.rs": "fb1a1c1b7d8b86ad35ea02fc8305d7516f24dfec4b995a8b34ca4733c7a70077",
+          "crates/domain/src/encoder.rs": "2a8cbef780696ee59d0d0dc0726f79e4e7a9542cd2f2bed42ff867cb3a01d103",
+          "crates/domain/src/lib.rs": "a99c729e691dfeedb28366d7742e47f3fa5eb0d88332ac942caaaf2e04d40695",
+          "crates/domain/src/number/certified.rs": "b3122ee556cd1e7e8316ce6542e994b721e750b9a9e1f1c64e7517aedb42d77c",
+          "crates/domain/src/number/checked.rs": "11972ce60a80d679a9ab3b1c5f3cc50f5147180727908fea286b46f9732ef561",
+          "crates/domain/src/number/convert.rs": "d7abdf97b181f0a78b2d641e98c80faac933797690131344f2f6a1a793a6f641",
+          "crates/domain/src/number/encoding.rs": "e914642dfab9dad767752ff5cfb2bc4e6faa55b37e0d83517918ead86a2139fb",
+          "crates/domain/src/number/evaluate.rs": "e4602f91da384c89ae2a9eda0223827ba2c24cbaf21124ae366eca73ea49e94d",
+          "crates/domain/src/number/exact.rs": "da29637bbc49161ca1e684f87bd0e1f971af89e9ed9ff8eda3f2d7af024a73bf",
+          "crates/domain/src/number/matrix.rs": "f742872b25fb7929e289741248d572e108f7aadbea8497c193bccbba02499d77",
+          "crates/domain/src/number/mod.rs": "6447938efe5ebf55093c50c6d727210677d202c6a7a58f5dbeb6f6bb6100880b",
+          "crates/domain/src/number/operations.rs": "0d11bb78e9d3cca51008aa86f064a4a806f6f5422f407b9a0407dfb1d7c57131",
+          "crates/domain/src/number/recognize.rs": "645905e3daf4bdb551a397019e8de4d8b9198086a43fddaef7d75284690e5e28",
+          "crates/domain/src/number/search.rs": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+          "crates/domain/src/number/stream.rs": "230aee44dd7f6fc448d6dda2f1f0771f419f60b400e369b391a62d19e1573057",
+          "crates/domain/src/operator.rs": "9ce9a0726d87398a49613873ea19be6aedfdb715619a28ff9358ea527fcd146f",
+          "crates/domain/src/soa.rs": "3491916a398985b335614736f956aa78275514de4ca32ade225518b991bfe44c",
+          "crates/domain/src/symbolic.rs": "da18949682b8fc4abbef3a58b52f7139fdfc562923720eee5cb287f09b41b947",
+          "crates/domain/src/symbolic/complex.rs": "5449232ce60f82fbf5a1c874b5796d125365fc892e90468fceb3109ee6a42afc",
+          "crates/domain/src/symbolic/synthesis.rs": "690f2e051cc8c8195a34ea7038fdbc7ebe2c888b13492b207b27a96bd1daed54",
+          "crates/domain/src/tensor/error.rs": "c6ff71fefbde02f6ae693af30fdb695350bdedd9916be345de02c953a9d7c246",
+          "crates/domain/src/tensor/kernels.rs": "0442b16e928df5bb473311db2d8cf06dd4e4d6451a545aef3bd9bb3de2f28bb7",
+          "crates/domain/src/tensor/mod.rs": "d8167810b60316933616b4f72e35fed42e51283092d5948ac67996f5ebd0a4dd",
+          "crates/domain/src/tensor/shape.rs": "7c24a9b78825f4fcdebe283f79c7486d803abe05b7caa5c9b3ea746589310517",
+          "crates/domain/src/transformer.rs": "0b0900a28a10f6c274e9617c8eac7c6a19955188c84abf3095d3b46abc9ddd10",
+          "crates/domain/src/transformer/bounded.rs": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+          "crates/domain/src/transformer/bounded_ops.rs": "ee7b5e406263a6e22d604bbb4a01c23090362a0d7ff6cb696668c44dc2f7b202",
+          "crates/domain/src/transformer/operations.rs": "d5789f282379d04bba9aacb47051a662d1fbff004712707a9ff16442f069f777",
+          "crates/kernels/src/lib.rs": "82c4511a44cf04c338e823dde904133b1f200f278e12efea66a66617319e23a4",
+          "crates/kernels/src/tensor.rs": "b09431aa1d2fb16bea90c82fea0244e7384a6397e707c98828545c7749120f8c"
+        },
+        "source_unchanged_at_completion": true,
+        "files_sha256": {
+          "benchmark.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "benchmark.json": "33ae4ba4abe5983c9bf70a77bc91c248e251d09a10d42ffe21c33ba8b841a2e9",
+          "build.log": "f6c95c5081d5fa3cd8c417b74d65df2b14f20d51c6ec5cb161317be8295c12e9",
+          "benchmark-executable": "22f8edff62055324f2b12d436bbde9482441e81ec463ce0ad74888df00517c7b",
+          "tests.log": "c14018d3efc48720713ff6996dce00dabd7b0a0b4251b3a0017f8290db6eac6f"
+        }
+      },
+      "benchmark": {
+        "iterations": 100,
+        "repetitions": 7,
+        "pairs": 512,
+        "avx2_available": false,
+        "neon_available": true,
+        "workloads": [
+          {
+            "name": "equal-long",
+            "logical_input_bits": 4199424,
+            "preparation": {
+              "ns": 6647690,
+              "allocation_calls": 5122,
+              "requested_bytes": 1624064,
+              "peak_additional_live_bytes": 557056
+            },
+            "backends": [
+              {
+                "backend": "Scalar",
+                "samples": [
+                  {
+                    "ns": 2020223,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1988497,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1986809,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1985113,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1994505,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1986090,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1984386,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              },
+              {
+                "backend": "Neon",
+                "samples": [
+                  {
+                    "ns": 1933724,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1934220,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1938484,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1934412,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1935372,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1933764,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1941204,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "late-difference",
+            "logical_input_bits": 4199424,
+            "preparation": {
+              "ns": 6613828,
+              "allocation_calls": 5122,
+              "requested_bytes": 1624064,
+              "peak_additional_live_bytes": 557056
+            },
+            "backends": [
+              {
+                "backend": "Scalar",
+                "samples": [
+                  {
+                    "ns": 1960091,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1961914,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1962195,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1958770,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1958931,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1959091,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1958667,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              },
+              {
+                "backend": "Neon",
+                "samples": [
+                  {
+                    "ns": 1918862,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1915926,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1917037,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1916397,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1916733,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1918965,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 1925365,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "short-mixed",
+            "logical_input_bits": 11264,
+            "preparation": {
+              "ns": 30902,
+              "allocation_calls": 1032,
+              "requested_bytes": 32816,
+              "peak_additional_live_bytes": 32768
+            },
+            "backends": [
+              {
+                "backend": "Scalar",
+                "samples": [
+                  {
+                    "ns": 269784,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 269864,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 269775,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 277600,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 269999,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 270024,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 273240,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              },
+              {
+                "backend": "Neon",
+                "samples": [
+                  {
+                    "ns": 273776,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 273639,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 273704,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 275959,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 273976,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 273800,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 275448,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "x86_64": {
+      "job_id": 126654556589,
+      "job_conclusion": "success",
+      "artifact_id": 13335353127,
+      "artifact_zip_sha256": "11f656a51de4e92dc337e5c4949f69dcee2a5f8fed3192dfd691df1dde588335",
+      "manifest_sha256": "2fb6c32b5b2f785b4e581c6f5309f2bc756bc7f970f2e73d3066455d724be05f",
+      "elf_machine": 62,
+      "tests_passed": 8,
+      "local_artifact_directory": "target/quality/native-kernels-run-41853147652/x86_64",
+      "median_batch_nanoseconds": {
+        "equal-long": {
+          "Scalar": 2063962,
+          "Avx2": 882255
+        },
+        "late-difference": {
+          "Scalar": 2026116,
+          "Avx2": 875164
+        },
+        "short-mixed": {
+          "Scalar": 250270,
+          "Avx2": 273103
+        }
+      },
+      "manifest": {
+        "scope": "Native structural-code comparison experiment; no BML numerical or inference throughput claim.",
+        "execution": "native ELF executed directly with taskset; no Cargo runner override",
+        "measured_at_utc": "2026-11-04T15:00:12.776128+00:00",
+        "revision": "6d15db6cd3e72f1ad97dbf5e74bbbd97962429e1",
+        "worktree_dirty": false,
+        "architecture": "x86_64",
+        "expected_backend": "Avx2",
+        "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8",
+        "runner_arch": "X64",
+        "runner_os": "Linux",
+        "github_run_id": "41853147652",
+        "github_run_attempt": "1",
+        "cpu": {
+          "lscpu": [
+            {
+              "field": "Architecture:",
+              "data": "x86_64"
+            },
+            {
+              "field": "CPU op-mode(s):",
+              "data": "32-bit, 64-bit"
+            },
+            {
+              "field": "Address sizes:",
+              "data": "48 bits physical, 48 bits virtual"
+            },
+            {
+              "field": "Byte Order:",
+              "data": "Little Endian"
+            },
+            {
+              "field": "CPU(s):",
+              "data": "4"
+            },
+            {
+              "field": "On-line CPU(s) list:",
+              "data": "0-3"
+            },
+            {
+              "field": "Vendor ID:",
+              "data": "AuthenticAMD"
+            },
+            {
+              "field": "Model name:",
+              "data": "AMD EPYC 9V74 80-Core Processor"
+            },
+            {
+              "field": "CPU family:",
+              "data": "25"
+            },
+            {
+              "field": "Model:",
+              "data": "17"
+            },
+            {
+              "field": "Thread(s) per core:",
+              "data": "2"
+            },
+            {
+              "field": "Core(s) per socket:",
+              "data": "2"
+            },
+            {
+              "field": "Socket(s):",
+              "data": "1"
+            },
+            {
+              "field": "Stepping:",
+              "data": "1"
+            },
+            {
+              "field": "BogoMIPS:",
+              "data": "5192.25"
+            },
+            {
+              "field": "Flags:",
+              "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves user_shstk avx512_bf16 clzero xsaveerptr rdpru arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm"
+            },
+            {
+              "field": "Virtualization:",
+              "data": "AMD-V"
+            },
+            {
+              "field": "Hypervisor vendor:",
+              "data": "Microsoft"
+            },
+            {
+              "field": "Virtualization type:",
+              "data": "full"
+            },
+            {
+              "field": "L1d cache:",
+              "data": "64 KiB (2 instances)"
+            },
+            {
+              "field": "L1i cache:",
+              "data": "64 KiB (2 instances)"
+            },
+            {
+              "field": "L2 cache:",
+              "data": "2 MiB (2 instances)"
+            },
+            {
+              "field": "L3 cache:",
+              "data": "32 MiB (1 instance)"
+            },
+            {
+              "field": "NUMA node(s):",
+              "data": "1"
+            },
+            {
+              "field": "NUMA node0 CPU(s):",
+              "data": "0-3"
+            },
+            {
+              "field": "Vulnerability Gather data sampling:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Ghostwrite:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Indirect target selection:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Itlb multihit:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability L1tf:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Mds:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Meltdown:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Mmio stale data:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Old microcode:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Reg file data sampling:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Retbleed:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Spec rstack overflow:",
+              "data": "Vulnerable: Safe RET, no microcode"
+            },
+            {
+              "field": "Vulnerability Spec store bypass:",
+              "data": "Vulnerable"
+            },
+            {
+              "field": "Vulnerability Spectre v1:",
+              "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+            },
+            {
+              "field": "Vulnerability Spectre v2:",
+              "data": "Mitigation; Retpolines; STIBP disabled; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected"
+            },
+            {
+              "field": "Vulnerability Srbds:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Tsa:",
+              "data": "Vulnerable: No microcode"
+            },
+            {
+              "field": "Vulnerability Tsx async abort:",
+              "data": "Not affected"
+            },
+            {
+              "field": "Vulnerability Vmscape:",
+              "data": "Not affected"
+            }
+          ]
+        },
+        "uname": "Linux runnervm48cm3 7.0.0-1017-azure #17~24.04.1-Ubuntu SMP PREEMPT Thu Sep 24 18:46:57 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "allowed_cpus": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "benchmark_cpu": 0,
+        "source_sha256": {
+          "Cargo.toml": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+          "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1",
+          "Cargo.lock": "675d1f5f1db672a4d477d17a279485e864659f6f21870f87068630dad901431c",
+          "crates/domain/Cargo.toml": "ab5553ea1a83d4cb7fa5705c43d91c5c4e57495bb6a969acd54b5667bdfecd34",
+          "crates/kernels/Cargo.toml": "ef943b48a6ffbf7755ae2d775e0f36f60e27ceeb08f43f1e1b0aeee11183ea65",
+          "crates/kernels/tests/code_comparison.rs": "7f3e33cedc7057ad6305c16686cf7cfd14be4930d5f6790a36d17f5ef677e4ac",
+          "crates/kernels/tests/tensor_simd.rs": "292caf87c4bca681ea057017764d7b124c0b0ee0b3521ead6a2bc425fe51e760",
+          "crates/kernels/examples/code_compare_bench.rs": "a82ba8d2eda2a5d24ae2ab63aa24e2f0e6c9821563859929ed5b2c1802e02f37",
+          "tools/native_kernel_campaign.py": "bbe56cbc195fc3c4ed3b369a9f012ad40ab9533329ddd01ea07aaea808fd3424",
+          ".github/workflows/native-kernels.yml": "c8a2e621072d78f7f28686c8bdc17f119d77b6c112b2b61bf31f2e26d553b6ce",
+          "crates/domain/src/ast.rs": "fb1a1c1b7d8b86ad35ea02fc8305d7516f24dfec4b995a8b34ca4733c7a70077",
+          "crates/domain/src/encoder.rs": "2a8cbef780696ee59d0d0dc0726f79e4e7a9542cd2f2bed42ff867cb3a01d103",
+          "crates/domain/src/lib.rs": "a99c729e691dfeedb28366d7742e47f3fa5eb0d88332ac942caaaf2e04d40695",
+          "crates/domain/src/number/certified.rs": "b3122ee556cd1e7e8316ce6542e994b721e750b9a9e1f1c64e7517aedb42d77c",
+          "crates/domain/src/number/checked.rs": "11972ce60a80d679a9ab3b1c5f3cc50f5147180727908fea286b46f9732ef561",
+          "crates/domain/src/number/convert.rs": "d7abdf97b181f0a78b2d641e98c80faac933797690131344f2f6a1a793a6f641",
+          "crates/domain/src/number/encoding.rs": "e914642dfab9dad767752ff5cfb2bc4e6faa55b37e0d83517918ead86a2139fb",
+          "crates/domain/src/number/evaluate.rs": "e4602f91da384c89ae2a9eda0223827ba2c24cbaf21124ae366eca73ea49e94d",
+          "crates/domain/src/number/exact.rs": "da29637bbc49161ca1e684f87bd0e1f971af89e9ed9ff8eda3f2d7af024a73bf",
+          "crates/domain/src/number/matrix.rs": "f742872b25fb7929e289741248d572e108f7aadbea8497c193bccbba02499d77",
+          "crates/domain/src/number/mod.rs": "6447938efe5ebf55093c50c6d727210677d202c6a7a58f5dbeb6f6bb6100880b",
+          "crates/domain/src/number/operations.rs": "0d11bb78e9d3cca51008aa86f064a4a806f6f5422f407b9a0407dfb1d7c57131",
+          "crates/domain/src/number/recognize.rs": "645905e3daf4bdb551a397019e8de4d8b9198086a43fddaef7d75284690e5e28",
+          "crates/domain/src/number/search.rs": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+          "crates/domain/src/number/stream.rs": "230aee44dd7f6fc448d6dda2f1f0771f419f60b400e369b391a62d19e1573057",
+          "crates/domain/src/operator.rs": "9ce9a0726d87398a49613873ea19be6aedfdb715619a28ff9358ea527fcd146f",
+          "crates/domain/src/soa.rs": "3491916a398985b335614736f956aa78275514de4ca32ade225518b991bfe44c",
+          "crates/domain/src/symbolic.rs": "da18949682b8fc4abbef3a58b52f7139fdfc562923720eee5cb287f09b41b947",
+          "crates/domain/src/symbolic/complex.rs": "5449232ce60f82fbf5a1c874b5796d125365fc892e90468fceb3109ee6a42afc",
+          "crates/domain/src/symbolic/synthesis.rs": "690f2e051cc8c8195a34ea7038fdbc7ebe2c888b13492b207b27a96bd1daed54",
+          "crates/domain/src/tensor/error.rs": "c6ff71fefbde02f6ae693af30fdb695350bdedd9916be345de02c953a9d7c246",
+          "crates/domain/src/tensor/kernels.rs": "0442b16e928df5bb473311db2d8cf06dd4e4d6451a545aef3bd9bb3de2f28bb7",
+          "crates/domain/src/tensor/mod.rs": "d8167810b60316933616b4f72e35fed42e51283092d5948ac67996f5ebd0a4dd",
+          "crates/domain/src/tensor/shape.rs": "7c24a9b78825f4fcdebe283f79c7486d803abe05b7caa5c9b3ea746589310517",
+          "crates/domain/src/transformer.rs": "0b0900a28a10f6c274e9617c8eac7c6a19955188c84abf3095d3b46abc9ddd10",
+          "crates/domain/src/transformer/bounded.rs": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+          "crates/domain/src/transformer/bounded_ops.rs": "ee7b5e406263a6e22d604bbb4a01c23090362a0d7ff6cb696668c44dc2f7b202",
+          "crates/domain/src/transformer/operations.rs": "d5789f282379d04bba9aacb47051a662d1fbff004712707a9ff16442f069f777",
+          "crates/kernels/src/lib.rs": "82c4511a44cf04c338e823dde904133b1f200f278e12efea66a66617319e23a4",
+          "crates/kernels/src/tensor.rs": "b09431aa1d2fb16bea90c82fea0244e7384a6397e707c98828545c7749120f8c"
+        },
+        "source_unchanged_at_completion": true,
+        "files_sha256": {
+          "build.log": "c826dc32b4d7e89bf687c409d8135c7ca4fe0c64a07a5351edc67954fbaa1ad4",
+          "tests.log": "68ae312d5bb5143389102b4b71829c186b9b15ffcdd5c29f8429839f880f31f8",
+          "benchmark.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "benchmark.json": "1b4b2e8f2c3eed45d491834cd5e759b408eaa9384db729e72df62f23a4836923",
+          "benchmark-executable": "30eadfc43e255df28cc025b9294e9cb947ec1adb7b21d60af9d27585a525c915"
+        }
+      },
+      "benchmark": {
+        "iterations": 100,
+        "repetitions": 7,
+        "pairs": 512,
+        "avx2_available": true,
+        "neon_available": false,
+        "workloads": [
+          {
+            "name": "equal-long",
+            "logical_input_bits": 4199424,
+            "preparation": {
+              "ns": 6886722,
+              "allocation_calls": 5122,
+              "requested_bytes": 1624064,
+              "peak_additional_live_bytes": 557056
+            },
+            "backends": [
+              {
+                "backend": "Scalar",
+                "samples": [
+                  {
+                    "ns": 2069480,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2099745,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2052945,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2063962,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2054718,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2055990,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2072324,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              },
+              {
+                "backend": "Avx2",
+                "samples": [
+                  {
+                    "ns": 882255,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 873392,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 888543,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 882875,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 872179,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 868875,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 888333,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "late-difference",
+            "logical_input_bits": 4199424,
+            "preparation": {
+              "ns": 6921815,
+              "allocation_calls": 5122,
+              "requested_bytes": 1624064,
+              "peak_additional_live_bytes": 557056
+            },
+            "backends": [
+              {
+                "backend": "Scalar",
+                "samples": [
+                  {
+                    "ns": 2037082,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2019306,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2020878,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2025475,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2039536,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2026116,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 2038434,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              },
+              {
+                "backend": "Avx2",
+                "samples": [
+                  {
+                    "ns": 889695,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 881233,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 875164,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 867492,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 871007,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 873031,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 879991,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "short-mixed",
+            "logical_input_bits": 11264,
+            "preparation": {
+              "ns": 18948,
+              "allocation_calls": 1032,
+              "requested_bytes": 32816,
+              "peak_additional_live_bytes": 32768
+            },
+            "backends": [
+              {
+                "backend": "Scalar",
+                "samples": [
+                  {
+                    "ns": 250080,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 249960,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 251803,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 257310,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 250270,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 250270,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 250090,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              },
+              {
+                "backend": "Avx2",
+                "samples": [
+                  {
+                    "ns": 275577,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 269448,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 273103,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 278301,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 271131,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 273474,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  },
+                  {
+                    "ns": 270460,
+                    "allocation_calls": 100,
+                    "requested_bytes": 51200,
+                    "peak_additional_live_bytes": 512
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "qualification": "Seven repeated batches per workload/backend at one fixed CPU. Hosted VM measurements are workload-specific; no universal SIMD speedup claim.",
+  "verification": {
+    "downloaded_zip_digests_match_github": true,
+    "all_archived_file_hashes_match": true,
+    "native_elf_machine_types_match": true,
+    "all_captured_source_hashes_match_reviewed_worktree": true,
+    "canonical_workspace_gate": "passed on the identical reviewed source tree before publication",
+    "script_contract_tests": 6,
+    "openspec_strict": "11 passed, 0 failed",
+    "logs": {
+      "target/quality/native-kernel-native-results-openspec.log": "6b99ee0a922fddf28abfac2992d576cf83956e080d8271ca8559ab3e30dcf0d7",
+      "target/quality/native-kernel-campaign-gate.log": "f5e3a34ef4564ded4aa0667722ca701bcdac5bf0be78520398467115cc8815b0",
+      "target/quality/native-kernel-campaign-tool-tests.log": "3fdda47ec8ce71e0b958ebe026a232c0ba418cd511bf30ecdfc1be5cc372fa8d"
+    }
+  }
+}
