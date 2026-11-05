@@ -1,0 +1,50 @@
+{
+  "status": "passed",
+  "base_revision": "236a46d3cff6cb1f1951894a231743fc90154c8c",
+  "command": "./scripts/check.sh 236a46d",
+  "exit_code": 0,
+  "observed_at_utc": "2026-11-05T01:14:45.906436+00:00",
+  "scope": "Integrated second-wave working tree. Exact tested input hashes are recorded. Ignored real-model diagnostic is running separately; final coverage, mutation and PMU/release gates are not established.",
+  "python_tooling_tests": 119,
+  "historical_contract_discrepancies": 0,
+  "traceability": "105/105",
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "openspec": {
+    "command": "openspec validate --all --strict",
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/wave-two-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "log": "target/quality/wave-two-gate.log",
+  "log_sha256": "1c8d8182ecdc7f62294efbe5bca0f7450d0d8b12c92350dc1981247ede0f75b2",
+  "tested_source_hashes": {
+    "Cargo.lock": "24f3ffb3895c5d7d6c2ff84f4db44695fad726f20972cf7517ead389d049e091",
+    "Cargo.toml": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+    "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1",
+    "crates/runtime/Cargo.toml": "96c17d28e915029ac983f66fef9e2df5217785ee75b1db576f2a8ebb71253514",
+    "crates/runtime/tests/real_model_two_position_diagnostic.rs": "2324dd58e6e57292097a6f1d29a6366d33985df2d52ad9172fe1ac904374bfd1",
+    "crates/runtime/examples/subfragment_cache_probe.rs": "51d1395d9d24c71f105d1988fbb2a543516602fc889a214f49907e956ce566e0",
+    "tools/merge_mutation_shards.py": "db67458c1af5a6a406b1802c195288be3d7bdf3a7c146da75695522db927f88b",
+    "tools/test_merge_mutation_shards.py": "3b4f6c60468b19fc51b1627c2bfe9200eebe9c342363df5eb0bc653d57172603"
+  },
+  "pre_review_tool_sources": {
+    "target/quality/wave-two-pre-review-tools/merge_mutation_shards.py": "db67458c1af5a6a406b1802c195288be3d7bdf3a7c146da75695522db927f88b",
+    "target/quality/wave-two-pre-review-tools/test_merge_mutation_shards.py": "3b4f6c60468b19fc51b1627c2bfe9200eebe9c342363df5eb0bc653d57172603"
+  },
+  "post_review_tooling_verification": {
+    "reason": "Independent review found phase argv scope was unchecked. The correction rejects narrowed tests, filters, features and unlocked invocations. Rust sources and Cargo inputs did not change after the canonical gate.",
+    "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+    "exit_code": 0,
+    "python_tooling_tests": 122,
+    "observed_at_utc": "2026-11-05T01:19:08.070430+00:00",
+    "log": "target/quality/wave-two-tooling-after-review.log",
+    "log_sha256": "acf441e53d3ae37a1b2d7f8d9f3cc26f82c80626ecba1ffbd635cf04208cc976",
+    "tested_source_hashes": {
+      "tools/merge_mutation_shards.py": "eb5d011bd15dda4a3c8cc0673b22d745d6a356bfc43fe0b9c39f0629bedbfda8",
+      "tools/test_merge_mutation_shards.py": "b9a72443c82167aa96963f17db0398aaa34f121575d3a3787de24d4229be8978"
+    }
+  }
+}
