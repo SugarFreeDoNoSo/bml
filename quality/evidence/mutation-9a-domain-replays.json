@@ -1,0 +1,230 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "22c443649d9d5ba52c929dc707553cf0f7e23fa8",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_recognition",
+        "--locked",
+        "recognition_accepts_the_inclusive_tree_bit_limit",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-domain-recognition-inclusive.log",
+      "log_sha256": "48bf375a78c558abae4aa4b9c25ad1c9570b93b37ff28af3b457067071d47dd9",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_matrix",
+        "--locked",
+        "scalar_output_budget_reports_the_last_row_major_position_transactionally",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-domain-matrix-row-budget.log",
+      "log_sha256": "0f81df3884b9276cf513b45ca8b7cb5433ad5c7aca81c7e00b245e8bad5b01d4",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "cache_bit_budget_evicts_independently_of_the_step_budget",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-domain-cache-independent-bits.log",
+      "log_sha256": "98954077c7e20d0676f4a64161c201d89486d46141e1b2f51ee7b82745e4984b",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_recognition",
+        "--locked",
+        "recognition_accepts_the_inclusive_tree_bit_limit",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-domain-recognition-inclusive.log",
+      "log_sha256": "5127f518a65d8da2d7a2575d86fe217bc2a7231e225410b9b43631605a085c3d",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "domain-recognition-inclusive",
+      "candidate": "crates/domain/src/number/recognize.rs:168:27: replace > with >= in Bml::certify_exact",
+      "original_source_sha256": "645905e3daf4bdb551a397019e8de4d8b9198086a43fddaef7d75284690e5e28",
+      "mutated_source_sha256": "0ddf63f84e1ca20d86c9052ba569785e6fea664d4f26a882a6b6ef3d04541069",
+      "original_diff_sha256": "89436e657ad70daa6b21016597fbcb3fbacf3c3c6d52354cfa4b1b8ba33417c4",
+      "original_span": {
+        "end": {
+          "column": 28,
+          "line": 168
+        },
+        "start": {
+          "column": 27,
+          "line": 168
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_matrix",
+        "--locked",
+        "scalar_output_budget_reports_the_last_row_major_position_transactionally",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-domain-matrix-row-budget.log",
+      "log_sha256": "cd97b6f5066572781747121139861f63e9881eadabd50f77543e142ef14e00aa",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "domain-matrix-row-budget",
+      "candidate": "crates/domain/src/number/matrix.rs:361:19: replace / with * in BmlMatrix::scalar_map",
+      "original_source_sha256": "f742872b25fb7929e289741248d572e108f7aadbea8497c193bccbba02499d77",
+      "mutated_source_sha256": "b1d377543c5f116c1941bae3653d021b765843cd19d6dd564ec3a199029156f9",
+      "original_diff_sha256": "caf14d94c2f771703681a59a65c937dcd27bb05404041d03e79077d43335a15e",
+      "original_span": {
+        "end": {
+          "column": 20,
+          "line": 361
+        },
+        "start": {
+          "column": 19,
+          "line": 361
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_matrix",
+        "--locked",
+        "scalar_output_budget_reports_the_last_row_major_position_transactionally",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-domain-matrix-column-budget.log",
+      "log_sha256": "fdf2a11f385ecafb74f3c97fac94baac53a02aa7b163f89c7774bcb2d0a777cf",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "domain-matrix-column-budget",
+      "candidate": "crates/domain/src/number/matrix.rs:362:19: replace % with / in BmlMatrix::scalar_map",
+      "original_source_sha256": "f742872b25fb7929e289741248d572e108f7aadbea8497c193bccbba02499d77",
+      "mutated_source_sha256": "80455201e058a52cc9fa85170b8c4d11e0fee52d1ba9becfe84af5308502c1ed",
+      "original_diff_sha256": "5312aa04a3bf43702c4ec15d56bc3e3defe57eafa865b658a1da0a067d418cc0",
+      "original_span": {
+        "end": {
+          "column": 20,
+          "line": 362
+        },
+        "start": {
+          "column": 19,
+          "line": 362
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "cache_bit_budget_evicts_independently_of_the_step_budget",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-domain-cache-independent-bits.log",
+      "log_sha256": "0f9621ebd4d9dd74c5b77b480d29c770bd39eb22122b188de670737189a93184",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "domain-cache-independent-bits",
+      "candidate": "crates/domain/src/number/search.rs:367:17: replace || with && in ExactSearcher::remember",
+      "original_source_sha256": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+      "mutated_source_sha256": "ee026cfc3f1f1e1a4ca335521ed608c8314fcbcd0071f972ec6239f2b39edc18",
+      "original_diff_sha256": "f206cf4830d096813d167c8f12d996e11c7612be41fab08070f09ee62adbad75",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 367
+        },
+        "start": {
+          "column": 17,
+          "line": 367
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T02:56:21.956688+00:00",
+  "status": "passed_focused_replays",
+  "patched_input_hashes": {
+    "crates/compiler/tests/symbolic_artifact_contracts.rs": "ff50ca24a3fd9202375abf5b7c436c434df0b4e3cd180f64ac8a8cee567bd239",
+    "crates/compiler/tests/symbolic_kernel_boundaries.rs": "73c4ec65164bd5b996e7272a33660e55079e3af2a1e55bc4f1a6f4aa4a90e600",
+    "crates/compiler/tests/symbolic_weight_shard_contracts.rs": "bfcd97a2a9ab28adeeacc0951198a371f7073c8422b867f14f14b8cd82248226",
+    "crates/domain/src/transformer/bounded.rs": "6d57cd1c4d00e9e275328667ad01c9b0624f74dee738cc24231dfb42a16c0727",
+    "crates/domain/tests/bml_matrix.rs": "cbaae6467f8dc8b50e8aacdb448d393dded85fd80c32566be44fa9ae3536207e",
+    "crates/domain/tests/bml_recognition.rs": "863165effdc7d6c51481e71f19ca5989608963de1cc0c1aa575d92d719575908",
+    "crates/domain/tests/bml_search.rs": "0cb6bfc38fd6a7ce7da2c965c577d5fbc6fbc9c991cc6d54af31031bcc2c5245",
+    "crates/inference/tests/model_contracts.rs": "8610e358b6dcbb157d4d1395981523831f484351f68642344d3aac34d71ca708",
+    "crates/inference/tests/remote_handshake_contracts.rs": "8c97b719e5330a7d58c3d84a5f8e2183f06866c8c88483019f8717a03e1fd076",
+    "crates/runtime/tests/graph_rpc_contracts.rs": "7beed5319ec28f6a5f02924434418b19bc6a59f6bf68a8c49949c9f7b7d318c2",
+    "crates/runtime/tests/operation_attention_contracts.rs": "9e0263caf1103c9e1b615b675343ce23cfe9529327fa44e5823dc0e35e0eb146",
+    "crates/runtime/tests/operation_matmul_contracts.rs": "234d6cad722d078d3b97fb82b4b7f4f1af5a1bc9fdcd3e454fc43aca8ca165dd",
+    "crates/runtime/tests/operation_mlp_contracts.rs": "846ebadb017477b4931fb88a5385ce17cd79fc75f68ca5dc26fb870f8d6fbaf8",
+    "crates/runtime/tests/quantized_symbolic_causal_contracts.rs": "cfb816c71725f84773f86afb4638b92a247a7e19aae892d7ccb728e301126c99",
+    "crates/runtime/tests/symbolic_transport_contracts.rs": "b31283ea376cc485faa746a82d422b394cfa3b235b3fc7573c1b0ead923b8a55",
+    "crates/worker/tests/timeout_cli_contracts.rs": "a58b9b5beb8ec95aa7e101c54ff53c2b228bc378c71a46ffc5b21be8a60807f5"
+  },
+  "source_files_restored": true,
+  "verified_restored_at_utc": "2026-11-05T03:25:57.771669+00:00",
+  "positive_target_verification": "target/quality/domain-survivor-contracts.log"
+}

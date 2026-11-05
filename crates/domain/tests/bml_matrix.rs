@@ -259,6 +259,39 @@ fn numeric_scalar_is_prepared_once_before_the_kernel() {
 }
 
 #[test]
+fn scalar_output_budget_reports_the_last_row_major_position_transactionally() {
+    let input = matrix(2, 3, &[1; 6]);
+    let before = input.clone();
+    // Measure an independently constructed scalar result, rather than assume
+    // a particular expansion length or use the matrix's accounting itself.
+    let scalar_sum = (&Bml::one() + &Bml::one()).unwrap();
+    let total_output_bits = 6 * scalar_sum.bit_len();
+    let tight = MatrixLimits {
+        max_total_bits: total_output_bits - 1,
+        ..MatrixLimits::default()
+    };
+    assert_eq!(
+        input.add_scalar(1i32, tight),
+        Err(MatrixError::Budget {
+            row: 1,
+            column: 2,
+            inner: None,
+        })
+    );
+    assert_eq!(input, before);
+
+    let exact = MatrixLimits {
+        max_total_bits: total_output_bits,
+        ..tight
+    };
+    let output = input.add_scalar(1i32, exact).unwrap();
+    assert_eq!(output.shape(), (2, 3));
+    assert_eq!(output.total_bits().unwrap(), total_output_bits);
+    assert_eq!(targets(&output), vec![ExactRational::from_i64(2); 6]);
+    assert_eq!(input, before);
+}
+
+#[test]
 fn signed_matmul_and_output_budget_preserve_inputs() {
     let limits = MatrixLimits::default();
     let a = matrix(1, 3, &[-1, 0, 1]);

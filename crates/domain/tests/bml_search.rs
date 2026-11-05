@@ -145,6 +145,46 @@ fn budgets_limit_candidates_factorization_and_cache() {
     assert!(result.report.candidate_limit_reached);
 }
 
+fn assert_independent_cache_eviction(options: ExactSearchOptions) {
+    let mut searcher = ExactSearcher::new(options);
+    let one = searcher.search(&target(1)).best.unwrap();
+    assert_eq!(one.term().bit_len(), 1);
+    assert_eq!(one.derivation().steps.len(), 1);
+    assert_eq!(searcher.cached_results(), 1);
+
+    let two = searcher.search(&target(2)).best.unwrap();
+    assert_eq!(two.term().bit_len(), 3);
+    assert_eq!(two.derivation().steps.len(), 2);
+    // Each entry fits on its own. The previous entry must be evicted when
+    // either cumulative budget is exceeded, even if the other has ample room.
+    assert_eq!(searcher.cached_results(), 1, "{options:?}");
+
+    let repeated = searcher.search(&target(1));
+    assert_eq!(repeated.report.cache_lookups, 1);
+    assert!(!repeated
+        .report
+        .candidates
+        .iter()
+        .any(|candidate| candidate.strategy == ExactStrategy::Previous));
+    assert_eq!(searcher.cached_results(), 1);
+}
+
+#[test]
+fn cache_bit_budget_evicts_independently_of_the_step_budget() {
+    assert_independent_cache_eviction(ExactSearchOptions {
+        max_cache_bits: 3,
+        ..ExactSearchOptions::default()
+    });
+}
+
+#[test]
+fn cache_step_budget_evicts_independently_of_the_bit_budget() {
+    assert_independent_cache_eviction(ExactSearchOptions {
+        max_cache_steps: 2,
+        ..ExactSearchOptions::default()
+    });
+}
+
 #[test]
 fn failures_are_reported_without_approximate_success_and_ties_are_deterministic() {
     let mut options = ExactSearchOptions::default();

@@ -69,6 +69,29 @@ fn unsupported_domains_and_budgets_do_not_gain_certificates() {
 }
 
 #[test]
+fn recognition_accepts_the_inclusive_tree_bit_limit() {
+    use bml_domain::number::ExactRational;
+
+    for (code, target) in [(0, 1), (4, 2)] {
+        let term = Bml::from_u64(code).unwrap();
+        let options = ExactSynthesisOptions {
+            max_bits: term.bit_len(),
+            ..ExactSynthesisOptions::default()
+        };
+        let certificate = term.certify_exact(options).unwrap();
+        assert_eq!(certificate.term(), &term);
+        assert_eq!(certificate.target(), &ExactRational::from_i64(target));
+        assert_eq!(
+            term.certify_exact(ExactSynthesisOptions {
+                max_bits: term.bit_len() - 1,
+                ..options
+            }),
+            Err(ExactError::Limit)
+        );
+    }
+}
+
+#[test]
 fn raw_tree_operators_preserve_order_and_support_chaining() {
     use bml_domain::number::ExactRational;
     let options = ExactSynthesisOptions::default();

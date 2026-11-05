@@ -251,13 +251,15 @@ impl BMLTransformer {
                 return Err(BoundedBuildError::InvalidNode(node));
             }
         }
-        // Every stage has fixed size; this also covers all helper nodes.
+        // Every stage fits in 16384 nodes, including its 17 owned constants.
+        // constant() adds one pool entry and one node; all other builder
+        // operations only grow nodes, so const_pool.len() <= soa.len().
+        // This node-index margin therefore also protects the ConstId range.
         if self
             .soa
             .len()
             .checked_add(16384)
             .is_none_or(|size| size > u32::MAX as usize)
-            || self.soa.const_pool.len() > u32::MAX as usize - 17
         {
             return Err(BoundedBuildError::SizeOverflow);
         }
