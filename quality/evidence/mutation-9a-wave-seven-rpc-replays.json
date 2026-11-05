@@ -1,0 +1,177 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "d837b868af656254f5d7922a0750f57308b8eeea",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_rpc_contracts",
+        "--locked",
+        "graph_encoder_accepts_exact_value_quota_and_rejects_one_more_input",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-inclusive encoder value quota.log",
+      "log_sha256": "e4f094cd02ca737843992bc2d052a3c8a1b01314805d5bda3d8202f24f87a401",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_rpc_contracts",
+        "--locked",
+        "graph_encoder_accepts_exact_wire_limit_and_rejects_one_more_opcode_byte",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-existing inclusive wire boundary.log",
+      "log_sha256": "47f017ac47704f10a7f43dae2c552b0e90b3c7566e94d1502f1c951a878aab70",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_rpc_contracts",
+        "--locked",
+        "graph_rpc_zero_and_two_inputs_execute_closed_sum_and_preserve_buffer_bits",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-zero and two input cardinalities.log",
+      "log_sha256": "b150c05f527d3b97c0712dfe7c1786c75e0ab82a22eea790a52437d0b75f9515",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_rpc_contracts",
+        "--locked",
+        "graph_encoder_accepts_exact_value_quota_and_rejects_one_more_input",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-inclusive encoder value quota.log",
+      "log_sha256": "9b766cd5109c3b6adc90cb0498c9d69dfd48b753b63efc432d7da681ff30007a",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "inclusive encoder value quota",
+      "candidate": "crates/runtime/src/graph_rpc.rs:117:14: replace > with >= in encode_request",
+      "original_source_sha256": "6218ee9369072d3b39d2159eefd608442d4ae9f94b9c5f4c4ea3fabd9aee0a7e",
+      "mutated_source_sha256": "21f5ddd2a3890347eed543e2d9aafc5bb65d9466f01bdcc34a5d7cba7391b31e",
+      "original_diff_sha256": "5d07921d2bf3ced77f4db65d7acf8ff5875dc6139cb81bf2d2f71818bac2abe1",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 117
+        },
+        "start": {
+          "column": 14,
+          "line": 117
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_rpc_contracts",
+        "--locked",
+        "graph_encoder_accepts_exact_wire_limit_and_rejects_one_more_opcode_byte",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-existing inclusive wire boundary.log",
+      "log_sha256": "cc5508b5f80f269ec759a5d817daae8a22713708b76ffa226c3b541a6ed31f11",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "existing inclusive wire boundary",
+      "candidate": "crates/runtime/src/graph_rpc.rs:126:13: replace > with == in encode_request",
+      "original_source_sha256": "6218ee9369072d3b39d2159eefd608442d4ae9f94b9c5f4c4ea3fabd9aee0a7e",
+      "mutated_source_sha256": "8cdc9103fe5e4fba43f21f76cdb2f78f8508c2a0706f18987ecf71004edd1311",
+      "original_diff_sha256": "982a0b81a850b26ec034275531bcda8ed3ddf0432eac683f5ec8db485b5bbb9b",
+      "original_span": {
+        "end": {
+          "column": 14,
+          "line": 126
+        },
+        "start": {
+          "column": 13,
+          "line": 126
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_rpc_contracts",
+        "--locked",
+        "graph_rpc_zero_and_two_inputs_execute_closed_sum_and_preserve_buffer_bits",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-zero and two input cardinalities.log",
+      "log_sha256": "9c81e41709d761fd5021f9025c597559c489422b482c6e53375753cc28bb85f8",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "zero and two input cardinalities",
+      "candidate": "crates/runtime/src/graph_rpc.rs:184:56: replace * with + in execute_request",
+      "original_source_sha256": "6218ee9369072d3b39d2159eefd608442d4ae9f94b9c5f4c4ea3fabd9aee0a7e",
+      "mutated_source_sha256": "9d713f843cf89449c14acf4df3ac6c613168a8be2cbbde11da02cb919de36dce",
+      "original_diff_sha256": "96d2e8a432742527fd4fd06d0367139ec049192bbfc4347826168c6b2ad5039c",
+      "original_span": {
+        "end": {
+          "column": 57,
+          "line": 184
+        },
+        "start": {
+          "column": 56,
+          "line": 184
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T04:42:59.394787+00:00",
+  "status": "passed_focused_replays",
+  "patched_test_hashes": {
+    "crates/runtime/tests/graph_rpc_contracts.rs": "8028cede3cfa72cc8b18a41b8c28fbfbc5b817edf6375df2b1886d87e213c116"
+  }
+}

@@ -52,6 +52,126 @@ fn bounded_graph_decoder_rejects_declared_allocations_before_payload_reads() {
         assert!(BmlGraph::deserialize_with_limits(&corrupt, 32, 100, 100, 100).is_err());
     }
 }
+
+#[test]
+fn graph_encoder_accepts_exact_value_quota_and_rejects_one_more_input() {
+    let quota = bml_runtime::graph::GraphLimits::default().max_values;
+    assert!(
+        (4..=1_000_000).contains(&quota),
+        "keep the fixture allocation bounded"
+    );
+    let graph = BmlGraph {
+        fragments: vec![Fragment {
+            ops: vec![RpnOp::One],
+        }],
+        const_pool: vec![],
+        threshold: 32,
+    };
+    let mut buffer = ResultBuffer::new(1, quota - 2);
+    let first = 0x7ff8_0000_0000_0042_u64;
+    buffer.write(0, 0, f64::from_bits(first));
+    buffer.write(0, (quota - 3) as u32, -0.0);
+    // This quota belongs to the encoder. Execution separately accounts for
+    // constants and stack, so do not interpret this as server admission.
+    let encoded = encode_request(&graph, &[2.0, 5.0], &buffer)
+        .expect("the declared value quota is inclusive");
+    assert_eq!(encoded.len(), 20 + 8 * quota + 25);
+    let header: Vec<u32> = encoded[..20]
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|bytes| u32::from_le_bytes(*bytes))
+        .collect();
+    assert_eq!(header, [1, 2, 1, (quota - 2) as u32, 25]);
+    assert_eq!(
+        u64::from_le_bytes(encoded[36..44].try_into().unwrap()),
+        first
+    );
+    let last = 20 + 8 * (quota - 1);
+    assert_eq!(
+        u64::from_le_bytes(encoded[last..last + 8].try_into().unwrap()),
+        (-0.0_f64).to_bits()
+    );
+    assert_eq!(buffer.read(0, 0).to_bits(), first);
+    assert_eq!(
+        buffer.read(0, (quota - 3) as u32).to_bits(),
+        (-0.0_f64).to_bits()
+    );
+    drop(encoded);
+    let error = encode_request(&graph, &[2.0, 5.0, 7.0], &buffer).unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    assert_eq!(error.to_string(), "graph value budget exceeded");
+}
+
+#[test]
+fn graph_rpc_zero_and_two_inputs_execute_closed_sum_and_preserve_buffer_bits() {
+    let stored = [
+        (-0.0_f64).to_bits(),
+        0x7ff8_0000_0000_0042,
+        f64::INFINITY.to_bits(),
+        f64::NEG_INFINITY.to_bits(),
+        1,
+        42.5_f64.to_bits(),
+    ];
+    for (inputs, ops, constants) in [
+        (
+            vec![],
+            vec![RpnOp::Const(0), RpnOp::Const(1), RpnOp::FAdd],
+            vec![2.0, 5.0],
+        ),
+        (
+            vec![2.0, 5.0],
+            vec![RpnOp::Var(0), RpnOp::Var(1), RpnOp::FAdd],
+            vec![],
+        ),
+    ] {
+        let graph = BmlGraph {
+            fragments: vec![Fragment { ops }],
+            const_pool: constants,
+            threshold: 32,
+        };
+        let buffer =
+            ResultBuffer::from_vec(2, 3, stored.into_iter().map(f64::from_bits).collect()).unwrap();
+        let request = encode_request(&graph, &inputs, &buffer).unwrap();
+        assert_eq!(
+            u32::from_le_bytes(request[4..8].try_into().unwrap()) as usize,
+            inputs.len()
+        );
+        assert_eq!(&request[8..16], &[2, 0, 0, 0, 3, 0, 0, 0]);
+        let response = handle_request(&request);
+        assert_eq!(&response[..8], &[1, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(response.len(), 20 + 8 * stored.len());
+        assert_eq!(
+            u64::from_le_bytes(response[8..16].try_into().unwrap()),
+            7.0_f64.to_bits()
+        );
+        assert_eq!(
+            u32::from_le_bytes(response[16..20].try_into().unwrap()) as usize,
+            stored.len()
+        );
+        let returned: Vec<u64> = response[20..]
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|bytes| u64::from_le_bytes(*bytes))
+            .collect();
+        assert_eq!(returned, stored);
+        assert_eq!(
+            buffer
+                .data()
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            stored
+        );
+        // Change only the declared input cardinality, leaving the valid body
+        // and graph intact. The fixed rejection cannot be mistaken for 7.
+        let mut corrupt = request;
+        corrupt[4..8].copy_from_slice(&((inputs.len() + 1) as u32).to_le_bytes());
+        rejected(&handle_request(&corrupt));
+    }
+}
+
 #[test]
 fn graph_encoder_accepts_exact_wire_limit_and_rejects_one_more_opcode_byte() {
     use bml_runtime::graph_rpc::MAX_WIRE_BYTES;
