@@ -1,0 +1,128 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "e8c9338d601d776f0b856c1c5eaf5e319ae175ae",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "attention_operand_bounds_are_inclusive_in_both_executable_layouts"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-attention-inclusive-operand-bounds.log",
+      "log_sha256": "3936704b02f478bfd965ade91d03f70b4d0afd65ebb78e0dcf16ce3f4b161cb6",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "attention_operand_bounds_are_inclusive_in_both_executable_layouts",
+          "ok"
+        ]
+      ]
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "attention_operand_bounds_are_inclusive_in_both_executable_layouts"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-attention-inclusive-operand-bounds.log",
+      "log_sha256": "0a63e32f4efdb12cfd8b241fa1e177d3127eb4588cb3c699e59414e1f2705cb3",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "attention_operand_bounds_are_inclusive_in_both_executable_layouts",
+          "FAILED"
+        ]
+      ],
+      "label": "attention-inclusive-operand-bounds",
+      "candidate": "crates/compiler/src/operation_attention.rs:339:54: replace > with == in CheckedAttentionFragment::validate_values",
+      "original_source_sha256": "9cfd830108355de7b9d1926fca7806c124082bed050df9c0512c4ff9e4c7e279",
+      "mutated_source_sha256": "98d3c404ed659be6c9a890967619126b23394648bc0d684f1fd68a58ead64086",
+      "original_diff_sha256": "9a60d603310bc50dd8cfe14e63f2e872c20bff190e54f6a1fe40f4721f3e8e76",
+      "original_span": {
+        "end": {
+          "column": 55,
+          "line": 339
+        },
+        "start": {
+          "column": 54,
+          "line": 339
+        }
+      },
+      "detected": true
+    }
+  ],
+  "build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "cleaned_packages": [
+    "bml-compiler",
+    "bml-inference"
+  ],
+  "cleanup": [
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-inference"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-ten-contract-replays-before-baselines.log",
+      "log_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-inference"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-ten-contract-replays-restored-attention-inclusive-operand-bounds.log",
+      "log_sha256": "34e510b729a1e4eb773d3020ab86a7aaca86324267dd59ea3e0ec2c3a88e424f",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    }
+  ],
+  "observed_at_utc": "2026-11-05T06:48:42.915505+00:00",
+  "status": "passed_focused_replays",
+  "current_source_restored_after_replays": true,
+  "patched_test_hashes": {
+    "crates/runtime/tests/operation_attention_contracts.rs": "4d51d02e170cf5d092817c13aa5a5077a7c5827493ec44cb99514c0f58479a8a"
+  },
+  "runner_sha256": "a233b5fbe35ea0395d4d095c0b02c1aa1d1488dc41ebbceaeb96acddc14726a6",
+  "full_execution_report": {
+    "path": "target/quality/wave-ten-contract-replays.json",
+    "sha256": "537d0743b88d681d66acbab97b9bf9e3e66d5980ff480049777d633db5089a6c"
+  }
+}

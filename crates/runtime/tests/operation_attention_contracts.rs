@@ -267,6 +267,45 @@ fn historical_attention_is_one_kv_token_with_owned_constants_and_real_outputs() 
 }
 
 #[test]
+fn attention_operand_bounds_are_inclusive_in_both_executable_layouts() {
+    for scratch in [false, true] {
+        for (query, key, value) in [
+            (0.5, -0.25, 1.25),
+            (4.0, 0.0, 8.0),
+            (-4.0, 0.0, -8.0),
+            (0.0, 4.0, 8.0),
+            (0.0, -4.0, -8.0),
+        ] {
+            let (checked, mut buffer) = fixture(&[query], &[key], &[value], scratch);
+            // A single causal cache row has probability one. Its output is
+            // the literal value, including when query/key/value lie exactly
+            // at either sign of their inclusive absolute declarations.
+            Runtime::new(4096, 0).execute_fragments_sequential(
+                std::slice::from_ref(checked.operation()),
+                &EvalContext::new(&[], &[]),
+                &mut buffer,
+            );
+            near(buffer.slot(7), &[value]);
+
+            let outside_attention = f64::from_bits(4.0_f64.to_bits() + 1);
+            let outside_value = f64::from_bits(8.0_f64.to_bits() + 1);
+            for (bad_query, bad_key, bad_value) in [
+                (outside_attention, 0.0, 0.0),
+                (-outside_attention, 0.0, 0.0),
+                (0.0, outside_attention, 0.0),
+                (0.0, -outside_attention, 0.0),
+                (0.0, 0.0, outside_value),
+                (0.0, 0.0, -outside_value),
+            ] {
+                assert!(checked
+                    .validate_values(&[bad_query], &[bad_key], &[bad_value])
+                    .is_err());
+            }
+        }
+    }
+}
+
+#[test]
 fn attention_rejects_bad_dimensions_addresses_profiles_and_actual_intermediates() {
     let default = AttentionBounds::default();
     for (q, k, v, width, context) in [
