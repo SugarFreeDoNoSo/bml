@@ -217,14 +217,15 @@ Then it rejects the request before expensive generation
     Given row-major BML matrices with checked shapes and prepared numeric scalars
     When standard or generalized products reduce from left to right
     Then independent results, empty reductions, localized failures and transactional replacement satisfy their contracts
-    And exhausting the aggregate scalar-output bit budget reports the last row-major coordinate without mutating inputs
+    And exhausting either aggregate scalar-output bits or cumulative work reports the last row-major coordinate without mutating inputs
 
   @C36
   Scenario: Compare exact synthesis strategies with explicit bounded evidence
     Given an exact target and candidate, factorization and cache budgets
     When certified candidates are ranked by expanded operators, depth and code
     Then attempts and failures are reported without claiming global minimality or inferring numeric stability
-    And retained cache bits and derivation steps independently enforce their cumulative budgets
+    And retained cache bits and derivation steps independently enforce inclusive cumulative budgets
+    And repeating the same certified target does not duplicate its cached entry
 
   @C37
   Scenario: Simplify certified rational expressions before explicitly rounded evaluation
@@ -523,6 +524,7 @@ Then it rejects the request before expensive generation
     Then old graphs retain their v2 bytes and new loads require single-file v3 tags
     And every truncated prefix, incompatible version and exceeded decode budget is rejected
     And new reference loops resolve exact context indices while historical reference loops retain their behavior
+    And indexed addition, multiplication and stack picks match independent literal answers for distinct operands
     And legacy directory containers reject the new instructions before creating output files
 
   @C83
@@ -555,6 +557,9 @@ Then it rejects the request before expensive generation
     And role-specific operand bounds and the extra selected-maximum softmax input are enforced
 
   # Also verifies down-projection bounds and RMS/residual failure context.
+    And every profile family validates before compilation and scalar roles reject other nonempty widths
+
+
   @C81
   Scenario: Complete bounded v4 artifacts preserve causal behavior and exact numerical metadata
     Given an explicitly selected bounded profile and a complete persisted operation plan with external mapped weights
@@ -682,6 +687,8 @@ Then it rejects the request before expensive generation
     And explicit scratch retains linear work and compact code while preserving unrelated storage
     And the historical signature represents one KV token and invalid shapes or layouts reject
     And reported scratch dimensions support execution while address capacity and u32 limits are checked independently
+    And layout-only checks admit the final u32 operand address and reject an insufficient output stride independently
+
 
   @C98
   Scenario: Public MLP uses complete rectangular projections and standard SwiGLU
@@ -691,6 +698,8 @@ Then it rejects the request before expensive generation
     And declared scratch yields linear matrix work with safe complete-loop fragments and owned constants
     And invalid dimensions, ranges, addressing or numeric stages reject without native data arithmetic
     And reported custom bounds admit the same declared edge operands used by the compiled program
+    And each matrix shape and empty-FFN input bound rejects independently while adjacent disjoint scratch remains valid
+
 
   @C99
   Scenario: Public layer composition preserves causal KV and both original residuals
@@ -733,6 +742,9 @@ Then it rejects the request before expensive generation
     And a lost commit response invalidates the entire coordinator without advancing its confirmed position
     And replacing a shard rejects new sessions while an established session retains verified bytes
     And reported server width matches the hidden vectors carried by its admitted sessions
+    And each Open field and the server context budget rejects independently while complete subsequent transactions remain usable
+    And exact minimum and maximum frame policies admit tiny valid frames and invalid frame sizes fail before Open admission
+    And local prepare and commit rejections send no RPC and preserve the confirmed session state
 
   @C103
   Scenario: Real symbolic worker processes execute complete causal layer ranges
@@ -783,9 +795,9 @@ Then it rejects the request before expensive generation
     And a valid peer can exchange a forward result and close normally
 
   @C108
-  Scenario: Symbolic worker timeout is validated before help mode finishes
+  Scenario: Symbolic worker numeric options are validated before help mode finishes
     Given the worker command-line parser
-    When an explicit timeout is zero even when help is requested
+    When explicit timeout or step budgets are zero or layer/context integers overflow even when help is requested
     Then it exits with a configuration error before binding a worker listener
     And positive timeout values preserve successful help output
 
@@ -801,3 +813,18 @@ Then it rejects the request before expensive generation
     When epsilon is zero, negative, infinite or NaN
     Then no configuration signature is exposed
     And finite positive epsilon values retain their exact declarations
+
+
+  @C111
+  Scenario: Causal worker resource switches are parsed and validated before model access
+    Given resource options for sessions, context, memory, frames and socket timeout
+    When each limit is independently zero
+    Then the worker rejects configuration before opening the supplied model or listening
+    And memory, frame and timeout options are recognized by successful help invocations
+
+  @C112
+  Scenario: Prepared worker plans reject independent conflicting explicit options
+    Given a prepared-plan path and selected worker index
+    When any explicit artifact, source, shard, identity, range or fragment option is also supplied
+    Then configuration rejects before reading the plan or listening
+    And an absent plan without conflicting options reaches the plan I/O error instead

@@ -1,0 +1,728 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "26a4a16971a6f8ec4c927653c9438696f2f17ee6",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "frame_budgets_include_exact_open_size_and_maximum_u32_without_large_frames",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-transport-0.log",
+      "log_sha256": "ca6eeb57f778792b3be1f2f70dc53b79ec1d8f3e2de01e427888f1aa5a40495d",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "raw_open_checks_each_owned_field_and_the_servers_own_context_budget",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-transport-2.log",
+      "log_sha256": "fe6dd2557a45a3776a55e216cf7edf2adbdf625d1e08d851b6418968c0dd5436",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "client_prepare_and_commit_preflight_never_sends_or_consumes_rejected_work",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-transport-3.log",
+      "log_sha256": "117bd448cfce5bedda7fbb257cb8beac142b0d7daf932fc5003f1f744a3c479e",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "invalid_inbound_sizes_fail_in_framing_before_any_open_rejection",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-transport-9.log",
+      "log_sha256": "65091f95b20e59f8ae56e7a1569a6656542733cab6c6e216ac9aa6d1f68bb0d7",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "frame_budgets_include_exact_open_size_and_maximum_u32_without_large_frames",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-0.log",
+      "log_sha256": "569ff36f5d09bab0ad77a27ceada5722c3f09887c60e4abfe31d8dd9de9c9508",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-0",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:59:31: replace > with >= in setup",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "4101828560ffd6d400172f6c666934e258cd24351ffdd9a85aeb83e09629ecf6",
+      "original_diff_sha256": "2f5c1bc4db1fc29444c22115a5977e8e6db68e83c532cd24f2cafde310bb1e27",
+      "original_span": {
+        "end": {
+          "column": 32,
+          "line": 59
+        },
+        "start": {
+          "column": 31,
+          "line": 59
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "frame_budgets_include_exact_open_size_and_maximum_u32_without_large_frames",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-1.log",
+      "log_sha256": "b4e7b0af0917021228f80c93271cb911d13e206318bde5ffd86c7bf6cd0bc622",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-1",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:73:24: replace > with >= in read_frame",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "3408e575eaa0d6a96b4c2852cc87a87727c7f84e5c585aa8e1d7981e2af7308d",
+      "original_diff_sha256": "c719cd4607a400b9f1c467bf0f638a795e7e4b53ca4048fd31b6dfb81968ac2e",
+      "original_span": {
+        "end": {
+          "column": 25,
+          "line": 73
+        },
+        "start": {
+          "column": 24,
+          "line": 73
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "raw_open_checks_each_owned_field_and_the_servers_own_context_budget",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-2.log",
+      "log_sha256": "0e9c31895f823f07a874ab7b11b80a20bb0c9c012a221f3bc30df47cfa6d3827",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-2",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:282:13: replace || with && in SymbolicLayerServer::serve_connection",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "ffbfd340528524b23b7c921d4a70f2acc86d35a272df0d0296a912944c7cc5dd",
+      "original_diff_sha256": "dd79f046af631c8bcadc6657b7a75415fc0405bbcbcde4ed367375606f40777d",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 282
+        },
+        "start": {
+          "column": 13,
+          "line": 282
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "client_prepare_and_commit_preflight_never_sends_or_consumes_rejected_work",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-3.log",
+      "log_sha256": "b50ff9f1b81b8057c1e538bb33fb4c7eeae465b7b824dc6534d149121abd69e1",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-3",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:523:13: replace || with && in SymbolicLayerClient::prepare",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "ec1291bb3ec310069a87c83df675841987e242e96d6a777d9933df7155241068",
+      "original_diff_sha256": "b2605d691720815c9297056e4c89845ded27b79246b327f1ff141adb7d030452",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 523
+        },
+        "start": {
+          "column": 13,
+          "line": 523
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "raw_open_checks_each_owned_field_and_the_servers_own_context_budget",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-4.log",
+      "log_sha256": "159feac4733bc13761445ab439598bf4b4442a55c104d181a06b5fd7897132f0",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-4",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:281:13: replace || with && in SymbolicLayerServer::serve_connection",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "34aa0300edec45939fb5b8d8793cd3dbf32abe62c8d7443b9f4e56b5964f0829",
+      "original_diff_sha256": "8339700029e2c05bc7ba5c8def09484052631f5edd38865134db237f6c8a784b",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 281
+        },
+        "start": {
+          "column": 13,
+          "line": 281
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "frame_budgets_include_exact_open_size_and_maximum_u32_without_large_frames",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-5.log",
+      "log_sha256": "3bc003ba438536602ade31105d5dc389e1ed66f2c00e6c8f7c415528ea557c90",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-5",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:85:40: replace > with == in write_frame",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "c0c9a93fc393935b853bfae5eba87be95008e288820615c023a987ec588eb8fb",
+      "original_diff_sha256": "62a62037cd565d1555f9304801227fd5dc07bb8105e7c35ab74cec2f304dedb6",
+      "original_span": {
+        "end": {
+          "column": 41,
+          "line": 85
+        },
+        "start": {
+          "column": 40,
+          "line": 85
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "frame_budgets_include_exact_open_size_and_maximum_u32_without_large_frames",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-6.log",
+      "log_sha256": "0cc4959971ffcaa8dfacc18c5f6d8b800508ca003b0ad612362b6505e34dc651",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-6",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:85:40: replace > with >= in write_frame",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "bb8d61c1ef8c68558406ca7877a977fd5a4fdfe21aba8713b54234647224104d",
+      "original_diff_sha256": "b03278ebe904c3bc71ff7926c8c17a0661b4737d4ce2e22e2717b46468a76cbb",
+      "original_span": {
+        "end": {
+          "column": 41,
+          "line": 85
+        },
+        "start": {
+          "column": 40,
+          "line": 85
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "raw_open_checks_each_owned_field_and_the_servers_own_context_budget",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-7.log",
+      "log_sha256": "630e373ed554f7fcc91e116f0a8cc1b81c9638c4c55461f186f090ea2486782e",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-7",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:298:25: replace || with && in SymbolicLayerServer::serve_connection",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "3916b16c0d8e1968dffe5770746033b4f823d7f8bea7e7cfa78ccda8d71d7834",
+      "original_diff_sha256": "9a6da9c653b85e1a1ec2fadf9511a350054c0b2c776304bcf82e197e541a5b6a",
+      "original_span": {
+        "end": {
+          "column": 27,
+          "line": 298
+        },
+        "start": {
+          "column": 25,
+          "line": 298
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "client_prepare_and_commit_preflight_never_sends_or_consumes_rejected_work",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-8.log",
+      "log_sha256": "98b6b1b3a754b71d223177481798bff91ba95b7c27772a8bd8405aabc26e04e0",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-8",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:565:27: replace || with && in SymbolicLayerClient::commit",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "dc3f1f64f6f6f4e0340fadbf62c1a7ec9b2547f8af89bbae96e4429d16a98261",
+      "original_diff_sha256": "59af7b8b7d76a1b24a4e6e6bb3d70a8bdf102c7b14fb45527fa5c0505ed6dd50",
+      "original_span": {
+        "end": {
+          "column": 29,
+          "line": 565
+        },
+        "start": {
+          "column": 27,
+          "line": 565
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "invalid_inbound_sizes_fail_in_framing_before_any_open_rejection",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-9.log",
+      "log_sha256": "646ca93af6655d1fc3056a531dcc39df9d33dab10420fd3a36f3c73007127d0f",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-9",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:73:17: replace || with && in read_frame",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "2459a55e6b507510fc0efe3958dd95725fa9d78ecb138b51eada9a9e2a2aa597",
+      "original_diff_sha256": "932ebf7d690ce8a6d60ef288980de7bfa1b3cc9df7dd3c3ceacfe5e43864175c",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 73
+        },
+        "start": {
+          "column": 17,
+          "line": 73
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "client_prepare_and_commit_preflight_never_sends_or_consumes_rejected_work",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-10.log",
+      "log_sha256": "22066d431cd2c57bee29e2e123d1aa06b588ae20679e3d9afd5101818f6ac565",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-10",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:526:13: replace || with && in SymbolicLayerClient::prepare",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "a9d27468337bd80f1f648df4551bfc42a63bceee07c441293ded6764b145389c",
+      "original_diff_sha256": "442c5b519cf41970bab30870ee3051dc8d3062889a0c76398d14078154a851aa",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 526
+        },
+        "start": {
+          "column": 13,
+          "line": 526
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "raw_open_checks_each_owned_field_and_the_servers_own_context_budget",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-11.log",
+      "log_sha256": "3f79ac81a8b3363873756342c6cbc2ed57650f8fa9cbbb7a7741e37f8ba47369",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-11",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:284:13: replace || with && in SymbolicLayerServer::serve_connection",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "32d821557895ad5af8cd98d914432f97c4a0de8d6b7ee441ebc20a18c6af5f5a",
+      "original_diff_sha256": "cd677e1a5547d3093d832970e15fa798d3501c834b084aac2e8ad21d8c8a18b8",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 284
+        },
+        "start": {
+          "column": 13,
+          "line": 284
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "client_prepare_and_commit_preflight_never_sends_or_consumes_rejected_work",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-12.log",
+      "log_sha256": "b584bfd8b4153172ed03c78bf040b88b40cf830855369a2c23119c6a7c88ec27",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-12",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:525:13: replace || with && in SymbolicLayerClient::prepare",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "c4ae8b80c8e27a90498c1b3a755310174b317c5d49a5d34b6267d194b89bcd04",
+      "original_diff_sha256": "17e228e28e2e39c09cbe544d5a6cfef042f2f36a7f8aef4f7316c29eb630926c",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 525
+        },
+        "start": {
+          "column": 13,
+          "line": 525
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "raw_open_checks_each_owned_field_and_the_servers_own_context_budget",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-13.log",
+      "log_sha256": "bdeeb93c98e32f160e600619573855fbdba202629ce1d27d1b90a657d2cf7937",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-13",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:283:13: replace || with && in SymbolicLayerServer::serve_connection",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "61d2ea28a942b99c5d60cd4095966cc75562df94f51d06edf302502cd53b1872",
+      "original_diff_sha256": "c0318eddcdd6980ba15eeb1417d3db81a48ac6af679037eaeb992dec058984bb",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 283
+        },
+        "start": {
+          "column": 13,
+          "line": 283
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "client_prepare_and_commit_preflight_never_sends_or_consumes_rejected_work",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-14.log",
+      "log_sha256": "767984ee7ef9170562a7f897daac128686aed5bc1b129f41730c3ea64bff0980",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-14",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:524:13: replace || with && in SymbolicLayerClient::prepare",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "154a6d8efd9804fb8c2a33185d2bb2839778fd417c1803b28c4c26787d9a8c6b",
+      "original_diff_sha256": "c6f976fa2383eebdcaa725f72e1049d78655ca03c106cc83f8bbfded1a371d08",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 524
+        },
+        "start": {
+          "column": 13,
+          "line": 524
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "invalid_inbound_sizes_fail_in_framing_before_any_open_rejection",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-extra-0.log",
+      "log_sha256": "9ccbca2968fae26c769df64b3a75b030b1bbe2381efcd3fcce67f5763779b23f",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-extra-0",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:73:24: replace > with == in read_frame",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "c78f443a4a66e4510f8765be9beffe8b13195f9f8835fe47fe05b7fc9a6382b0",
+      "original_diff_sha256": "edfc646cfa0c147f97fd5bc4304e4c30119e9b8dcfdc9c8ff97d0de7498962b1",
+      "original_span": {
+        "end": {
+          "column": 25,
+          "line": 73
+        },
+        "start": {
+          "column": 24,
+          "line": 73
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "raw_open_checks_each_owned_field_and_the_servers_own_context_budget",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-transport-extra-1.log",
+      "log_sha256": "9deabbb8bfaadee0b9e27c983db2753852010012bc32a6fdb1d80435cf1b4c4b",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-transport-extra-1",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:98:5: replace reject -> Vec<u8> with vec![0]",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "350e501d572576df626cfb9d23f17348cd1db0ac1217cfbdec419b0f43854fe8",
+      "original_diff_sha256": "9a73b744030142ffddef130dff45c000e84dfb78f017be09c8086afbde5f064b",
+      "original_span": {
+        "end": {
+          "column": 8,
+          "line": 104
+        },
+        "start": {
+          "column": 5,
+          "line": 98
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T04:04:38.933751+00:00",
+  "status": "passed_focused_replays",
+  "patched_test_hashes": {
+    "crates/runtime/tests/symbolic_transport_contracts.rs": "61e01f2fda9cb25119f46680f44fa151041cddb74c127b963ef425af2de07bc0"
+  },
+  "additional_baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "invalid_inbound_sizes_fail_in_framing_before_any_open_rejection",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-transport-extra-0.log",
+      "log_sha256": "da826627da754747cfad272e3dbd73614c438df7f68f30b9f3acc053124b6316",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "raw_open_checks_each_owned_field_and_the_servers_own_context_budget",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-transport-extra-1.log",
+      "log_sha256": "4e820918cc4bb12bef75ea322fd8687aba79fa54a441651963044383627a40f5",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "additional_candidates_note": "Two additional manifest-defined candidates were replayed against the same restored 9a source. The reject-response candidate was observed in the unsealed shard21 raw data; this focused replay does not certify those original outcomes or repair their missing source/input attestation.",
+  "additional_observed_at_utc": "2026-11-05T04:09:40.093988+00:00"
+}

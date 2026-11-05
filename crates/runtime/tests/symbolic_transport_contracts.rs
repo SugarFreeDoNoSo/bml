@@ -9,9 +9,9 @@ use bml_runtime::{
     },
 };
 use std::{
-    io::{Read, Write},
-    net::TcpListener,
-    sync::Arc,
+    io::{self, Read, Write},
+    net::{Shutdown, TcpListener, TcpStream},
+    sync::{Arc, Mutex},
     thread,
     time::Duration,
 };
@@ -64,6 +64,294 @@ fn listener(
     });
     (address, task)
 }
+
+fn test_socket(address: std::net::SocketAddr) -> TcpStream {
+    let stream = TcpStream::connect(address).unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(3)))
+        .unwrap();
+    stream
+        .set_write_timeout(Some(Duration::from_secs(3)))
+        .unwrap();
+    stream
+}
+
+fn test_write_frame(stream: &mut TcpStream, payload: &[u8]) {
+    stream
+        .write_all(&(payload.len() as u32).to_le_bytes())
+        .unwrap();
+    stream.write_all(payload).unwrap();
+}
+
+fn test_read_frame(stream: &mut TcpStream) -> io::Result<Vec<u8>> {
+    let mut prefix = [0; 4];
+    stream.read_exact(&mut prefix)?;
+    let count = u32::from_le_bytes(prefix) as usize;
+    assert!((1..=1024).contains(&count), "unexpected test response size");
+    let mut payload = vec![0; count];
+    stream.read_exact(&mut payload)?;
+    Ok(payload)
+}
+
+fn test_open(identity: &str, context: u32) -> Vec<u8> {
+    let mut request = vec![0];
+    for field in [1_u32, context, 0, 1] {
+        request.extend_from_slice(&field.to_le_bytes());
+    }
+    request.extend_from_slice(identity.as_bytes());
+    assert_eq!(request.len(), 81);
+    request
+}
+
+fn short_limits(frame_bytes: usize) -> SymbolicTransportLimits {
+    SymbolicTransportLimits {
+        frame_bytes,
+        context: 2,
+        timeout: Duration::from_secs(3),
+        ..Default::default()
+    }
+}
+
+#[test]
+fn raw_open_checks_each_owned_field_and_the_servers_own_context_budget() {
+    let (_source, artifact) = artifact();
+    let policy = short_limits(128);
+    let server = Arc::new(SymbolicLayerServer::new(&artifact.0, None, 0..1, policy).unwrap());
+    let original = test_open(server.identity(), 2);
+    let mut requests = Vec::new();
+    for (name, offset, value) in [
+        ("version", 1, 2_u32),
+        ("start", 9, 1),
+        ("end", 13, 2),
+        // The artifact admits three positions. Only the server policy limits
+        // this request to two, so a later session check cannot mask this guard.
+        ("context", 5, 3),
+    ] {
+        let mut request = original.clone();
+        request[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+        requests.push((name, request));
+    }
+    let mut wrong_type = original.clone();
+    wrong_type[0] = 1;
+    requests.push(("type", wrong_type));
+    let mut wrong_identity = original.clone();
+    wrong_identity[80] ^= 1;
+    requests.push(("identity", wrong_identity));
+    let mut trailing = original.clone();
+    trailing.push(0);
+    requests.push(("length", trailing));
+    for (name, request) in requests {
+        let (address, task) = listener(Arc::clone(&server), 1);
+        let mut stream = test_socket(address);
+        test_write_frame(&mut stream, &request);
+        let response = test_read_frame(&mut stream).expect("an explicit rejection, not EOF");
+        assert_eq!(response[0], 1, "accepted altered {name}");
+        let message = std::str::from_utf8(&response[1..]).unwrap();
+        if name == "context" {
+            assert_eq!(message, "invalid context");
+        } else {
+            assert_eq!(message, "invalid identity, version or range");
+        }
+        assert!(task.join().is_ok());
+    }
+    // Independent subsequent admission and a complete transaction must work.
+    let mut reference = SymbolicCausalModel::open_artifact(
+        &artifact.0,
+        None,
+        SymbolicLimits {
+            max_nodes: 0,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let input = reference.compiler().get_embedding(69).unwrap();
+    let mut cache = HashConsedKV::new(3, 1, 2, 2);
+    let expected = reference
+        .forward_layer_range(&input, 0, &mut cache, 0..1)
+        .unwrap();
+    let (address, task) = listener(server.clone(), 1);
+    let mut client =
+        SymbolicLayerClient::connect(address, server.identity(), 0..1, 2, policy).unwrap();
+    let actual = client.prepare(0, &input).unwrap();
+    assert_eq!(
+        actual.iter().map(|x| x.to_bits()).collect::<Vec<_>>(),
+        expected.iter().map(|x| x.to_bits()).collect::<Vec<_>>()
+    );
+    client.commit(0).unwrap();
+    assert_eq!(client.position(), 1);
+    assert!(client.is_healthy());
+    client.reset().unwrap();
+    assert_eq!(client.prepare(0, &input).unwrap(), actual);
+    client.abort(0).unwrap();
+    client.close().unwrap();
+    task.join().unwrap();
+}
+
+#[test]
+fn frame_budgets_include_exact_open_size_and_maximum_u32_without_large_frames() {
+    let (_source, artifact) = artifact();
+    for budget in [81, u32::MAX as usize] {
+        let policy = short_limits(budget);
+        let server = Arc::new(SymbolicLayerServer::new(&artifact.0, None, 0..1, policy).unwrap());
+        let (address, task) = listener(server.clone(), 1);
+        // Even the maximum policy sends only the 81-byte Open and tiny controls;
+        // no allocation scales with the configured frame budget.
+        let mut client = SymbolicLayerClient::connect(address, server.identity(), 0..1, 2, policy)
+            .expect("both inclusive frame endpoints must admit an ordinary session");
+        client.reset().unwrap();
+        assert!(client.is_healthy());
+        client.close().unwrap();
+        task.join().unwrap();
+    }
+}
+
+#[test]
+fn invalid_inbound_sizes_fail_in_framing_before_any_open_rejection() {
+    let (_source, artifact) = artifact();
+    let server =
+        Arc::new(SymbolicLayerServer::new(&artifact.0, None, 0..1, short_limits(128)).unwrap());
+    for payload in [Vec::new(), vec![0_u8; 130]] {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = Arc::clone(&server);
+        let (written, inspect) = std::sync::mpsc::channel();
+        let task = thread::spawn(move || {
+            let stream = listener.accept().unwrap().0;
+            inspect.recv().unwrap();
+            server.serve_connection(stream)
+        });
+        let mut stream = test_socket(address);
+        // Supply the entire declared payload and finish the write side. A peer
+        // that incorrectly proceeds cannot turn an absent body into a false hit.
+        test_write_frame(&mut stream, &payload);
+        stream.shutdown(Shutdown::Write).unwrap();
+        written.send(()).unwrap();
+        let error = task
+            .join()
+            .unwrap()
+            .expect_err("invalid frame reached Open admission");
+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+        assert_eq!(error.to_string(), "symbolic frame size");
+    }
+}
+
+fn assert_local_rejection<T: std::fmt::Debug>(result: io::Result<T>, message: &str) {
+    let error = result.unwrap_err();
+    assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+    assert_eq!(error.to_string(), message);
+}
+
+#[test]
+fn client_prepare_and_commit_preflight_never_sends_or_consumes_rejected_work() {
+    let trace = Arc::new(Mutex::new(Vec::<Vec<u8>>::new()));
+    let recorded = Arc::clone(&trace);
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let task = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        stream
+            .set_write_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        let open = test_read_frame(&mut stream).unwrap();
+        assert_eq!(open.len(), 81);
+        recorded.lock().unwrap().push(open);
+        test_write_frame(&mut stream, &[0, 2, 0, 0, 0]);
+        loop {
+            let request = match test_read_frame(&mut stream) {
+                Ok(request) => request,
+                Err(error) if error.kind() == io::ErrorKind::UnexpectedEof => return,
+                Err(error) => panic!("test peer: {error}"),
+            };
+            let code = request[0];
+            recorded.lock().unwrap().push(request);
+            // Deliberately accept every prepare/control: rejecting invalid
+            // client work here would mask missing *local* validation.
+            if code == 1 {
+                let mut response = vec![0, 2, 0, 0, 0];
+                for value in [10.0_f64, 20.0] {
+                    response.extend_from_slice(&value.to_le_bytes());
+                }
+                test_write_frame(&mut stream, &response);
+            } else {
+                test_write_frame(&mut stream, &[0]);
+                if code == 5 {
+                    return;
+                }
+            }
+        }
+    });
+    let policy = SymbolicTransportLimits {
+        context: 3,
+        ..short_limits(81)
+    };
+    let mut client =
+        SymbolicLayerClient::connect(address, &"a".repeat(64), 0..1, 3, policy).unwrap();
+    let codes = || {
+        trace
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|frame| frame[0])
+            .collect::<Vec<_>>()
+    };
+    assert_local_rejection(client.commit(0), "no matching symbolic row to commit");
+    for (position, input) in [
+        (1, vec![1.0, 2.0]),
+        (0, vec![1.0]),
+        (0, vec![f64::NAN, 2.0]),
+        (0, vec![1.0, f64::INFINITY]),
+    ] {
+        assert_local_rejection(
+            client.prepare(position, &input),
+            "invalid symbolic input vector",
+        );
+        assert!(client.is_healthy());
+        assert_eq!(client.position(), 0);
+        assert!(!client.is_prepared());
+        assert_eq!(codes(), [0]);
+    }
+    assert_eq!(client.prepare(0, &[1.0, 2.0]).unwrap(), [10.0, 20.0]);
+    assert_eq!(codes(), [0, 1]);
+    assert_local_rejection(
+        client.prepare(0, &[1.0, 2.0]),
+        "invalid symbolic input vector",
+    );
+    assert_local_rejection(client.commit(1), "no matching symbolic row to commit");
+    assert_local_rejection(client.abort(1), "no matching symbolic row to abort");
+    assert!(client.is_healthy());
+    assert!(client.is_prepared());
+    assert_eq!(client.position(), 0);
+    assert_eq!(codes(), [0, 1]);
+    client.abort(0).unwrap();
+    assert!(!client.is_prepared());
+    for position in 0..3 {
+        assert_eq!(client.prepare(position, &[1.0, 2.0]).unwrap(), [10.0, 20.0]);
+        assert!(client.is_prepared());
+        assert_eq!(client.position(), position);
+        client.commit(position).unwrap();
+        assert!(!client.is_prepared());
+        assert_eq!(client.position(), position + 1);
+    }
+    let before = codes();
+    assert_local_rejection(
+        client.prepare(3, &[1.0, 2.0]),
+        "invalid symbolic input vector",
+    );
+    assert_eq!(codes(), before);
+    assert_eq!(client.position(), 3);
+    assert!(client.is_healthy());
+    client.reset().unwrap();
+    assert_eq!(client.position(), 0);
+    assert_eq!(client.prepare(0, &[1.0, 2.0]).unwrap(), [10.0, 20.0]);
+    client.abort(0).unwrap();
+    client.close().unwrap();
+    assert!(!client.is_healthy());
+    task.join().unwrap();
+}
+
 #[test]
 fn two_tcp_ranges_match_persisted_causal_logits_and_keep_sessions_independent() {
     let (_source, artifact) = artifact();

@@ -348,7 +348,8 @@
       "failures_are_localized_and_do_not_mutate_inputs",
       "numeric_scalar_is_prepared_once_before_the_kernel",
       "shapes_access_and_transactional_replacement",
-      "scalar_output_budget_reports_the_last_row_major_position_transactionally"
+      "scalar_output_budget_reports_the_last_row_major_position_transactionally",
+      "scalar_work_budget_reports_the_last_row_major_position_transactionally"
     ]
   },
   "C36": {
@@ -362,7 +363,9 @@
       "numeric_observations_are_explicit_and_cannot_change_exact_ranking",
       "logical_growth_storage_and_structural_equality_are_separate",
       "cache_bit_budget_evicts_independently_of_the_step_budget",
-      "cache_step_budget_evicts_independently_of_the_bit_budget"
+      "cache_step_budget_evicts_independently_of_the_bit_budget",
+      "repeated_search_does_not_duplicate_the_same_certified_cache_entry",
+      "cumulative_cache_budgets_accept_exact_totals"
     ]
   },
   "C37": {
@@ -757,7 +760,8 @@
       "indexed_context_graphs_use_new_tags_and_version_without_changing_legacy_bytes",
       "indexed_context_codec_rejects_all_truncated_prefixes_and_honors_budgets",
       "reference_evaluators_load_context_vectors_inside_loops_and_reject_lossy_indices",
-      "legacy_directory_containers_reject_context_loads_before_creating_outputs"
+      "legacy_directory_containers_reject_context_loads_before_creating_outputs",
+      "indexed_reference_arithmetic_and_pick_consume_distinct_operands"
     ]
   },
   "C83": {
@@ -790,7 +794,12 @@
     "tests": [
       "indexed_dot_roles_preserve_external_context_and_independent_signed_results",
       "indexed_dot_storage_is_constant_and_executed_work_has_exact_linear_budgets",
-      "complete_bounded_role_bounds_and_explicit_softmax_shift_are_enforced"
+      "complete_bounded_role_bounds_and_explicit_softmax_shift_are_enforced",
+      "bounded_rope_configuration_requires_exact_pair_width",
+      "bounded_swiglu_configuration_requires_exact_scalar_width",
+      "bounded_residual_configuration_requires_exact_scalar_width",
+      "bounded_scale_configuration_requires_exact_scalar_width",
+      "bounded_profile_validation_checks_every_declared_family_before_compilation"
     ]
   },
   "C81": {
@@ -967,7 +976,9 @@
       "attention_layout_preflight_rejects_overlap_bad_scratch_and_capacity",
       "scratch_attention_code_literals_and_stack_are_constant_across_dimensions",
       "attention_native_arithmetic_is_only_used_for_indices",
-      "attention_rejects_read_capacity_even_when_addresses_fit_u32"
+      "attention_rejects_read_capacity_even_when_addresses_fit_u32",
+      "attention_layout_admits_the_last_u32_element_without_allocating_a_buffer",
+      "attention_output_stride_is_checked_independently_of_a_valid_output_slot"
     ]
   },
   "C98": {
@@ -980,7 +991,10 @@
       "mlp_preflight_rejects_shapes_bounds_and_each_invalid_stage",
       "scratch_mlp_executes_checked_graph_and_runtime_binds_its_owned_constants",
       "mlp_dimensions_addresses_and_explicit_scratch_layout_are_checked",
-      "mlp_storage_is_constant_and_native_arithmetic_is_only_addressing"
+      "mlp_storage_is_constant_and_native_arithmetic_is_only_addressing",
+      "mlp_preflight_rejects_each_oversized_matrix_independently",
+      "scratch_mlp_accepts_adjacent_operand_and_temporary_ranges",
+      "empty_ffn_still_checks_input_finiteness_and_declared_bound"
     ]
   },
   "C99": {
@@ -1025,7 +1039,11 @@
       "later_commit_loss_invalidates_pipeline_even_after_an_earlier_worker_acknowledges",
       "oversized_frame_is_rejected_before_its_body_is_received",
       "worker_admission_rejects_a_different_relocated_source_model",
-      "source_free_sessions_keep_verified_bytes_and_reject_replaced_shards"
+      "source_free_sessions_keep_verified_bytes_and_reject_replaced_shards",
+      "frame_budgets_include_exact_open_size_and_maximum_u32_without_large_frames",
+      "raw_open_checks_each_owned_field_and_the_servers_own_context_budget",
+      "client_prepare_and_commit_preflight_never_sends_or_consumes_rejected_work",
+      "invalid_inbound_sizes_fail_in_framing_before_any_open_rejection"
     ]
   },
   "C103": {
@@ -1081,7 +1099,8 @@
     "package": "bml-worker",
     "target": "timeout_cli_contracts",
     "tests": [
-      "symbolic_timeout_must_be_positive_before_help_can_complete"
+      "symbolic_timeout_must_be_positive_before_help_can_complete",
+      "symbolic_integer_options_validate_before_help"
     ]
   },
   "C109": {
@@ -1096,6 +1115,21 @@
     "target": "symbolic_kernel_boundaries",
     "tests": [
       "rms_signature_rejects_invalid_epsilon_before_exposing_configuration"
+    ]
+  },
+  "C111": {
+    "package": "bml-inference",
+    "target": "worker_cli_contracts",
+    "tests": [
+      "causal_worker_accepts_each_resource_option_before_help",
+      "causal_worker_rejects_each_zero_resource_before_opening_a_model"
+    ]
+  },
+  "C112": {
+    "package": "bml-worker",
+    "target": "timeout_cli_contracts",
+    "tests": [
+      "prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io"
     ]
   }
 }
