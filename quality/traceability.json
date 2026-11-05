@@ -1166,5 +1166,14 @@
       "buffer_literal_preflight_accepts_u32_max_count_without_allocating",
       "small_buffer_factories_preserve_prefix_offsets_and_admission_errors"
     ]
+  },
+  "C115": {
+    "package": "bml-runtime",
+    "target": "real_model_two_position_diagnostic",
+    "tests": [
+      "prompt_selection_requires_predeclared_text_exact_rust_ids_and_context_two",
+      "native_role_probe_preserves_two_position_logits_and_checks_every_family",
+      "native_role_preflight_retains_a_real_bound_violation_before_committing"
+    ]
   }
 }

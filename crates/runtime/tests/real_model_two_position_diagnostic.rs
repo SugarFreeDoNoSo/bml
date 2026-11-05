@@ -8,6 +8,100 @@ use bml_compiler::{
 use bml_runtime::symbolic_causal::{SymbolicCausalModel, SymbolicLimits};
 use std::{io::Write, path::Path, time::Instant};
 
+#[path = "support/prompt_diagnostic.rs"]
+mod prompt_diagnostic;
+#[path = "support/prompt_profile.rs"]
+mod prompt_profile;
+#[allow(dead_code)]
+#[path = "support/symbolic_fixture.rs"]
+mod symbolic_fixture;
+
+#[test]
+#[ignore = "requires pinned TinyLlama GGUF/AOT, BML_TEST_PROMPT=Hello|Hi, BML_TEST_SOURCE_REVISION and a new BML_TEST_LOGITS_DIR; executes native only"]
+fn real_model_native_prompt_profile_preflight() {
+    prompt_diagnostic::run_native_only().unwrap();
+}
+
+#[test]
+#[ignore = "requires pinned TinyLlama GGUF/AOT, BML_TEST_PROMPT=Hello|Hi, BML_TEST_SOURCE_REVISION and a new BML_TEST_LOGITS_DIR; full BML can take hours"]
+fn real_model_two_position_prompt_symbolic_logit_diagnostic() {
+    prompt_diagnostic::run_full().unwrap();
+}
+
+#[test]
+fn prompt_selection_requires_predeclared_text_exact_rust_ids_and_context_two() {
+    for (text, ids) in prompt_diagnostic::CASES {
+        assert_eq!(
+            prompt_diagnostic::validate_prompt(text, &ids, 2).unwrap(),
+            ids
+        );
+        assert!(prompt_diagnostic::validate_prompt(text, &ids[..1], 2).is_err());
+        assert!(prompt_diagnostic::validate_prompt(text, &[ids[0], ids[1] + 1], 2).is_err());
+        assert!(prompt_diagnostic::validate_prompt(text, &[ids[0], ids[1], 2], 2).is_err());
+        assert!(prompt_diagnostic::validate_prompt(text, &ids, 1).is_err());
+        assert!(prompt_diagnostic::validate_prompt(text, &ids, 3).is_err());
+    }
+    for text in ["", "hello", "Hi ", "Other"] {
+        assert!(prompt_diagnostic::validate_prompt(text, &[1, 6324], 2).is_err());
+    }
+}
+
+#[test]
+fn native_role_probe_preserves_two_position_logits_and_checks_every_family() {
+    let source = symbolic_fixture::fixture(0.25);
+    let native = InferenceCompiler::open_mapped(&source.0).unwrap();
+    let mut probe = prompt_profile::Probe::new(&native, prompt_diagnostic::profile());
+    let mut observed_cache = HashConsedKV::new(1, 1, 2, 2);
+    let mut reference_cache = HashConsedKV::new(1, 1, 2, 2);
+    for (position, id) in [69, 70].into_iter().enumerate() {
+        let actual = probe.position(&native, id, &mut observed_cache).unwrap();
+        let expected = native.forward_cached(&[id], &mut reference_cache).unwrap();
+        assert_eq!(
+            actual.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+        );
+        assert!(actual.iter().all(|value| value.is_finite()));
+        assert_eq!(observed_cache.current_pos(), position as u32 + 1);
+        let report = probe.report();
+        assert_eq!(report["projection_callbacks"], 8);
+        assert_eq!(report["roles"].as_object().unwrap().len(), 10);
+        assert_eq!(report["roles"]["rms_norm"]["calls"], 3);
+        assert_eq!(report["roles"]["rope"]["calls"], 3);
+        assert_eq!(report["roles"]["residual_add"]["calls"], 8);
+        assert_eq!(report["roles"]["swiglu"]["calls"], 4);
+        assert_eq!(
+            report["roles"]["attention_dot"]["calls"],
+            2 * (position + 1)
+        );
+        assert_eq!(report["roles"]["softmax"]["calls"], 2);
+        assert_eq!(report["roles"]["weighted_sum"]["calls"], 4);
+        assert_eq!(report["kv_head_rows_verified_in_bits"], 2 * (position + 1));
+    }
+}
+
+#[test]
+fn native_role_preflight_retains_a_real_bound_violation_before_committing() {
+    let source = symbolic_fixture::fixture(2.0);
+    let native = InferenceCompiler::open_mapped(&source.0).unwrap();
+    let mut profile = prompt_diagnostic::profile();
+    profile.rms.input = 1.0;
+    profile
+        .validate(native.config().n_embd as usize, native.rms_norm_epsilon())
+        .unwrap();
+    assert!(native
+        .get_embedding(69)
+        .unwrap()
+        .iter()
+        .any(|value| value.abs() > 1.0));
+    let mut probe = prompt_profile::Probe::new(&native, profile);
+    let mut cache = HashConsedKV::new(1, 1, 2, 2);
+    let error = probe.position(&native, 69, &mut cache).unwrap_err();
+    assert!(error.contains("attn_norm.weight rms_norm"), "{error}");
+    assert_eq!(cache.current_pos(), 0);
+    assert_eq!(probe.report()["projection_callbacks"], 0);
+    assert_eq!(probe.report()["roles"]["rms_norm"]["calls"], 1);
+}
+
 fn save_vector(directory: &Path, name: &str, values: &[f64]) {
     let file = std::fs::File::create(directory.join(name)).unwrap();
     let mut writer = std::io::BufWriter::new(file);

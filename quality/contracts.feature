@@ -873,3 +873,10 @@ Then it rejects the request before expensive generation
     When callers check the buffer literal count before allocation
     Then exactly u32::MAX literals are admitted while one more and usize overflow are rejected without allocation
     And small buffer factories preserve their prefixes, offsets and admission errors
+
+  @C115
+  Scenario: Prompt diagnostic protocols and native role observers are validated independently of real-model runs
+    Given predeclared Hello and Hi identities, an explicit bounded profile and a small native fixture
+    When diagnostic inputs are checked and two native fixture positions are observed
+    Then text, token and context mismatches reject while observed logits preserve native bits and all role counters agree
+    And an actual activation beyond a valid declared bound rejects without committing the KV position

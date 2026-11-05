@@ -148,6 +148,11 @@ workflow no aprueba la campaña completa ni recupera el raw antiguo20/27.
 
 ## Instrumentación optativa
 
+Los casos TinyLlama `Hello`/`Hi`, su preflight nativo por roles y el diagnóstico
+BML completo tienen un protocolo separado en
+[REAL_PROMPT_DIAGNOSTICS.md](REAL_PROMPT_DIAGNOSTICS.md). Requieren selección
+exacta del test, inputs fijados, captura de build y directorios nuevos por modo.
+
 ```sh
 cargo test -p bml-parser --test zero_copy_strace -- --ignored --exact strace_shows_mmap_not_read
 cargo test -p bml-tests --test perf_cache -- --ignored --exact perf_stat_cache_events_on_program

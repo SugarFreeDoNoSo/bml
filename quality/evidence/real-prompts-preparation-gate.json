@@ -1,0 +1,72 @@
+{
+  "status": "passed_preparation_only",
+  "observed_at_utc": "2026-11-05T07:55:21.960544+00:00",
+  "base_revision": "c00edbce2d464c006902d9ef3d50d7ec3b01ce68",
+  "command": "./scripts/check.sh c00edbce2d464c006902d9ef3d50d7ec3b01ce68",
+  "exit_code": 0,
+  "scope": "Three ordinary fixture/protocol/role-observer tests and two opt-in real-prompt entry points; no Hello/Hi model run or new real-model qualification yet.",
+  "rust_tests_passed": 998,
+  "rust_suites": 145,
+  "python_tooling_tests": 213,
+  "traceability": "115/115",
+  "historical_contract_discrepancies": 0,
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "predeclared_cases": {
+    "Hello": [
+      1,
+      15043
+    ],
+    "Hi": [
+      1,
+      6324
+    ]
+  },
+  "future_exact_tests": [
+    "real_model_native_prompt_profile_preflight",
+    "real_model_two_position_prompt_symbolic_logit_diagnostic"
+  ],
+  "future_required_environment": [
+    "BML_TEST_PROMPT",
+    "BML_TEST_SOURCE_REVISION",
+    "BML_TEST_GGUF",
+    "BML_TEST_SYMBOLIC_ARTIFACT",
+    "BML_TEST_LOGITS_DIR"
+  ],
+  "future_prerequisites": "Authenticated current build, both native preflights and resource inspection before either long symbolic case. No global numerical tolerance introduced.",
+  "log": "target/quality/real-prompts-preparation-gate.log",
+  "log_sha256": "d6e073bfd7c45b5fbd63a8faca57fe2e7e1e9c04a67e5a94f46a5cfba3847d34",
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/real-prompts-preparation-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598",
+    "initial_grouping_failure_log": "target/quality/real-prompts-preparation-openspec-initial-grouping-failure.log",
+    "initial_grouping_failure_log_sha256": "7002cb4fc055c232bcd3e1ac181029fc2c0eeebb6d3e04b4243189e9bf5e4636"
+  },
+  "tested_rust_input_hashes": {
+    "crates/runtime/tests/real_model_two_position_diagnostic.rs": "6bf11e8236051014fbc5ea36f070784da721de2060eff36bc1ef4fbf9752c1fe",
+    "crates/runtime/tests/support/prompt_diagnostic.rs": "882999022dea8ca1adbb2388d081324bd3476cd040841f679bb290804fe9f54b",
+    "crates/runtime/tests/support/prompt_profile.rs": "2aa184015d6d192f4b56c3714407f366de4b4d58d144911885a6b05d6ed4fa93",
+    "crates/runtime/tests/support/symbolic_fixture.rs": "628c316441a5f0baf1c18bdb75ec43a3a44b1c688b42eb7d18631f7316c7162a"
+  },
+  "traceability_hashes": {
+    "quality/contracts.feature": "5f82f2ba362a58aa0e66f3db8cff0df600114b95e34c486b4c0f8e3be128781a",
+    "quality/traceability.json": "5a14966e50e38bdd8c8d99bc7037c8c3ceb4646ad8b5b8f36ed1a162b754df6d"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  },
+  "review": {
+    "reviewers": [
+      "root",
+      "audit_specs_waves"
+    ],
+    "historical_function_body": "Old fixed-input body unchanged.",
+    "native_observer": "Every role/projected row, RMS/down folds, RoPE/nativeF32KV and expected counters checked; fixture outputs preserve native bits.",
+    "execution_boundary": "Native-only makes no symbolic execution call; full uses max_nodes0, independent caches and complete finite vectors before final summary."
+  }
+}
