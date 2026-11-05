@@ -1,0 +1,647 @@
+{
+  "scope": "Three CURRENT wave20 source replays with exact whole-workspace commands; not historical9a or a complete mutation campaign.",
+  "runner_pid": 29522,
+  "started_at": "2026-11-05T11:55:14.909268+00:00",
+  "commands": [
+    {
+      "label": "clean-before-baseline",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-server"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T11:55:14.930949+00:00",
+      "stdout": "clean-before-baseline.stdout",
+      "stderr": "clean-before-baseline.stderr",
+      "disk_free_before": 3903447040,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T11:55:15.301216+00:00",
+      "elapsed_seconds": 0.37030210898956284,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "3d6e7d29b7301d219e426d16330e9d373887dd16f2f55c591c6b840261a04e0d",
+      "disk_free_after": 3927982080
+    },
+    {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T11:55:15.301852+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 3927982080,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T11:56:40.366586+00:00",
+      "elapsed_seconds": 85.06478289799998,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0cec0e68015514737076e0ff2207c93492be0bb4a6c4146886728b24d5e0fd0b",
+      "disk_free_after": 3785183232
+    },
+    {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T11:56:40.367432+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 3785183232,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T11:58:20.187109+00:00",
+      "elapsed_seconds": 99.81971119099762,
+      "stdout_sha256": "cbe6a9d4fd10223053a0403ddde02d89418dd9808762e7b9d22b4302cfb8a3a5",
+      "stderr_sha256": "2ddf4fbb9f2d215317200a016caf312d799e5afd749aae25d39837b2be9dcf35",
+      "disk_free_after": 3784564736
+    },
+    {
+      "label": "clean-before-utf8-offset-advance",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-server"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T11:58:20.497414+00:00",
+      "stdout": "clean-before-utf8-offset-advance.stdout",
+      "stderr": "clean-before-utf8-offset-advance.stderr",
+      "disk_free_before": 3784560640,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T11:58:20.668069+00:00",
+      "elapsed_seconds": 0.17068534600548446,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "3b52df05d48e4d954cc6ece760c905a6618a6bd658e77b1822c57fa2d53e3682",
+      "disk_free_after": 3847872512
+    },
+    {
+      "label": "utf8-offset-advance-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T11:58:20.669540+00:00",
+      "stdout": "utf8-offset-advance-build.stdout",
+      "stderr": "utf8-offset-advance-build.stderr",
+      "disk_free_before": 3847872512,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T11:59:35.428175+00:00",
+      "elapsed_seconds": 74.7586665310082,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "08f467afb36a0874f94a9fb887b1807060ce9a2b8a119e7de10db79577318724",
+      "disk_free_after": 3784355840
+    },
+    {
+      "label": "utf8-offset-advance-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T11:59:35.428910+00:00",
+      "stdout": "utf8-offset-advance-test.stdout",
+      "stderr": "utf8-offset-advance-test.stderr",
+      "disk_free_before": 3784355840,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:01:03.403204+00:00",
+      "elapsed_seconds": 87.97432892100187,
+      "stdout_sha256": "5744cc91639b58f909cf08edbb7c8f99f0f493271643d2502a27ad313bcb69a5",
+      "stderr_sha256": "bee29f09d88cb6efdeb51cfa554fdb22ef0a6109fb5ad3b693f7d6d9087c9d83",
+      "disk_free_after": 3783995392
+    },
+    {
+      "label": "clean-restored-utf8-offset-advance",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-server"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:01:03.510228+00:00",
+      "stdout": "clean-restored-utf8-offset-advance.stdout",
+      "stderr": "clean-restored-utf8-offset-advance.stderr",
+      "disk_free_before": 3783991296,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:01:03.729140+00:00",
+      "elapsed_seconds": 0.2189466700074263,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "3b52df05d48e4d954cc6ece760c905a6618a6bd658e77b1822c57fa2d53e3682",
+      "disk_free_after": 3847307264
+    },
+    {
+      "label": "clean-before-utf8-error-width",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-server"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:01:03.820842+00:00",
+      "stdout": "clean-before-utf8-error-width.stdout",
+      "stderr": "clean-before-utf8-error-width.stderr",
+      "disk_free_before": 3847307264,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:01:03.936323+00:00",
+      "elapsed_seconds": 0.1155138670001179,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "disk_free_after": 3847303168
+    },
+    {
+      "label": "utf8-error-width-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:01:03.938087+00:00",
+      "stdout": "utf8-error-width-build.stdout",
+      "stderr": "utf8-error-width-build.stderr",
+      "disk_free_before": 3847303168,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:02:19.949568+00:00",
+      "elapsed_seconds": 76.01151178200962,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "ca34dbf3f8e9920c79e13091ee99d58aa47df0d4492c93dd14fb250c510d8912",
+      "disk_free_after": 3783852032
+    },
+    {
+      "label": "utf8-error-width-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T12:02:19.950334+00:00",
+      "stdout": "utf8-error-width-test.stdout",
+      "stderr": "utf8-error-width-test.stderr",
+      "disk_free_before": 3783852032,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:03:46.135313+00:00",
+      "elapsed_seconds": 86.18501066800673,
+      "stdout_sha256": "5015d31bd9393f4d9cc23a26f40c34ac833027c30d2b8cb6586155c25e147e3d",
+      "stderr_sha256": "bee29f09d88cb6efdeb51cfa554fdb22ef0a6109fb5ad3b693f7d6d9087c9d83",
+      "disk_free_after": 3783356416
+    },
+    {
+      "label": "clean-restored-utf8-error-width",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-server"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:03:46.241218+00:00",
+      "stdout": "clean-restored-utf8-error-width.stdout",
+      "stderr": "clean-restored-utf8-error-width.stderr",
+      "disk_free_before": 3783352320,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:03:46.410284+00:00",
+      "elapsed_seconds": 0.169096166966483,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "3b52df05d48e4d954cc6ece760c905a6618a6bd658e77b1822c57fa2d53e3682",
+      "disk_free_after": 3846664192
+    },
+    {
+      "label": "clean-before-exact-last-nonzero",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-server"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:03:46.529331+00:00",
+      "stdout": "clean-before-exact-last-nonzero.stdout",
+      "stderr": "clean-before-exact-last-nonzero.stderr",
+      "disk_free_before": 3846664192,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:03:46.649971+00:00",
+      "elapsed_seconds": 0.12066941999364644,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "disk_free_after": 3846660096
+    },
+    {
+      "label": "exact-last-nonzero-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:03:46.652973+00:00",
+      "stdout": "exact-last-nonzero-build.stdout",
+      "stderr": "exact-last-nonzero-build.stderr",
+      "disk_free_before": 3846656000,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:05:11.960317+00:00",
+      "elapsed_seconds": 85.30737799400231,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "06a905f4c129cfc2c554dc3990e9e5261e541b5edf4feec43b7e017f4fd97e26",
+      "disk_free_after": 3782926336
+    },
+    {
+      "label": "exact-last-nonzero-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T12:05:11.961124+00:00",
+      "stdout": "exact-last-nonzero-test.stdout",
+      "stderr": "exact-last-nonzero-test.stderr",
+      "disk_free_before": 3782926336,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:05:12.929676+00:00",
+      "elapsed_seconds": 0.9685808949870989,
+      "stdout_sha256": "6bc72c1dc68f117aa2ea1404db215ade252a925939d9ec5fb80857d817b911b5",
+      "stderr_sha256": "581ec9de9b102f5319cf69da8b5dac0daca2de49a1afa9d3f408bee99f02e963",
+      "disk_free_after": 3782828032
+    },
+    {
+      "label": "clean-restored-exact-last-nonzero",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-server"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:05:13.033541+00:00",
+      "stdout": "clean-restored-exact-last-nonzero.stdout",
+      "stderr": "clean-restored-exact-last-nonzero.stderr",
+      "disk_free_before": 3782823936,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:05:13.199405+00:00",
+      "elapsed_seconds": 0.16589517099782825,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "3b52df05d48e4d954cc6ece760c905a6618a6bd658e77b1822c57fa2d53e3682",
+      "disk_free_after": 3846127616
+    }
+  ],
+  "cases": [
+    {
+      "build": {
+        "label": "utf8-offset-advance-build",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 600,
+        "started_at": "2026-11-05T11:58:20.669540+00:00",
+        "stdout": "utf8-offset-advance-build.stdout",
+        "stderr": "utf8-offset-advance-build.stderr",
+        "disk_free_before": 3847872512,
+        "exit_code": 0,
+        "timed_out": false,
+        "ended_at": "2026-11-05T11:59:35.428175+00:00",
+        "elapsed_seconds": 74.7586665310082,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "08f467afb36a0874f94a9fb887b1807060ce9a2b8a119e7de10db79577318724",
+        "disk_free_after": 3784355840
+      },
+      "test": {
+        "label": "utf8-offset-advance-test",
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 360,
+        "started_at": "2026-11-05T11:59:35.428910+00:00",
+        "stdout": "utf8-offset-advance-test.stdout",
+        "stderr": "utf8-offset-advance-test.stderr",
+        "disk_free_before": 3784355840,
+        "exit_code": 101,
+        "timed_out": false,
+        "ended_at": "2026-11-05T12:01:03.403204+00:00",
+        "elapsed_seconds": 87.97432892100187,
+        "stdout_sha256": "5744cc91639b58f909cf08edbb7c8f99f0f493271643d2502a27ad313bcb69a5",
+        "stderr_sha256": "bee29f09d88cb6efdeb51cfa554fdb22ef0a6109fb5ad3b693f7d6d9087c9d83",
+        "disk_free_after": 3783995392
+      },
+      "failed_tests": [
+        "tests::streaming_utf8_prefix_does_not_split_a_multibyte_token"
+      ],
+      "compile_error": false,
+      "caught_current_workspace": true,
+      "label": "utf8-offset-advance",
+      "candidate": "crates/api/src/main.rs:493:40: replace += with *= in complete_utf8_prefix",
+      "source_before_sha256": "19a8c6b503fbf73c4db91a514d55bea9170c07f020f74fb68cae3ac11cfe7ad9",
+      "source_mutated_sha256": "e384588dbaeb6dd3c75046c73e8d41563cc0436c5bcd3d39f6390abbf90d0c19",
+      "producer_diff_sha256": "674286e1d0e4144b555b3d15c57767bf32c8abfa1a4e7ec35348691529c6e12a"
+    },
+    {
+      "build": {
+        "label": "utf8-error-width-build",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 600,
+        "started_at": "2026-11-05T12:01:03.938087+00:00",
+        "stdout": "utf8-error-width-build.stdout",
+        "stderr": "utf8-error-width-build.stderr",
+        "disk_free_before": 3847303168,
+        "exit_code": 0,
+        "timed_out": false,
+        "ended_at": "2026-11-05T12:02:19.949568+00:00",
+        "elapsed_seconds": 76.01151178200962,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "ca34dbf3f8e9920c79e13091ee99d58aa47df0d4492c93dd14fb250c510d8912",
+        "disk_free_after": 3783852032
+      },
+      "test": {
+        "label": "utf8-error-width-test",
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 360,
+        "started_at": "2026-11-05T12:02:19.950334+00:00",
+        "stdout": "utf8-error-width-test.stdout",
+        "stderr": "utf8-error-width-test.stderr",
+        "disk_free_before": 3783852032,
+        "exit_code": 101,
+        "timed_out": false,
+        "ended_at": "2026-11-05T12:03:46.135313+00:00",
+        "elapsed_seconds": 86.18501066800673,
+        "stdout_sha256": "5015d31bd9393f4d9cc23a26f40c34ac833027c30d2b8cb6586155c25e147e3d",
+        "stderr_sha256": "bee29f09d88cb6efdeb51cfa554fdb22ef0a6109fb5ad3b693f7d6d9087c9d83",
+        "disk_free_after": 3783356416
+      },
+      "failed_tests": [
+        "tests::streaming_utf8_prefix_does_not_split_a_multibyte_token"
+      ],
+      "compile_error": false,
+      "caught_current_workspace": true,
+      "label": "utf8-error-width",
+      "candidate": "crates/api/src/main.rs:493:63: replace + with * in complete_utf8_prefix",
+      "source_before_sha256": "19a8c6b503fbf73c4db91a514d55bea9170c07f020f74fb68cae3ac11cfe7ad9",
+      "source_mutated_sha256": "76747ecc3eaa20a9ea9e04c8a5fa81dfc585f8e871e008dbceb48c7db1075598",
+      "producer_diff_sha256": "ba21c8461a16b3f4132a21e8ca019c4569b5e68a5c648279fe5713f5569d084d"
+    },
+    {
+      "build": {
+        "label": "exact-last-nonzero-build",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 600,
+        "started_at": "2026-11-05T12:03:46.652973+00:00",
+        "stdout": "exact-last-nonzero-build.stdout",
+        "stderr": "exact-last-nonzero-build.stderr",
+        "disk_free_before": 3846656000,
+        "exit_code": 0,
+        "timed_out": false,
+        "ended_at": "2026-11-05T12:05:11.960317+00:00",
+        "elapsed_seconds": 85.30737799400231,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "06a905f4c129cfc2c554dc3990e9e5261e541b5edf4feec43b7e017f4fd97e26",
+        "disk_free_after": 3782926336
+      },
+      "test": {
+        "label": "exact-last-nonzero-test",
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 360,
+        "started_at": "2026-11-05T12:05:11.961124+00:00",
+        "stdout": "exact-last-nonzero-test.stdout",
+        "stderr": "exact-last-nonzero-test.stderr",
+        "disk_free_before": 3782926336,
+        "exit_code": 101,
+        "timed_out": false,
+        "ended_at": "2026-11-05T12:05:12.929676+00:00",
+        "elapsed_seconds": 0.9685808949870989,
+        "stdout_sha256": "6bc72c1dc68f117aa2ea1404db215ade252a925939d9ec5fb80857d817b911b5",
+        "stderr_sha256": "581ec9de9b102f5319cf69da8b5dac0daca2de49a1afa9d3f408bee99f02e963",
+        "disk_free_after": 3782828032
+      },
+      "failed_tests": [
+        "explicit_prepared_run_rejects_corruption_without_generation",
+        "run_generates_from_converted_container_without_source_gguf",
+        "run_requires_explicit_policy_and_cap_and_never_modifies_container"
+      ],
+      "compile_error": false,
+      "caught_current_workspace": true,
+      "label": "exact-last-nonzero",
+      "candidate": "crates/domain/src/number/exact.rs:200:33: replace != with == in normalize",
+      "source_before_sha256": "cbab81b1a6501357683f0e8b15d8b3e375010bf93efbedfe124915370de0c549",
+      "source_mutated_sha256": "51c2e295833d81a8445de166bdcc34629958ffa1e9136301fa0acb93ac0aa0ef",
+      "producer_diff_sha256": "a2894e09d24748355f0f832bdec35521b63a3a6ac42f3032df98b1a4b38fdf2f"
+    }
+  ],
+  "active": null,
+  "prepared_source_sha256": "4733ba811f59d2e50874781087bcd9a86c665e7ca95049303b8b217fbd4471e7",
+  "prepare_report_sha256": "d8a7eecdc105b431afc9075f1cf5c640675fc270c7c9b7c17c374f14f3590a67",
+  "identity": "CURRENT published f106207 plus exact UTF8/normalize Rust and campaign telemetry overlays; not historical9a",
+  "environment": {
+    "PATH": "/tmp/bml-cargo/bin:/home/dev/.local/bin:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/home/dev/.opencode/bin:/home/dev/.local/share/mise/installs/node/24.22.2/bin:/home/dev/.local/share/mise/installs/uv/0.13.6/.mise-bins:/home/dev/.local/share/mise/shims:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.cargo/bin:/home/dev/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/games:/home/dev/.codex/tmp/arg0-linux/codex-arg0q6I2SF:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin",
+    "CARGO_HOME": "/tmp/bml-cargo",
+    "RUSTUP_HOME": "/tmp/bml-rustup",
+    "TMPDIR": "/home/dev/Work/bml/target/quality/wave-twenty-current-20261105T115206Z/tmp",
+    "CARGO_TARGET_DIR": "/home/dev/Work/bml/target/wave-twelve-current-build-20261105T092132Z",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "PROPTEST_RNG_SEED": "20260923",
+    "CARGO_TERM_COLOR": "never"
+  },
+  "cache_receipt": {
+    "previous_output": "/home/dev/Work/bml/target/quality/wave-sixteen-current-20261105T101609Z",
+    "previous_source_sha256": "a5ff815f90d1d21f94b617e0dec201c1f4e236482dc094e0ddffaf78cab6cdae",
+    "previous_report_sha256": "4ed57e9271e44c607bf02ece14bc9f1b7efeeaa9d0a4f33d5e3299d0b47ab5cd",
+    "changed_source_paths": [
+      ".github/workflows/mutation-campaign.yml",
+      "crates/api/src/main.rs",
+      "crates/domain/src/number/exact.rs",
+      "crates/domain/tests/bml_matrix.rs",
+      "openspec/changes/bml-1-0-release/tasks.md",
+      "openspec/changes/bml-inference-pipeline/tasks.md",
+      "quality/evidence/current-real-prompt-hello-bos-position0.json",
+      "quality/evidence/current-real-prompt-hello-bos-position0.tar.gz",
+      "quality/evidence/finite-wave-runtime-current-replay.bundle.json",
+      "quality/evidence/finite-wave-runtime-current-replay.json",
+      "quality/evidence/finite-wave-runtime-current-replay.tar.gz",
+      "quality/evidence/finite-wave-runtime-current-source.json",
+      "quality/evidence/finite-wave-runtime-gate.json",
+      "quality/evidence/mutation-9a-fifty-eight-shards.json",
+      "quality/evidence/mutation-five-first-recoveries-dispatch.json",
+      "quality/evidence/mutation-five-first-recoveries-terminal-capture.bundle.json",
+      "quality/evidence/mutation-five-first-recoveries-terminal-capture.tar.gz",
+      "quality/evidence/mutation-five-first-recoveries-terminal.json",
+      "quality/evidence/mutation-recovery-46-artifact.zip",
+      "quality/evidence/mutation-recovery-46-completion.json",
+      "quality/evidence/mutation-recovery-46-verification-capture.bundle.json",
+      "quality/evidence/mutation-recovery-46-verification-capture.tar.gz",
+      "quality/evidence/mutation-recovery-46-verification.json",
+      "quality/evidence/scalar-arithmetic-coordinate-gate.json",
+      "quality/evidence/scalar-arithmetic-coordinate-replays.bundle.json",
+      "quality/evidence/scalar-arithmetic-coordinate-replays.json",
+      "quality/evidence/scalar-arithmetic-coordinate-replays.tar.gz",
+      "quality/traceability.json",
+      "tools/test_mutation_campaign.py"
+    ],
+    "published_base": "f1062073f655c95d98b1d250033ca1495c786ba8",
+    "patch_paths_against_published_base": [
+      ".github/workflows/mutation-campaign.yml",
+      "crates/api/src/main.rs",
+      "crates/domain/src/number/exact.rs",
+      "tools/test_mutation_campaign.py"
+    ],
+    "current_inventory_sha256": "3b09a92e3899201526a637738ca61be2b004bdcd78fdb774a85bf66e5bf7cefa",
+    "policy": "Reuse only the owned restored completed CURRENT stage16 target for f106 plus the exact UTF8, normalize and campaign telemetry overlays. Only four reviewed paths differ from published f106, including one intent-to-add Python input. Clean bml-domain and bml-server before baseline, each negative and after restore; preserve previous source/worktrees/receipts. Cargo fingerprints rebuild any other published source changes."
+  },
+  "updated_at": "2026-11-05T12:05:13.295461+00:00",
+  "baseline": {
+    "build": {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T11:55:15.301852+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 3927982080,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T11:56:40.366586+00:00",
+      "elapsed_seconds": 85.06478289799998,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0cec0e68015514737076e0ff2207c93492be0bb4a6c4146886728b24d5e0fd0b",
+      "disk_free_after": 3785183232
+    },
+    "test": {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T11:56:40.367432+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 3785183232,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T11:58:20.187109+00:00",
+      "elapsed_seconds": 99.81971119099762,
+      "stdout_sha256": "cbe6a9d4fd10223053a0403ddde02d89418dd9808762e7b9d22b4302cfb8a3a5",
+      "stderr_sha256": "2ddf4fbb9f2d215317200a016caf312d799e5afd749aae25d39837b2be9dcf35",
+      "disk_free_after": 3784564736
+    },
+    "failed_tests": [],
+    "compile_error": false,
+    "caught_current_workspace": false
+  },
+  "restores": [
+    {
+      "label": "utf8-offset-advance",
+      "source_sha256": "19a8c6b503fbf73c4db91a514d55bea9170c07f020f74fb68cae3ac11cfe7ad9",
+      "all_tracked_inputs_restored": true
+    },
+    {
+      "label": "utf8-error-width",
+      "source_sha256": "19a8c6b503fbf73c4db91a514d55bea9170c07f020f74fb68cae3ac11cfe7ad9",
+      "all_tracked_inputs_restored": true
+    },
+    {
+      "label": "exact-last-nonzero",
+      "source_sha256": "cbab81b1a6501357683f0e8b15d8b3e375010bf93efbedfe124915370de0c549",
+      "all_tracked_inputs_restored": true
+    }
+  ],
+  "status": "passed_current_workspace_replays",
+  "all_tracked_inputs_restored": true,
+  "ended_at": "2026-11-05T12:05:13.295439+00:00"
+}

@@ -1,0 +1,221 @@
+{
+  "status": "three_verified_current_workspace_replays",
+  "archive": "quality/evidence/current-utf8-normalize-replays.tar.gz",
+  "archive_sha256": "53b55b110b262e5069bcc26403bbad6922c15cdbe0c9e19996cf1dd958c5113d",
+  "archive_bytes": 193327,
+  "members": {
+    "execution/artifact-hashes.json": {
+      "sha256": "7cd0590c9d64d600f9a4155855bf67654e274245f9bd8c5aa79499f51fb0d2d4",
+      "bytes": 8639
+    },
+    "execution/baseline-build.stderr": {
+      "sha256": "0cec0e68015514737076e0ff2207c93492be0bb4a6c4146886728b24d5e0fd0b",
+      "bytes": 29572
+    },
+    "execution/baseline-build.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/baseline-test.stderr": {
+      "sha256": "2ddf4fbb9f2d215317200a016caf312d799e5afd749aae25d39837b2be9dcf35",
+      "bytes": 28225
+    },
+    "execution/baseline-test.stdout": {
+      "sha256": "cbe6a9d4fd10223053a0403ddde02d89418dd9808762e7b9d22b4302cfb8a3a5",
+      "bytes": 90826
+    },
+    "execution/cargo-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/cargo-version.stdout": {
+      "sha256": "9950bbb2d5c3417b1a068f0e81f6d3cac991a363193bdf2a22d447f5acf8b503",
+      "bytes": 36
+    },
+    "execution/clean-before-baseline.stderr": {
+      "sha256": "3d6e7d29b7301d219e426d16330e9d373887dd16f2f55c591c6b840261a04e0d",
+      "bytes": 37
+    },
+    "execution/clean-before-baseline.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-before-exact-last-nonzero.stderr": {
+      "sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "bytes": 21
+    },
+    "execution/clean-before-exact-last-nonzero.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-before-utf8-error-width.stderr": {
+      "sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "bytes": 21
+    },
+    "execution/clean-before-utf8-error-width.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-before-utf8-offset-advance.stderr": {
+      "sha256": "3b52df05d48e4d954cc6ece760c905a6618a6bd658e77b1822c57fa2d53e3682",
+      "bytes": 38
+    },
+    "execution/clean-before-utf8-offset-advance.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-restored-exact-last-nonzero.stderr": {
+      "sha256": "3b52df05d48e4d954cc6ece760c905a6618a6bd658e77b1822c57fa2d53e3682",
+      "bytes": 38
+    },
+    "execution/clean-restored-exact-last-nonzero.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-restored-utf8-error-width.stderr": {
+      "sha256": "3b52df05d48e4d954cc6ece760c905a6618a6bd658e77b1822c57fa2d53e3682",
+      "bytes": 38
+    },
+    "execution/clean-restored-utf8-error-width.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-restored-utf8-offset-advance.stderr": {
+      "sha256": "3b52df05d48e4d954cc6ece760c905a6618a6bd658e77b1822c57fa2d53e3682",
+      "bytes": 38
+    },
+    "execution/clean-restored-utf8-offset-advance.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/current-mutants.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/current-mutants.stdout": {
+      "sha256": "b2bc65d3e8f95a66e213686d63de127e4d301fa96d19bcd7a2bf85f039cad0a7",
+      "bytes": 670038
+    },
+    "execution/exact-last-nonzero-build.stderr": {
+      "sha256": "06a905f4c129cfc2c554dc3990e9e5261e541b5edf4feec43b7e017f4fd97e26",
+      "bytes": 29465
+    },
+    "execution/exact-last-nonzero-build.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/exact-last-nonzero-test.stderr": {
+      "sha256": "581ec9de9b102f5319cf69da8b5dac0daca2de49a1afa9d3f408bee99f02e963",
+      "bytes": 7895
+    },
+    "execution/exact-last-nonzero-test.stdout": {
+      "sha256": "6bc72c1dc68f117aa2ea1404db215ade252a925939d9ec5fb80857d817b911b5",
+      "bytes": 4059
+    },
+    "execution/final-summary.json": {
+      "sha256": "1e4b05b26d1116a677a4ea812cce877267565a9443209a4be0c35cc3d6ebf7ac",
+      "bytes": 4882
+    },
+    "execution/prepare-report.json": {
+      "sha256": "d8a7eecdc105b431afc9075f1cf5c640675fc270c7c9b7c17c374f14f3590a67",
+      "bytes": 4178
+    },
+    "execution/producer-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/producer-version.stdout": {
+      "sha256": "ba3c35073708a1da94eef75cafca1e263013077a73d090b5a798135dac2ffbe5",
+      "bytes": 21
+    },
+    "execution/report.json": {
+      "sha256": "c1c090cf9fdf85d08aca7faf22f6f905153196d35cb707365a3f3de7f796133c",
+      "bytes": 25709
+    },
+    "execution/runner.py": {
+      "sha256": "81498982bb27ce6bdfce33dfe4a9c5582f5e673ee8547df9899fab716cbe2419",
+      "bytes": 25979
+    },
+    "execution/rustc-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/rustc-version.stdout": {
+      "sha256": "778fbc643a806f0dd123c056e66201d7e8a56a61928ec0a33171be8d6c2d5a37",
+      "bytes": 196
+    },
+    "execution/source.json": {
+      "sha256": "4733ba811f59d2e50874781087bcd9a86c665e7ca95049303b8b217fbd4471e7",
+      "bytes": 113536
+    },
+    "execution/utf8-error-width-build.stderr": {
+      "sha256": "ca34dbf3f8e9920c79e13091ee99d58aa47df0d4492c93dd14fb250c510d8912",
+      "bytes": 29465
+    },
+    "execution/utf8-error-width-build.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/utf8-error-width-test.stderr": {
+      "sha256": "bee29f09d88cb6efdeb51cfa554fdb22ef0a6109fb5ad3b693f7d6d9087c9d83",
+      "bytes": 26021
+    },
+    "execution/utf8-error-width-test.stdout": {
+      "sha256": "5015d31bd9393f4d9cc23a26f40c34ac833027c30d2b8cb6586155c25e147e3d",
+      "bytes": 82945
+    },
+    "execution/utf8-offset-advance-build.stderr": {
+      "sha256": "08f467afb36a0874f94a9fb887b1807060ce9a2b8a119e7de10db79577318724",
+      "bytes": 29465
+    },
+    "execution/utf8-offset-advance-build.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/utf8-offset-advance-test.stderr": {
+      "sha256": "bee29f09d88cb6efdeb51cfa554fdb22ef0a6109fb5ad3b693f7d6d9087c9d83",
+      "bytes": 26021
+    },
+    "execution/utf8-offset-advance-test.stdout": {
+      "sha256": "5744cc91639b58f909cf08edbb7c8f99f0f493271643d2502a27ad313bcb69a5",
+      "bytes": 82945
+    },
+    "execution/workspace-metadata.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/workspace-metadata.stdout": {
+      "sha256": "063de3022eeeedf029fa8889d0b4f413618ccf86ff859c9281378e2a1594aa49",
+      "bytes": 70422
+    },
+    "review/utf8/current-replay-plan.json": {
+      "sha256": "8cd3ce3c6089a95b5608c9e8c3c22c1e0dd0a9239b5903276f7e9467e45646ef",
+      "bytes": 3735
+    },
+    "review/utf8/proof.md": {
+      "sha256": "88348bdf05e6874a80aa2310872ee534260f6b0ac52a20018c6fa41b10f3cd47",
+      "bytes": 2782
+    },
+    "review/utf8/utf8.patch": {
+      "sha256": "c4989218db08d0e055dec9c84f9752f21cd6e1cdfe155eabc7f2a132c1a8120a",
+      "bytes": 670
+    },
+    "review/normalize/current-replay-plan.json": {
+      "sha256": "7c30a49e5b77473f071e7ed5a49421529984388137fb7023156410582769aeba",
+      "bytes": 3281
+    },
+    "review/normalize/normalize.patch": {
+      "sha256": "ac30e30555a7568b42607d70a2ed4afea95cc1470dc5e32a8f0827e0a2c89ddb",
+      "bytes": 579
+    },
+    "review/normalize/proof.md": {
+      "sha256": "f9cc3c16d6552930717dac8e43745a7ce0989cdb2fbf9b838ffbb4bb5b93d799",
+      "bytes": 2830
+    }
+  },
+  "root_independent_rehash": {
+    "tracked_inputs": 853,
+    "mismatches": 0
+  },
+  "scope": "Real27.1 producer verifies API +=to*=,API +to*,normalize !=to== in reviewed current source. Baselinewholeworkspace1003, all3Build0/Test101 without timeout or compiler error. UTF8 malformed/incomplete oracle and prepared model certification fail semantically; original frozen9aTimeout unchanged. Restored853inputs and clean domain/server in exclusive replay target. No global score pass."
+}

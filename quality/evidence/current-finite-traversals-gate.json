@@ -1,0 +1,76 @@
+{
+  "status": "canonical_and_feature_gates_passed",
+  "observed_at_utc": "2026-11-05T12:14:11.631968+00:00",
+  "canonical": {
+    "command": [
+      "./scripts/check.sh",
+      "f1062073f655c95d98b1d250033ca1495c786ba8"
+    ],
+    "exit_code": 0,
+    "rust_tests": 1003,
+    "suites": 145,
+    "python_tooling_tests": 236,
+    "historical_discrepancies": 0,
+    "traceability": "115/115",
+    "clippy": {
+      "diagnostics": 54,
+      "baseline": 192,
+      "new": 0
+    },
+    "log": "target/quality/wave-twenty-one-final-preflight/check-1.log",
+    "log_sha256": "d94ef9513f011bd67b52fe44b80bb906b3a3d5b459f652baaceb4bd0bfff547a"
+  },
+  "features_and_loom": {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "bml",
+      "-p",
+      "bml-runtime",
+      "-p",
+      "bml-kernels",
+      "-p",
+      "bml-queue",
+      "--all-features",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "passed": 225,
+    "suites": 32,
+    "actual_loom_model_passes": [
+      "test model::tests::bounded_admission_preserves_rejected_ownership ... ok",
+      "test model::tests::consumed_and_retained_values_are_dropped_exactly_once ... ok",
+      "test model::tests::publication_and_slot_reuse_preserve_payload ... ok",
+      "test model::tests::concurrent_reuse_publishes_the_next_lap_after_consumption ... ok",
+      "test model::tests::simultaneous_consumers_transfer_each_item_once ... ok",
+      "test model::tests::publication_precedes_producer_completion_without_join_synchronization ... ok",
+      "test append_only::loom_tests::concurrent_complete_records_receive_disjoint_stable_ranges ... ok",
+      "test append_only::loom_tests::record_reservations_do_not_overlap_or_consume_capacity_on_failure ... ok",
+      "test append_only::loom_tests::saturation_race_preserves_the_winner ... ok",
+      "test append_only::loom_tests::concurrent_publish_and_read_explores_real_storage_atomics ... ok"
+    ],
+    "log": "target/quality/wave-twenty-one-final-preflight/check-0.log",
+    "log_sha256": "f16d620ae5bf7803ab111f2516f6780fa6048155bfc46b26397d34b4141ff6ae"
+  },
+  "tested_source_sha256": {
+    "crates/api/src/main.rs": "19a8c6b503fbf73c4db91a514d55bea9170c07f020f74fb68cae3ac11cfe7ad9",
+    "crates/domain/src/number/exact.rs": "cbab81b1a6501357683f0e8b15d8b3e375010bf93efbedfe124915370de0c549",
+    "crates/runtime/src/graph.rs": "1a586bb31524f24bf517d25fb91b92cd46a2fd99d379f743c04ac128d1b8dfba",
+    ".github/workflows/mutation-campaign.yml": "a9c832c70c5552ad79f85bdd8dad37449f425eb2a274e4739fc9dc2814777556",
+    "tools/test_mutation_campaign.py": "267767a0739379412280a484168319612a2f4fe13976ebff0f45fff1a9413493"
+  },
+  "source_scope": "Root working overlay of reviewed UTF8,limb normalization,graph traversal and published generic telemetry. CURRENT3 uses its separate f106+three-patch snapshot without graph, baseline1003; graph CURRENT replay separate and pending when this gate was captured. No model/performance or full mutation pass inferred.",
+  "unchanged_policy_sha256": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  },
+  "openspec": {
+    "version": "1.13.0",
+    "passed": 16,
+    "failed": 0,
+    "exit_code": 0,
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  }
+}

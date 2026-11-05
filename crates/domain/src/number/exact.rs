@@ -195,9 +195,11 @@ impl ExactRational {
 }
 
 fn normalize(words: &mut Vec<u64>) {
-    while words.last() == Some(&0) {
-        words.pop();
-    }
+    let keep = words
+        .iter()
+        .rposition(|word| *word != 0)
+        .map_or(0, |index| index + 1);
+    words.truncate(keep);
 }
 pub(super) fn bit_len(words: &[u64]) -> usize {
     words.last().map_or(0, |last| {
