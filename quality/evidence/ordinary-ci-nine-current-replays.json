@@ -1,0 +1,590 @@
+{
+  "format_version": 1,
+  "captured_at": "2026-11-05T12:59:24.161110+00:00",
+  "scope": "Actual serial cargo-mutants27.1.0 execution of the exact nine candidates from frozen CI9ff2acd, not the complete development campaign.",
+  "source_revision": "9ff2acd33f9a7fa502254766159caf791cc53d7b",
+  "source_tree": "8a7a2ace7ff0faf0700ee2b4fe07b66a95c16ced",
+  "actual_cli_argv": [
+    "cargo",
+    "mutants",
+    "--workspace",
+    "--cargo-arg=--locked",
+    "--test-workspace",
+    "true",
+    "--timeout",
+    "360",
+    "--build-timeout",
+    "600",
+    "--in-place",
+    "--in-diff",
+    "/home/dev/Work/bml/target/quality/current-ci-nine-replay-9ff2acd/ci-exact.diff",
+    "--output",
+    "/home/dev/Work/bml/target/quality/current-ci-nine-replay-9ff2acd"
+  ],
+  "actual_cli_exit": 0,
+  "serial_difference_from_ci": "Local --in-place is serial and forbids --jobs; inherited CARGO_MUTANTS_* removed; original ordinary CI used --jobs2.",
+  "whole_workspace_baseline": {
+    "passed": 1003,
+    "suites": 145,
+    "build_seconds": 80.99517197703244,
+    "test_seconds": 104.03442968497984,
+    "build_exit": 0,
+    "test_exit": 0
+  },
+  "real_cli_baseline": {
+    "scope": "package-only bml-runtime, not workspace",
+    "summary": "Success",
+    "phases": [
+      {
+        "phase": "Build",
+        "duration": 39.019747686,
+        "process_status": "Success",
+        "argv": [
+          "/tmp/bml-rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+          "test",
+          "--no-run",
+          "--verbose",
+          "--package=bml-runtime@0.1.0",
+          "--locked"
+        ]
+      },
+      {
+        "phase": "Test",
+        "duration": 29.530833595,
+        "process_status": "Success",
+        "argv": [
+          "/tmp/bml-rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+          "test",
+          "--verbose",
+          "--package=bml-runtime@0.1.0",
+          "--locked"
+        ]
+      }
+    ]
+  },
+  "counts": {
+    "CaughtMutant": 9,
+    "MissedMutant": 0,
+    "Timeout": 0,
+    "Unviable": 0
+  },
+  "cases": [
+    {
+      "candidate": "crates/runtime/src/graph.rs:417:5: replace structure -> Result<(), GraphError> with Ok(())",
+      "summary": "CaughtMutant",
+      "build_seconds": 54.9430252,
+      "test_seconds": 33.367549543,
+      "failed_tests": [
+        "runtime_preflight_rejects_bad_stacks_and_expanded_loop_budgets"
+      ],
+      "log_path": "mutants.out/log/crates__runtime__src__graph.rs_line_417_col_5.log",
+      "log_sha256": "f88630b4abd27d8ce3e7d0669b12a4913b2609e5bb05d6b1da9c51b3bf363713"
+    },
+    {
+      "candidate": "crates/runtime/src/graph.rs:419:14: replace < with == in structure",
+      "summary": "CaughtMutant",
+      "build_seconds": 33.850258969,
+      "test_seconds": 33.950372007,
+      "failed_tests": [
+        "runtime_preflight_rejects_bad_stacks_and_expanded_loop_budgets"
+      ],
+      "log_path": "mutants.out/log/crates__runtime__src__graph.rs_line_419_col_14.log",
+      "log_sha256": "6653e3cf76a02c16dfd95f4433903c83081baf43b0c010ee352a09b60941321d"
+    },
+    {
+      "candidate": "crates/runtime/src/graph.rs:419:14: replace < with > in structure",
+      "summary": "CaughtMutant",
+      "build_seconds": 34.041585291,
+      "test_seconds": 59.646355569,
+      "failed_tests": [
+        "malformed_references_loops_and_stack_effects_fail_before_execution"
+      ],
+      "log_path": "mutants.out/log/crates__runtime__src__graph.rs_line_419_col_14_001.log",
+      "log_sha256": "1130e34b6daa851e1b596e349fb4b0ecfa0835c79a467a3b41d4d9892c6c4acc"
+    },
+    {
+      "candidate": "crates/runtime/src/graph.rs:419:14: replace < with <= in structure",
+      "summary": "CaughtMutant",
+      "build_seconds": 32.636534983,
+      "test_seconds": 39.426908295,
+      "failed_tests": [
+        "runtime_preflight_rejects_bad_stacks_and_expanded_loop_budgets"
+      ],
+      "log_path": "mutants.out/log/crates__runtime__src__graph.rs_line_419_col_14_002.log",
+      "log_sha256": "bffbe43b821cfb7a0c44a14466a42242293dc55878a1c5bad60d59d4bd318858"
+    },
+    {
+      "candidate": "crates/runtime/src/graph.rs:434:13: delete match arm RpnOp::Loop{body_len, ..} in structure",
+      "summary": "CaughtMutant",
+      "build_seconds": 33.25542602,
+      "test_seconds": 58.472389511,
+      "failed_tests": [
+        "malformed_references_loops_and_stack_effects_fail_before_execution"
+      ],
+      "log_path": "mutants.out/log/crates__runtime__src__graph.rs_line_434_col_13.log",
+      "log_sha256": "dba8bdfa3d01c595abdf648737d4a2ca9d5a079ea8d7b42c85f53d85e230918f"
+    },
+    {
+      "candidate": "crates/runtime/src/graph.rs:442:34: replace + with - in structure",
+      "summary": "CaughtMutant",
+      "build_seconds": 32.593835239,
+      "test_seconds": 0.351962882,
+      "failed_tests": [
+        "compiled_cli_generates_utf8_and_eos_using_saved_metadata_and_relocated_weights"
+      ],
+      "log_path": "mutants.out/log/crates__runtime__src__graph.rs_line_442_col_34.log",
+      "log_sha256": "8c55729b5d390e8f269bf90f91dcdc1a73330743405e2ab61ec19c6c306aa671"
+    },
+    {
+      "candidate": "crates/runtime/src/graph.rs:442:34: replace + with * in structure",
+      "summary": "CaughtMutant",
+      "build_seconds": 33.794417581,
+      "test_seconds": 0.353588519,
+      "failed_tests": [
+        "compiled_cli_generates_utf8_and_eos_using_saved_metadata_and_relocated_weights"
+      ],
+      "log_path": "mutants.out/log/crates__runtime__src__graph.rs_line_442_col_34_001.log",
+      "log_sha256": "6db1bac73e29c1245e1082937761acb02fd1aaff193a31204ddaf899b8ba8e83"
+    },
+    {
+      "candidate": "crates/runtime/src/graph.rs:442:51: replace + with - in structure",
+      "summary": "CaughtMutant",
+      "build_seconds": 33.077990495,
+      "test_seconds": 0.402882375,
+      "failed_tests": [
+        "compiled_cli_generates_utf8_and_eos_using_saved_metadata_and_relocated_weights"
+      ],
+      "log_path": "mutants.out/log/crates__runtime__src__graph.rs_line_442_col_51.log",
+      "log_sha256": "4602d77719d824c0402bee77288d234c60c6b7d5af99aeda7e48113d81e9ae1e"
+    },
+    {
+      "candidate": "crates/runtime/src/graph.rs:442:51: replace + with * in structure",
+      "summary": "CaughtMutant",
+      "build_seconds": 36.973711155,
+      "test_seconds": 67.357388484,
+      "failed_tests": [
+        "malformed_references_loops_and_stack_effects_fail_before_execution"
+      ],
+      "log_path": "mutants.out/log/crates__runtime__src__graph.rs_line_442_col_51_001.log",
+      "log_sha256": "9237c1d2cf590d742028d151681224227a19d97952f3f46bc20a8a2634888c68"
+    }
+  ],
+  "strict_quality_gate": {
+    "command": [
+      "python3",
+      "tools/quality.py",
+      "mutations",
+      "--report",
+      "target/quality/current-ci-nine-replay-9ff2acd/mutants.out/outcomes.json"
+    ],
+    "exit_code": 0,
+    "score_percent": 100,
+    "log_sha256": "329e07f3b772ce23321405c34d297e10b4b48f5903b97349c6b1657960fb3dc9",
+    "quality_py_sha256": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851"
+  },
+  "source_restoration": {
+    "all_tracked_inputs_restored": true,
+    "tracked_inputs_independently_rehashed_by_agent_and_root": 864,
+    "git_clean_after": true,
+    "source_before_sha256": "4fd0e6d11b209a63eaa47b86fffd94770756f8fa3268caa1cc9a560195b7ab0f",
+    "source_after_sha256": "6b71bbbc1a0d84f7e7e3fedf171c1fbe1dab022dd45c819a1592c5b4fe1a5912",
+    "previous_owned_target_parent_hashes_verified_by_root": true
+  },
+  "original_frozen_ci": {
+    "run_id": 42026331570,
+    "counts": {
+      "CaughtMutant": 3,
+      "Timeout": 6
+    },
+    "raw_sha256": "208644e7822ebd426f9ac3a94749a9abbe0881611f8a90064872e74285ed9f30",
+    "results_reclassified": false,
+    "durable_prior_archive": "ordinary-ci-workspace-budget-repair.tar.gz"
+  },
+  "repair_ci": {
+    "source_revision": "6d8ad482783b9d480a89215539c435016c94d745",
+    "run_id": 42029036679,
+    "all_jobs_success": true,
+    "mutation_scope": "Genuine N/A: zero selected candidates, zero baseline runs; not substituted for these nine replays.",
+    "verification_sha256": "99f09696af54629b46d2399d69b3212a2aa724a3eb28b4ea57aa2e74d0148a05",
+    "rust_manifests_lock_toolchain_unchanged_from_replay_source": true
+  },
+  "verification_sha256": "4238fc32d8694f7b9d64862fc45d25c556b5ff979671dc547205e3f237603741",
+  "outcomes_sha256": "671423d1501878c479c3bd985fd666b26de7a4587ecdc3a3f74f8be4ac759cb6",
+  "raw_archive": {
+    "path": "ordinary-ci-nine-current-replays.tar.gz",
+    "sha256": "86c59a1d1e9b6a25fa310f49df0fc3b094f870b60c934ff5baee06510bfac85c",
+    "bytes": 2144752,
+    "members": {
+      "repair-ci/artifacts-42029036679-20261105T124442Z.json": {
+        "sha256": "faecb03408bbd6d4f82c16909ce5c332c8dc04304fa97ef654a28cf0d8e4a9f3",
+        "bytes": 2574
+      },
+      "repair-ci/artifacts/13414987458-mutation/artifact-api.json": {
+        "sha256": "f7ab57b467be56fe905bb5f50b469eceee2866973523d7c7afe1dbfdce323477",
+        "bytes": 757
+      },
+      "repair-ci/artifacts/13414987458-mutation/artifact.zip": {
+        "sha256": "03585a254357e9870473c4e0cb25fbf84f33f90b6490e7b44377cb1cf5495096",
+        "bytes": 2389
+      },
+      "repair-ci/artifacts/13414987458-mutation/extracted-report-index.json": {
+        "sha256": "6520d56a34937df577abbb9776e7e735f133f32412f610d089f5442476b08768",
+        "bytes": 1132
+      },
+      "repair-ci/artifacts/13414987458-mutation/verified-artifact.json": {
+        "sha256": "ecd07b23c4d0442328c4f5c4709de49778d6fce92c985e72e0fd48b93f759297",
+        "bytes": 2608
+      },
+      "repair-ci/artifacts/13414987458-mutation/zip-members.json": {
+        "sha256": "199553792e4ddb812fed877d90ae8c73d41654c8144a74aa64c741e32e7b2a0d",
+        "bytes": 313
+      },
+      "repair-ci/artifacts/13415222432-contracts-and-clippy/artifact-api.json": {
+        "sha256": "6cd9be84b44d1f3ca3900a0f0f258171ec552f3ff5f696e3ea53b65fd5f6944d",
+        "bytes": 770
+      },
+      "repair-ci/artifacts/13415222432-contracts-and-clippy/artifact.zip": {
+        "sha256": "1a8175d489ef5b3b91a26ae7b1a5ffd4999cc59b146f2c80d1a74df38feb982b",
+        "bytes": 45846
+      },
+      "repair-ci/artifacts/13415222432-contracts-and-clippy/extracted-report-index.json": {
+        "sha256": "89944dd483e101998a8c0bc53ee4c91881d2273ea1c4f260e96d7f1902015019",
+        "bytes": 206
+      },
+      "repair-ci/artifacts/13415222432-contracts-and-clippy/verified-artifact.json": {
+        "sha256": "c7e65ccb133e215ea90ac06492f7830a07d678422ef3f285b678c727a7c40a8d",
+        "bytes": 554
+      },
+      "repair-ci/artifacts/13415222432-contracts-and-clippy/zip-members.json": {
+        "sha256": "52efb6c9eba31587b933ff33454d67cff40cf6d90d2b7c5b25ada75b29bf1e1f",
+        "bytes": 96
+      },
+      "repair-ci/artifacts/13415975505-coverage/artifact-api.json": {
+        "sha256": "258115ee0aa0f14ab368279b03ff48283fd1a2f1c623c0af4985dcc431139bd6",
+        "bytes": 760
+      },
+      "repair-ci/artifacts/13415975505-coverage/artifact.zip": {
+        "sha256": "02e5d247232c38d58d77764ac9f5c2b44617fa5d252b1d2b023198fa13720332",
+        "bytes": 1565590
+      },
+      "repair-ci/artifacts/13415975505-coverage/extracted-report-index.json": {
+        "sha256": "341fe7b60deebef203270c7d00d36a3344b3f19850a1cf4c4c87aa864cd8c091",
+        "bytes": 369
+      },
+      "repair-ci/artifacts/13415975505-coverage/frozen-coverage-baseline.json": {
+        "sha256": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5",
+        "bytes": 316
+      },
+      "repair-ci/artifacts/13415975505-coverage/verified-artifact.json": {
+        "sha256": "57dd786245aeb462b19b2bf61b2febd902a073283722f755f0c6e09b3705233a",
+        "bytes": 1013
+      },
+      "repair-ci/artifacts/13415975505-coverage/zip-members.json": {
+        "sha256": "63de07ead3f635cb099a918a7af4d442893083748b8b69f16db8bb3bf79284b2",
+        "bytes": 49
+      },
+      "repair-ci/checkpoint-20261105T124043Z.json": {
+        "sha256": "efab25ec7f7898931a9b09b529ad3b8f2254859ceadf0628892441c5fa9306c1",
+        "bytes": 1060
+      },
+      "repair-ci/ci-verification-base.json": {
+        "sha256": "7610e6d589f87abf8fdd0969c12ef3cd3d6cd95e4b9a2c16eff7c619493425a4",
+        "bytes": 7289
+      },
+      "repair-ci/ci-verification.json": {
+        "sha256": "99f09696af54629b46d2399d69b3212a2aa724a3eb28b4ea57aa2e74d0148a05",
+        "bytes": 8635
+      },
+      "repair-ci/delivery-index.json": {
+        "sha256": "8a6c9bba7ed6fbe78fab0dd73f78440f109c22c30baa4577f1800a97933d9a38",
+        "bytes": 7050
+      },
+      "repair-ci/head-runs-20261105T124043Z.json": {
+        "sha256": "957c928a5362539f90bdfc9211729d9c04b2247270fecf4fd6c96e52241c058f",
+        "bytes": 29030
+      },
+      "repair-ci/job-127250440455.log": {
+        "sha256": "1efa14849c7fcf6fec215316758ad8cd7d67649aa80f6ad1d47d0ab61730a4e8",
+        "bytes": 25322
+      },
+      "repair-ci/job-127250440690.log": {
+        "sha256": "e25e3e8d6e55d9f37195da8a785e92c449dc0dd7c1cdbccd0e003a952428ad2d",
+        "bytes": 237426
+      },
+      "repair-ci/job-127250440949.log": {
+        "sha256": "d928e20186465ce8a723251f0287905c7d3f6203d84bb01f014d13a4c513fc8d",
+        "bytes": 219893
+      },
+      "repair-ci/jobs-42029036679-20261105T124043Z.json": {
+        "sha256": "538e55b53ccb67819fc7e21b9a53df5956a9b2450f3e52ea7babce9e3d963798",
+        "bytes": 8830
+      },
+      "repair-ci/jobs-42029036679-20261105T124442Z.json": {
+        "sha256": "19ca01f49817c28892a1ce07b664195095acbd9f040cf40b9ffb8e5c60322da9",
+        "bytes": 9574
+      },
+      "repair-ci/run-42029036679-20261105T124043Z.json": {
+        "sha256": "c94e02b1f13fab53cf50be18170ffebd5d7880f36ba131f1853cc876ffd938b2",
+        "bytes": 13591
+      },
+      "repair-ci/run-42029036679-20261105T124442Z.json": {
+        "sha256": "35b8363027700bb10a441b6b4c272c9ac8a5eb11fa6195c473a4b1aefbdc94c7",
+        "bytes": 13594
+      },
+      "replay/actual-cargo-mutants.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/actual-cargo-mutants.stdout": {
+        "sha256": "286800731c712d8ee55bbc201d10ed1272cfc4278641e78e3bc246d921f3a417",
+        "bytes": 110
+      },
+      "replay/actual-listing.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/actual-listing.stdout": {
+        "sha256": "b7579608b0a94fdd5788fb84deb9aa83024a144588c9b75e838f5b0e7c5b4d51",
+        "bytes": 14226
+      },
+      "replay/artifact-hashes.json": {
+        "sha256": "85a6746e3e0fc9120600677d9188b8a1b4c9a8b678a21788b1e7d4737b738b46",
+        "bytes": 164135
+      },
+      "replay/cache-receipt.json": {
+        "sha256": "e9984cc31fa5f2a7c9852bd6c06a60ef0f2157ea497e6a168c32426371c5a50b",
+        "bytes": 573
+      },
+      "replay/cargo-version.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/cargo-version.stdout": {
+        "sha256": "9950bbb2d5c3417b1a068f0e81f6d3cac991a363193bdf2a22d447f5acf8b503",
+        "bytes": 36
+      },
+      "replay/ci-candidates.json": {
+        "sha256": "23ac21d34336dac43ba4741f2bab9da75aca50ca2ebafd47bfd7f64ebdd4e7d3",
+        "bytes": 14227
+      },
+      "replay/ci-exact.diff": {
+        "sha256": "a8575568fe1a5dcdd0d5b470533f96b166ec70e6e87a1017806dbf6150345d19",
+        "bytes": 458
+      },
+      "replay/ci-selection.json": {
+        "sha256": "9d826c85258a8792c8bad0fdfa463f414acbfc08716bb8e06b8772be552b5c53",
+        "bytes": 786
+      },
+      "replay/clean-after-source-restoration.stderr": {
+        "sha256": "c41a2ae0404100bfec4866448a3d40e2eaee202972a562ac0daf538a45da3e31",
+        "bytes": 39
+      },
+      "replay/clean-after-source-restoration.stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/clean-before-real-cli.stderr": {
+        "sha256": "d461b581002be2773ea34761c158886312e32bc1e9a1ae833a4fa74fed6c0713",
+        "bytes": 39
+      },
+      "replay/clean-before-real-cli.stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/clean-before-workspace-baseline.stderr": {
+        "sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+        "bytes": 21
+      },
+      "replay/clean-before-workspace-baseline.stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/core.py": {
+        "sha256": "74962ffe28a9c31cc8926d4ae916742f9e62e14e5de3de5fe819f0f6cb895161",
+        "bytes": 23037
+      },
+      "replay/driver.py": {
+        "sha256": "a582ff6b2f2714f980fa39ee9db1c10fce64c0ab6a741ea8b88f5bdd654a7b3e",
+        "bytes": 11035
+      },
+      "replay/execution-plan.json": {
+        "sha256": "5929d9b29161b34278afc6498f9fb350782a04ba1c446ae0631f551b5c06fe54",
+        "bytes": 2119
+      },
+      "replay/mutants.out/caught.txt": {
+        "sha256": "a6283fde8426bf497cc5a1625721e5ba88401aa04adcf0c94498afc51880a9ce",
+        "bytes": 647
+      },
+      "replay/mutants.out/debug.log": {
+        "sha256": "edac4e674a3ba40ab0e277042fbd3d35b2564c6e1dc848c6595fdc06819f97b2",
+        "bytes": 38877
+      },
+      "replay/mutants.out/diff/crates__runtime__src__graph.rs_line_417_col_5.diff": {
+        "sha256": "50858c5f20073749b7c78a3bc459fe4dcfa48d0886829a61a7f389ab06227997",
+        "bytes": 1628
+      },
+      "replay/mutants.out/diff/crates__runtime__src__graph.rs_line_419_col_14.diff": {
+        "sha256": "6a7deab142454328a93a5c5656d023e7f130a87f39d0278189735f7a76fe17a2",
+        "bytes": 728
+      },
+      "replay/mutants.out/diff/crates__runtime__src__graph.rs_line_419_col_14_001.diff": {
+        "sha256": "7f7a258162fc84862a0c9ca782c3648e0868daee9cafc1d57e127aaec8a6a35a",
+        "bytes": 726
+      },
+      "replay/mutants.out/diff/crates__runtime__src__graph.rs_line_419_col_14_002.diff": {
+        "sha256": "353ae7e596c9a44a4bec5bef418dddeed38f125b3c768b7fb0bfbe9476689f0a",
+        "bytes": 728
+      },
+      "replay/mutants.out/diff/crates__runtime__src__graph.rs_line_434_col_13.diff": {
+        "sha256": "608def95461cf1f8c162cd7c089581453c6d487f9a9f975f2bc430338ab18666",
+        "bytes": 1090
+      },
+      "replay/mutants.out/diff/crates__runtime__src__graph.rs_line_442_col_34.diff": {
+        "sha256": "9801121c8f8d229ea740aae39c735e13cd1d42618b5c4624f769620c395275fe",
+        "bytes": 757
+      },
+      "replay/mutants.out/diff/crates__runtime__src__graph.rs_line_442_col_34_001.diff": {
+        "sha256": "afcf87a83f6d71eba4b08dec7aa36412c7f0c0246d96cf6b6dd7185ab54b8b0e",
+        "bytes": 757
+      },
+      "replay/mutants.out/diff/crates__runtime__src__graph.rs_line_442_col_51.diff": {
+        "sha256": "65bd977079207cdaa93bae52d9569c6015046e75a891ef7bb01a972567f6b195",
+        "bytes": 757
+      },
+      "replay/mutants.out/diff/crates__runtime__src__graph.rs_line_442_col_51_001.diff": {
+        "sha256": "314493c0312c0dd5fc4daf5712bae2bc4988f89489966191443c68bbcf42e5e8",
+        "bytes": 757
+      },
+      "replay/mutants.out/lock.json": {
+        "sha256": "2c8792f0e7081ca9d32883ae6d82aca6f23ca48988681e77a820664f3710c36f",
+        "bytes": 133
+      },
+      "replay/mutants.out/log/baseline.log": {
+        "sha256": "c21b9871646d30e38a7f5a4ea2831bd43913de226652d8229fc815cbb9f6f84e",
+        "bytes": 128087
+      },
+      "replay/mutants.out/log/crates__runtime__src__graph.rs_line_417_col_5.log": {
+        "sha256": "f88630b4abd27d8ce3e7d0669b12a4913b2609e5bb05d6b1da9c51b3bf363713",
+        "bytes": 335146
+      },
+      "replay/mutants.out/log/crates__runtime__src__graph.rs_line_419_col_14.log": {
+        "sha256": "6653e3cf76a02c16dfd95f4433903c83081baf43b0c010ee352a09b60941321d",
+        "bytes": 258158
+      },
+      "replay/mutants.out/log/crates__runtime__src__graph.rs_line_419_col_14_001.log": {
+        "sha256": "1130e34b6daa851e1b596e349fb4b0ecfa0835c79a467a3b41d4d9892c6c4acc",
+        "bytes": 325078
+      },
+      "replay/mutants.out/log/crates__runtime__src__graph.rs_line_419_col_14_002.log": {
+        "sha256": "bffbe43b821cfb7a0c44a14466a42242293dc55878a1c5bad60d59d4bd318858",
+        "bytes": 258158
+      },
+      "replay/mutants.out/log/crates__runtime__src__graph.rs_line_434_col_13.log": {
+        "sha256": "dba8bdfa3d01c595abdf648737d4a2ca9d5a079ea8d7b42c85f53d85e230918f",
+        "bytes": 326487
+      },
+      "replay/mutants.out/log/crates__runtime__src__graph.rs_line_442_col_34.log": {
+        "sha256": "8c55729b5d390e8f269bf90f91dcdc1a73330743405e2ab61ec19c6c306aa671",
+        "bytes": 243944
+      },
+      "replay/mutants.out/log/crates__runtime__src__graph.rs_line_442_col_34_001.log": {
+        "sha256": "6db1bac73e29c1245e1082937761acb02fd1aaff193a31204ddaf899b8ba8e83",
+        "bytes": 243942
+      },
+      "replay/mutants.out/log/crates__runtime__src__graph.rs_line_442_col_51.log": {
+        "sha256": "4602d77719d824c0402bee77288d234c60c6b7d5af99aeda7e48113d81e9ae1e",
+        "bytes": 244055
+      },
+      "replay/mutants.out/log/crates__runtime__src__graph.rs_line_442_col_51_001.log": {
+        "sha256": "9237c1d2cf590d742028d151681224227a19d97952f3f46bc20a8a2634888c68",
+        "bytes": 325126
+      },
+      "replay/mutants.out/missed.txt": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/mutants.out/mutants.json": {
+        "sha256": "b7579608b0a94fdd5788fb84deb9aa83024a144588c9b75e838f5b0e7c5b4d51",
+        "bytes": 14226
+      },
+      "replay/mutants.out/outcomes.json": {
+        "sha256": "671423d1501878c479c3bd985fd666b26de7a4587ecdc3a3f74f8be4ac759cb6",
+        "bytes": 17724
+      },
+      "replay/mutants.out/timeout.txt": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/mutants.out/unviable.txt": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/original-ci-outcomes.json": {
+        "sha256": "208644e7822ebd426f9ac3a94749a9abbe0881611f8a90064872e74285ed9f30",
+        "bytes": 17608
+      },
+      "replay/producer-version.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/producer-version.stdout": {
+        "sha256": "ba3c35073708a1da94eef75cafca1e263013077a73d090b5a798135dac2ffbe5",
+        "bytes": 21
+      },
+      "replay/report.json": {
+        "sha256": "6d1ec558416e280337750994bb5862d8950c37e8bc381188b25f58dd5e5c6b08",
+        "bytes": 14813
+      },
+      "replay/root-parent-hash-verification.json": {
+        "sha256": "15ff51376731897a7e44dcb9928feb086b07a76889141dd26f83af35b68d3c42",
+        "bytes": 485
+      },
+      "replay/root-strict-quality.log": {
+        "sha256": "329e07f3b772ce23321405c34d297e10b4b48f5903b97349c6b1657960fb3dc9",
+        "bytes": 63
+      },
+      "replay/root-strict-summary.json": {
+        "sha256": "06aa2fd2bb44d48e7c1ba570b646fc460ec2f7c58781598a52cf7571ed705e8a",
+        "bytes": 80
+      },
+      "replay/rustc-version.stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/rustc-version.stdout": {
+        "sha256": "778fbc643a806f0dd123c056e66201d7e8a56a61928ec0a33171be8d6c2d5a37",
+        "bytes": 196
+      },
+      "replay/source-after.json": {
+        "sha256": "6b71bbbc1a0d84f7e7e3fedf171c1fbe1dab022dd45c819a1592c5b4fe1a5912",
+        "bytes": 103340
+      },
+      "replay/source-before.json": {
+        "sha256": "4fd0e6d11b209a63eaa47b86fffd94770756f8fa3268caa1cc9a560195b7ab0f",
+        "bytes": 103394
+      },
+      "replay/verification.json": {
+        "sha256": "4238fc32d8694f7b9d64862fc45d25c556b5ff979671dc547205e3f237603741",
+        "bytes": 8927
+      },
+      "replay/workspace-baseline-build.stderr": {
+        "sha256": "d70e55e7e8a24f6110ead47429601ba0e8fd6a475e48119a2f2a6bbba046792c",
+        "bytes": 29497
+      },
+      "replay/workspace-baseline-build.stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "replay/workspace-baseline-test.stderr": {
+        "sha256": "dfd3d7d7a78e5765b53921ec6c165c5f5f7afa17ce6ba735c20977f50ec347ee",
+        "bytes": 28225
+      },
+      "replay/workspace-baseline-test.stdout": {
+        "sha256": "5cafbda011dedb76d8c204ed4d01fda0b1d916994f5cc5b64dd8738f9ce590a3",
+        "bytes": 90826
+      }
+    }
+  },
+  "archive_scope": "Raw reports/logs/diffs/argv/env/versions and before-after hashes retained. Full source-backup bytes are excluded; reconstruct the clean tracked inputs using Git9ff2acd and verify source-before.json. CI artifact ZIPs are exact, extracted duplicates omitted.",
+  "pending": "Complete current-source mutation campaign, final frozen source and exact CI qualification; release6.2 remains open."
+}
