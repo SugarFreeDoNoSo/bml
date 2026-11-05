@@ -1,0 +1,24 @@
+{
+  "status": "incomplete_frozen_campaign_partial_results",
+  "observed_at_utc": "2026-11-05T06:11:58.309266+00:00",
+  "original_run_id": 41950170549,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "verified_shards": 36,
+  "candidate_count": 2916,
+  "counts": {
+    "CaughtMutant": 2309,
+    "Unviable": 249,
+    "Timeout": 24,
+    "MissedMutant": 334
+  },
+  "original_sealed_shards": 35,
+  "fresh_recovery_shards": [
+    "21/64"
+  ],
+  "inputs": {
+    "quality/evidence/mutation-9a-thirty-five-shards.json": "1716a07ce2291a326f18a01b53d1d79ade036b63a881de311d243129b0957119",
+    "quality/evidence/mutation-recovery-21-completion.json": "d33739992ef12e7d8edd6282983587b51d573b7a5b20767313fce3c4812db0bd"
+  },
+  "limits": "Incomplete original union. Missed and Timeout retain raw classifications; neither focused repairs nor successful Actions jobs establish a global quality pass. Original unsealed21 and27 raw remains excluded; fresh21 counted once."
+}

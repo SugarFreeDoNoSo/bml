@@ -1,0 +1,40 @@
+{
+  "observed_at": "2026-11-05T06:07:47.122275+00:00",
+  "run_id": 41972807181,
+  "attempt": 1,
+  "job_id": 127064705318,
+  "controller_revision": "bbc2d52d85c822af23f13065f06d9bba8fad681e",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "shard": "21/64",
+  "artifact_id": 13391888922,
+  "artifact_zip_sha256": "2c6c496c469fd235716f055717be3c8d8748d406952c889137bf789eab634c63",
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "manifest_sha256": "cfee7050785ae54c46f84826c3c9e155540d4b22a4dab4793adfb14471d9322e",
+  "authorization_sha256": "8df8f33fccaac8b5e222e57e8e6748c7e672cc968a071d9f8045cd01399e8210",
+  "metadata_sha256": "f412740e36bd1d7442516491f56cacfef38e8eec38de1a8a62e690cb16447337",
+  "sealer_method": "controller-live-source-sealer",
+  "sealer_tool_sha256": "8eb192be3a90d111570b7f3d2ad9fa7ceb62754205e056c4661d8db6bc5d5c62",
+  "seal_file_sha256": "a343ffd70ea45d8ef14d3a62604ea8db3733f06926981937621f796b9459e886",
+  "seal_path": "target/quality/wave-eight-status-20261105T055748Z/recovery21/extracted/source/target/quality/controller-shard-result-21.json",
+  "raw_outcomes_sha256": "da5cef2df73309e513be02bafd265df9eeb81da8233fae8dcdf42d029e4c0450",
+  "candidates_sha256": "352afa5a01635445b4f0e6fcbc2cd5d7f541c2cd91cabdcab4378e162c4fde16",
+  "runner_log_sha256": "1d5d8d02dc83566afe88e4e307ba2c606d97383a9233e50974d84fa3ffe9983d",
+  "runner_exit_code": 1,
+  "cargo_mutants_exit_code": null,
+  "baseline_summary": "Success",
+  "candidate_count": 81,
+  "counts": {
+    "CaughtMutant": 67,
+    "MissedMutant": 6,
+    "Unviable": 7,
+    "Timeout": 1
+  },
+  "generated_seed_count": 1,
+  "original_unattested_raw_reused": false,
+  "source_attestation_basis": "Actual immutable-controller API job passed live-source attestation and finish; downloaded seal source/raw/seed hashes verified. No local Cargo/source snapshot rerun.",
+  "quality_gate": "not evaluated; global union incomplete; missed/timeouts preserved",
+  "verification_tools_sha256": {
+    "merge_mutation_shards.py": "3bcc7b668e6e1bc87a8e25ac425ba18948df154a0d3f7d9c67b90c6513c174a0",
+    "mutation_recovery.py": "43954e2c234c87ad261a8d7ff69de8eddadf49a77918a155cecb05e60376557e"
+  }
+}

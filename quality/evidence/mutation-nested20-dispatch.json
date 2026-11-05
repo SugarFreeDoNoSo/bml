@@ -1,0 +1,29 @@
+{
+  "status": "started_not_completed",
+  "observed_at_utc": "2026-11-05T06:11:58.309266+00:00",
+  "workflow": "mutation-subshards.yml",
+  "controller_revision": "ab04db2884da3f69e3b1f794f1185e964f7ecf2f",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "original_run_id": 41950170549,
+  "original_shard": "20/64",
+  "run_id": 41978564427,
+  "attempt": 1,
+  "url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41978564427",
+  "prepare_job_id": 127083088612,
+  "prepare_status": "in_progress",
+  "prepare_phase": "Independent 256 assignments and actual workspace Build/Test preflight step is in progress. No completion or leaf result observed.",
+  "planned_leaves": {
+    "20/256": 21,
+    "84/256": 20,
+    "148/256": 20,
+    "212/256": 20
+  },
+  "scope": "Fresh execution on immutable source only. Dispatch does not establish a baseline, complete union or mutation quality pass.",
+  "snapshots": {
+    "target/quality/wave-eight-nested20-dispatch-request.json": "2fba68df8090b902bf8d415913c715b5a464986a100989d3f8187432745e9a5c",
+    "target/quality/wave-eight-nested20-runs.json": "4c435bd9ece6ba259db4cd53487c5d89ddfc5bb2281ecca04a58e13fa9947a6c",
+    "target/quality/wave-eight-nested20-jobs.json": "370df22c357697085745d87c0c746f46bcb9a21382df05a9051e7f813365a119"
+  },
+  "implementation_preflight": "quality/evidence/mutation-nested20-preflight.json",
+  "implementation_preflight_sha256": "d5c0b49751359f3ede6dd8c5a757a5c1c67730d6b9a5dc76d4751e245b109a40"
+}
