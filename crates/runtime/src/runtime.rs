@@ -216,18 +216,16 @@ impl Runtime {
             self.execute_fragments_sequential(fragments, ctx, buf);
             return;
         };
-        let mut start = 0;
-        while start < fragments.len() {
-            let count = crate::operation_schedule::wave_len(&accesses[start..], n_cores);
-            let end = start + count;
-            if count == 1 {
-                let context = fragments[start].context(ctx);
+        for range in crate::operation_schedule::wave_ranges(&accesses, n_cores) {
+            let fragments = &fragments[range.clone()];
+            if fragments.len() == 1 {
+                let context = fragments[0].context(ctx);
                 self.hot_loop
-                    .execute_fragment_full(&fragments[start].fragment, &context, buf);
+                    .execute_fragment_full(&fragments[0].fragment, &context, buf);
             } else {
-                let accesses = &accesses[start..end];
+                let accesses = &accesses[range];
                 crate::operation_schedule::run_wave(
-                    &fragments[start..end],
+                    fragments,
                     accesses,
                     buf,
                     |worker, fragment, view| {
@@ -237,7 +235,6 @@ impl Runtime {
                     },
                 );
             }
-            start = end;
         }
     }
 }

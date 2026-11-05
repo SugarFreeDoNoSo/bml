@@ -206,19 +206,27 @@ pub(crate) fn analyze(
         .collect()
 }
 
-/// A wave is a contiguous prefix so RAW, WAR and WAW preserve program order.
-pub(crate) fn wave_len(accesses: &[Access], cores: usize) -> usize {
-    let mut count = 1;
-    while count < accesses.len().min(cores.max(1)) {
-        if accesses[..count]
-            .iter()
-            .any(|old| old.conflicts(&accesses[count]))
+/// Yield contiguous waves so RAW, WAR and WAW preserve program order.
+/// Each candidate boundary is visited once, independently of wave sizes.
+pub(crate) fn wave_ranges(
+    accesses: &[Access],
+    cores: usize,
+) -> impl Iterator<Item = std::ops::Range<usize>> + '_ {
+    let mut start = 0;
+    (1..=accesses.len()).filter_map(move |end| {
+        if end == accesses.len()
+            || end - start == cores.max(1)
+            || accesses[start..end]
+                .iter()
+                .any(|old| old.conflicts(&accesses[end]))
         {
-            break;
+            let range = start..end;
+            start = end;
+            Some(range)
+        } else {
+            None
         }
-        count += 1;
-    }
-    count
+    })
 }
 
 /// Scoped workers borrow input slots and own disjoint output slices. They
@@ -296,7 +304,10 @@ mod tests {
         buffer.write(0, 0, 10.0);
         let address = buffer.data().as_ptr();
         let accesses = analyze(&fragments, &context, &buffer).unwrap();
-        assert_eq!(wave_len(&accesses, 2), 2);
+        assert_eq!(
+            wave_ranges(&accesses, 2).collect::<Vec<_>>(),
+            [std::ops::Range { start: 0, end: 2 }]
+        );
         let arrived = Mutex::new(0);
         let ready = Condvar::new();
         run_wave(
@@ -332,7 +343,7 @@ mod tests {
             [operation(0, 1), operation(2, 1)], // WAW
         ] {
             let accesses = analyze(&fragments, &context, &buffer).unwrap();
-            assert_eq!(wave_len(&accesses, 2), 1);
+            assert_eq!(wave_ranges(&accesses, 2).collect::<Vec<_>>(), [0..1, 1..2]);
         }
     }
 
@@ -345,7 +356,49 @@ mod tests {
         next.fragment.ops[0] = RpnOp::Const(0);
         next.const_pool = Some(vec![4.0]); // Actual read is slot 2, not slot 0.
         let accesses = analyze(&[first, next], &context, &buffer).unwrap();
-        assert_eq!(wave_len(&accesses, 2), 1);
+        assert_eq!(wave_ranges(&accesses, 2).collect::<Vec<_>>(), [0..1, 1..2]);
+    }
+
+    #[test]
+    fn wave_ranges_preserve_greedy_boundaries_and_core_limits() {
+        let context = EvalContext::new(&[], &[]);
+        let buffer = ResultBuffer::new(6, 1);
+        assert!(wave_ranges(&[], 2).next().is_none());
+
+        let independent: Vec<_> = (1..=5).map(|slot| operation(0, slot)).collect();
+        let accesses = analyze(&independent, &context, &buffer).unwrap();
+        assert_eq!(
+            wave_ranges(&accesses, 2).collect::<Vec<_>>(),
+            [0..2, 2..4, 4..5]
+        );
+        assert_eq!(
+            wave_ranges(&accesses, usize::MAX).collect::<Vec<_>>(),
+            [std::ops::Range { start: 0, end: 5 }]
+        );
+
+        // The third operation reads the first one's output. The fourth can
+        // share its wave, so ending every wave at the core cap is incorrect.
+        let fragments = [
+            operation(0, 1),
+            operation(0, 2),
+            operation(1, 3),
+            operation(0, 4),
+        ];
+        let accesses = analyze(&fragments, &context, &buffer).unwrap();
+        for cores in [2, 3, usize::MAX] {
+            assert_eq!(
+                wave_ranges(&accesses, cores).collect::<Vec<_>>(),
+                [0..2, 2..4],
+                "cores={cores}"
+            );
+        }
+        for cores in [0, 1] {
+            assert_eq!(
+                wave_ranges(&accesses, cores).collect::<Vec<_>>(),
+                [0..1, 1..2, 2..3, 3..4],
+                "cores={cores}"
+            );
+        }
     }
 
     #[test]

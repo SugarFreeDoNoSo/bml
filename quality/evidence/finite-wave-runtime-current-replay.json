@@ -1,0 +1,351 @@
+{
+  "scope": "One CURRENT runtime16 source replay with exact whole-workspace commands; not historical9a or a complete mutation campaign.",
+  "runner_pid": 3503,
+  "started_at": "2026-11-05T10:19:52.612761+00:00",
+  "commands": [
+    {
+      "label": "clean-before-baseline",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T10:19:52.622950+00:00",
+      "stdout": "clean-before-baseline.stdout",
+      "stderr": "clean-before-baseline.stderr",
+      "disk_free_before": 4325335040,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T10:19:52.739428+00:00",
+      "elapsed_seconds": 0.11651183298090473,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "disk_free_after": 4325330944
+    },
+    {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T10:19:52.740021+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 4325330944,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T10:21:07.017687+00:00",
+      "elapsed_seconds": 74.27770550601417,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "055338db740f972841dfad5929b529be817a3b71a43ea168efc705ce3dbe63e0",
+      "disk_free_after": 4207226880
+    },
+    {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T10:21:07.018479+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 4207226880,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T10:22:57.042873+00:00",
+      "elapsed_seconds": 110.02443149499595,
+      "stdout_sha256": "e6ae07ef1a7358a2df11fb2ec5f34b012efe07e30d97146fd6a6f82e146a49db",
+      "stderr_sha256": "0da17116d99fe1d425b93da201e9c943da3b4125e2bc0996afe9bd3518712932",
+      "disk_free_after": 4206542848
+    },
+    {
+      "label": "clean-before-wave-range-core-limit",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T10:22:57.224859+00:00",
+      "stdout": "clean-before-wave-range-core-limit.stdout",
+      "stderr": "clean-before-wave-range-core-limit.stderr",
+      "disk_free_before": 4206538752,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T10:22:57.392712+00:00",
+      "elapsed_seconds": 0.16788548801559955,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "58c227b9217f4ccdc8c945ff71c0ccff4fd6f075a2a4bad35f05ed510743b29d",
+      "disk_free_after": 4324466688
+    },
+    {
+      "label": "wave-range-core-limit-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T10:22:57.394648+00:00",
+      "stdout": "wave-range-core-limit-build.stdout",
+      "stderr": "wave-range-core-limit-build.stderr",
+      "disk_free_before": 4324466688,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T10:24:26.178674+00:00",
+      "elapsed_seconds": 88.78405535197817,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "9f6409ff60ed64d11a593f9280e8d4570a94f1e3beddffcb14fc71450c06277d",
+      "disk_free_after": 4206166016
+    },
+    {
+      "label": "wave-range-core-limit-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T10:24:26.179367+00:00",
+      "stdout": "wave-range-core-limit-test.stdout",
+      "stderr": "wave-range-core-limit-test.stderr",
+      "disk_free_before": 4206166016,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T10:25:24.200151+00:00",
+      "elapsed_seconds": 58.0208207879914,
+      "stdout_sha256": "0114d3b1f0ad6cef119a851bf09f02c4673e82d66c5028827908312acd0ee41d",
+      "stderr_sha256": "e24fffebdaf3afa53fc82957015a4d380a0e3dfbac6e5397c689b0f3cb8cb09f",
+      "disk_free_after": 4195491840
+    },
+    {
+      "label": "clean-restored-wave-range-core-limit",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T10:25:24.262330+00:00",
+      "stdout": "clean-restored-wave-range-core-limit.stdout",
+      "stderr": "clean-restored-wave-range-core-limit.stderr",
+      "disk_free_before": 4195487744,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T10:25:24.429525+00:00",
+      "elapsed_seconds": 0.16723761800676584,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "58c227b9217f4ccdc8c945ff71c0ccff4fd6f075a2a4bad35f05ed510743b29d",
+      "disk_free_after": 4313407488
+    }
+  ],
+  "cases": [
+    {
+      "build": {
+        "label": "wave-range-core-limit-build",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 600,
+        "started_at": "2026-11-05T10:22:57.394648+00:00",
+        "stdout": "wave-range-core-limit-build.stdout",
+        "stderr": "wave-range-core-limit-build.stderr",
+        "disk_free_before": 4324466688,
+        "exit_code": 0,
+        "timed_out": false,
+        "ended_at": "2026-11-05T10:24:26.178674+00:00",
+        "elapsed_seconds": 88.78405535197817,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "9f6409ff60ed64d11a593f9280e8d4570a94f1e3beddffcb14fc71450c06277d",
+        "disk_free_after": 4206166016
+      },
+      "test": {
+        "label": "wave-range-core-limit-test",
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 360,
+        "started_at": "2026-11-05T10:24:26.179367+00:00",
+        "stdout": "wave-range-core-limit-test.stdout",
+        "stderr": "wave-range-core-limit-test.stderr",
+        "disk_free_before": 4206166016,
+        "exit_code": 101,
+        "timed_out": false,
+        "ended_at": "2026-11-05T10:25:24.200151+00:00",
+        "elapsed_seconds": 58.0208207879914,
+        "stdout_sha256": "0114d3b1f0ad6cef119a851bf09f02c4673e82d66c5028827908312acd0ee41d",
+        "stderr_sha256": "e24fffebdaf3afa53fc82957015a4d380a0e3dfbac6e5397c689b0f3cb8cb09f",
+        "disk_free_after": 4195491840
+      },
+      "failed_tests": [
+        "operation_schedule::tests::independent_workers_overlap_and_write_the_original_storage",
+        "operation_schedule::tests::wave_ranges_preserve_greedy_boundaries_and_core_limits"
+      ],
+      "compile_error": false,
+      "caught_current_workspace": true,
+      "label": "wave-range-core-limit",
+      "candidate": "crates/runtime/src/operation_schedule.rs:218:28: replace == with != in wave_ranges",
+      "source_before_sha256": "14a3ff04ab4450732b0c0ce1a60408fa637a50ad3d4ce3d45448692fac70a7f3",
+      "source_mutated_sha256": "5088ef3bc54a4b3a17e26823a2015c4518dfe815ab4e2a6cb8631fa1e44edfbe",
+      "producer_diff_sha256": "60eeb71f5b1802b43144aa3603055988925d264338db6da5e74fa2cfc0c69987"
+    }
+  ],
+  "active": null,
+  "prepared_source_sha256": "a5ff815f90d1d21f94b617e0dec201c1f4e236482dc094e0ddffaf78cab6cdae",
+  "prepare_report_sha256": "8dde67d9ad7d0f5e9e8eaeab16fe8069d8cc36b13b5bc890962929eeadae32a3",
+  "identity": "CURRENT published 8befa33 tracked worktree plus reviewed two-file runtime16 finite-wave patch; not historical9a",
+  "environment": {
+    "PATH": "/tmp/bml-cargo/bin:/home/dev/.local/bin:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/home/dev/.opencode/bin:/home/dev/.local/share/mise/installs/node/24.22.2/bin:/home/dev/.local/share/mise/installs/uv/0.13.6/.mise-bins:/home/dev/.local/share/mise/shims:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.cargo/bin:/home/dev/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/games:/home/dev/.codex/tmp/arg0-linux/codex-arg0q6I2SF:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin",
+    "CARGO_HOME": "/tmp/bml-cargo",
+    "RUSTUP_HOME": "/tmp/bml-rustup",
+    "TMPDIR": "/home/dev/Work/bml/target/quality/wave-sixteen-current-20261105T101609Z/tmp",
+    "CARGO_TARGET_DIR": "/home/dev/Work/bml/target/wave-twelve-current-build-20261105T092132Z",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "PROPTEST_RNG_SEED": "20260923",
+    "CARGO_TERM_COLOR": "never"
+  },
+  "cache_receipt": {
+    "previous_output": "/home/dev/Work/bml/target/quality/wave-fourteen-current-20261105T095217Z",
+    "previous_source_sha256": "4070a16e56e5851b7a7b5f489b7cdf9515e359f60483cf706ebc418a3b041ceb",
+    "previous_report_sha256": "71f62bb5cab76b3b8a5dfd47c7d0b745497e454f6166a172891a7e5b777c092a",
+    "changed_source_paths": [
+      ".github/workflows/mutation-recovery.yml",
+      "crates/inference/tests/resource_contracts.rs",
+      "crates/runtime/src/operation_schedule.rs",
+      "crates/runtime/src/runtime.rs",
+      "openspec/changes/bml-1-0-release/tasks.md",
+      "openspec/changes/bml-inference-pipeline/tasks.md",
+      "quality/evidence/bounded-synthesis-current-replay.bundle.json",
+      "quality/evidence/bounded-synthesis-current-replay.json",
+      "quality/evidence/bounded-synthesis-current-replay.tar.gz",
+      "quality/evidence/bounded-synthesis-current-source.json",
+      "quality/evidence/bounded-synthesis-final-gate.json",
+      "quality/evidence/current-real-prompts-verifier/README.md",
+      "quality/evidence/current-real-prompts-verifier/preparation-gate.json",
+      "quality/evidence/current-real-prompts-verifier/preparation-handoff.json",
+      "quality/evidence/current-real-prompts-verifier/test_verify_real_prompts.py",
+      "quality/evidence/current-real-prompts-verifier/verify_real_prompts.py",
+      "quality/evidence/finite-runtime-stream-current-replays.bundle.json",
+      "quality/evidence/finite-runtime-stream-current-replays.json",
+      "quality/evidence/finite-runtime-stream-current-replays.tar.gz",
+      "quality/evidence/finite-runtime-stream-current-source.json",
+      "quality/evidence/finite-runtime-stream-gate.json",
+      "quality/evidence/finite-runtime-stream-prior-resource-failure.json",
+      "quality/evidence/generic-fresh-recovery-gate.json",
+      "quality/evidence/generic-fresh-recovery-readonly-preflight.json",
+      "quality/evidence/generic-fresh-recovery-review.json",
+      "quality/evidence/generic-fresh-recovery-review.md",
+      "quality/evidence/hashmap-profile-admission-replay.bundle.json",
+      "quality/evidence/hashmap-profile-admission-replay.json",
+      "quality/evidence/hashmap-profile-admission-replay.tar.gz",
+      "quality/evidence/leaf84-diagnostic-41997136527/analysis.json",
+      "quality/evidence/leaf84-diagnostic-41997136527/analysis.md",
+      "quality/evidence/leaf84-diagnostic-41997136527/candidate-risk-review.json",
+      "quality/evidence/leaf84-diagnostic-41997136527/candidate-risk-review.md",
+      "quality/evidence/mutation-9a-fifty-seven-shards.json",
+      "quality/evidence/mutation-original-final-increment.json",
+      "quality/evidence/mutation-recovery-46-dispatch.json",
+      "tools/mutation_recovery.py",
+      "tools/test_mutation_recovery.py"
+    ],
+    "published_base": "8befa33d3e89c5d42a5f8c02cc5a1f4d63b1113f",
+    "patch_paths_against_published_base": [
+      "crates/runtime/src/operation_schedule.rs",
+      "crates/runtime/src/runtime.rs"
+    ],
+    "current_inventory_sha256": "7185900c3950f798f540834af4d4870f1b4c3a8338e927b9407723d7af1906d1",
+    "policy": "Reuse only owned restored completed CURRENT stage14 target for runtime16 on the advanced published base; only the two reviewed runtime files differ from that base. Clean domain/runtime before baseline and each negative, and after restore. Previous source/worktree/receipts remain immutable; Cargo fingerprints rebuild other changed published inputs."
+  },
+  "updated_at": "2026-11-05T10:25:24.487098+00:00",
+  "baseline": {
+    "build": {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T10:19:52.740021+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 4325330944,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T10:21:07.017687+00:00",
+      "elapsed_seconds": 74.27770550601417,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "055338db740f972841dfad5929b529be817a3b71a43ea168efc705ce3dbe63e0",
+      "disk_free_after": 4207226880
+    },
+    "test": {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T10:21:07.018479+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 4207226880,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T10:22:57.042873+00:00",
+      "elapsed_seconds": 110.02443149499595,
+      "stdout_sha256": "e6ae07ef1a7358a2df11fb2ec5f34b012efe07e30d97146fd6a6f82e146a49db",
+      "stderr_sha256": "0da17116d99fe1d425b93da201e9c943da3b4125e2bc0996afe9bd3518712932",
+      "disk_free_after": 4206542848
+    },
+    "failed_tests": [],
+    "compile_error": false,
+    "caught_current_workspace": false
+  },
+  "restores": [
+    {
+      "label": "wave-range-core-limit",
+      "source_sha256": "14a3ff04ab4450732b0c0ce1a60408fa637a50ad3d4ce3d45448692fac70a7f3",
+      "all_tracked_inputs_restored": true
+    }
+  ],
+  "status": "passed_current_workspace_replays",
+  "all_tracked_inputs_restored": true,
+  "ended_at": "2026-11-05T10:25:24.487078+00:00"
+}

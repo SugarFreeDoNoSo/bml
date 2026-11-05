@@ -1,0 +1,162 @@
+{
+  "status": "verified_one_current_whole_workspace_replay",
+  "observed_at_utc": "2026-11-05T10:33:40.346879+00:00",
+  "archive": "quality/evidence/finite-wave-runtime-current-replay.tar.gz",
+  "archive_sha256": "eb06a7fdae049cfda614f6c85ae7c01457371c4b99607c9f1f862982a4767656",
+  "archive_bytes": 178944,
+  "members": {
+    "execution/artifact-hashes.json": {
+      "sha256": "1491dea1fb03ebb17a82ad18761f4e104d8aa6b6debd7ab24f3228c55bc004c8",
+      "bytes": 5131
+    },
+    "execution/baseline-build.stderr": {
+      "sha256": "055338db740f972841dfad5929b529be817a3b71a43ea168efc705ce3dbe63e0",
+      "bytes": 29497
+    },
+    "execution/baseline-build.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/baseline-test.stderr": {
+      "sha256": "0da17116d99fe1d425b93da201e9c943da3b4125e2bc0996afe9bd3518712932",
+      "bytes": 28225
+    },
+    "execution/baseline-test.stdout": {
+      "sha256": "e6ae07ef1a7358a2df11fb2ec5f34b012efe07e30d97146fd6a6f82e146a49db",
+      "bytes": 90737
+    },
+    "execution/cargo-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/cargo-version.stdout": {
+      "sha256": "9950bbb2d5c3417b1a068f0e81f6d3cac991a363193bdf2a22d447f5acf8b503",
+      "bytes": 36
+    },
+    "execution/clean-before-baseline.stderr": {
+      "sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "bytes": 21
+    },
+    "execution/clean-before-baseline.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-before-wave-range-core-limit.stderr": {
+      "sha256": "58c227b9217f4ccdc8c945ff71c0ccff4fd6f075a2a4bad35f05ed510743b29d",
+      "bytes": 39
+    },
+    "execution/clean-before-wave-range-core-limit.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-restored-wave-range-core-limit.stderr": {
+      "sha256": "58c227b9217f4ccdc8c945ff71c0ccff4fd6f075a2a4bad35f05ed510743b29d",
+      "bytes": 39
+    },
+    "execution/clean-restored-wave-range-core-limit.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/current-mutants.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/current-mutants.stdout": {
+      "sha256": "864eea2ffd292fc982b52613fa17d11d56438dd9151538d66a8ace8be86d7f01",
+      "bytes": 137607
+    },
+    "execution/final-summary.json": {
+      "sha256": "30d25a88c42cfdb3bc09bc8b8fb0963ca1a27d56ae7baac2344f9a08d7e42b06",
+      "bytes": 3952
+    },
+    "execution/prepare-report.json": {
+      "sha256": "8dde67d9ad7d0f5e9e8eaeab16fe8069d8cc36b13b5bc890962929eeadae32a3",
+      "bytes": 4132
+    },
+    "execution/producer-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/producer-version.stdout": {
+      "sha256": "ba3c35073708a1da94eef75cafca1e263013077a73d090b5a798135dac2ffbe5",
+      "bytes": 21
+    },
+    "execution/report.json": {
+      "sha256": "4ed57e9271e44c607bf02ece14bc9f1b7efeeaa9d0a4f33d5e3299d0b47ab5cd",
+      "bytes": 15139
+    },
+    "execution/runner.py": {
+      "sha256": "6ed92da948177444fa28c24bf3c12befaf4c40a22976bd20799b2f1650e407b0",
+      "bytes": 24902
+    },
+    "execution/rustc-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/rustc-version.stdout": {
+      "sha256": "778fbc643a806f0dd123c056e66201d7e8a56a61928ec0a33171be8d6c2d5a37",
+      "bytes": 196
+    },
+    "execution/source.json": {
+      "sha256": "a5ff815f90d1d21f94b617e0dec201c1f4e236482dc094e0ddffaf78cab6cdae",
+      "bytes": 107281
+    },
+    "execution/wave-range-core-limit-build.stderr": {
+      "sha256": "9f6409ff60ed64d11a593f9280e8d4570a94f1e3beddffcb14fc71450c06277d",
+      "bytes": 29395
+    },
+    "execution/wave-range-core-limit-build.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/wave-range-core-limit-test.stderr": {
+      "sha256": "e24fffebdaf3afa53fc82957015a4d380a0e3dfbac6e5397c689b0f3cb8cb09f",
+      "bytes": 22187
+    },
+    "execution/wave-range-core-limit-test.stdout": {
+      "sha256": "0114d3b1f0ad6cef119a851bf09f02c4673e82d66c5028827908312acd0ee41d",
+      "bytes": 69133
+    },
+    "execution/workspace-metadata.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/workspace-metadata.stdout": {
+      "sha256": "fb4a622553fb3c90bac5d32b4173538672f9501764f3af27a9adda47659a0daf",
+      "bytes": 69127
+    },
+    "review/wave-sixteen-reviewed-fix.patch": {
+      "sha256": "0a2ba5e53e83939d3b999832e008d232246e2edc58e2679924140fe8f58a72ff",
+      "bytes": 5751
+    },
+    "review/implementation-proof.md": {
+      "sha256": "a89475602829ba0117f5f4d9db8485ed330340ba94cd4925a37f7dae88c8dfcb",
+      "bytes": 4335
+    },
+    "review/review.json": {
+      "sha256": "a427f29772cdb060785a79ef42ec2ad6e30ac05fa51b0251f67cd3266b664400",
+      "bytes": 4997
+    },
+    "review/root-lint-fix.json": {
+      "sha256": "daafe058aa151b2a488a33e351dda9c93eeea2ec7e99799abf0e7d94e01cdd73",
+      "bytes": 795
+    },
+    "execution/finite-wave-runtime-verified-gate.log": {
+      "sha256": "5ab52446b1690832a0a65e51f8c4a04ba3cbc43659e9eddb51f2e11f6ae6adf3",
+      "bytes": 116754
+    },
+    "execution/finite-wave-runtime-final-gate.log": {
+      "sha256": "3e5252387e48a12cfa2bffd34286d9c32ce8b40a98f66027824a1d9a1b8583f7",
+      "bytes": 117353
+    },
+    "execution/finite-wave-runtime-lint-fix.log": {
+      "sha256": "dea69f95325d1ce6cb3ef9c378b3b4ab995da2387321ef7a489d151c27874d53",
+      "bytes": 562
+    }
+  },
+  "root_independent_rehash": {
+    "tracked_files": 831,
+    "mismatches": 0
+  },
+  "scope": "Actual27.1 producer core-guard ==to!=; baselinewholeworkspace1002pass, mutantBuild0/Test101 and2realFAILED in58.02s without timeout. Literal expected greedy ranges and overlap contract detect changed partition. All831inputsrestored. Historical9a runtime+to* site eliminated by equivalent finite traversal but raw frozen classifications unchanged. No full campaign or performance approval."
+}
