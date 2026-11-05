@@ -139,7 +139,7 @@ fn full_symbolic_causal_model_matches_independent_gqa_rope_and_nonzero_mlp_oracl
 #[test]
 fn converted_autonomous_model_tokenizer_logits_and_generation_match_independent_oracle() {
     use bml_compiler::gguf_compiler::prepared_model::WeightEvaluation;
-    use bml_model_weights::{convert, ConversionOptions, ReadLimits};
+    use bml_model_weights::{convert, ConversionOptions, ReadLimits, WeightReader};
     let source = symbolic_fixture::fixture(0.25);
     let output = symbolic_fixture::Fixture(source.0.with_extension("bmlgguf"));
     let mut options = ConversionOptions::default();
@@ -147,20 +147,49 @@ fn converted_autonomous_model_tokenizer_logits_and_generation_match_independent_
     let report = convert::from_gguf(&source.0, &output.0, options).unwrap();
     assert!(report.weights_reused > 0);
     std::fs::remove_file(&source.0).unwrap();
-    let error = SymbolicCausalModel::open_bmlgguf(
+    let reader = WeightReader::open(&output.0, ReadLimits::default()).unwrap();
+    let weight_count: usize = reader
+        .tensors()
+        .iter()
+        .map(|tensor| {
+            tensor
+                .ggml_dimensions
+                .iter()
+                .map(|&dimension| usize::try_from(dimension).unwrap())
+                .product::<usize>()
+        })
+        .sum();
+    // Two 4x260 tables, three 4-element norms and seven projections with
+    // shapes 4x4, 4x2, 4x2, 4x4, 4x4, 4x4 and 4x4: count scalar weights,
+    // independently of the compiler's materialization accounting.
+    assert_eq!(weight_count, 2188);
+    drop(reader);
+    for cap in [0, weight_count - 1] {
+        let error = SymbolicCausalModel::open_bmlgguf(
+            &output.0,
+            ReadLimits::default(),
+            cap,
+            WeightEvaluation::CheckedExactF32,
+            SymbolicLimits::default(),
+        )
+        .err()
+        .unwrap();
+        assert!(error.contains("materialization limit"));
+    }
+    let mut above = SymbolicCausalModel::open_bmlgguf(
         &output.0,
         ReadLimits::default(),
-        1,
+        weight_count + 1,
         WeightEvaluation::CheckedExactF32,
         SymbolicLimits::default(),
     )
-    .err()
     .unwrap();
-    assert!(error.contains("materialization limit"));
+    close(&above.forward(&[69]).unwrap(), &oracle(&[69], true));
+    drop(above);
     let mut model = SymbolicCausalModel::open_bmlgguf(
         &output.0,
         ReadLimits::default(),
-        10000,
+        weight_count,
         WeightEvaluation::CheckedExactF32,
         SymbolicLimits::default(),
     )

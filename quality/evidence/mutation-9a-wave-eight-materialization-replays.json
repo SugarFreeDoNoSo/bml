@@ -1,0 +1,127 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "cb290927d2727aa4fad699547df884e7fa8bdcc3",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_causal_contracts",
+        "--locked",
+        "converted_autonomous_model_tokenizer_logits_and_generation_match_independent_oracle",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-eight-materialization-exact.log",
+      "log_sha256": "f5182b7c8ae1583b313024cbc80ce6db150b560e00104fe2c9758d2db146e112",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "cumulative_cache_budgets_accept_exact_totals",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-eight-cache-observations.log",
+      "log_sha256": "b14c16f41c512acbd765f0661847651198004dfa4f5e07e320848e402dfa864b",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_causal_contracts",
+        "--locked",
+        "converted_autonomous_model_tokenizer_logits_and_generation_match_independent_oracle",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-eight-materialization-exact.log",
+      "log_sha256": "205e64d8aa227d4740b9164697f8dc34f69f6e905645c50ac3d10069e2eab718",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-eight-materialization-exact",
+      "candidate": "crates/compiler/src/prepared_model.rs:95:14: replace > with >= in load",
+      "original_source_sha256": "e92c2092ae03a35bfe108a00ce35c320206feae3fe8f071e20e8d71474856e12",
+      "mutated_source_sha256": "400bb94a694c00a14e53873d59a08fb28e8fa0f8e3d112bce0a49bad48779f82",
+      "original_diff_sha256": "1976c79de40476372a1c0b7bebea650d615e01df988ec5288c697e2e6d9b38df",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 95
+        },
+        "start": {
+          "column": 14,
+          "line": 95
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "cumulative_cache_budgets_accept_exact_totals",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-eight-cache-observations.log",
+      "log_sha256": "fc0ecc02464134ba0a5145941523a9c4691e9ac8bc46d1d430bf070f2a7da35a",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-eight-cache-observations",
+      "candidate": "crates/domain/src/number/search.rs:227:38: replace += with *= in ExactSearcher::search",
+      "original_source_sha256": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+      "mutated_source_sha256": "f13e91e12d31cfcf48574f0a8ed57b6bf7d865e6c036f350d37a0d29cc1bbd0b",
+      "original_diff_sha256": "91fadd210f4169d1813cd109d7515d8b478d5c53e3e883690831f5dcf52db0af",
+      "original_span": {
+        "end": {
+          "column": 40,
+          "line": 227
+        },
+        "start": {
+          "column": 38,
+          "line": 227
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T05:28:18.308851+00:00",
+  "status": "passed_focused_replays",
+  "patched_test_hashes": {
+    "crates/runtime/tests/symbolic_causal_contracts.rs": "cdd77ba5d8f49aa74dc6127ba422d34bc05338b99584a54d299bfe38b950d21f"
+  },
+  "unchanged_test_inputs": {
+    "crates/domain/tests/bml_search.rs": "00e7d73103f896eeac1245d951e3d2a42b890a07f29144e298742c0468dfafb8"
+  },
+  "scope_note": "The materialization boundary is newly strengthened; the cache-lookup mutation is detected by the already-published wave-six cache contract."
+}
