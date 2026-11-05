@@ -1,0 +1,657 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "26a4a16971a6f8ec4c927653c9438696f2f17ee6",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "symbolic_integer_options_validate_before_help",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-cli-0.log",
+      "log_sha256": "a5ae6a89d3e58f558968318cab53dc56ce19d3f5c8b7fd16963896836679e14a",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-cli-1.log",
+      "log_sha256": "dd0525b25ee0080a0bc3a3d71e263629b2c321e1fc5f9a0a62bc0ba46b4a753e",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "worker_cli_contracts",
+        "--locked",
+        "causal_worker_accepts_each_resource_option_before_help",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-cli-3.log",
+      "log_sha256": "cd0e1b812d72e4eab0fe87faa7cbbb417d465ef4d6da1efd400e03fe08ab3575",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "worker_cli_contracts",
+        "--locked",
+        "causal_worker_rejects_each_zero_resource_before_opening_a_model",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-cli-9.log",
+      "log_sha256": "548686b9014cbcd7059c846d23472bd7e7baf87de2a79c0674f8e28aec9552fb",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "symbolic_integer_options_validate_before_help",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-0.log",
+      "log_sha256": "40aefef0ca43ccb303471d70aba879f87ea38eb0fd167472941bdd14abdc40fb",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-0",
+      "candidate": "crates/worker/src/main.rs:231:21: delete match arm \"--layer-start\" in main",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "82760d0acf47d9cc24b3f328ff59632d3eb2bd4145e72b24f0cf4adf63c8247c",
+      "original_diff_sha256": "bdc851d804c80d115c59842a23b38304219cbe56e09cc170850309633afeb77b",
+      "original_span": {
+        "end": {
+          "column": 22,
+          "line": 236
+        },
+        "start": {
+          "column": 21,
+          "line": 231
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-1.log",
+      "log_sha256": "b54d44d83e6caf32fdc40852bd39b8fcb4ed79d0e2ce9394ff5dc2d4c5504538",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-1",
+      "candidate": "crates/worker/src/main.rs:304:17: replace || with && in main",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "564d6533bb62719a5e165410c98a117f2f8ad0e38cffda797d30fdc861371cd3",
+      "original_diff_sha256": "955168fba0a3a670e95c227211e094ff1d719d388bf8b9710cf1c2dc4b5254b1",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 304
+        },
+        "start": {
+          "column": 17,
+          "line": 304
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-2.log",
+      "log_sha256": "e1f8e8726402d31542a921dd4466f1038f362809efbee878863958f08e0fe1ba",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-2",
+      "candidate": "crates/worker/src/main.rs:303:17: replace || with && in main",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "8711d2c97ebb3b5b695b7aeb72b41fdb51129a55d8bf6fb6d2aed394d9886b4f",
+      "original_diff_sha256": "618f8e59894ccceac5957159c764673a99baed6ac78e5f350931fc3e30680fc9",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 303
+        },
+        "start": {
+          "column": 17,
+          "line": 303
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "worker_cli_contracts",
+        "--locked",
+        "causal_worker_accepts_each_resource_option_before_help",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-3.log",
+      "log_sha256": "a7efa406ed4cf10bb419caf31286212cb67f2e3816396ba08054974e9c3cd21e",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-3",
+      "candidate": "crates/inference/src/bin/bml-layer-worker.rs:36:13: delete match arm \"--memory-bytes\" in run",
+      "original_source_sha256": "d37625eecf0eebea7d5187835b7da533c28ba1d4d5290fd6b9f62cfc62c2e17f",
+      "mutated_source_sha256": "45b2f0d2f665f32596d9d1dc6c51a0911b98a3c8eaad0fef7ae1e67478ac0182",
+      "original_diff_sha256": "97d2e29effc51fe13708cbcc05e6185d82fe747563e28d18017c8a80270f18ad",
+      "original_span": {
+        "end": {
+          "column": 70,
+          "line": 36
+        },
+        "start": {
+          "column": 13,
+          "line": 36
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-4.log",
+      "log_sha256": "725007b2ac4f21dfbe606238e7424eb02658d57c106eeb249b2b64cd1886b43e",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-4",
+      "candidate": "crates/worker/src/main.rs:302:17: replace || with && in main",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "ffcb9cfa07c3e45a7c53a80ff25b9d0cf8c645ae292fc5115ce94713a5509e51",
+      "original_diff_sha256": "7a7c275835c461e9ea062d28ef41f75fbed3d0af380920ccc81be7a4d1c35b03",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 302
+        },
+        "start": {
+          "column": 17,
+          "line": 302
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "worker_cli_contracts",
+        "--locked",
+        "causal_worker_accepts_each_resource_option_before_help",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-5.log",
+      "log_sha256": "781e02329ed4f0079f3eaafee96bc078407956c0628ada556be9819beb998485",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-5",
+      "candidate": "crates/inference/src/bin/bml-layer-worker.rs:37:13: delete match arm \"--frame-bytes\" in run",
+      "original_source_sha256": "d37625eecf0eebea7d5187835b7da533c28ba1d4d5290fd6b9f62cfc62c2e17f",
+      "mutated_source_sha256": "f18ae52380742e97974a42797f07fceaef94ca350a5199d3b2d4e4ab5a2d25b7",
+      "original_diff_sha256": "e85145987992d39925cf38e51b376647e9db53775fe364e1d0c326e4514c444e",
+      "original_span": {
+        "end": {
+          "column": 68,
+          "line": 37
+        },
+        "start": {
+          "column": 13,
+          "line": 37
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-6.log",
+      "log_sha256": "d351fb620d6aeca4796353fba0744a591bbcc4bd00fb0ba543b3ac30ecdec708",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-6",
+      "candidate": "crates/worker/src/main.rs:301:17: replace || with && in main",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "0c7477a669b8e1c0a83dd3915340b6d164bed865e5ab34131df83532a0a4d037",
+      "original_diff_sha256": "57c604604bb712fd884e1f0931e2bcd0b17c9731f4317c59a956abf3050691b1",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 301
+        },
+        "start": {
+          "column": 17,
+          "line": 301
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "worker_cli_contracts",
+        "--locked",
+        "causal_worker_accepts_each_resource_option_before_help",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-7.log",
+      "log_sha256": "0d8db2128ad33a6ada8c6d0b10ba44d4caf9c159ff4e53cbaeb5c8f5f87466a5",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-7",
+      "candidate": "crates/inference/src/bin/bml-layer-worker.rs:38:13: delete match arm \"--timeout-ms\" in run",
+      "original_source_sha256": "d37625eecf0eebea7d5187835b7da533c28ba1d4d5290fd6b9f62cfc62c2e17f",
+      "mutated_source_sha256": "46ea9c9d3c58d1df2c0bdcd377c0ee3f23cc40ab7d45dfb4f8b6ba3eb6a927fa",
+      "original_diff_sha256": "677659f7d7758e3a5dd0bbcef8ff851768710f7cf3851526a22d7e75b43dd65b",
+      "original_span": {
+        "end": {
+          "column": 97,
+          "line": 38
+        },
+        "start": {
+          "column": 13,
+          "line": 38
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-8.log",
+      "log_sha256": "c8681ce4b092a3e17d1a0dc9c34b115479270351c3d4473c1115555f76ff2a0a",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-8",
+      "candidate": "crates/worker/src/main.rs:300:17: replace || with && in main",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "25d539772f746591061119878d57fc5948013a3f5fd1ba10b6342349712ab1c0",
+      "original_diff_sha256": "0148fc3513a39365a624927110e384a36c4f0193e9d868f50ff0d3a7e9c7e48e",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 300
+        },
+        "start": {
+          "column": 17,
+          "line": 300
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "worker_cli_contracts",
+        "--locked",
+        "causal_worker_rejects_each_zero_resource_before_opening_a_model",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-9.log",
+      "log_sha256": "ccfa31fbe0b1831c2dc40425ecf950ba5156ba3796f4cf4cb2c1f70e65c02b1b",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-9",
+      "candidate": "crates/inference/src/bin/bml-layer-worker.rs:49:9: replace || with && in run",
+      "original_source_sha256": "d37625eecf0eebea7d5187835b7da533c28ba1d4d5290fd6b9f62cfc62c2e17f",
+      "mutated_source_sha256": "640d80a6867a8b33916b95a3576c94a28cf4048f95d85a403d16bcee7d11a039",
+      "original_diff_sha256": "2aeab19d364b0a71f903e810851b1bfe94231cb3f1f1a844ca244fa337fe3056",
+      "original_span": {
+        "end": {
+          "column": 11,
+          "line": 49
+        },
+        "start": {
+          "column": 9,
+          "line": 49
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-10.log",
+      "log_sha256": "92e8057ccc5aecf1a9fa66d99de4d537874531e0af90dc954fd63703885b1c05",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-10",
+      "candidate": "crates/worker/src/main.rs:299:17: replace || with && in main",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "838c045cac28181c793dfb780482a026784fefa23eb0ced21b04d3cc5297541d",
+      "original_diff_sha256": "0cb37546441f301e9d308e12996a08e7a920a5001e4bbf311622958f1abe7374",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 299
+        },
+        "start": {
+          "column": 17,
+          "line": 299
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "worker_cli_contracts",
+        "--locked",
+        "causal_worker_rejects_each_zero_resource_before_opening_a_model",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-11.log",
+      "log_sha256": "e42b5772c14b2e534a962a976ebd2b2c0e645b3a8f5612bc6e8602135a5cfbe5",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-11",
+      "candidate": "crates/inference/src/bin/bml-layer-worker.rs:48:9: replace || with && in run",
+      "original_source_sha256": "d37625eecf0eebea7d5187835b7da533c28ba1d4d5290fd6b9f62cfc62c2e17f",
+      "mutated_source_sha256": "e0e1ea591aed5eabb4e4b558e71249fcb469304bbaffecdf7321728227559c98",
+      "original_diff_sha256": "8a18105cf4d0403938414027a12f3eed3fd5fd951c615e6d1faf66801fae276b",
+      "original_span": {
+        "end": {
+          "column": 11,
+          "line": 48
+        },
+        "start": {
+          "column": 9,
+          "line": 48
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-12.log",
+      "log_sha256": "f84b21adc5bfcf4aefc079e2137d31e5033d8869783c7356fb85afa81d733eea",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-12",
+      "candidate": "crates/worker/src/main.rs:298:17: replace || with && in main",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "8ce867d6e57be44f40c536cdf6aeaed42bc9ff84c17fb43c5821acd656855a49",
+      "original_diff_sha256": "3c3c26ccbc64f4f46b7f712c22db8efb7aeff7995a584fac33f24e3251525dcd",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 298
+        },
+        "start": {
+          "column": 17,
+          "line": 298
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "worker_cli_contracts",
+        "--locked",
+        "causal_worker_rejects_each_zero_resource_before_opening_a_model",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-13.log",
+      "log_sha256": "46190ee4b37b2f8967c04a3d5792fd0dc8b70042a8ad634989e0aaedfe86c007",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-13",
+      "candidate": "crates/inference/src/bin/bml-layer-worker.rs:47:9: replace || with && in run",
+      "original_source_sha256": "d37625eecf0eebea7d5187835b7da533c28ba1d4d5290fd6b9f62cfc62c2e17f",
+      "mutated_source_sha256": "fde6254e5d69869b70f182bb89d383bfc5927e973323ffb228b57988ec9c577c",
+      "original_diff_sha256": "aa5d4931800e2bed6455e2df0adcd9829df36a992cdf2d2d8d29ed2cc98f87fe",
+      "original_span": {
+        "end": {
+          "column": 11,
+          "line": 47
+        },
+        "start": {
+          "column": 9,
+          "line": 47
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "worker_cli_contracts",
+        "--locked",
+        "causal_worker_rejects_each_zero_resource_before_opening_a_model",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-14.log",
+      "log_sha256": "83dcdff404aa4bda2b73ea8138d467f33887b3be81475a304e3f2f13fce3a408",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-14",
+      "candidate": "crates/inference/src/bin/bml-layer-worker.rs:46:9: replace || with && in run",
+      "original_source_sha256": "d37625eecf0eebea7d5187835b7da533c28ba1d4d5290fd6b9f62cfc62c2e17f",
+      "mutated_source_sha256": "75a0a86380c09fec36bedc7ca1f80bef4c2135fccdd40f583a26f434c5f9a514",
+      "original_diff_sha256": "4452995fbc95cea844329f0522a9a02d8f457379901b471c2252842bd4585064",
+      "original_span": {
+        "end": {
+          "column": 11,
+          "line": 46
+        },
+        "start": {
+          "column": 9,
+          "line": 46
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "symbolic_integer_options_validate_before_help",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-cli-15.log",
+      "log_sha256": "4bcd8f7658ed7be2a1a9e35758db259cf7753101594e9f436d5ddeae7675d97b",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-cli-15",
+      "candidate": "crates/worker/src/main.rs:249:21: delete match arm \"--symbolic-max-steps\" in main",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "be20f3078a3148a4798d1b1bfaeeeba62ff8e0cb9266ee05b4e303cfc8e5c0f3",
+      "original_diff_sha256": "f4da19b5d9a07298081dd81ff2f483eff2dc68c86c1559f7e880bc6d695c4313",
+      "original_span": {
+        "end": {
+          "column": 22,
+          "line": 255
+        },
+        "start": {
+          "column": 21,
+          "line": 249
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T03:55:13.912168+00:00",
+  "status": "passed_focused_replays",
+  "patched_test_hashes": {
+    "crates/worker/tests/timeout_cli_contracts.rs": "38c0d8f1b1b129b04323f0ef8f8989a8a54ea383bf0229c9a6a7435c7e75ffde",
+    "crates/inference/tests/worker_cli_contracts.rs": "7c1a0e402f1e1a3da5e45302da26fd2dd496d2d5765c7c21c293fdfa6af9c248"
+  },
+  "integrated_formatted_test_hashes": {
+    "crates/worker/tests/timeout_cli_contracts.rs": "38c0d8f1b1b129b04323f0ef8f8989a8a54ea383bf0229c9a6a7435c7e75ffde",
+    "crates/inference/tests/worker_cli_contracts.rs": "7c1a0e402f1e1a3da5e45302da26fd2dd496d2d5765c7c21c293fdfa6af9c248"
+  },
+  "format_note": "patched_test_hashes identify the focused replay inputs; integrated_formatted_test_hashes identify the rustfmt-formatted files checked by the canonical gate."
+}
