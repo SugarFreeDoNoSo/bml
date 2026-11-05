@@ -432,10 +432,13 @@ def main():
                 script = root / "tools/merge_mutation_shards.py"
                 shared = ["--manifest", str(args.manifest.resolve()), "--diff", str(args.diff.resolve()),
                           "--root", str(root)]
-                run = ["env", f"CARGO_TARGET_DIR={root / ('target/final-mutation-build-' + index)}",
+                # --in-place is serial and conflicts with --jobs, including its
+                # inherited CARGO_MUTANTS_JOBS environment value in 27.1.0.
+                run = ["env", "-u", "CARGO_MUTANTS_JOBS",
+                       f"CARGO_TARGET_DIR={root / ('target/final-mutation-build-' + index)}",
                        "CARGO_INCREMENTAL=0", "cargo", "mutants", "--workspace",
                        "--cargo-arg=--locked", "--test-workspace", "true", "--in-place",
-                       "--jobs", "1", "--timeout", str(args.timeout), "--build-timeout",
+                       "--timeout", str(args.timeout), "--build-timeout",
                        str(args.build_timeout), "--in-diff", str(args.diff.resolve()),
                        "--sharding", "round-robin", "--shard", args.shard, "--output", str(output)]
                 print("set -eu")

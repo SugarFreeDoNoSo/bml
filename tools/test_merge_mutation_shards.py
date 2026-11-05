@@ -2,7 +2,12 @@ import contextlib
 import copy
 import io
 import json
+import os
 from pathlib import Path
+import shlex
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -11,6 +16,7 @@ from merge_mutation_shards import (
     BASE_REVISION, TOOL_VERSION, digest, make_manifest, merge_shards, seal_shard,
     validate_manifest, source_snapshot, verify_worktree, file_digest, write_new,
     workspace_packages,
+    main as shard_main,
 )
 import quality
 
@@ -77,6 +83,58 @@ def rehash(result):
 
 
 class MutationShardContracts(unittest.TestCase):
+    def runner_command(self, root, diff):
+        stdout = io.StringIO()
+        argv = ["merge_mutation_shards.py", "commands", "--manifest", str(root / "campaign.json"),
+                "--root", str(root), "--diff", str(diff), "--shard", "0/3"]
+        with patch.object(sys, "argv", argv), \
+             patch("merge_mutation_shards.read_json", return_value=campaign()[0]), \
+             patch("merge_mutation_shards.verify_worktree"), contextlib.redirect_stdout(stdout):
+            shard_main()
+        line = next(line for line in stdout.getvalue().splitlines() if line.startswith("if "))
+        suffix = "; then shard_exit=0; else shard_exit=$?; fi"
+        self.assertTrue(line.endswith(suffix))
+        return shlex.split(line[len("if "):-len(suffix)])
+
+    def test_in_place_runner_omits_jobs_and_clears_inherited_jobs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            command = self.runner_command(root, root / "scope.diff")
+        self.assertEqual(command[:3], ["env", "-u", "CARGO_MUTANTS_JOBS"])
+        self.assertIn("--in-place", command)
+        self.assertNotIn("--jobs", command)
+        self.assertFalse(any(arg.startswith("--jobs=") for arg in command))
+
+    def test_generated_runner_parses_with_real_pinned_cargo_mutants_list_only(self):
+        if not shutil.which("cargo") or not shutil.which("cargo-mutants"):
+            self.skipTest("cargo-mutants 27.1.0 is optional for the parser-only integration check")
+        version = subprocess.check_output(["cargo", "mutants", "--version"], text=True).strip()
+        if version != f"cargo-mutants {TOOL_VERSION}":
+            self.skipTest(f"parser-only integration check needs cargo-mutants {TOOL_VERSION}")
+        with tempfile.TemporaryDirectory(prefix="bml-mutants-cli-") as directory:
+            root = Path(directory)
+            (root / "Cargo.toml").write_text(
+                '[package]\nname = "merge-shard-cli-probe"\nversion = "0.1.0"\n'
+                'edition = "2021"\n[workspace]\n')
+            (root / "Cargo.lock").write_text(
+                'version = 4\n\n[[package]]\nname = "merge-shard-cli-probe"\nversion = "0.1.0"\n')
+            (root / "src").mkdir()
+            (root / "src/lib.rs").write_text("pub fn flag() -> bool { true }\n")
+            diff = root / "scope.diff"
+            diff.write_text(
+                'diff --git a/src/lib.rs b/src/lib.rs\n--- a/src/lib.rs\n+++ b/src/lib.rs\n'
+                '@@ -1 +1 @@\n-pub fn flag() -> bool { false }\n+pub fn flag() -> bool { true }\n')
+            command = self.runner_command(root, diff) + ["--list", "--json"]
+            inherited = {**os.environ, "CARGO_MUTANTS_JOBS": "7"}
+            result = subprocess.run(command, cwd=root, env=inherited, text=True,
+                                    capture_output=True, check=True, timeout=60)
+            candidates = json.loads(result.stdout)
+            self.assertEqual(len(candidates), 1)
+            self.assertEqual(candidates[0]["package"], "merge-shard-cli-probe")
+            self.assertEqual(candidates[0]["replacement"], "false")
+            self.assertFalse((root / "target/final-mutation-build-0").exists())
+            self.assertFalse((root / "target/final-mutation-shard-0").exists())
+
     def test_zero_based_round_robin_lists_and_complete_merge(self):
         manifest, results = campaign()
         self.assertEqual([row["shard"] for row in manifest["shards"]], ["0/3", "1/3", "2/3"])

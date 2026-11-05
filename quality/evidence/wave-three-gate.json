@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "base_revision": "afecff47c2788abc7679a52b5a6989070ad8ace1",
+  "command": "./scripts/check.sh afecff4",
+  "exit_code": 0,
+  "observed_at_utc": "2026-11-05T01:26:25.881937+00:00",
+  "scope": "Integrated third-wave working tree: deployment plan negative contracts and compatible in-place mutation runner commands. No full mutation/PMU/release completion claim. Real-model diagnostic remains separately running.",
+  "python_tooling_tests": 124,
+  "historical_contract_discrepancies": 0,
+  "traceability": "105/105",
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "log": "target/quality/wave-three-gate.log",
+  "log_sha256": "cbca85cd08f732ed6ff37ea27208c72930d7e7c113d239b2e2b6073807ab0409",
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/wave-three-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_source_hashes": {
+    "Cargo.lock": "24f3ffb3895c5d7d6c2ff84f4db44695fad726f20972cf7517ead389d049e091",
+    "Cargo.toml": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+    "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1",
+    "crates/cli/tests/symbolic_distributed_cli.rs": "e581441a109c045a5353e32a0f30d329c47189eeeb8892af0efccf5ee782b476",
+    "crates/cli/src/deployment.rs": "41b2773328facc0555917bd2cf21691fa3866cb53527ae6acad54af35cf46b97",
+    "tools/merge_mutation_shards.py": "7891024da8b209f526e01f592dcc63501a01754109697485697765beb5187a2c",
+    "tools/test_merge_mutation_shards.py": "3cb316d353c8114574c234fc90480184a5a3e3879cec00a9e3709f5fbf4dbb08"
+  },
+  "deployment_guard_replays": {
+    "evidence": "quality/evidence/deployment-plan-guard-replays.json",
+    "detected": 5,
+    "total": 5
+  },
+  "real_mutants_parser_regression": "Optional parser-only integration test ran with installed cargo-mutants27.1.0 and inherited CARGO_MUTANTS_JOBS=7; one candidate listed, no build or mutation output created."
+}
