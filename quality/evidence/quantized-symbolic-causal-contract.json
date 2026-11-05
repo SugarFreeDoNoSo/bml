@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "observed_at_utc": "2026-11-05T02:12:59.650019+00:00",
+  "base_revision": "a1b978c49be70a4c9e3623645af5d9aa2b31dbc8",
+  "production_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "scope": "Synthetic complete one-layer GQA model, Q4_0 mmap weights versus an independently written literal F32 representation, separately in native and checked-BML backends. This does not establish global native-versus-symbolic numerical parity or real TinyLlama success.",
+  "model": {
+    "embedding_width": 32,
+    "query_heads": 2,
+    "kv_heads": 1,
+    "head_dim": 16,
+    "context": 3,
+    "input_ids": [
+      69,
+      70,
+      69
+    ],
+    "vocabulary_size": 260,
+    "quantized_matrices": 9,
+    "scales": [
+      "+1/64",
+      "-1/64"
+    ]
+  },
+  "contracts": [
+    "Bit-identical finite Q4/F32 logits and KV rows within each backend at all three positions",
+    "Committed KV prefixes preserved; prefill2+decode1 and full prefix match incremental evaluation",
+    "Persisted authenticated v4 artifacts load with max_nodes=0 and external weights",
+    "All ten operation roles observed after successful calls, empty role list before execution",
+    "A distinct GGUF with a changed MLP down-projection nibble changes native and symbolic logits; all writes finish before mappings open"
+  ],
+  "exit_code": 0,
+  "passed": 1,
+  "failed": 0,
+  "test_source": "crates/runtime/tests/quantized_symbolic_causal_contracts.rs",
+  "traceability_id": "C106",
+  "initial_focused_run": {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "bml-runtime",
+      "--test",
+      "quantized_symbolic_causal_contracts",
+      "--locked",
+      "--",
+      "--exact",
+      "persisted_q4_causal_model_matches_literal_f32_representation_across_gqa_positions"
+    ],
+    "log": "target/quality/quantized-symbolic-causal-contract.log",
+    "log_sha256": "3aeca94b46c30b0699ca51dac4002593fe3cdb17a475b6e2370d45bda99cbd2a",
+    "test_source_sha256": "93c319d37b0f0f92beedb051bdb7e9af36a7affa472e14a30200766ac929c53f"
+  },
+  "command": [
+    "./scripts/check.sh",
+    "a1b978c"
+  ],
+  "test_source_sha256": "4e6d30ee80ccba366ae54f64a7e09a9e14e508b1ecf102b1c3c8d0a83f6227bf",
+  "log": "target/quality/wave-four-gate.log",
+  "log_sha256": "fab6fbc58625ee14e841b6b3349489d87c6be9f1271ac2a6d3f4b0c421ad48c1",
+  "canonical_gate_evidence": "quality/evidence/wave-four-gate.json"
+}

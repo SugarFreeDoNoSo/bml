@@ -1053,5 +1053,12 @@
     "tests": [
       "distributed_legacy_compilers_reject_placeholder_output"
     ]
+  },
+  "C106": {
+    "package": "bml-runtime",
+    "target": "quantized_symbolic_causal_contracts",
+    "tests": [
+      "persisted_q4_causal_model_matches_literal_f32_representation_across_gqa_positions"
+    ]
   }
 }

@@ -755,3 +755,11 @@ Then it rejects the request before expensive generation
     Given a valid Llama GGUF fixture
     When either legacy distributed constructor is called
     Then it rejects compilation and points to the bounded symbolic pipeline
+
+  @C106
+  Scenario: Persisted bounded causal inference preserves Q4_0 weight representation
+    Given complete Q4_0 and independent literal F32 models with signed scales and GQA
+    When authenticated v4 programs execute three positions with zero construction-node budget
+    Then each backend has identical finite logits and committed KV bits across the two representations
+    And prefill followed by decode agrees with the complete causal prefix
+    And every required bounded operation family executes and an MLP weight perturbation changes the output

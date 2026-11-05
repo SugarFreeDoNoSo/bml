@@ -28,6 +28,8 @@ con reparto round-robin entre réplicas completas. Falta ejecución numérica co
 
 - [x] 8.6.1 Preparar y lanzar un diagnóstico reproducible de dos posiciones TinyLlama sin reconstrucción de kernels. `real_model_two_position_symbolic_logit_diagnostic` verifica AOT v4, contexto 2, hash del modelo y perfil completo; usa `max_nodes=0`, IDs fijos [1, 29958] y cachés independientes. El AOT nuevo conserva las cotas BOS salvo RoPE32/atención20; CLI y diagnóstico compilan con el toolchain fijado y `--locked`. Guarda vectores y estadísticas por posición, y el resumen solo al completar ambas. Procedencia en `quality/evidence/tinyllama-two-position-diagnostic.json`; la ejecución larga y la evaluación de su resultado siguen pendientes y no acreditan paridad ni cierran 8.6.
 
+- [x] 8.6.2 Verificar la ruta causal completa de pesos mmap Q4_0 a programas BML persistidos mediante un modelo sintético GQA de ancho 32 y tres posiciones. C106 compara por backend los bits de logits y KV con una representación F32 escrita desde nibbles y escalas literales, carga AOT v4 con `max_nodes=0`, contrasta prefill/decode y detecta una perturbación del MLP. La prueba pasa sin modelo descargado; evidencia en `quality/evidence/quantized-symbolic-causal-contract.json`. Esto verifica equivalencia de representación por backend, no paridad global nativa/simbólica ni el diagnóstico TinyLlama pendiente.
+
 ## 9. Pruebas de concurrencia
 
 Diagnóstico adicional de 8.6: el caso de una sola componente `x=1`, `weight=4`,
