@@ -1,0 +1,78 @@
+{
+  "format_version": 1,
+  "status": "independent_read_only_review_no_blockers",
+  "reviewed_at": "2026-11-05T09:22:12.516000+00:00",
+  "base_revision": "8c86f28dab7c6bba03353d9aeb548a530aff1cd8",
+  "files_sha256": {
+    ".github/workflows/mutation-recovery.yml": "e32d4e1bb4abd3c6f9eb8605acb8f07eec3d4e4a3c05996578b5a38a2ed3791b",
+    "tools/mutation_recovery.py": "fb6ddada3a9c9da40796e5839afd6692addea25c08e312f64d0c9efdc5c11c8e",
+    "tools/test_mutation_recovery.py": "5a663cc4213f5add9664b5b5292261677451ebd27fb382c781161a3390423fce"
+  },
+  "checks": {
+    "new_generic_authorization_version": 2,
+    "legacy_indices_excluded": [
+      20,
+      21,
+      27
+    ],
+    "fixed_source": "9a6bc9680d5915576ca92528f60956efe9796cef",
+    "fixed_run": 41950170549,
+    "fixed_attempt": 1,
+    "identity": "exact repository/name/index/job/run/source; completed failing job required",
+    "job_terminal_independent_of_run_terminal": "Intentional: job completed/failure suffices; other original jobs may still be running. No source/result reuse authorized.",
+    "no_artifact": "complete nonduplicated API inventory required; eligibility only, no fake log/steps/exitcode.",
+    "missing_log": "only actual gh exit1+exact404 JSON/AzureXML response retained byte-for-byte; auth/server/other errors propagate. Revalidation rehashes and reparses raw404 proof.",
+    "collection": "API detail equals inventory; ZIPsize/digest API exact; bounded path-safe in-memory ZIP inspection; candidate list pinned; complete raw with successful baseline; exit1+exact last guard; no source seal.",
+    "fresh_execution": "original archive kept solely in controller inspection directory; source checkout9a and existing runner/attest/finish unchanged.",
+    "outcomes": "Missed/Timeout preserved; no old raw becomes source seal; final seal requires new fresh complete raw/live-source proof.",
+    "workflow": "only description/comments differ, original runner flags/tool/source checkout/uploads unchanged.",
+    "existing_source_functions_ast_identical": [
+      "collection_failure",
+      "collection_requested",
+      "zip_members",
+      "inspection_plan",
+      "inspect_collection_zip",
+      "validate_origin",
+      "api_bytes",
+      "api",
+      "checked_plan_bytes",
+      "checked_plan",
+      "verify_plan",
+      "controller_guard_recovery",
+      "attest",
+      "finish",
+      "main"
+    ],
+    "only_changed_existing_functions": [
+      "authorization",
+      "authorize"
+    ],
+    "existing_test_ast_nodes": "all7 unchanged; two new independent test classes; no removed old assertion.",
+    "diff_check": "PASS"
+  },
+  "author_validation_reported": {
+    "all_python_tests": 235,
+    "actionlint": "PASS",
+    "real_preflight_sha256": "e8b8592208c2e4cd6d7590fd853a4369e32e5fb1ac50d1aad600f83d0c6c0540",
+    "real_original_run_status": "completed",
+    "real_original_run_conclusion": "failure",
+    "generic_cases": [
+      29,
+      31,
+      39,
+      40,
+      43,
+      46
+    ],
+    "legacy_authorizations_revalidated": [
+      21,
+      27
+    ]
+  },
+  "limitations": [
+    "Review is read-only; no independent Cargo, mutation, model, dispatch or full Python test execution. Author tests/preflight are identified separately.",
+    "Authorization artifacts are reproducible evidence, not signatures. Future collection must authenticate recovery API run/attempt/controller/artifactZIP and fresh seal, ensuring one result perindex before the unchanged64-way quality gate.",
+    "Missing logs cannot supply an original exitcode or original candidate identity; those fields remain absent/unknown.",
+    "No old raw/classification is rehabilitated and no quality approval is asserted."
+  ]
+}

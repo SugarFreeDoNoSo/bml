@@ -3,12 +3,15 @@ name: Recover a failed 9a mutation shard with fresh execution
 # This separate run cannot satisfy the original attempt's artifact pattern.
 # A later explicit collection must validate recovery metadata and exactly one
 # attested seal per index before the unchanged 64-way union/quality gate.
+# A terminal original failure without an artifact, or an API-bound complete
+# unsealed collection failure, authorizes fresh execution only. Logs missing
+# with HTTP 404 remain absent; authentication/server errors still fail closed.
 
 on:
   workflow_dispatch:
     inputs:
       original_job:
-        description: Original shutdown job, or reviewed collection failure 126992338544 (21) / 126992339813 (27)
+        description: Original attempt1 terminal failed job; 20/21/27 retain their pinned legacy rules
         required: true
         default: '126992338544'
       shard_index:

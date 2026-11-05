@@ -1,0 +1,35 @@
+{
+  "status": "reviewed_tooling_change_passed",
+  "observed_at_utc": "2026-11-05T09:24:27.346884+00:00",
+  "base_revision": "8c86f28dab7c6bba03353d9aeb548a530aff1cd8",
+  "scope": "Generic fresh retry eligibility only for authenticated failed original jobs outside20/21/27. Read-only preflight; no mutation execution or source attestation inferred. No Rust files in this change.",
+  "python_tooling_tests": 235,
+  "python_exit_code": 0,
+  "tooling_log": "target/quality/fresh-recovery-tools-gate.log",
+  "tooling_log_sha256": "a5a5c5de9fa01f4dcf1f62a03cd1139b3171c9204b610096590be48cfe1cac31",
+  "actionlint": {
+    "version": "1.7.12",
+    "exit_code": 0,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "openspec": {
+    "version": "1.13.0",
+    "passed": 16,
+    "failed": 0,
+    "exit_code": 0,
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_source_sha256": {
+    "tools/mutation_recovery.py": "fb6ddada3a9c9da40796e5839afd6692addea25c08e312f64d0c9efdc5c11c8e",
+    "tools/test_mutation_recovery.py": "5a663cc4213f5add9664b5b5292261677451ebd27fb382c781161a3390423fce",
+    ".github/workflows/mutation-recovery.yml": "e32d4e1bb4abd3c6f9eb8605acb8f07eec3d4e4a3c05996578b5a38a2ed3791b"
+  },
+  "review_sha256": "1982c38e3751a33381a66d2e317b69ced76bb5e5687ac7a330745175943d9628",
+  "readonly_real_preflight_sha256": "e8b8592208c2e4cd6d7590fd853a4369e32e5fb1ac50d1aad600f83d0c6c0540",
+  "unchanged_policy_sha256": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  },
+  "limits": "Legacy authorization/live-source/attestation/finish functions preserved. Old raw reports never count as sealed results. Missing logs remain absent; unknown exit code stays null. Fixture mutation scores printed by Python tests are not campaign results. Frozen campaign remains incomplete."
+}

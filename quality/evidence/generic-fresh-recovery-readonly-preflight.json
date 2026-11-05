@@ -1,0 +1,154 @@
+{
+  "observed_at": "2026-11-05T09:11:55.597837+00:00",
+  "mode": "read-only eligibility inspection; not an actual authorization or recovery",
+  "generic": [
+    {
+      "index": 29,
+      "job_id": 126992340392,
+      "job_status": "completed",
+      "job_conclusion": "failure",
+      "log_state": "absent_http404",
+      "eligibility": {
+        "state": "retry_eligible_from_terminal_failure_without_artifact",
+        "exit_code": null
+      },
+      "inspection": null
+    },
+    {
+      "index": 31,
+      "job_id": 126992340694,
+      "job_status": "completed",
+      "job_conclusion": "failure",
+      "log_state": "absent_http404",
+      "eligibility": {
+        "state": "retry_eligible_from_terminal_failure_without_artifact",
+        "exit_code": null
+      },
+      "inspection": null
+    },
+    {
+      "index": 39,
+      "job_id": 126992342461,
+      "job_status": "completed",
+      "job_conclusion": "failure",
+      "log_state": "present",
+      "eligibility": {
+        "state": "retry_eligible_from_terminal_failure_without_artifact",
+        "exit_code": 143
+      },
+      "inspection": null
+    },
+    {
+      "index": 40,
+      "job_id": 126992342513,
+      "job_status": "completed",
+      "job_conclusion": "failure",
+      "log_state": "present",
+      "eligibility": {
+        "state": "retry_eligible_from_terminal_failure_without_artifact",
+        "exit_code": 143
+      },
+      "inspection": null
+    },
+    {
+      "index": 43,
+      "job_id": 126992342771,
+      "job_status": "completed",
+      "job_conclusion": "failure",
+      "log_state": "present",
+      "eligibility": {
+        "state": "retry_eligible_from_terminal_failure_without_artifact",
+        "exit_code": 143
+      },
+      "inspection": null
+    },
+    {
+      "index": 46,
+      "job_id": 126992343007,
+      "job_status": "completed",
+      "job_conclusion": "failure",
+      "log_state": "present",
+      "eligibility": {
+        "state": "retry_eligible_from_api_bound_collection_failure",
+        "exit_code": 1
+      },
+      "inspection": {
+        "state": "retry_eligible_from_api_bound_collection_failure",
+        "artifact_id": 13392074343,
+        "zip_sha256": "6b60b5bdec8ddd7818b938c8529c350313a715e52ee77bb41c820d55a6abd4f3",
+        "candidate_count": 81,
+        "raw_counts": {
+          "caught": 55,
+          "missed": 20,
+          "unviable": 6,
+          "timeout": 0
+        },
+        "members_sha256": {
+          "target/final-mutation-shard-46/mutants.out/mutants.json": "e830194f505377538401a846f88e052e182f567df1704e71dd17eab1b58c0b5f",
+          "target/quality/shard-46/exit-code.txt": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+          "target/final-mutation-shard-46/mutants.out/outcomes.json": "5dca75efd2cb645b48617973710a3b23d6c679a7bdf59b8de9b0cdeaf05786a9",
+          "target/quality/shard-46/runner.log": "62fd7575385246a3856ea22a755d8013bfa93069ebe1a7fc9cdfb4b3b8cf9d3c"
+        },
+        "source_state": "unattested; original live source and seed inventory are unavailable",
+        "fresh_execution_required": true
+      }
+    }
+  ],
+  "legacy": [
+    {
+      "index": 21,
+      "format_version": 1,
+      "state": "retry_eligible_from_collection_failure",
+      "path": "/home/dev/Work/bml/target/quality/wave-eight-status-20261105T055748Z/recovery21/extracted/control/target/quality/recovery",
+      "authorization_sha256": "8df8f33fccaac8b5e222e57e8e6748c7e672cc968a071d9f8045cd01399e8210"
+    },
+    {
+      "index": 27,
+      "format_version": 1,
+      "state": "retry_eligible_from_collection_failure",
+      "path": "/home/dev/Work/bml/target/quality/wave-eleven-recovery27-verified/extracted/control/target/quality/recovery",
+      "authorization_sha256": "625801cad3ca72b53d6430107aa5fd3ec00e7a9c9e7c32b4c31d0600461ee503"
+    }
+  ],
+  "protected_functions_ast_identical": {
+    "collection_failure": true,
+    "collection_requested": true,
+    "zip_members": true,
+    "inspection_plan": true,
+    "inspect_collection_zip": true,
+    "validate_origin": true,
+    "checked_plan_bytes": true,
+    "checked_plan": true,
+    "verify_plan": true,
+    "controller_guard_recovery": true,
+    "attest": true,
+    "finish": true
+  },
+  "files_sha256": {
+    "api/artifact-46.json": "7cc4b9dd3bd911e43b04c93a16a26b4bf4a5c656726974ea146bc32dbed89c9f",
+    "api/inspection-plan.zip": "88f35174af278236030091f9fa44f6caae2ffdf0842818cd3e02966e05f0674b",
+    "api/job-29-log-fetch.stderr": "6c5ec582d3b25e97273d17fd4088d0e13837c8384ee94aba555afc35856ec3ae",
+    "api/job-29-log-fetch.stdout": "6406ed102e70519c3db70a34815c3bf3826ae5f50875c51711634e34a51758bf",
+    "api/job-29.json": "3e92158f0c61ca1577722c597d3ba15f4f14a3825994106bb0055440c34b189a",
+    "api/job-31-log-fetch.stderr": "6c5ec582d3b25e97273d17fd4088d0e13837c8384ee94aba555afc35856ec3ae",
+    "api/job-31-log-fetch.stdout": "3a58869aecc894532984cd4cd57b9551438ac1e966dd72699d72b4be1e900a78",
+    "api/job-31.json": "ced383c1e7ff295670baeace133ecd7fb7db2e94cc123109b4bee98af4b4ae08",
+    "api/job-39.json": "f78101e0e42875b494507e05188d273c37fbd604e227f2a1fda702e08f6e2f31",
+    "api/job-39.log": "4dc81428fc0db30012a90f34715f7666f5c004a32fc126dfd50a2c78e5f3b797",
+    "api/job-40.json": "bc1ca774597002316edebd3a2c948856e2fd77990183aae35f4fe920892c09d8",
+    "api/job-40.log": "414949bac49a7221dbb15198f3925738d40b2f5487ed5baa362a73bf9a2df8b2",
+    "api/job-43.json": "3a43b2528a165eac161b72d3c51d26973b48445c69cd1d337e83a565975612de",
+    "api/job-43.log": "3e8fc5248d4c189cf4d8f2f37c979eaf386f7158fdc06cca9853a1543cf2dabc",
+    "api/job-46.json": "5b56ae6ca384ccfb461bffc9463aa2e0fb8d71021ba3edb37ebacadf5d4322a9",
+    "api/job-46.log": "33d4fcd3c0e9c23b277a158f9eddae96bc520cfae598eea04b63ba74edef031f",
+    "api/original-artifacts.json": "98233311eeb6a572e3e8ceb6172669d7e8d9017d0d16e874b932dac9ee6ff133",
+    "api/original-collection-46.zip": "6b60b5bdec8ddd7818b938c8529c350313a715e52ee77bb41c820d55a6abd4f3",
+    "api/original-plan-artifact.json": "feef0c609707b39f4300eaf5cb1d600c9cba59043cd14fb6f5958b13367173c4",
+    "api/original-run.json": "d49cb499234b90727fd2ba3c827bed3455369fbe58002469c4c9d875190f9e02"
+  },
+  "cached_inputs_revalidated_at": "2026-11-05T09:16:31.975374+00:00",
+  "helper_sha256": "fb6ddada3a9c9da40796e5839afd6692addea25c08e312f64d0c9efdc5c11c8e",
+  "original_run_status": "completed",
+  "original_run_conclusion": "failure",
+  "revalidation_note": "Cached real API/ZIP/log bytes revalidated against final helper. HTTP404 returncode1 follows from the original successful strict classifier; no recovery authorization or source seal was created."
+}

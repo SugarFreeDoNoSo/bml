@@ -1,0 +1,9 @@
+# Independent review: generic fresh recovery
+
+No blocking finding in the three reviewed files. The helper adds authorization v2 for original failed jobs outside the unchanged legacy indices20/21/27. The repository, source9a, run41950170549, attempt1, shard index and terminal failed job remain exact. A terminal job may authorize fresh execution while other original jobs continue; no requirement to wait for campaign completion is introduced.
+
+Missing-artifact eligibility requires a complete nonduplicated API inventory. Missing logs remain absent, with exact saved404 response bytes; authentication/server/other errors fail. No log, final step or exitcode is invented. Collection-failure eligibility additionally binds artifact detail to inventory, API ZIP size/digest, exact pinned candidates, complete raw outcomes with a successful baseline, final untracked-file guard, exit1 and absence of any source seal. It only authorizes a new execution.
+
+Independent AST comparison found15 existing helper functions unchanged, including the12 protected legacy/source/plan/attestation functions. Only existing authorize/authorization dispatchers changed. All7 old test AST nodes are unchanged. The workflow changes only comments/inputdescription. Newly added tests cover positive branches and rehashed/tampered404 proof, auth/server errors, wrong provenance, partial raw, failed baseline, wrong candidates, unexpected seals and downgrade attempts.
+
+The reviewed hashes are in `review.json`; author reports235 Python tests, actionlint and real preflight for29/31/39/40/43/46 plus old21/27 authorization revalidation. This review did not rerun Cargo or those tests. Future collection must independently authenticate the recovery run/controller/attempt/artifact and fresh source seal and reject duplicate or missing indices before the unchanged64-way gate. No historical raw results or classifications become valid through eligibility metadata.

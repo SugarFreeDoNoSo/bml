@@ -8,6 +8,13 @@ If only the frozen sealer's final untracked-file guard fails on a real generated
 proptest seed, the versioned controller can attest the still-live source and
 complete raw reports itself. That distinct seal never claims to come from 9a.
 
+Original terminal failures with no artifact, and API-bound complete unsealed
+collection failures, may establish fresh-retry eligibility in version2 metadata.
+Logs genuinely absent with HTTP404 stay absent, with exact fetch-response bytes;
+other API errors remain errors. Their old raw results never become source seals.
+The historical shard20/21/27 rules and existing version1 authorizations remain
+unchanged. No generic route can substitute for those three legacy indices.
+
 The pinned original shard21 and shard27 ZIPs may establish retry eligibility only.
 Their complete raw reports lack an attested source/seed inventory, so they are never
 copied into the fresh source checkout or converted into a source seal. Archives
@@ -35,6 +42,7 @@ from pathlib import Path
 import re
 import stat
 import subprocess
+import xml.etree.ElementTree as ET
 import zipfile
 
 from merge_mutation_shards import (
@@ -59,6 +67,7 @@ COLLECTION_27_JOB = 126992339813
 COLLECTION_27_ARTIFACT = 13389245750
 COLLECTION_27_ZIP_SHA256 = "faa89ea81b3b6624da0563d752b46ea0cda78d712b4edb5413c8df97dbb1009f"
 MAX_INSPECTION_ZIP = 32 * 1024 * 1024
+LEGACY_INDICES = {20, 21, 27}
 
 
 def collection_failure(index):
@@ -231,6 +240,275 @@ def api(path, raw=False):
     return json.loads(subprocess.check_output(["gh", "api", path], text=True))
 
 
+def missing_log_404(error):
+    """Recognize only gh's actual 404 response, never another API failure."""
+    if type(error.returncode) is not int or error.returncode != 1 or not isinstance(error.output, bytes) or len(error.output) > 16384:
+        return False
+    if error.stderr in (b"gh: Not Found (HTTP 404)\n", b"gh: Not Found (HTTP 404)\r\n"):
+        try:
+            body = json.loads(error.output)
+        except (ValueError, TypeError, UnicodeError):
+            return False
+        return isinstance(body, dict) and body.get("message") == "Not Found" and body.get("status") == "404"
+    # Expired runner-log redirects return the storage service's actual 404 XML.
+    if error.stderr not in (b"gh: HTTP 404\n", b"gh: HTTP 404\r\n") or b"<!" in error.output:
+        return False
+    try:
+        body = ET.fromstring(error.output)
+        return (body.tag == "Error" and not body.attrib and [child.tag for child in body] == ["Code", "Message"]
+                and all(not child.attrib and len(child) == 0 for child in body)
+                and body[0].text == "BlobNotFound"
+                and isinstance(body[1].text, str) and body[1].text.startswith("The specified blob does not exist."))
+    except (ET.ParseError, ValueError):
+        return False
+
+
+def fetch_original_log(path):
+    command = ["gh", "api"]
+    if "--allow-escape-sequences" in subprocess.check_output(["gh", "api", "--help"], text=True):
+        command.append("--allow-escape-sequences")
+    try:
+        return {"state": "present", "bytes": subprocess.check_output([*command, path], stderr=subprocess.PIPE)}
+    except subprocess.CalledProcessError as error:
+        if not missing_log_404(error):
+            raise
+        return {"state": "absent_http404", "stdout": error.output, "stderr": error.stderr,
+                "returncode": error.returncode}
+
+
+def write_bytes_new(path, value):
+    with path.open("xb") as stream:
+        stream.write(value)
+
+
+def validate_fresh_identity(repository, job_id, index, bundle):
+    """Authenticate a new failure without weakening the historical v1 routes."""
+    require(repository == REPOSITORY, "recovery is restricted to the original repository")
+    require(type(job_id) is int and job_id > 0 and type(index) is int
+            and 0 <= index < SHARDS and index not in LEGACY_INDICES,
+            "generic recovery cannot replace a legacy route or an invalid shard")
+    run, plan, job, inventory = (bundle[k] for k in ("run", "artifact", "job", "artifacts"))
+    require(run.get("id") == ORIGIN_RUN and run.get("head_sha") == SOURCE
+            and type(run.get("run_attempt")) is int and run["run_attempt"] == ORIGIN_ATTEMPT
+            and run.get("event") == "workflow_dispatch"
+            and run.get("path") == ".github/workflows/mutation-campaign.yml"
+            and run.get("repository", {}).get("full_name") == repository
+            and run["repository"].get("id") == REPOSITORY_ID,
+            "original run repository, source or attempt differs")
+    require(plan.get("id") == ARTIFACT_ID and plan.get("expired") is False
+            and plan.get("name") == f"mutation-plan-{ORIGIN_RUN}-{ORIGIN_ATTEMPT}"
+            and plan.get("workflow_run", {}).get("id") == ORIGIN_RUN
+            and plan["workflow_run"].get("head_sha") == SOURCE
+            and plan["workflow_run"].get("repository_id") == REPOSITORY_ID
+            and plan["workflow_run"].get("head_repository_id") == REPOSITORY_ID,
+            "original plan artifact is expired or belongs to another source")
+    require(job.get("id") == job_id and job.get("run_id") == ORIGIN_RUN
+            and type(job.get("run_attempt")) is int and job["run_attempt"] == ORIGIN_ATTEMPT
+            and job.get("head_sha") == SOURCE
+            and job.get("name") == f"shard ({index}, {index}/{SHARDS})"
+            and job.get("status") == "completed" and job.get("conclusion") == "failure",
+            "original shard job is not the matching terminal failure")
+    rows = inventory.get("artifacts")
+    require(isinstance(rows, list) and type(inventory.get("total_count")) is int
+            and inventory["total_count"] == len(rows) <= 100
+            and all(isinstance(row, dict) and type(row.get("id")) is int and row["id"] > 0 for row in rows)
+            and len({row["id"] for row in rows}) == len(rows), "incomplete or duplicate original artifact inventory")
+    require(len([row for row in rows if row["id"] == ARTIFACT_ID]) == 1,
+            "original plan is not in run inventory")
+    name = f"mutation-shard-{ORIGIN_RUN}-{ORIGIN_ATTEMPT}-{index}"
+    matches = [row for row in rows if row.get("name") == name]
+    require(len(matches) <= 1, "ambiguous original shard artifact")
+    return matches[0] if matches else None
+
+
+def fresh_collection_identity(bundle, listed, index):
+    original = bundle.get("collection_artifact", {})
+    keys = ("id", "name", "expired", "digest", "size_in_bytes", "workflow_run")
+    require(all(original.get(key) == listed.get(key) for key in keys)
+            and original.get("name") == f"mutation-shard-{ORIGIN_RUN}-{ORIGIN_ATTEMPT}-{index}"
+            and original.get("expired") is False
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", original.get("digest", ""))
+            and type(original.get("size_in_bytes")) is int
+            and 0 < original["size_in_bytes"] <= MAX_INSPECTION_ZIP
+            and original.get("workflow_run", {}).get("id") == ORIGIN_RUN
+            and original["workflow_run"].get("head_sha") == SOURCE
+            and original["workflow_run"].get("repository_id") == REPOSITORY_ID
+            and original["workflow_run"].get("head_repository_id") == REPOSITORY_ID,
+            "original collection artifact differs from its authenticated inventory")
+    return original
+
+
+def fresh_inspection_plan(blob, index):
+    require(type(index) is int and 0 <= index < SHARDS and index not in LEGACY_INDICES,
+            "generic inspection cannot replace a legacy route")
+    values, _ = zip_members(blob, {"campaign.json", "final.diff"})
+    return checked_plan_bytes(values["campaign.json"], values["final.diff"], f"{index}/{SHARDS}")
+
+
+def inspect_fresh_collection(blob, manifest, index, artifact):
+    require(type(index) is int and 0 <= index < SHARDS and index not in LEGACY_INDICES,
+            "generic inspection cannot replace a legacy route")
+    require(len(blob) == artifact["size_in_bytes"]
+            and "sha256:" + hashlib.sha256(blob).hexdigest() == artifact["digest"],
+            "original collection ZIP size or digest differs from API")
+    base = f"target/final-mutation-shard-{index}/mutants.out/"
+    evidence = f"target/quality/shard-{index}/"
+    values, names = zip_members(blob, {base + "mutants.json", base + "outcomes.json",
+                                      evidence + "runner.log", evidence + "exit-code.txt"})
+    require(not any(Path(name).name in {f"shard-result-{index}.json", f"controller-shard-result-{index}.json"}
+                    for name in names), "collection failure unexpectedly contains a source seal")
+    lines = values[evidence + "runner.log"].decode("utf-8").rstrip().splitlines()
+    require(lines and lines[-1] == UNTRACKED_ERROR
+            and values[evidence + "exit-code.txt"].decode("ascii").strip() == "1",
+            "original collection did not end at the untracked-file guard with exit 1")
+    candidates = json.loads(values[base + "mutants.json"])
+    assigned = manifest["shards"][index]["candidates"]
+    require(manifest["source"]["revision"] == SOURCE
+            and manifest["shards"][index]["shard"] == f"{index}/{SHARDS}"
+            and candidates == assigned, "original collection candidates differ from pinned manifest")
+    outcomes = json.loads(values[base + "outcomes.json"])
+    validate_outcomes(outcomes, assigned, manifest["source"]["workspace_packages"])
+    return {"state": "retry_eligible_from_api_bound_collection_failure", "artifact_id": artifact["id"],
+            "zip_sha256": hashlib.sha256(blob).hexdigest(), "candidate_count": len(candidates),
+            "raw_counts": {key: outcomes[key] for key in ["caught", "missed", "unviable", "timeout"]},
+            "members_sha256": {name: hashlib.sha256(value).hexdigest() for name, value in values.items()},
+            "source_state": "unattested; original live source and seed inventory are unavailable",
+            "fresh_execution_required": True}
+
+
+def validate_fresh_origin(repository, job_id, index, bundle, log, collection=None):
+    listed = validate_fresh_identity(repository, job_id, index, bundle)
+    require(log.get("state") in {"present", "absent_http404"}, "unknown original log state")
+    text = log["bytes"].decode("utf-8") if log["state"] == "present" else None
+    if log["state"] == "absent_http404":
+        require(missing_log_404(subprocess.CalledProcessError(log["returncode"], [],
+                output=log["stdout"], stderr=log["stderr"])), "missing log is not an authenticated HTTP 404")
+    if listed is None:
+        require(collection is None and "collection_artifact" not in bundle,
+                "missing-artifact recovery cannot contain collection evidence")
+        codes = re.findall(r"Z ##\[error\]Process completed with exit code ([0-9]+)\.\r?$", text or "", re.M)
+        return {"state": "retry_eligible_from_terminal_failure_without_artifact",
+                "exit_code": int(codes[0]) if len(codes) == 1 else None}
+    original = fresh_collection_identity(bundle, listed, index)
+    steps = bundle["job"].get("steps", [])
+    for name, conclusion in [
+        ("Check independent prepare digest and frozen revision", "success"),
+        ("Run baseline and workspace mutation tests; seal completed outcomes", "failure"),
+        ("Preserve raw reports, candidates, logs, seals and generated regressions", "success")]:
+        matching = [step for step in steps if step.get("name") == name]
+        require(len(matching) == 1 and matching[0].get("conclusion") == conclusion,
+                "original collection job steps do not prove the final guard/upload failure")
+    require(text is not None and re.search(r"Z ##\[error\]Process completed with exit code 1\.\r?$", text, re.M)
+            and collection and collection.get("state") == "retry_eligible_from_api_bound_collection_failure"
+            and collection.get("artifact_id") == original["id"]
+            and "sha256:" + collection.get("zip_sha256", "") == original["digest"]
+            and collection.get("fresh_execution_required") is True,
+            "original API-bound collection inspection, exit or log is missing")
+    return {"state": "retry_eligible_from_api_bound_collection_failure", "exit_code": 1}
+
+
+def authorize_fresh(repository, job_id, index, run_id, attempt, controller, output, bundle):
+    listed = validate_fresh_identity(repository, job_id, index, bundle)
+    prefix = f"repos/{repository}/actions"
+    log = fetch_original_log(f"{prefix}/jobs/{job_id}/logs")
+    collection, plan_zip, collection_zip = None, None, None
+    if listed is not None:
+        bundle["collection_artifact"] = api(f"{prefix}/artifacts/{listed['id']}")
+        original = fresh_collection_identity(bundle, listed, index)
+        plan_zip = api_bytes(f"{prefix}/artifacts/{ARTIFACT_ID}/zip")
+        manifest = fresh_inspection_plan(plan_zip, index)
+        collection_zip = api_bytes(f"{prefix}/artifacts/{original['id']}/zip")
+        collection = inspect_fresh_collection(collection_zip, manifest, index, original)
+    eligibility = validate_fresh_origin(repository, job_id, index, bundle, log, collection)
+    output.mkdir(parents=True, exist_ok=True)
+    write_new(output / "origin-api.json", bundle)
+    record = {"format_version": 2, "repository": repository, "origin_run_id": ORIGIN_RUN,
+              "origin_attempt": ORIGIN_ATTEMPT, "origin_job_id": job_id,
+              "origin_exit_code": eligibility["exit_code"], "eligibility_state": eligibility["state"],
+              "artifact_id": ARTIFACT_ID, "source_revision": SOURCE, "manifest_file_sha256": MANIFEST_SHA256,
+              "shard": f"{index}/{SHARDS}", "index": index, "recovery_run_id": run_id,
+              "recovery_attempt": attempt, "controller_revision": controller,
+              "origin_api_sha256": file_digest(output / "origin-api.json"), "origin_log_state": log["state"],
+              "origin_log_sha256": None, "fresh_execution_required": True}
+    if log["state"] == "present":
+        write_bytes_new(output / "origin-job.log", log["bytes"])
+        record["origin_log_sha256"] = file_digest(output / "origin-job.log")
+    else:
+        proof = {"state": "absent_http404", "http_status": 404, "returncode": log["returncode"]}
+        for key in ("stdout", "stderr"):
+            path = output / ("origin-job-log-fetch." + key)
+            write_bytes_new(path, log[key])
+            proof[key + "_sha256"] = file_digest(path)
+        write_new(output / "origin-job-log-fetch.json", proof)
+        record["origin_log_fetch_sha256"] = file_digest(output / "origin-job-log-fetch.json")
+    if collection is not None:
+        write_bytes_new(output / "inspection-plan.zip", plan_zip)
+        write_bytes_new(output / "original-collection.zip", collection_zip)
+        record.update(collection_inspection=collection,
+                      inspection_plan_zip_sha256=file_digest(output / "inspection-plan.zip"),
+                      original_collection_zip_sha256=file_digest(output / "original-collection.zip"))
+    write_new(output / "authorization.json", record)
+
+
+def fresh_authorization(directory, record):
+    require(record.get("format_version") == 2 and record.get("origin_run_id") == ORIGIN_RUN
+            and type(record.get("origin_attempt")) is int and record["origin_attempt"] == ORIGIN_ATTEMPT
+            and record.get("artifact_id") == ARTIFACT_ID
+            and record.get("source_revision") == SOURCE and record.get("manifest_file_sha256") == MANIFEST_SHA256
+            and record.get("shard") == f"{record.get('index')}/{SHARDS}"
+            and type(record.get("recovery_run_id")) is int and record["recovery_run_id"] > 0
+            and record["recovery_run_id"] != ORIGIN_RUN
+            and type(record.get("recovery_attempt")) is int and record["recovery_attempt"] > 0
+            and record.get("fresh_execution_required") is True,
+            "fresh recovery authorization identity changed")
+    sha(record["controller_revision"], "controller revision", 40)
+    require(file_digest(directory / "origin-api.json") == record["origin_api_sha256"],
+            "original API evidence changed")
+    bundle = read_json(directory / "origin-api.json")
+    listed = validate_fresh_identity(record["repository"], record["origin_job_id"], record["index"], bundle)
+    if record.get("origin_log_state") == "present":
+        require(file_digest(directory / "origin-job.log") == record.get("origin_log_sha256")
+                and record.get("origin_log_fetch_sha256") is None
+                and not any((directory / ("origin-job-log-fetch." + suffix)).exists()
+                            for suffix in ("json", "stdout", "stderr")), "original log evidence changed")
+        log = {"state": "present", "bytes": (directory / "origin-job.log").read_bytes()}
+    else:
+        require(record.get("origin_log_state") == "absent_http404"
+                and record.get("origin_log_sha256") is None and not (directory / "origin-job.log").exists()
+                and file_digest(directory / "origin-job-log-fetch.json") == record.get("origin_log_fetch_sha256"),
+                "original missing-log evidence changed")
+        proof = read_json(directory / "origin-job-log-fetch.json")
+        require(proof.get("state") == "absent_http404" and proof.get("http_status") == 404,
+                "original missing log is not HTTP 404")
+        log = {"state": "absent_http404", "returncode": proof.get("returncode")}
+        for key in ("stdout", "stderr"):
+            path = directory / ("origin-job-log-fetch." + key)
+            require(file_digest(path) == proof.get(key + "_sha256"), "original log-fetch bytes changed")
+            log[key] = path.read_bytes()
+    collection = None
+    if listed is not None:
+        original = fresh_collection_identity(bundle, listed, record["index"])
+        require(file_digest(directory / "inspection-plan.zip") == record.get("inspection_plan_zip_sha256")
+                and file_digest(directory / "original-collection.zip") == record.get("original_collection_zip_sha256")
+                and "sha256:" + record["original_collection_zip_sha256"] == original["digest"],
+                "original inspection archives changed")
+        manifest = fresh_inspection_plan((directory / "inspection-plan.zip").read_bytes(), record["index"])
+        collection = inspect_fresh_collection((directory / "original-collection.zip").read_bytes(),
+                                             manifest, record["index"], original)
+        require(collection == record.get("collection_inspection"), "collection inspection record changed")
+    else:
+        require(record.get("collection_inspection") is None
+                and record.get("inspection_plan_zip_sha256") is None
+                and record.get("original_collection_zip_sha256") is None
+                and not (directory / "inspection-plan.zip").exists()
+                and not (directory / "original-collection.zip").exists(),
+                "missing-artifact recovery contains collection archives")
+    eligibility = validate_fresh_origin(record["repository"], record["origin_job_id"], record["index"], bundle, log, collection)
+    require(record.get("eligibility_state") == eligibility["state"]
+            and record.get("origin_exit_code") == eligibility["exit_code"], "fresh recovery eligibility changed")
+    return record
+
+
 def authorize(repository, job_id, index, run_id, attempt, controller, output):
     sha(controller, "controller revision", 40)
     require(run_id > 0 and run_id != ORIGIN_RUN and attempt > 0,
@@ -241,6 +519,8 @@ def authorize(repository, job_id, index, run_id, attempt, controller, output):
               "artifact": api(f"{prefix}/artifacts/{ARTIFACT_ID}"),
               "job": api(f"{prefix}/jobs/{job_id}"),
               "artifacts": api(f"{prefix}/runs/{ORIGIN_RUN}/artifacts?per_page=100")}
+    if index not in LEGACY_INDICES:
+        return authorize_fresh(repository, job_id, index, run_id, attempt, controller, output, bundle)
     log = api(f"{prefix}/jobs/{job_id}/logs", raw=True)
     collection, collection_zip, plan_zip = None, None, None
     if collection_requested(job_id, index):
@@ -278,6 +558,8 @@ def authorize(repository, job_id, index, run_id, attempt, controller, output):
 
 def authorization(directory):
     record = read_json(directory / "authorization.json")
+    if record.get("format_version") == 2:
+        return fresh_authorization(directory, record)
     require(record.get("format_version") == 1 and record.get("origin_run_id") == ORIGIN_RUN
             and record.get("origin_attempt") == ORIGIN_ATTEMPT
             and record.get("origin_exit_code") ==

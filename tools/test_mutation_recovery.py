@@ -303,6 +303,285 @@ class CollectionFailure27Eligibility(CollectionFailureEligibility):
     index = 27
 
 
+class FreshFailureEligibility(unittest.TestCase):
+    index = 46
+    job = 126992343007
+    artifact_id = 13392074343
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        source = copy.deepcopy(campaign()[0]["source"])
+        source["revision"] = recovery.SOURCE
+        self.diff = b"original scope\n"
+        candidates = [candidate(i) for i in range(64)]
+        self.manifest = make_manifest(source, hashlib.sha256(self.diff).hexdigest(), candidates,
+                                      [[value] for value in candidates])
+        self.plan = json.dumps(self.manifest).encode()
+        self.plan_zip = inspection_zip({"campaign.json": self.plan, "final.diff": self.diff})
+        self.base = f"target/final-mutation-shard-{self.index}/mutants.out/"
+        self.evidence = f"target/quality/shard-{self.index}/"
+        values = self.manifest["shards"][self.index]["candidates"]
+        self.outcomes = report(values, ["MissedMutant"])
+        self.entries = {self.base + "mutants.json": json.dumps(values),
+                        self.base + "outcomes.json": json.dumps(self.outcomes),
+                        self.evidence + "runner.log": recovery.UNTRACKED_ERROR + "\n",
+                        self.evidence + "exit-code.txt": "1\n"}
+        self.archive = inspection_zip(self.entries)
+        patcher = patch.object(recovery, "MANIFEST_SHA256", hashlib.sha256(self.plan).hexdigest())
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def bundle(self, collection=False):
+        value = origin()
+        value["job"].update(id=self.job, name=f"shard ({self.index}, {self.index}/64)")
+        if collection:
+            value["job"]["steps"][-1]["conclusion"] = "success"
+            value["collection_artifact"] = {
+                "id": self.artifact_id, "name": f"mutation-shard-{recovery.ORIGIN_RUN}-1-{self.index}",
+                "expired": False, "digest": "sha256:" + hashlib.sha256(self.archive).hexdigest(),
+                "size_in_bytes": len(self.archive), "workflow_run": copy.deepcopy(value["artifact"]["workflow_run"])}
+            value["artifacts"]["artifacts"].append(copy.deepcopy(value["collection_artifact"]))
+            value["artifacts"]["total_count"] = 2
+        return value
+
+    def log(self):
+        return {"state": "present", "bytes": b"2026-11-05T06:00:00Z ##[error]Process completed with exit code 1.\r\n"}
+
+    def missing_log(self):
+        return {"state": "absent_http404", "returncode": 1,
+                "stdout": b'{"message":"Not Found","status":"404"}',
+                "stderr": b"gh: Not Found (HTTP 404)\n"}
+
+    def authorize(self, bundle, log):
+        def api(path, raw=False):
+            self.assertFalse(raw)
+            if path.endswith(f"artifacts/{self.artifact_id}"):
+                return bundle["collection_artifact"]
+            if "/jobs/" in path:
+                return bundle["job"]
+            if path.endswith("artifacts?per_page=100"):
+                return bundle["artifacts"]
+            return bundle["artifact"] if path.endswith(f"artifacts/{recovery.ARTIFACT_ID}") else bundle["run"]
+        output = self.root / "control/target/recovery"
+        with patch.object(recovery, "api", side_effect=api), \
+                patch.object(recovery, "fetch_original_log", return_value=log), \
+                patch.object(recovery, "api_bytes", side_effect=[self.plan_zip, self.archive]):
+            recovery.authorize(recovery.REPOSITORY, self.job, self.index, 1234, 1, "a" * 40, output)
+        return output
+
+    def test_terminal_no_artifact_does_not_fabricate_finished_steps_or_exit(self):
+        bundle = self.bundle()
+        bundle["job"]["steps"][-2].update(status="in_progress", conclusion=None)
+        bundle["job"]["steps"][-1]["conclusion"] = None
+        before = copy.deepcopy(bundle)
+        result = recovery.validate_fresh_origin(recovery.REPOSITORY, self.job, self.index, bundle, self.missing_log())
+        self.assertEqual(result, {"state": "retry_eligible_from_terminal_failure_without_artifact", "exit_code": None})
+        self.assertEqual(bundle, before)
+
+    def test_success_wrong_source_repo_attempt_job_and_legacy_index_fail_closed(self):
+        for section, key, value in [
+            ("run", "id", 2), ("run", "head_sha", "f" * 40), ("run", "run_attempt", 2),
+            ("run", "run_attempt", True),
+            ("run", "event", "push"), ("run", "path", "other.yml"),
+            ("artifact", "expired", True), ("artifact", "id", 2), ("artifact", "name", "other"),
+            ("job", "id", 2), ("job", "run_id", 2), ("job", "head_sha", "f" * 40),
+            ("job", "run_attempt", 2), ("job", "name", "shard (45, 45/64)"),
+            ("job", "run_attempt", True),
+            ("job", "status", "in_progress"), ("job", "conclusion", "success")]:
+            bundle = self.bundle()
+            bundle[section][key] = value
+            with self.subTest(section=section, key=key), self.assertRaises(ValueError):
+                recovery.validate_fresh_origin(recovery.REPOSITORY, self.job, self.index, bundle, self.log())
+        for index in [20, 21, 27, -1, 64, True, 46.0]:
+            with self.subTest(index=index), self.assertRaises(ValueError):
+                recovery.validate_fresh_identity(recovery.REPOSITORY, self.job, index, self.bundle())
+        for repository in ["other/repo", "sugarfreedonoso/bml"]:
+            with self.assertRaises(ValueError):
+                recovery.validate_fresh_identity(repository, self.job, self.index, self.bundle())
+        for section in ["run", "artifact"]:
+            bundle = self.bundle()
+            parent = bundle[section]["repository"] if section == "run" else bundle[section]["workflow_run"]
+            parent["id" if section == "run" else "repository_id"] = 2
+            with self.assertRaises(ValueError):
+                recovery.validate_fresh_identity(recovery.REPOSITORY, self.job, self.index, bundle)
+
+    def test_incomplete_duplicate_ambiguous_inventory_or_existing_uninspected_artifact_fails(self):
+        cases = []
+        partial = self.bundle()
+        partial["artifacts"]["total_count"] = 2
+        cases.append(partial)
+        duplicate = self.bundle()
+        duplicate["artifacts"]["artifacts"] *= 2
+        duplicate["artifacts"]["total_count"] = 2
+        cases.append(duplicate)
+        ambiguous = self.bundle(True)
+        other = {**ambiguous["collection_artifact"], "id": self.artifact_id + 1}
+        ambiguous["artifacts"]["artifacts"].append(other)
+        ambiguous["artifacts"]["total_count"] = 3
+        cases.extend([ambiguous, self.bundle(True)])
+        for bundle in cases:
+            with self.subTest(bundle=bundle), self.assertRaises(ValueError):
+                recovery.validate_fresh_origin(recovery.REPOSITORY, self.job, self.index, bundle, self.log())
+
+    def test_missing_log_roundtrip_retains_real_404_bytes_and_no_fake_log(self):
+        output = self.authorize(self.bundle(), self.missing_log())
+        record = recovery.authorization(output)
+        self.assertEqual(record["format_version"], 2)
+        self.assertEqual(record["origin_log_state"], "absent_http404")
+        self.assertIsNone(record["origin_exit_code"])
+        self.assertIsNone(record["origin_log_sha256"])
+        self.assertFalse((output / "origin-job.log").exists())
+        self.assertEqual((output / "origin-job-log-fetch.stdout").read_bytes(), self.missing_log()["stdout"])
+        self.assertEqual((output / "origin-job-log-fetch.stderr").read_bytes(), self.missing_log()["stderr"])
+        (output / "origin-job-log-fetch.stderr").write_bytes(b"gh: HTTP 403\n")
+        with self.assertRaisesRegex(ValueError, "bytes changed"):
+            recovery.authorization(output)
+
+    def test_present_log_roundtrip_keeps_crlf_and_requires_actual_logged_exit(self):
+        log = {"state": "present", "bytes": LOG.replace("\n", "\r\n").encode()}
+        output = self.authorize(self.bundle(), log)
+        record = recovery.authorization(output)
+        self.assertEqual(record["origin_exit_code"], 143)
+        self.assertEqual((output / "origin-job.log").read_bytes(), log["bytes"])
+        self.assertEqual(record["origin_log_state"], "present")
+        self.assertFalse((output / "origin-job-log-fetch.json").exists())
+
+    def test_rehashed_404_proof_cannot_hide_403_or_fabricate_an_origin_log(self):
+        output = self.authorize(self.bundle(), self.missing_log())
+        stderr = output / "origin-job-log-fetch.stderr"
+        stderr.write_bytes(b"gh: HTTP 403\n")
+        proof = json.loads((output / "origin-job-log-fetch.json").read_text())
+        proof["stderr_sha256"] = file_digest(stderr)
+        (output / "origin-job-log-fetch.json").write_text(json.dumps(proof))
+        record = json.loads((output / "authorization.json").read_text())
+        record["origin_log_fetch_sha256"] = file_digest(output / "origin-job-log-fetch.json")
+        (output / "authorization.json").write_text(json.dumps(record))
+        with self.assertRaisesRegex(ValueError, "authenticated HTTP 404"):
+            recovery.authorization(output)
+
+    def test_api_failure_never_creates_generic_authorization(self):
+        output = self.root / "failed-authorization"
+        with patch.object(recovery, "fetch_original_log", side_effect=subprocess.CalledProcessError(
+                1, ["gh", "api", "logs"], output=b"error", stderr=b"gh: HTTP 401\n")), \
+                self.assertRaises(subprocess.CalledProcessError):
+            recovery.authorize_fresh(recovery.REPOSITORY, self.job, self.index, 1234, 1,
+                                     "a" * 40, output, self.bundle())
+        self.assertFalse(output.exists())
+
+    def test_api_bound_collection_roundtrip_is_eligibility_only_and_preserves_missed(self):
+        output = self.authorize(self.bundle(True), self.log())
+        record = recovery.authorization(output)
+        self.assertEqual(record["eligibility_state"], "retry_eligible_from_api_bound_collection_failure")
+        inspection = record["collection_inspection"]
+        self.assertEqual(inspection["raw_counts"]["missed"], 1)
+        self.assertIn("unattested", inspection["source_state"])
+        self.assertTrue(record["fresh_execution_required"])
+        self.assertEqual((output / "original-collection.zip").read_bytes(), self.archive)
+        self.assertFalse((self.root / "source").exists())
+        self.assertEqual(list(self.root.rglob("outcomes.json")), [])
+        self.assertEqual(list(self.root.rglob("*shard-result*.json")), [])
+        (output / "original-collection.zip").write_bytes(self.archive + b"tampered")
+        with self.assertRaisesRegex(ValueError, "archives changed"):
+            recovery.authorization(output)
+
+    def test_reauthenticated_partial_failed_baseline_wrong_candidates_or_any_seal_fails(self):
+        for case in ["guard", "incomplete", "baseline", "candidate", "seal", "root-seal", "controller-seal", "exit"]:
+            entries = dict(self.entries)
+            if case == "guard":
+                entries[self.evidence + "runner.log"] += "another error\n"
+            elif case in {"incomplete", "baseline"}:
+                outcomes = copy.deepcopy(self.outcomes)
+                if case == "incomplete":
+                    outcomes["end_time"] = None
+                else:
+                    outcomes["outcomes"][0]["summary"] = "Failure"
+                entries[self.base + "outcomes.json"] = json.dumps(outcomes)
+            elif case == "candidate":
+                entries[self.base + "mutants.json"] = json.dumps([candidate(3)])
+            elif case == "exit":
+                entries[self.evidence + "exit-code.txt"] = "2\n"
+            else:
+                prefix = "" if case == "root-seal" else "target/quality/"
+                stem = "controller-shard-result" if case == "controller-seal" else "shard-result"
+                entries[f"{prefix}{stem}-{self.index}.json"] = "{}"
+            blob = inspection_zip(entries)
+            artifact = {**self.bundle(True)["collection_artifact"], "digest": "sha256:" + hashlib.sha256(blob).hexdigest(),
+                        "size_in_bytes": len(blob)}
+            with self.subTest(case=case), self.assertRaises(ValueError):
+                recovery.inspect_fresh_collection(blob, self.manifest, self.index, artifact)
+
+    def test_collection_requires_exact_api_inventory_digest_source_upload_and_present_log(self):
+        bundle = self.bundle(True)
+        artifact = bundle["collection_artifact"]
+        inspected = recovery.inspect_fresh_collection(self.archive, self.manifest, self.index, artifact)
+        for key, value in [("id", 1), ("expired", True), ("digest", "sha256:" + "0" * 64),
+                           ("name", "other"), ("size_in_bytes", len(self.archive) + 1)]:
+            changed = copy.deepcopy(bundle)
+            changed["collection_artifact"][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                recovery.validate_fresh_origin(recovery.REPOSITORY, self.job, self.index, changed, self.log(), inspected)
+        for case in ["wrong-source", "upload", "duplicate-step", "missing-log"]:
+            changed = copy.deepcopy(bundle)
+            log = self.log()
+            if case == "wrong-source":
+                for item in [changed["collection_artifact"], changed["artifacts"]["artifacts"][-1]]:
+                    item["workflow_run"]["head_sha"] = "f" * 40
+            elif case == "upload":
+                changed["job"]["steps"][-1]["conclusion"] = "failure"
+            elif case == "duplicate-step":
+                changed["job"]["steps"].append(copy.deepcopy(changed["job"]["steps"][-1]))
+            else:
+                log = self.missing_log()
+            with self.subTest(case=case), self.assertRaises(ValueError):
+                recovery.validate_fresh_origin(recovery.REPOSITORY, self.job, self.index, changed, log, inspected)
+        for blob in [self.archive + b"changed", self.archive[:-1]]:
+            with self.assertRaisesRegex(ValueError, "size or digest"):
+                recovery.inspect_fresh_collection(blob, self.manifest, self.index, artifact)
+
+    def test_tampered_v2_identity_or_downgrade_cannot_authorize(self):
+        output = self.authorize(self.bundle(), self.missing_log())
+        original = json.loads((output / "authorization.json").read_text())
+        for key, value in [("format_version", 1), ("eligibility_state", "retry_eligible_from_runner_shutdown"),
+                           ("origin_exit_code", 143), ("fresh_execution_required", False),
+                           ("origin_attempt", 2), ("index", 21), ("recovery_run_id", recovery.ORIGIN_RUN)]:
+            record = {**original, key: value}
+            (output / "authorization.json").write_text(json.dumps(record))
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                recovery.authorization(output)
+
+
+class MissingLogResponses(unittest.TestCase):
+    def test_both_real_404_shapes_are_preserved_and_no_other_error_is_hidden(self):
+        responses = [(b'{"message":"Not Found","status":"404"}', b"gh: Not Found (HTTP 404)\n"),
+                     (b'\xef\xbb\xbf<?xml version="1.0" encoding="utf-8"?><Error><Code>BlobNotFound</Code>'
+                      b'<Message>The specified blob does not exist.\nRequestId:actual\nTime:actual</Message></Error>',
+                      b"gh: HTTP 404\n")]
+        for stdout, stderr in responses:
+            error = subprocess.CalledProcessError(1, ["gh", "api", "logs"], output=stdout, stderr=stderr)
+            with self.subTest(stderr=stderr), patch.object(recovery.subprocess, "check_output", side_effect=[
+                    "--allow-escape-sequences", error]) as check:
+                result = recovery.fetch_original_log("logs")
+            self.assertEqual(result, {"state": "absent_http404", "stdout": stdout, "stderr": stderr, "returncode": 1})
+            self.assertEqual(check.call_args.args[0], ["gh", "api", "--allow-escape-sequences", "logs"])
+            self.assertEqual(check.call_args.kwargs, {"stderr": subprocess.PIPE})
+        for code, stdout, stderr in [
+            (1, b'{"message":"Not Found","status":"404"}', b"gh: HTTP 403\n"),
+            (1, b'{"message":"Not Found","status":"401"}', b"gh: Not Found (HTTP 404)\n"),
+            (1, b"", b"gh: HTTP 404\n"), (1, b"garbage", b"gh: HTTP 404\n"),
+            (1, responses[1][0], b"gh: HTTP 500\n"), (1, responses[0][0], b"gh: HTTP 401\n"),
+            (1, responses[1][0].replace(b"BlobNotFound", b"AuthenticationFailed"), b"gh: HTTP 404\n"),
+            (1, b'<!DOCTYPE Error>' + responses[1][0], b"gh: HTTP 404\n"),
+            (1, responses[0][0], b"gh: Not Found (HTTP 404)\nERROR other\n"),
+            (2, responses[0][0], responses[0][1]),
+        ]:
+            error = subprocess.CalledProcessError(code, ["gh", "api", "logs"], output=stdout, stderr=stderr)
+            with self.subTest(code=code, stderr=stderr), patch.object(recovery.subprocess, "check_output", side_effect=["help", error]), \
+                    self.assertRaises(subprocess.CalledProcessError):
+                recovery.fetch_original_log("logs")
+
+
 class RecoveredShardEvidence(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
