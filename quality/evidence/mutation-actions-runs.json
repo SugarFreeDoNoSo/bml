@@ -1,6 +1,6 @@
 {
-  "status": "preparation_failed_fix_validated",
-  "observed_at_utc": "2026-11-05T01:39:56.785481+00:00",
+  "status": "running",
+  "observed_at_utc": "2026-11-05T01:43:20.031049+00:00",
   "scope": "Full development mutation campaign attempts; no passing complete campaign claim.",
   "runs": [
     {
@@ -17,6 +17,32 @@
       "failure": "cargo-mutants27.1.0 requires --shard when --sharding is passed; global listing incorrectly included --sharding",
       "log": "target/quality/mutation-actions-first-failure.log",
       "log_sha256": "46460f1346b5e95ed8aa2bd3f79ed699d6200de9804c811462ade25606c05080"
+    },
+    {
+      "id": 41950170549,
+      "attempt": 1,
+      "url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41950170549",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "requested_shards": 64,
+      "status": "in_progress",
+      "conclusion": null,
+      "created_at": "2026-11-05T01:41:05Z",
+      "phase": "prepare passed; eight shards observed running, remaining queued; results pending",
+      "gguf_no_default_features": "passed",
+      "gguf_all_features": "passed",
+      "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+      "manifest_source_matches_clean_local_smoke": true,
+      "candidate_count": 5183,
+      "candidates_sha256": "a9e547818b64a3409acdc7786ee6633033c6b2dee7a36e96cea77322eacf2307",
+      "diff_sha256": "ed5a4fe4236c18b9577e3939e9efbb974ecd3b2151fb031a58498050344ac26b",
+      "shard_count": 64,
+      "shard_sizes": {
+        "81": 63,
+        "80": 1
+      },
+      "downloaded_manifest": "target/quality/mutation-plan-41950170549/campaign.json",
+      "independent_prepare_log": "target/quality/mutation-actions-prepare-41950170549.log",
+      "independent_prepare_log_sha256": "52f520a160f179c30884a4f76805d6855c0e110b2b81fd4117e2b512d7cc9d0a"
     }
   ],
   "fix": {
@@ -28,6 +54,22 @@
       "tools/merge_mutation_shards.py": "9a63c6ce36611e6c6cfb6e18df68392b8ffe4d30c0ca1c3674de4c1f1499400c",
       "tools/test_merge_mutation_shards.py": "6e252cbc65c23d753b2edc71eef73863401a14e8c5df4c634e9d2b1ba4940ca1"
     },
-    "full_frozen_prepare_smoke": "pending"
+    "full_frozen_prepare_smoke": {
+      "status": "passed",
+      "revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "base_revision": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+      "candidates": 5183,
+      "shards": [
+        2592,
+        2591
+      ],
+      "scope": "Complete prepare command on clean detached checkout. Candidate listing only; no mutant builds or tests.",
+      "manifest": "target/wave-complete-mutation-prepare/target/quality/campaign-smoke.json",
+      "manifest_file_sha256": "c900e0a05e65d467bc3ef5650cea6b51c5233e352276a3461bb9433e843bec5e",
+      "candidates_sha256": "a9e547818b64a3409acdc7786ee6633033c6b2dee7a36e96cea77322eacf2307",
+      "diff_sha256": "ed5a4fe4236c18b9577e3939e9efbb974ecd3b2151fb031a58498050344ac26b",
+      "log": "target/quality/mutation-actions-frozen-prepare-smoke.log",
+      "log_sha256": "eac82a829b67e578b5a28869a3311d115c671da4bd130b32da0979fbe5976c19"
+    }
   }
 }
