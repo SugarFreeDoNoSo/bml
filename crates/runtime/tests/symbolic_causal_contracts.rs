@@ -100,6 +100,87 @@ fn close(actual: &[f64], expected: &[f64]) {
     }
 }
 #[test]
+fn lazy_kernel_cache_enforces_the_sum_of_distinct_program_sizes() {
+    use bml_compiler::{
+        symbolic_artifact::{compile_directory_bounded, load_directory},
+        symbolic_bounded::BoundedProfile,
+        symbolic_kernels::KernelLimits,
+    };
+    let source = symbolic_fixture::fixture(0.25);
+    struct ArtifactDirectory(std::path::PathBuf);
+    impl Drop for ArtifactDirectory {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let directory = ArtifactDirectory(source.0.with_extension("cache-op-budget"));
+    std::fs::create_dir(&directory.0).unwrap();
+    let profile = BoundedProfile::default();
+    // The one-position public AOT plan supplies independently countable
+    // program sizes for exactly the operation widths required by this input.
+    compile_directory_bounded(&source.0, &directory.0, 1, profile, KernelLimits::default())
+        .unwrap();
+    let loaded = load_directory(&directory.0, None).unwrap();
+    let per_kernel: Vec<usize> = loaded
+        .kernels
+        .iter()
+        .map(|kernel| {
+            kernel
+                .graphs
+                .iter()
+                .flat_map(|graph| &graph.fragments)
+                .map(|fragment| fragment.ops.len())
+                .sum()
+        })
+        .collect();
+    let total_ops: usize = per_kernel.iter().sum();
+    let largest_kernel = *per_kernel.iter().max().unwrap();
+    let total_programs = loaded
+        .kernels
+        .iter()
+        .map(|kernel| kernel.graphs.len())
+        .sum();
+    assert!(per_kernel.len() > 1);
+    assert!(total_ops > largest_kernel && largest_kernel > 0);
+    drop(loaded);
+
+    let limits = SymbolicLimits {
+        max_cached_ops: total_ops,
+        max_programs: total_programs,
+        ..SymbolicLimits::default()
+    };
+    let mut admitted = SymbolicCausalModel::open_bounded(&source.0, limits, profile).unwrap();
+    assert!(admitted.executed_operations().is_empty());
+    let mut admitted_cache = HashConsedKV::new(1, 1, 2, 1);
+    let logits = admitted.forward_cached(&[69], &mut admitted_cache).unwrap();
+    assert_eq!(logits.len(), 260);
+    assert!(logits.iter().all(|value| value.is_finite()));
+    close(&logits, &oracle(&[69], true));
+    assert_eq!(admitted_cache.current_pos(), 1);
+    assert!(admitted.executed_operations().len() > 1);
+
+    // Every individual kernel fits this limit, but the complete forward pass
+    // requires their sum. Repeated calls to an already cached kernel must not
+    // consume another copy of its program budget.
+    let mut rejected = SymbolicCausalModel::open_bounded(
+        &source.0,
+        SymbolicLimits {
+            max_cached_ops: largest_kernel,
+            ..limits
+        },
+        profile,
+    )
+    .unwrap();
+    let mut rejected_cache = HashConsedKV::new(1, 1, 2, 1);
+    let error = rejected
+        .forward_cached(&[69], &mut rejected_cache)
+        .unwrap_err();
+    assert!(error.contains("budget"), "{error}");
+    assert_eq!(rejected_cache.current_pos(), 0);
+    assert!(rejected.executed_operations().contains(&"rms_norm"));
+}
+
+#[test]
 fn full_symbolic_causal_model_matches_independent_gqa_rope_and_nonzero_mlp_oracle() {
     let source = symbolic_fixture::fixture(0.25);
     let mut model = SymbolicCausalModel::open(&source.0, SymbolicLimits::default()).unwrap();
