@@ -1,0 +1,27 @@
+{
+  "status": "prepared_and_fixture_tested_not_full_model_validation",
+  "observed_at_utc": "2026-11-05T09:39:10.093160+00:00",
+  "source_revision": "bbb89735100e2e4ec6486f3b7029e48977944f3c",
+  "unit_tests_passed": 11,
+  "unit_test_exit_code": 0,
+  "unit_test_log_sha256": "2deabf1bb8ee62f3b06fc9b9ae90cdf58bf84c21ffac217b4acf1ddce7335cb6",
+  "unit_test_command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "quality/evidence/current-real-prompts-verifier",
+    "-p",
+    "test_*.py",
+    "-v"
+  ],
+  "published_file_sha256": {
+    "preparation-handoff.json": "7ad8d0419a533416cb6480a427ddeb8c72cb4ac56098a6a13754a3847e64abc7",
+    "verify_real_prompts.py": "7174959a8b291219ab34e0c2fd671346e7b0df118cab3114be3fcf8e6695906b",
+    "README.md": "7fa130f0f355fad062a3a57215e977bbc769f7125fa20490c24f84340ab24570",
+    "test_verify_real_prompts.py": "6346ee9ec1a2e9a68ed9fe0055f1963b34ed58c1dffda5e745852416d62c9c0c"
+  },
+  "root_review": "Exact report statistics recomputed from complete saved bytes in the driver arithmetic order; Rust total_cmp argmax tie behavior; missing/pending/native-only runs cannot qualify. Header/source/archive/model/AOT identities checked before any completed output. No numerical parity threshold added.",
+  "limits": "Both real full prompt results remain pending. Eleven small synthetic tests and original-input authentication do not establish full-model execution, performance or overall task completion."
+}

@@ -39,6 +39,8 @@ con reparto round-robin entre réplicas completas. Falta ejecución numérica co
 
 - [ ] 8.6.7 Capturar build original y fuentes actuales de ese driver en target exclusivo; verificar ambos preflights nativos Hello/Hi antes de ejecutar los dos casos completos con cachés independientes, max_nodes=0 y vectores íntegros por posición. Sólo un resumen completo y verificado por caso aporta evidencia; los reportes parciales o sólo nativos no cierran esta tarea ni 8.6. Captura original del build bbb8973 verificada y conservada en `quality/evidence/current-real-prompts-build-native.tar.gz`; ambos preflights nativos completaron. Hello ejecuta BML con PID4116115 y Hi queda en cola serial; el lanzamiento no acredita resultados completos (`quality/evidence/current-real-prompts-launch.json`).
 
+- [x] 8.6.8 Preparar verificador portátil para los dos diagnósticos completos Hello/Hi: build original y796 blobsGitbbb, binario/modelo/13archivosAOT fijados, protocolos e inputs, ocho vectores íntegros de32000f64 y estadísticas/argmax/cache reproducidos. Rechaza pendientes, parciales y sólo nativos; no añade umbral de paridad ni output esperado inventado. Once fixtures Python pasan en el paquete publicado `quality/evidence/current-real-prompts-verifier/`; sólo preparación, ambos resultados reales de8.6.7 siguen pendientes.
+
 ## 9. Pruebas de concurrencia
 
 Diagnóstico adicional de 8.6: el caso de una sola componente `x=1`, `weight=4`,

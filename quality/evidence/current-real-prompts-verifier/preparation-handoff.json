@@ -1,0 +1,82 @@
+{
+  "status": "prepared_verifier_only_both_full_results_required",
+  "prepared_at": "2026-11-05T09:37:12.826369+00:00",
+  "source_revision": "bbb89735100e2e4ec6486f3b7029e48977944f3c",
+  "unit_fixtures": {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "target/quality/current-real-prompts-verifier",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "passed": 11,
+    "elapsed_seconds": 0.323,
+    "scope": "synthetic saved-byte fixtures only; no real-model validation"
+  },
+  "input_authentication": {
+    "published_archive_sha256": "b841fbe317c8dd96e37f6975f606adfac1adf365bb38d5cb625cd27a478f8528",
+    "archive_members": 27,
+    "source_blobs_matched": 796,
+    "measured_binary_sha256": "f65902f207d85ff0cb0a3ccb148604d1f177199c7de8fdaead0bb0ffbd931c2f",
+    "scope": "original build receipt and source/binary input authentication only; no full result claim"
+  },
+  "pending_real_run_probe": {
+    "status": "expected_rejection_only_no_full_result_claim",
+    "command": [
+      "python3",
+      "target/quality/current-real-prompts-verifier/verify_real_prompts.py",
+      "/home/dev/Work/bml",
+      "/home/dev/Work/bml/target/quality/real-prompts-bbb89735100e"
+    ],
+    "exit_code": 1,
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "38f1059c6c5c4b986c3e4d5b88f6361904a1383c56770964d475368dacee627d"
+  },
+  "files": [
+    {
+      "file": "README.md",
+      "bytes": 4985,
+      "sha256": "76a6d3618feb91110c5eac7baf7b183e493655e64ca8946ac1bc405615e2f059"
+    },
+    {
+      "file": "pending-check.json",
+      "bytes": 457,
+      "sha256": "5ba5dfa7349acaf5724f62e044970d10e5f306953acc0962802b7318f50166b2"
+    },
+    {
+      "file": "pending-check.stderr",
+      "bytes": 79,
+      "sha256": "38f1059c6c5c4b986c3e4d5b88f6361904a1383c56770964d475368dacee627d"
+    },
+    {
+      "file": "pending-check.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "test_verify_real_prompts.py",
+      "bytes": 8229,
+      "sha256": "6346ee9ec1a2e9a68ed9fe0055f1963b34ed58c1dffda5e745852416d62c9c0c"
+    },
+    {
+      "file": "unit-tests.log",
+      "bytes": 2006,
+      "sha256": "3e068348d735239317d1befdcfa0a0163d32340ba83962820e25908aa5ebf151"
+    },
+    {
+      "file": "verify_real_prompts.py",
+      "bytes": 20860,
+      "sha256": "7174959a8b291219ab34e0c2fd671346e7b0df118cab3114be3fcf8e6695906b"
+    }
+  ],
+  "limitations": [
+    "No completed real Hello/Hi verification performed. All-case pass requires both full result sets.",
+    "No policy, spec, numeric threshold, compiler/runtime source or running process was changed.",
+    "Only Python standard library and read-only Git plumbing are used."
+  ]
+}
