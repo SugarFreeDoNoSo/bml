@@ -21,3 +21,4 @@ crossbeam.workspace = true
 bml-model-weights = { path = "../model-weights", features = ["gguf-import"] }
 loom.workspace = true
 proptest.workspace = true
+serde_json.workspace = true

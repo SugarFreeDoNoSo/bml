@@ -295,6 +295,7 @@ dependencies = [
  "crossbeam",
  "loom",
  "proptest",
+ "serde_json",
 ]
 
 [[package]]

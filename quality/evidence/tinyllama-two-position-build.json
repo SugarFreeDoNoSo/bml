@@ -1,0 +1,62 @@
+{
+  "status": "retrospective_build_supplement",
+  "scope": "Reproduction inputs checked after the measured binary was copied. This does not claim to capture the original compiler process command or environment. The active campaign remains authoritative for runtime state.",
+  "recorded_at_utc": "2026-11-05T01:12:49.528109+00:00",
+  "campaign": "quality/evidence/tinyllama-two-position-diagnostic.json",
+  "measured_binary_sha256": "6457b36dfb30a04c3b94ffe758cef33633b73d6a5b28817a95889ce7c02ebaf7",
+  "root_manifest": {
+    "path": "Cargo.toml",
+    "sha256": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+    "matches_base_revision": "236a46d3cff6cb1f1951894a231743fc90154c8c"
+  },
+  "compiler_artifact_build_record": {
+    "path": "target/quality/two-position-release-build.jsonl",
+    "sha256": "f1e3053d0a993aa0103d3e65463e9ec6180063e1006c0c8843a42e056fd76ca7",
+    "profile": {
+      "opt_level": "3",
+      "debuginfo": 0,
+      "debug_assertions": false,
+      "overflow_checks": false,
+      "test": true
+    },
+    "features": [],
+    "target": {
+      "kind": [
+        "test"
+      ],
+      "crate_types": [
+        "bin"
+      ],
+      "name": "real_model_two_position_diagnostic",
+      "src_path": "/home/dev/Work/bml/crates/runtime/tests/real_model_two_position_diagnostic.rs",
+      "edition": "2021",
+      "doc": false,
+      "doctest": false,
+      "test": true
+    },
+    "original_executable": "/home/dev/Work/bml/target/entrypoint-repair-build/release/deps/real_model_two_position_diagnostic-5c9825f0b44744d7"
+  },
+  "reproduction_command": [
+    "cargo",
+    "test",
+    "--release",
+    "-p",
+    "bml-runtime",
+    "--test",
+    "real_model_two_position_diagnostic",
+    "--locked",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "reproduction_environment": {
+    "PATH_prefix": "/tmp/bml-cargo/bin",
+    "CARGO_HOME": "/tmp/bml-cargo",
+    "RUSTUP_HOME": "/tmp/bml-rustup",
+    "CARGO_TARGET_DIR": "/home/dev/Work/bml/target/entrypoint-repair-build",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "TMPDIR": "/home/dev/Work/bml/target/tool-install-tmp"
+  },
+  "rustc_checked_retrospectively": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n"
+}

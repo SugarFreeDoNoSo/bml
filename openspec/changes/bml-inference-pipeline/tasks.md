@@ -26,6 +26,8 @@ con reparto round-robin entre réplicas completas. Falta ejecución numérica co
 
 - [x] 8.7 Acreditar pesos GGUF por referencia mmap y generación real desde `.bmlgraph`. C56/C57 verifican programas persistidos y metadatos/bindings; TinyLlama compilado completó diez tokens sin copiar pesos y con la misma salida textual que el nativo mapeado. Evidencia `quality/evidence/tinyllama-compiled-causal.json`; no acredita la traducción BML pendiente en 8.6 ni aceleración.
 
+- [x] 8.6.1 Preparar y lanzar un diagnóstico reproducible de dos posiciones TinyLlama sin reconstrucción de kernels. `real_model_two_position_symbolic_logit_diagnostic` verifica AOT v4, contexto 2, hash del modelo y perfil completo; usa `max_nodes=0`, IDs fijos [1, 29958] y cachés independientes. El AOT nuevo conserva las cotas BOS salvo RoPE32/atención20; CLI y diagnóstico compilan con el toolchain fijado y `--locked`. Guarda vectores y estadísticas por posición, y el resumen solo al completar ambas. Procedencia en `quality/evidence/tinyllama-two-position-diagnostic.json`; la ejecución larga y la evaluación de su resultado siguen pendientes y no acreditan paridad ni cierran 8.6.
+
 ## 9. Pruebas de concurrencia
 
 Diagnóstico adicional de 8.6: el caso de una sola componente `x=1`, `weight=4`,

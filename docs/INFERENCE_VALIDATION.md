@@ -469,3 +469,52 @@ cargo test -p bml-runtime --test symbolic_causal_contracts --release --locked \
 The output contains `native-logits.f64le`, `symbolic-logits.f64le` and
 `summary.txt`. Absence of the latter two means the symbolic forward has not
 completed successfully; the native vector alone is not symbolic evidence.
+
+## Two-position symbolic diagnostic
+
+`real_model_two_position_symbolic_logit_diagnostic` uses the fixed TinyLlama
+tokens `[1, 29958]`, independent native/symbolic KV caches of capacity two and
+an authenticated v4 AOT loaded with `max_nodes=0`. The new artifact keeps the
+BOS profile except for RoPE32 and attention20. Its complete declarations and
+source hash are checked before either symbolic forward; the per-operation
+probes supporting these bounds do not guarantee end-to-end admission.
+
+Prepare a new artifact without overwriting the recorded BOS artifact:
+
+```sh
+cargo run --release -p bml-cli --locked -- compile \
+  --model target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf \
+  --output target/quality/tinyllama-bounded-two-position32-20 \
+  --distributed --context-size 2 --symbolic-large-budget --l1-threshold 32768 \
+  --distributed-rms-input-bound 160 --distributed-rms-weight-bound 4 \
+  --distributed-projection-input-bound 64 --distributed-projection-weight-bound 4 \
+  --distributed-rope-bound 32 --distributed-attention-bound 20 \
+  --distributed-residual-bound 160 \
+  --distributed-down-input-bound 256 --distributed-down-weight-bound 1.5 \
+  --distributed-gate-bound 18 --distributed-up-bound 16
+```
+
+Run only the exact ignored diagnostic, with a new output directory:
+
+```sh
+BML_TEST_GGUF=target/bml-1.0/tinyllama/tinyllama-1.1b-chat-v1.0.Q4_0.gguf \
+BML_TEST_SYMBOLIC_ARTIFACT=target/quality/tinyllama-bounded-two-position32-20 \
+BML_TEST_LOGITS_DIR=target/quality/tinyllama-two-position-logits \
+cargo test --release -p bml-runtime --test real_model_two_position_diagnostic \
+  --locked real_model_two_position_symbolic_logit_diagnostic \
+  -- --ignored --exact --nocapture
+```
+
+Each completed position retains `native-N.f64le`, `symbolic-N.f64le` and
+`position-N.json`; `summary.json` is written only after both positions succeed.
+This can take hours. Finiteness, cache positions and complete vectors are
+checked; argmax and maximum/mean/RMS differences are observations without a
+preset parity threshold. Preserve partial output on failure and identify the
+offending operation before changing a profile or expansion. Keep GGUF, AOT
+and measured binary immutable throughout the run, and record their hashes.
+
+The active campaign is recorded in
+`quality/evidence/tinyllama-two-position-diagnostic.json`. Supplementary build
+inputs and a reproduction command are in
+`quality/evidence/tinyllama-two-position-build.json`; the latter explicitly
+distinguishes retrospective checks from metadata captured at build time.
