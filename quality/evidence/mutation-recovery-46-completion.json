@@ -1,0 +1,115 @@
+{
+  "format_version": 1,
+  "observed_at": "2026-11-05T10:29:07.199872+00:00",
+  "status": "authenticated_complete_fresh_recovery",
+  "repository": "SugarFreeDoNoSo/bml",
+  "run_id": 42002319364,
+  "run_attempt": 1,
+  "run_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/42002319364",
+  "job_id": 127160327341,
+  "workflow_path": ".github/workflows/mutation-recovery.yml",
+  "controller_revision": "9c3e5f36d6721a0733b97e97db50f9a094f5508e",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "source_base_revision": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+  "shard": "46/64",
+  "actual_inputs_verified": {
+    "original_job": "126992343007",
+    "shard_index": "46"
+  },
+  "input_evidence": "Actual API job log environment and validated format2 authorization agree with the unique dispatched run.",
+  "artifact": {
+    "id": 13406565257,
+    "name": "mutation-recovery-41950170549-42002319364-1-46",
+    "digest": "sha256:90be1deaa408631cb4cd14940eb58237d6ab81191592565e8a3efd226e74a75b",
+    "size_in_bytes": 10212429,
+    "created_at": "2026-11-05T10:10:11Z",
+    "expires_at": "2026-11-08T10:10:09Z"
+  },
+  "campaign_manifest_sha256": "cfee7050785ae54c46f84826c3c9e155540d4b22a4dab4793adfb14471d9322e",
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "authorization_format_version": 2,
+  "authorization_sha256": "93fbd0aafe725a997d1789c64e62947d7a5d16c08628c2f1c046b32647a824bb",
+  "eligibility_state": "retry_eligible_from_api_bound_collection_failure",
+  "fresh_execution_required": true,
+  "original_raw_reused": false,
+  "baseline": {
+    "summary": "Success",
+    "phases": [
+      {
+        "phase": "Build",
+        "duration": 39.931613343,
+        "process_status": "Success",
+        "argv": [
+          "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+          "test",
+          "--no-run",
+          "--verbose",
+          "--package=bml-cli@0.1.0",
+          "--package=bml-compiler@0.1.0",
+          "--package=bml-domain@1.0.0",
+          "--package=bml-gguf@1.0.0",
+          "--package=bml-inference@1.0.0",
+          "--package=bml-kernels@1.0.0",
+          "--package=bml-model-weights@1.0.0",
+          "--package=bml-runtime@0.1.0",
+          "--package=bml-server@0.1.0",
+          "--package=bml-worker@0.1.0",
+          "--locked"
+        ]
+      },
+      {
+        "phase": "Test",
+        "duration": 45.947336614,
+        "process_status": "Success",
+        "argv": [
+          "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+          "test",
+          "--verbose",
+          "--package=bml-cli@0.1.0",
+          "--package=bml-compiler@0.1.0",
+          "--package=bml-domain@1.0.0",
+          "--package=bml-gguf@1.0.0",
+          "--package=bml-inference@1.0.0",
+          "--package=bml-kernels@1.0.0",
+          "--package=bml-model-weights@1.0.0",
+          "--package=bml-runtime@0.1.0",
+          "--package=bml-server@0.1.0",
+          "--package=bml-worker@0.1.0",
+          "--locked"
+        ]
+      }
+    ]
+  },
+  "candidate_count": 81,
+  "raw_counts": {
+    "caught": 55,
+    "missed": 20,
+    "unviable": 6,
+    "timeout": 0
+  },
+  "raw_start_time": "2026-11-05T09:26:31.000899525Z",
+  "raw_end_time": "2026-11-05T10:10:03.770492748Z",
+  "raw_outcomes_sha256": "0d7ccdd99bb7e324f76a0a7a7fcc6045d9b99dc5ba5fd1500d96c578cda11a29",
+  "candidates_sha256": "e830194f505377538401a846f88e052e182f567df1704e71dd17eab1b58c0b5f",
+  "runner_exit_code": 1,
+  "cargo_mutants_exit_code": null,
+  "seal_format_version": 1,
+  "sealer": {
+    "method": "controller-live-source-sealer",
+    "runner_exit_code": 1,
+    "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+    "controller_revision": "9c3e5f36d6721a0733b97e97db50f9a094f5508e",
+    "sealer_tool_sha256": "3bcc7b668e6e1bc87a8e25ac425ba18948df154a0d3f7d9c67b90c6513c174a0",
+    "seal_sha256": "e9f2177e786c470a5d3f34430e91010a482695cf9484418d7e076003b516b811"
+  },
+  "generated_seeds_sha256": {
+    "crates/runtime/tests/operation_schedule_contracts.proptest-regressions": "d08c40996514280ad228d7c64c55da3311c3e2f54e99f4bb5c22849ad63ec0b8"
+  },
+  "fresh_source_attestation": "Controller9c3 attested the live source and actual generated seed after the exact frozen final guard; this is a controller seal, never a frozen9a seal.",
+  "retained_directory": "target/quality/fresh-recovery46-verification-20261105T102417Z",
+  "verification_report_sha256": "0fb3ea41f4056975d9507c99e07a692fc4a2edb3c40a90a6da8636dc5851b9ca",
+  "verification_script_sha256": "94ce314bbf31a22045a203ed1fdff3fcd8f6fd97c816c9ff41a4f68984be28bd",
+  "global_union_applied": false,
+  "quality_gate": "not evaluated; missed20/unviable6 retained; root reviews addition to57 complete indices",
+  "actions": "read-only API/download/offline validation only; no Cargo/dispatch/source edits/commit/push"
+}

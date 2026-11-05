@@ -1,0 +1,40 @@
+{
+  "status": "verified_partial_frozen_campaign_not_quality_pass",
+  "observed_at_utc": "2026-11-05T10:36:51.979300+00:00",
+  "original_run_id": 41950170549,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "verified_shards": 58,
+  "candidate_count": 4697,
+  "counts": {
+    "CaughtMutant": 3708,
+    "MissedMutant": 555,
+    "Unviable": 394,
+    "Timeout": 40
+  },
+  "original_sealed_shards": 55,
+  "fresh_recovery_shards": [
+    "21/64",
+    "27/64",
+    "46/64"
+  ],
+  "inputs": {
+    "previous_combined": "quality/evidence/mutation-9a-fifty-seven-shards.json",
+    "previous_combined_sha256": "c6b66a3392c91ea2609b371664eb5c3172c6c46b6f114250ca9d9c7bbb045d70",
+    "fresh46_completion": "quality/evidence/mutation-recovery-46-completion.json",
+    "fresh46_completion_sha256": "194aa707d93781e9a3c193614f4967a1a5384f85ff971cbd2641fc02186868e2",
+    "fresh46_verification": "quality/evidence/mutation-recovery-46-verification.json",
+    "fresh46_verification_sha256": "0fb3ea41f4056975d9507c99e07a692fc4a2edb3c40a90a6da8636dc5851b9ca",
+    "fresh46_durable_zip": "quality/evidence/mutation-recovery-46-artifact.zip",
+    "fresh46_zip_sha256": "90be1deaa408631cb4cd14940eb58237d6ab81191592565e8a3efd226e74a75b"
+  },
+  "remaining_original_indices": [
+    20,
+    29,
+    31,
+    39,
+    40,
+    43
+  ],
+  "limits": "55 original sealed shards plus separately verified fresh21/fresh27/fresh46. Actual fresh46 has81outcomes55caught20missed6unviable0timeout; old unsealed46raw not reused. Raw Missed/Timeout remain unchanged. Parent20partialleavesexcluded. Six unresolved assignments; incomplete union, no global mutation pass and no current-HEAD qualification."
+}

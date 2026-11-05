@@ -1,0 +1,45 @@
+{
+  "capture_sha256": "bb8f3ed963048c109cde79800af3fe0fc9596a3922c8ecbf345a93447116d203",
+  "capture_bytes": 22975,
+  "members": {
+    "artifact-api.json": {
+      "sha256": "197f98d2b0e1ba9b9bf1c07c2636640bcbf817c17724c8bc1864fa84b19a0b87",
+      "bytes": 799
+    },
+    "artifacts.json": {
+      "sha256": "d090f00522afedbfd2e51903662a02905bc9304e354a1daaa9e4a08c642cf32d",
+      "bytes": 924
+    },
+    "completion-receipt.json": {
+      "sha256": "194aa707d93781e9a3c193614f4967a1a5384f85ff971cbd2641fc02186868e2",
+      "bytes": 4906
+    },
+    "job.log": {
+      "sha256": "b51bb15f64758b6d7a57f5275a30c2ee34b586406b518b1faa50662a697ba6e7",
+      "bytes": 53477
+    },
+    "jobs.json": {
+      "sha256": "1a872c2b8ef0acf9b5a5c38d06e1ef97f4718f791a3faa8c1a88964eb961daea",
+      "bytes": 5444
+    },
+    "run.json": {
+      "sha256": "3f7576a501676f5ac9bdb0491238fb1c33efdaf01f8596285369952c139983cd",
+      "bytes": 13678
+    },
+    "verified-recovery46.json": {
+      "sha256": "0fb3ea41f4056975d9507c99e07a692fc4a2edb3c40a90a6da8636dc5851b9ca",
+      "bytes": 4541
+    },
+    "verify_recovery46.py": {
+      "sha256": "94ce314bbf31a22045a203ed1fdff3fcd8f6fd97c816c9ff41a4f68984be28bd",
+      "bytes": 13995
+    },
+    "zip-members.json": {
+      "sha256": "bada19f467c328bd9acc717533f5c9fa362d1ff0b4b1bfcef96e1baeabf10124",
+      "bytes": 20707
+    }
+  },
+  "durable_artifact": "quality/evidence/mutation-recovery-46-artifact.zip",
+  "artifact_sha256": "90be1deaa408631cb4cd14940eb58237d6ab81191592565e8a3efd226e74a75b",
+  "scope": "Original API/job-log/verifier capture plus durable exact fresh ZIP, retained before remote artifact expiry. Captured verifier paths refer to the original workspace; this capture is not presented as a portable CLI."
+}
