@@ -949,6 +949,79 @@ cp -R "$plan" "$artifact" "$shard" "$BML_DEPLOY_TEST_ROOT$path"
     assert!(!remote.join("calls").exists());
     let plan_path = prepared.join("plan.json");
     let original_plan = std::fs::read_to_string(&plan_path).unwrap();
+    let valid_plan: serde_json::Value = serde_json::from_str(&original_plan).unwrap();
+    assert_eq!(valid_plan["workers"].as_array().unwrap().len(), 2);
+    let valid_nodes = ["host-a:/one", "host-b:/two"];
+    let assert_preflight_rejection = |case: &str, nodes: &[&str], expected_error: &str| {
+        let result = deploy(nodes, "");
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert!(!result.status.success(), "accepted {case}: {stderr}");
+        assert!(
+            stderr.contains(expected_error),
+            "wrong rejection for {case}: {stderr}"
+        );
+        assert!(
+            !remote.join("calls").exists(),
+            "invoked SSH/SCP before rejecting {case}"
+        );
+        assert!(
+            std::fs::read_dir(&remote).unwrap().next().is_none(),
+            "created remote files before rejecting {case}"
+        );
+    };
+    // Keep every other field and bundle valid, including for errors in the
+    // second assignment: the whole plan must be checked before provisioning.
+    for worker in 0..2 {
+        let entry = &valid_plan["workers"][worker];
+        for (field, replacement) in [
+            (
+                "index",
+                serde_json::json!(entry["index"].as_u64().unwrap() + 1),
+            ),
+            ("directory", serde_json::json!("wrong-shard-directory")),
+            (
+                "layer_start",
+                serde_json::json!(entry["layer_start"].as_u64().unwrap() + 1),
+            ),
+            (
+                "layer_end",
+                serde_json::json!(entry["layer_end"].as_u64().unwrap() + 1),
+            ),
+        ] {
+            let mut altered = valid_plan.clone();
+            assert_ne!(altered["workers"][worker][field], replacement);
+            altered["workers"][worker][field] = replacement;
+            std::fs::write(&plan_path, serde_json::to_vec(&altered).unwrap()).unwrap();
+            assert_preflight_rejection(
+                &format!("worker {worker} field {field}"),
+                &valid_nodes,
+                "invalid prepared assignment",
+            );
+        }
+    }
+    // These are well-formed plans with one wrong value, rather than duplicate
+    // JSON keys rejected by serde before the deployment guards can execute.
+    for (field, replacement) in [
+        ("version", serde_json::json!(0)),
+        ("artifact", serde_json::json!("wrong-artifact-directory")),
+    ] {
+        let mut altered = valid_plan.clone();
+        assert_ne!(altered[field], replacement);
+        altered[field] = replacement;
+        std::fs::write(&plan_path, serde_json::to_vec(&altered).unwrap()).unwrap();
+        assert_preflight_rejection(field, &valid_nodes, "invalid prepared plan");
+    }
+    std::fs::write(&plan_path, &original_plan).unwrap();
+    for nodes in [
+        &valid_nodes[..1],
+        &["host-a:/one", "host-b:/two", "host-c:/three"][..],
+    ] {
+        assert_preflight_rejection(
+            &format!("two-worker plan with {} destinations", nodes.len()),
+            nodes,
+            "destination count must match prepared worker count",
+        );
+    }
     std::fs::write(
         &plan_path,
         original_plan.replacen('{', "{\"version\":1,", 1),

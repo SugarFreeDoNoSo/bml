@@ -1,0 +1,85 @@
+{
+  "status": "passed",
+  "observed_at_utc": "2026-11-05T01:21:34.115387+00:00",
+  "scope": "Five isolated deploy guard operator replays against one CLI test with fake SSH/SCP. Not a complete mutation campaign or real-host deployment.",
+  "base_revision": "afecff47c2788abc7679a52b5a6989070ad8ace1",
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "bml-cli",
+    "--test",
+    "symbolic_distributed_cli",
+    "--locked",
+    "cli_deploys_validated_prepared_shards_to_distinct_nodes",
+    "--",
+    "--exact"
+  ],
+  "baseline": {
+    "exit_code": 0,
+    "log": "target/quality/deployment-plan-replay-baseline.log",
+    "log_sha256": "b51f220fd302b36863bb08cd0c985b94e3614446119a05ff3603b6ece682441b",
+    "test_failed": false,
+    "compile_error": false
+  },
+  "tests_sha256": "e581441a109c045a5353e32a0f30d329c47189eeeb8892af0efccf5ee782b476",
+  "unmodified_production_sha256": "41b2773328facc0555917bd2cf21691fa3866cb53527ae6acad54af35cf46b97",
+  "source_restored": true,
+  "replays": [
+    {
+      "name": "header_or",
+      "old": "if plan.version != 1 || plan.artifact != \"artifact\" {",
+      "new": "if plan.version != 1 && plan.artifact != \"artifact\" {",
+      "exit_code": 101,
+      "log": "target/quality/deployment-plan-replay-header_or.log",
+      "log_sha256": "4d28135e8a59dd801a4c7b5de97b8d31c9cfd0f945c32a3d1a2cf1807a14992c",
+      "test_failed": true,
+      "compile_error": false,
+      "detected": true
+    },
+    {
+      "name": "count_or",
+      "old": "if entries.is_empty() || entries.len() != nodes.len() {",
+      "new": "if entries.is_empty() && entries.len() != nodes.len() {",
+      "exit_code": 101,
+      "log": "target/quality/deployment-plan-replay-count_or.log",
+      "log_sha256": "000cf31d1521421ef7074f104aa424544fc32c4818515f5ebb70aea05f6ea89c",
+      "test_failed": true,
+      "compile_error": false,
+      "detected": true
+    },
+    {
+      "name": "directory_or",
+      "old": "|| entry.directory != name",
+      "new": "&& entry.directory != name",
+      "exit_code": 101,
+      "log": "target/quality/deployment-plan-replay-directory_or.log",
+      "log_sha256": "b3d4307ebac68885e013854d9a4a25b4248ac1e6de376c41ef337156000c8ce2",
+      "test_failed": true,
+      "compile_error": false,
+      "detected": true
+    },
+    {
+      "name": "layer_start_or",
+      "old": "|| entry.layer_start != range.start",
+      "new": "&& entry.layer_start != range.start",
+      "exit_code": 101,
+      "log": "target/quality/deployment-plan-replay-layer_start_or.log",
+      "log_sha256": "ff48242fc5cd75103679f3192aa801f1c8c64fdeb76aaafcb2225c3fc3bfb299",
+      "test_failed": true,
+      "compile_error": false,
+      "detected": true
+    },
+    {
+      "name": "layer_end_or",
+      "old": "|| entry.layer_end != range.end",
+      "new": "&& entry.layer_end != range.end",
+      "exit_code": 101,
+      "log": "target/quality/deployment-plan-replay-layer_end_or.log",
+      "log_sha256": "5edc066b8c31825769007865526d7b9376382987a6db357256436ad360ccb9ee",
+      "test_failed": true,
+      "compile_error": false,
+      "detected": true
+    }
+  ]
+}
