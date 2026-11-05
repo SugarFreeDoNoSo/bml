@@ -658,6 +658,229 @@ fn worker_explicit_step_budget_is_enforced_regardless_of_argument_order() {
     }
 }
 
+enum PreparedStartup {
+    Ready(Worker, SocketAddr),
+    Rejected(std::process::ExitStatus, String),
+}
+
+fn bounded_prepared_start(directory: &std::path::Path) -> PreparedStartup {
+    use std::io::Read;
+    let child = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+        .args(["--port", "0", "--prepared"])
+        .arg(directory)
+        .args(["--worker-index", "0", "--symbolic-context", "3"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut worker = Worker(child);
+    let stdout = worker.0.stdout.take().unwrap();
+    let (send, receive) = std::sync::mpsc::channel();
+    let reader = std::thread::spawn(move || {
+        let mut line = String::new();
+        let result = BufReader::new(stdout).read_line(&mut line).map(|_| line);
+        let _ = send.send(result);
+    });
+    let line = match receive.recv_timeout(Duration::from_secs(5)) {
+        Ok(result) => result.unwrap(),
+        Err(error) => {
+            drop(worker);
+            reader.join().unwrap();
+            panic!("prepared worker did not report startup or rejection: {error}");
+        }
+    };
+    reader.join().unwrap();
+    if line.starts_with("symbolic worker listening on ") {
+        let bound: SocketAddr = line.split_whitespace().nth(4).unwrap().parse().unwrap();
+        return PreparedStartup::Ready(worker, SocketAddr::from(([127, 0, 0, 1], bound.port())));
+    }
+    let started = std::time::Instant::now();
+    loop {
+        if let Some(status) = worker.0.try_wait().unwrap() {
+            let mut error = String::new();
+            worker
+                .0
+                .stderr
+                .take()
+                .unwrap()
+                .read_to_string(&mut error)
+                .unwrap();
+            return PreparedStartup::Rejected(status, error);
+        }
+        assert!(
+            started.elapsed() < Duration::from_secs(5),
+            "worker remained alive after {line:?}"
+        );
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
+fn prepared_budget_fixture() -> (Directory, serde_json::Value) {
+    let source = symbolic_fixture::fixture_layers(0.25, 1);
+    let root = Directory(source.0.with_extension("prepared-budget"));
+    std::fs::create_dir(&root.0).unwrap();
+    let artifact = root.0.join("artifact");
+    std::fs::create_dir(&artifact).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &artifact,
+        3,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let identity = checked_identity(&artifact, None).unwrap();
+    let hash = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &artifact,
+        None,
+        0..1,
+        &root.0.join("shard-0"),
+        1_000_000,
+    )
+    .unwrap();
+    let plan = serde_json::json!({"version":1,"artifact":"artifact","artifact_sha256":identity,
+        "workers":[{"index":0,"layer_start":0,"layer_end":1,"directory":"shard-0","shard_sha256":hash}]});
+    (root, plan)
+}
+
+fn assert_prepared_session(directory: &std::path::Path, identity: &str) {
+    let (_worker, address) = match bounded_prepared_start(directory) {
+        PreparedStartup::Ready(worker, address) => (worker, address),
+        PreparedStartup::Rejected(status, error) => {
+            panic!("valid plan rejected: {status}: {error}")
+        }
+    };
+    let mut client = SymbolicLayerClient::connect(
+        address,
+        identity,
+        0..1,
+        3,
+        SymbolicTransportLimits::default(),
+    )
+    .unwrap();
+    let output = client.prepare(0, &[0.25, -0.5, 0.75, 0.0]).unwrap();
+    assert_eq!(output.len(), 4);
+    assert!(output.iter().all(|value| value.is_finite()));
+    client.commit(0).unwrap();
+    assert_eq!(client.position(), 1);
+    client.reset().unwrap();
+    client.close().unwrap();
+}
+
+#[test]
+fn prepared_plan_byte_budget_is_inclusive_and_does_not_accept_truncated_padding() {
+    const LIMIT: usize = 1024 * 1024;
+    let (directory, plan) = prepared_budget_fixture();
+    let encoded = serde_json::to_vec(&plan).unwrap();
+    let identity = plan["artifact_sha256"].as_str().unwrap();
+    let path = directory.0.join("plan.json");
+    std::fs::write(&path, &encoded).unwrap();
+    assert_prepared_session(&directory.0, identity);
+    let mut exact = encoded;
+    exact.resize(LIMIT, b' ');
+    std::fs::write(&path, &exact).unwrap();
+    assert_prepared_session(&directory.0, identity);
+    // Truncating valid trailing whitespace conceals an input-byte overflow.
+    exact.push(b' ');
+    std::fs::write(&path, &exact).unwrap();
+    match bounded_prepared_start(&directory.0) {
+        PreparedStartup::Rejected(status, error) => {
+            assert_eq!(status.code(), Some(1));
+            assert!(error.contains("plan exceeds byte budget"), "{error}");
+        }
+        PreparedStartup::Ready(_worker, _) => panic!("oversized plan was admitted"),
+    }
+    assert_eq!(std::fs::read(&path).unwrap(), exact);
+}
+
+#[test]
+fn prepared_plan_assignment_index_is_checked_even_when_all_provider_bytes_are_valid() {
+    let (directory, mut plan) = prepared_budget_fixture();
+    let path = directory.0.join("plan.json");
+    std::fs::write(&path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    assert_prepared_session(&directory.0, plan["artifact_sha256"].as_str().unwrap());
+    plan["workers"][0]["index"] = 1.into();
+    std::fs::write(&path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    match bounded_prepared_start(&directory.0) {
+        PreparedStartup::Rejected(status, error) => {
+            assert_eq!(status.code(), Some(1));
+            assert!(error.contains("invalid plan assignment"), "{error}");
+        }
+        PreparedStartup::Ready(_worker, _) => panic!("incorrect assignment index was admitted"),
+    }
+    plan["workers"][0]["index"] = 0.into();
+    std::fs::write(&path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    assert_prepared_session(&directory.0, plan["artifact_sha256"].as_str().unwrap());
+}
+
+#[test]
+fn prepared_plan_checks_version_and_canonical_directories_with_valid_relocated_bytes() {
+    let (directory, mut plan) = prepared_budget_fixture();
+    let path = directory.0.join("plan.json");
+    let identity = plan["artifact_sha256"].as_str().unwrap().to_owned();
+    std::fs::write(&path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    assert_prepared_session(&directory.0, &identity);
+    let rejected = |message: &str| match bounded_prepared_start(&directory.0) {
+        PreparedStartup::Rejected(status, error) => {
+            assert_eq!(status.code(), Some(1));
+            assert!(error.contains(message), "{error}");
+        }
+        PreparedStartup::Ready(_worker, _) => panic!("invalid prepared schema was admitted"),
+    };
+    plan["version"] = 0.into();
+    std::fs::write(&path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    rejected("invalid plan header");
+    plan["version"] = 1.into();
+
+    // Relocate real, authenticated provider bytes. If a schema guard is
+    // removed, a later provider error cannot incidentally reject this plan.
+    let artifact = directory.0.join("artifact");
+    let alias = directory.0.join("artifact-alias");
+    std::fs::rename(&artifact, &alias).unwrap();
+    bml_runtime::symbolic_transport::SymbolicLayerServer::new_authenticated(
+        &alias,
+        &identity,
+        0..1,
+        SymbolicTransportLimits {
+            context: 3,
+            ..Default::default()
+        },
+        &directory.0.join("shard-0"),
+        plan["workers"][0]["shard_sha256"].as_str().unwrap(),
+        1_000_000,
+    )
+    .unwrap();
+    plan["artifact"] = "artifact-alias".into();
+    std::fs::write(&path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    rejected("invalid plan header");
+    std::fs::rename(&alias, &artifact).unwrap();
+    plan["artifact"] = "artifact".into();
+
+    let shard = directory.0.join("shard-0");
+    let shard_alias = directory.0.join("shard-alias");
+    std::fs::rename(&shard, &shard_alias).unwrap();
+    bml_runtime::symbolic_transport::SymbolicLayerServer::new_authenticated(
+        &artifact,
+        &identity,
+        0..1,
+        SymbolicTransportLimits {
+            context: 3,
+            ..Default::default()
+        },
+        &shard_alias,
+        plan["workers"][0]["shard_sha256"].as_str().unwrap(),
+        1_000_000,
+    )
+    .unwrap();
+    plan["workers"][0]["directory"] = "shard-alias".into();
+    std::fs::write(&path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    rejected("invalid plan assignment");
+    std::fs::rename(&shard_alias, &shard).unwrap();
+    plan["workers"][0]["directory"] = "shard-0".into();
+    std::fs::write(&path, serde_json::to_vec(&plan).unwrap()).unwrap();
+    assert_prepared_session(&directory.0, &identity);
+}
+
 #[test]
 fn prepared_plan_starts_worker_and_rejects_invalid_or_conflicting_assignments() {
     let source = symbolic_fixture::fixture_layers(0.25, 3);

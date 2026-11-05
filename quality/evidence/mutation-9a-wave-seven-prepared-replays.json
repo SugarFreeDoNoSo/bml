@@ -1,0 +1,358 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "d837b868af656254f5d7922a0750f57308b8eeea",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_byte_budget_is_inclusive_and_does_not_accept_truncated_padding",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-seven-prepared-0.log",
+      "log_sha256": "876992ad5f57258076b9727d4f53f47e1a723ade2aa63411d44fe255b71b8995",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_checks_version_and_canonical_directories_with_valid_relocated_bytes",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-seven-prepared-4.log",
+      "log_sha256": "16ee52961f7ded9282ff600d49757cd71cc11e5093fe45422f665c6c7b9bf061",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_assignment_index_is_checked_even_when_all_provider_bytes_are_valid",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-seven-prepared-7.log",
+      "log_sha256": "6c66b959fe2cbd1b82016f031ae4ef20f4bb0a404edaac5f687a290d3ff34775",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_byte_budget_is_inclusive_and_does_not_accept_truncated_padding",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-seven-prepared-0.log",
+      "log_sha256": "81e48d526df4e0b3f9ddf589bfbb402fef949953d9dc434b9b2e130ff6dd9636",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-seven-prepared-0",
+      "candidate": "crates/worker/src/main.rs:66:24: replace + with - in read_prepared_plan",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "b9c6aaae27fdd33768a389f45012db4b00d0d900a7930a5baba5e12135c15847",
+      "original_diff_sha256": "8ab64de72b0b05def1d2354028e85f44576db0785d19edc897e74ef02caef106",
+      "original_span": {
+        "end": {
+          "column": 25,
+          "line": 66
+        },
+        "start": {
+          "column": 24,
+          "line": 66
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_byte_budget_is_inclusive_and_does_not_accept_truncated_padding",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-seven-prepared-1.log",
+      "log_sha256": "65240d02667b2c78ad07ddb09cd143a0dcbab7a11c6be7ee9a30e9a3d023fa93",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-seven-prepared-1",
+      "candidate": "crates/worker/src/main.rs:66:24: replace + with * in read_prepared_plan",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "f691b7db0619e679cc7c2e05f210f4b52d1ce215b1b86aa9fcfdb3019409f60e",
+      "original_diff_sha256": "27a0e7974dc1e67cdd26f6ab058a2ece031de071023def32166117a8176e474f",
+      "original_span": {
+        "end": {
+          "column": 25,
+          "line": 66
+        },
+        "start": {
+          "column": 24,
+          "line": 66
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_byte_budget_is_inclusive_and_does_not_accept_truncated_padding",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-seven-prepared-2.log",
+      "log_sha256": "727d3a67f9fa8a812ded7d1162433010a74d61b745c4643c13bc8bd9f13ccdf0",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-seven-prepared-2",
+      "candidate": "crates/worker/src/main.rs:69:26: replace > with == in read_prepared_plan",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "b57248376a5c7438bc52f5d2e3ba54be29b6ebbc0282f91c45de648715f68de4",
+      "original_diff_sha256": "ab91056a95265cb2ca699ec40c61a4b12070556b4314b5e374c7f130c32a222c",
+      "original_span": {
+        "end": {
+          "column": 27,
+          "line": 69
+        },
+        "start": {
+          "column": 26,
+          "line": 69
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_byte_budget_is_inclusive_and_does_not_accept_truncated_padding",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-seven-prepared-3.log",
+      "log_sha256": "f36132dbcb6f9fe3e72f46b7d1401b3f3ffd8e7ea2b4094c08e3663d1826e831",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-seven-prepared-3",
+      "candidate": "crates/worker/src/main.rs:69:26: replace > with >= in read_prepared_plan",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "538a9986ec7df0fd4aed4d506b2a91e97af0fa691a51f35e17cb7a420ba96b3b",
+      "original_diff_sha256": "76913000834ad51444ce51bbd77414bc8f640bbc4947bce1a288c3358eb87ce2",
+      "original_span": {
+        "end": {
+          "column": 27,
+          "line": 69
+        },
+        "start": {
+          "column": 26,
+          "line": 69
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_checks_version_and_canonical_directories_with_valid_relocated_bytes",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-seven-prepared-4.log",
+      "log_sha256": "e3190c2689a3291e5aff6403244325281a079bb030c6606dfb805129d8f5a0c7",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-seven-prepared-4",
+      "candidate": "crates/worker/src/main.rs:82:9: replace || with && in read_prepared_plan",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "a95279f33d44b64e6ac08ff9cfe28c7d71ceffb9d33eed254fc9b2c0a537b70b",
+      "original_diff_sha256": "0af574d47cff88791eff2bf681660bb6923b621e164f8ee5ef624ba13b2f8359",
+      "original_span": {
+        "end": {
+          "column": 11,
+          "line": 82
+        },
+        "start": {
+          "column": 9,
+          "line": 82
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_checks_version_and_canonical_directories_with_valid_relocated_bytes",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-seven-prepared-5.log",
+      "log_sha256": "1e2d499f03ae89512979bc1cd22c7dd259a1f3af10981fb809213c7b41ac7f90",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-seven-prepared-5",
+      "candidate": "crates/worker/src/main.rs:81:9: replace || with && in read_prepared_plan",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "d0ed63a129e973ef0a3f2db3218c65c54edf08c278513a977d2afddb060811db",
+      "original_diff_sha256": "d042f82b339f92bb5187900900b0b3de438806ec5e0d6b6538cd6795d7acf610",
+      "original_span": {
+        "end": {
+          "column": 11,
+          "line": 81
+        },
+        "start": {
+          "column": 9,
+          "line": 81
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_checks_version_and_canonical_directories_with_valid_relocated_bytes",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-seven-prepared-6.log",
+      "log_sha256": "3ba53f7b264abef46d211e6137fe9aad723e387ac41a98e764850a7eefecbf8d",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-seven-prepared-6",
+      "candidate": "crates/worker/src/main.rs:93:13: replace || with && in read_prepared_plan",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "a24179f261d6b98a598684da5876eeb19aff3490e6da6960814817a03c0a0225",
+      "original_diff_sha256": "1dfdd85977b96be8d840ca6f20c34d5279b9347b725ff034817e416a9c4041be",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 93
+        },
+        "start": {
+          "column": 13,
+          "line": 93
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "symbolic_worker_contracts",
+        "--locked",
+        "prepared_plan_assignment_index_is_checked_even_when_all_provider_bytes_are_valid",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-seven-prepared-7.log",
+      "log_sha256": "63fc012a0e5835a534083f0698278d94f45f52b137f98d337e6440c86a9c6147",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-seven-prepared-7",
+      "candidate": "crates/worker/src/main.rs:90:13: replace || with && in read_prepared_plan",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "f2d881f2bf1ff77653807858e3d20dc92975f18ccc67d9a59713bef5fdfd307d",
+      "original_diff_sha256": "3cfa3b69aa58a9c2457fd7d86a7154611471297a518c7f6b3a0961d0abf804a9",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 90
+        },
+        "start": {
+          "column": 13,
+          "line": 90
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T04:47:52.846705+00:00",
+  "status": "passed_focused_replays",
+  "patched_test_hashes": {
+    "crates/worker/tests/symbolic_worker_contracts.rs": "c7cc80f970796299adc9c7c18a9b45e4e3ceead5047efd93cb2d878138a669f6"
+  },
+  "initial_fixture_attempt": {
+    "status": "baseline_failed_before_mutations",
+    "reason": "The first relocated-provider control used source-validating checked_identity after removing the source GGUF. It was corrected to validate the complete provider with the externally trusted authenticated API; all baselines and replays then reran.",
+    "log": "target/quality/wave-seven-prepared-initial-baseline-failed.log",
+    "log_sha256": "dc0d17f3dd4ac3eac6c4aa0603112e0712df39bf0fa188cb6b1c4efd52195ed3"
+  }
+}
