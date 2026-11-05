@@ -1,6 +1,6 @@
 {
-  "status": "running",
-  "scope": "Two fixed TinyLlama positions [1,29958], authenticated persisted v4 kernels with max_nodes=0, reference native F64/F32-KV; diagnostic only, no preset parity threshold.",
+  "status": "completed_verified_historical_diagnostic",
+  "scope": "Two fixed TinyLlama positions from the immutable historical test binary; full saved vectors and reports verified. No preset numerical tolerance, current-main numerical parity or performance qualification.",
   "base_revision": "236a46d3cff6cb1f1951894a231743fc90154c8c",
   "started_at_utc": "2026-11-05T01:03:44.823247+00:00",
   "input_ids": [
@@ -352,5 +352,52 @@
     "--exact",
     "--nocapture"
   ],
-  "pid": 3676064
+  "pid": 3676064,
+  "exit_code": 0,
+  "ended_at_utc": "2026-11-05T06:17:53.033472+00:00",
+  "verification": {
+    "verified_at_utc": "2026-11-05T06:31:48.182352+00:00",
+    "archive": "quality/evidence/tinyllama-two-position-diagnostic.tar.gz",
+    "archive_sha256": "626f52da571b615da9b8882f9a0e95361386e8c9559fd2a368ecf7c7231401aa",
+    "archive_bytes": 991865,
+    "bundle_metadata": "quality/evidence/tinyllama-two-position-diagnostic.bundle.json",
+    "bundle_metadata_sha256": "2f023b421c3e781dc70dabf5217732562be78016aa706aceacd416aa7527d15c",
+    "portable_command": "python3 verify_tinyllama.py --results-only",
+    "portable_exit_code": 0,
+    "root_portable_receipt": "target/quality/wave-nine-tiny-bundle-audit/results-only.json",
+    "root_portable_receipt_sha256": "c75fd6edaf4187fef9d6b8f8e07cecb6a36cc342d4652d9f0e29ca0aea819022",
+    "historical_source_qualification": "The 292 captured source inputs reconstruct from base236a46d plus three archived overrides; the build supplement is retrospective and does not authenticate the original compiler invocation or environment. This result does not validate current main."
+  },
+  "verified_positions": [
+    {
+      "input_token": 1,
+      "logits": 32000,
+      "max_absolute_error": 4.878808905262044e-06,
+      "mean_absolute_error": 9.515421421736407e-07,
+      "native_argmax": 29958,
+      "native_cache_position": 1,
+      "native_vector": "native-0.f64le",
+      "position": 0,
+      "rms_error": 1.19034720252237e-06,
+      "symbolic_argmax": 29958,
+      "symbolic_cache_position": 1,
+      "symbolic_elapsed_seconds": 9556.890534925,
+      "symbolic_vector": "symbolic-0.f64le"
+    },
+    {
+      "input_token": 29958,
+      "logits": 32000,
+      "max_absolute_error": 1.5213590612184191e-05,
+      "mean_absolute_error": 2.1682508037710643e-06,
+      "native_argmax": 13,
+      "native_cache_position": 2,
+      "native_vector": "native-1.f64le",
+      "position": 1,
+      "rms_error": 2.7309321891513938e-06,
+      "symbolic_argmax": 13,
+      "symbolic_cache_position": 2,
+      "symbolic_elapsed_seconds": 9278.066515675,
+      "symbolic_vector": "symbolic-1.f64le"
+    }
+  ]
 }

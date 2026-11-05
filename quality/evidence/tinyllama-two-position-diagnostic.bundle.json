@@ -1,0 +1,141 @@
+{
+  "status": "verified_deterministic_results_bundle",
+  "archive": "tinyllama-two-position-diagnostic.tar.gz",
+  "bytes": 991865,
+  "sha256": "626f52da571b615da9b8882f9a0e95361386e8c9559fd2a368ecf7c7231401aa",
+  "member_count": 18,
+  "uncompressed_file_bytes": 1152877,
+  "members": [
+    {
+      "path": "tinyllama-two-position-diagnostic/README.md",
+      "bytes": 3071,
+      "sha256": "177025d8e73c54e5a91c1a2a071cd533bcf631f85be3b37de5ed8339a54f0a2c"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/historical-overrides/Cargo.lock",
+      "bytes": 43872,
+      "sha256": "24f3ffb3895c5d7d6c2ff84f4db44695fad726f20972cf7517ead389d049e091"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/historical-overrides/crates/runtime/Cargo.toml",
+      "bytes": 640,
+      "sha256": "96c17d28e915029ac983f66fef9e2df5217785ee75b1db576f2a8ebb71253514"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/historical-overrides/crates/runtime/tests/real_model_two_position_diagnostic.rs",
+      "bytes": 6747,
+      "sha256": "2324dd58e6e57292097a6f1d29a6366d33985df2d52ad9172fe1ac904374bfd1"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-results-only-verification.json",
+      "bytes": 8132,
+      "sha256": "7f4dd6b9cfbb05e009f71e2e0c51e88f791a0a8f4a01675eb782fbdae60e39be"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-build.json",
+      "bytes": 2414,
+      "sha256": "303d56d0a6de3859eaab4b3b66318b02a94556355cf16615b0fad5bd6642f69d"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-diagnostic.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-diagnostic.json",
+      "bytes": 36754,
+      "sha256": "f236af2182f25896d50a3490b507331a9969c24751cef2e1f4efa43d1badff11"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-diagnostic.log",
+      "bytes": 1103,
+      "sha256": "9c0194d131246e0fa4a123a6c323194aca2be38a3e62bfd0733889d3c42c414b"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-logits/native-0.f64le",
+      "bytes": 256000,
+      "sha256": "0481d190297c6f1bb2224c175f7c0ac5808b4883760b94bf3a615bccce30449d"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-logits/native-1.f64le",
+      "bytes": 256000,
+      "sha256": "f4531ef8a6c3bfb985f859fa66304fc8b4c61579938b0ebcdec773e3fe2378e6"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-logits/position-0.json",
+      "bytes": 427,
+      "sha256": "9edca2101d5c25ba53148f7aed9d69dcbb78d38aa8a73cd53d8b9fe1da8f16e9"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-logits/position-1.json",
+      "bytes": 431,
+      "sha256": "82d94e825cbd422300c057a0005e5dab4e0178a6eb14ec6dc73f662ddba5adf0"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-logits/summary.json",
+      "bytes": 1287,
+      "sha256": "5a937e20a1eaaa4be281f5fb9367aacee628760b2478a0599798c218c1552b71"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-logits/symbolic-0.f64le",
+      "bytes": 256000,
+      "sha256": "714229cd4777dcc1d5893fc95bcf7a9d5107b4c468210286621c78ff9eb0adca"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-two-position-logits/symbolic-1.f64le",
+      "bytes": 256000,
+      "sha256": "9356e535bc83e70dc51372590700447cba209e1c0a41d0e47eaae9185cec1e92"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/tinyllama-verification.json",
+      "bytes": 11441,
+      "sha256": "bda79c518badd1ce779ef8e1bdfa9ff282ce9891586624d36b8e34c8274721af"
+    },
+    {
+      "path": "tinyllama-two-position-diagnostic/verify_tinyllama.py",
+      "bytes": 12556,
+      "sha256": "e31aad162480de11521bbcdf920e5209b753c9c825744e411120bd6b9cc65225"
+    }
+  ],
+  "packaging": {
+    "format": "USTAR inside gzip",
+    "gzip_compresslevel": 9,
+    "gzip_mtime": 0,
+    "gzip_filename": "",
+    "tar_mtime": 0,
+    "tar_uid": 0,
+    "tar_gid": 0,
+    "tar_uname": "",
+    "tar_gname": "",
+    "ordering": "lexicographically sorted member names",
+    "modes": {
+      "verify_tinyllama.py": "0755",
+      "other_files": "0644"
+    },
+    "two_independent_packings_byte_identical": true
+  },
+  "verification": {
+    "complete_exit_code": 0,
+    "complete_report_sha256": "bda79c518badd1ce779ef8e1bdfa9ff282ce9891586624d36b8e34c8274721af",
+    "results_only_exit_code": 0,
+    "results_only_report_sha256": "7f4dd6b9cfbb05e009f71e2e0c51e88f791a0a8f4a01675eb782fbdae60e39be",
+    "extracted_results_only_exit_code": 0,
+    "extracted_results_only_without_repository_or_external_commands": true,
+    "verifier_sha256": "e31aad162480de11521bbcdf920e5209b753c9c825744e411120bd6b9cc65225",
+    "portable_command": [
+      "python3",
+      "verify_tinyllama.py",
+      "--results-only"
+    ],
+    "complete_command": [
+      "python3",
+      "verify_tinyllama.py",
+      "/absolute/path/to/bml"
+    ]
+  },
+  "producer": {
+    "script": "make_tinyllama_bundle.py",
+    "sha256": "1cfa57f4821625abb8366cf71b8cda4a7a10709b3fc8e8addbe45c02028b9e63"
+  },
+  "qualification": "Historical two-position diagnostic evidence only; no preset tolerance, numerical parity, throughput, performance or OpenSpec 8.6 completion claim."
+}
