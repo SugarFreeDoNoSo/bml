@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "base_revision": "a1b978c49be70a4c9e3623645af5d9aa2b31dbc8",
+  "command": "./scripts/check.sh a1b978c",
+  "exit_code": 0,
+  "observed_at_utc": "2026-11-05T02:12:59.650019+00:00",
+  "scope": "Integrated fourth subagent wave: ordinary CI empty-selection handling and complete synthetic Q4_0 causal contracts. Complete mutation campaign and real-model diagnostic remain separately running.",
+  "python_tooling_tests": 150,
+  "rust_tests_passed": 938,
+  "rust_suites": 141,
+  "historical_contract_discrepancies": 0,
+  "traceability": "106/106",
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "log": "target/quality/wave-four-gate.log",
+  "log_sha256": "fab6fbc58625ee14e841b6b3349489d87c6be9f1271ac2a6d3f4b0c421ad48c1",
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/wave-four-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_source_hashes": {
+    "crates/runtime/tests/quantized_symbolic_causal_contracts.rs": "4e6d30ee80ccba366ae54f64a7e09a9e14e508b1ecf102b1c3c8d0a83f6227bf",
+    "quality/contracts.feature": "51bdafcef8ea2caf5b05babc776b29fa70dd3a07a3a278fbebf7ea259404142e",
+    "quality/traceability.json": "23c15ec06abed14a33f3acaf1b0dbb5c01a636c0e4e045e531fe2d3089b0d46d",
+    ".github/workflows/quality.yml": "13fb529bd525c7c52c5a04bfde70f00c921d753aff74369f9738beaa54b92364",
+    "tools/ci_mutations.py": "1670aecbb751c5dd7f01946c265d360d790efefd910adab2d693c6ef360ec995",
+    "tools/test_ci_mutations.py": "e332ea456cfe57bc42154f919ac78e3bbd4cefee7b47523c0c41d403c3bf7ccf",
+    "Cargo.toml": "54d49486a81a91e4a13f70f2b982d28b670dd399f5fd93636dd75d9990788f20",
+    "Cargo.lock": "24f3ffb3895c5d7d6c2ff84f4db44695fad726f20972cf7517ead389d049e091",
+    "rust-toolchain.toml": "8b43e8367cdb4d117cdaea1eaba8d2c526614d603c6e7ba8f30165f5a712c1c1"
+  },
+  "prior_attempt": {
+    "exit_code": 1,
+    "reason": "One clippy::manual_is_multiple_of warning in new test fixture. Replaced its parity predicate and repeated the complete gate; baselines unchanged.",
+    "log": "target/quality/wave-four-gate-before-lint-fix.log",
+    "log_sha256": "fc8e1861b4a172ec36e38d05491900148c50b39187a4cbbaa3e3358834e258e5"
+  }
+}
