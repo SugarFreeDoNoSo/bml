@@ -1,0 +1,235 @@
+name: Fresh nested recovery of immutable mutation shard 20
+
+# Manual only. Four complete v1 leaves replace exactly 20/64 in an explicit v2
+# envelope. Neither this artifact nor a successful job approves mutation quality.
+# Partial job reruns fail identity checks; rerun all jobs to create a new plan
+# and matching attempt. Every source checkout remains the immutable 9a snapshot.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mutation-nested-41950170549-20
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: never
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_PROFILE_TEST_DEBUG: '0'
+  CARGO_BUILD_JOBS: '2'
+  PROPTEST_RNG_SEED: '20260923'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    outputs:
+      plan_sha: ${{ steps.hashes.outputs.plan_sha }}
+      manifest_sha: ${{ steps.hashes.outputs.manifest_sha }}
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: 9a6bc9680d5915576ca92528f60956efe9796cef
+          fetch-depth: 0
+          path: source
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: 41950170549
+          artifact-ids: 13379899471
+          merge-multiple: true
+          path: control/target/nested-plan
+      - name: Install frozen toolchain
+        working-directory: source
+        run: rustup show active-toolchain
+      - uses: taiki-e/install-action@7623a79cdfecb99d681017af368ca353d9f49bb5 # v2
+        with:
+          tool: cargo-mutants@27.1.0
+      - name: List all 256 frozen assignments and run real workspace preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          ATTEMPT: ${{ github.run_attempt }}
+          CONTROLLER: ${{ github.sha }}
+        run: |
+          python3 control/tools/mutation_subshards.py prepare --source source \
+            --plan control/target/nested-plan --run "$RUN_ID" \
+            --attempt "$ATTEMPT" --controller "$CONTROLLER"
+      - name: Transmit independent plan and manifest file digests
+        id: hashes
+        run: |
+          python3 - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              for name, file in [('plan_sha', 'nested-plan.json'), ('manifest_sha', 'nested-campaign.json')]:
+                  checksum = hashlib.sha256((Path('control/target/nested-plan') / file).read_bytes()).hexdigest()
+                  output.write(f'{name}={checksum}\n')
+          PY
+      - name: Upload immutable nested plan and real workspace baseline
+        if: always()
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mutation-subplan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: control/target/nested-plan/
+          if-no-files-found: error
+          retention-days: 3
+
+  leaf:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        index: [20, 84, 148, 212]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: 9a6bc9680d5915576ca92528f60956efe9796cef
+          fetch-depth: 0
+          path: source
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          artifact-ids: ${{ needs.prepare.outputs.artifact_id }}
+          merge-multiple: true
+          path: control/target/nested-plan
+      - name: Verify independently transmitted plan and manifest digests
+        env:
+          PLAN_SHA: ${{ needs.prepare.outputs.plan_sha }}
+          MANIFEST_SHA: ${{ needs.prepare.outputs.manifest_sha }}
+        run: |
+          python3 control/tools/mutation_subshards.py verify --plan control/target/nested-plan \
+            --plan-sha "$PLAN_SHA" --manifest-sha "$MANIFEST_SHA"
+      - name: Install frozen toolchain
+        working-directory: source
+        run: rustup show active-toolchain
+      - uses: taiki-e/install-action@7623a79cdfecb99d681017af368ca353d9f49bb5 # v2
+        with:
+          tool: cargo-mutants@27.1.0
+      - name: Execute frozen leaf with diagnostic telemetry
+        working-directory: source
+        env:
+          INDEX: ${{ matrix.index }}
+        run: |
+          evidence="target/quality/shard-$INDEX"
+          mkdir -p "$evidence"
+          {
+            uname -a
+            rustc --version --verbose
+            cargo --version
+            cargo mutants --version
+          } > "$evidence/toolchain.txt"
+          python3 tools/merge_mutation_shards.py commands \
+            --manifest ../control/target/nested-plan/nested-campaign.json \
+            --diff ../control/target/nested-plan/final.diff --shard "$INDEX/256" \
+            --timeout 360 --build-timeout 600 > "$evidence/run-leaf.sh"
+          # Subshell saves both statuses immediately: tee must not hide the
+          # frozen runner status. The twenty-minute deadline yields no seal.
+          (
+            set +e
+            timeout --signal=TERM --kill-after=30s 20m bash "$evidence/run-leaf.sh" 2>&1 | tee "$evidence/runner.log"
+            statuses=("${PIPESTATUS[@]}")
+            printf '%s\n' "${statuses[0]}" > "$evidence/exit-code.txt"
+            printf '%s\n' "${statuses[1]}" > "$evidence/tee-exit-code.txt"
+          ) &
+          runner_pid=$!
+          python3 ../control/tools/mutation_subshards.py telemetry --pid "$runner_pid" \
+            --source . --output "$evidence/telemetry.jsonl" &
+          telemetry_pid=$!
+          trap 'kill "$telemetry_pid" 2>/dev/null || true' EXIT
+          wait "$runner_pid"
+          kill "$telemetry_pid" 2>/dev/null || true
+          wait "$telemetry_pid" 2>/dev/null || true
+          test "$(cat "$evidence/tee-exit-code.txt")" = 0
+          case "$(cat "$evidence/exit-code.txt")" in
+            0|1|2|3) : ;;
+            *) echo 'Incomplete leaf: diagnostic artifact only' >&2; exit 1 ;;
+          esac
+      - name: Attest complete live-source leaf
+        env:
+          INDEX: ${{ matrix.index }}
+          PLAN_SHA: ${{ needs.prepare.outputs.plan_sha }}
+          MANIFEST_SHA: ${{ needs.prepare.outputs.manifest_sha }}
+        run: |
+          python3 control/tools/mutation_subshards.py attest --source source \
+            --plan control/target/nested-plan --shard "$INDEX/256" \
+            --plan-sha "$PLAN_SHA" --manifest-sha "$MANIFEST_SHA" \
+            --output source/target/quality/leaf-evidence.json
+      - name: Upload complete or partial leaf evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mutation-subleaf-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.index }}
+          path: |
+            source/target/quality/
+            source/target/final-mutation-shard-${{ matrix.index }}/mutants.out/
+            source/**/proptest-regressions/**/*.txt
+            source/**/*.proptest-regressions
+          if-no-files-found: error
+          retention-days: 3
+
+  envelope:
+    if: always()
+    needs: [prepare, leaf]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          artifact-ids: ${{ needs.prepare.outputs.artifact_id }}
+          merge-multiple: true
+          path: control/target/nested-plan
+      - name: Verify independent prepare outputs
+        env:
+          PLAN_SHA: ${{ needs.prepare.outputs.plan_sha }}
+          MANIFEST_SHA: ${{ needs.prepare.outputs.manifest_sha }}
+        run: |
+          python3 control/tools/mutation_subshards.py verify --plan control/target/nested-plan \
+            --plan-sha "$PLAN_SHA" --manifest-sha "$MANIFEST_SHA"
+      - name: Verify actual leaf API and ZIP bytes; produce explicit v2 envelope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLAN_SHA: ${{ needs.prepare.outputs.plan_sha }}
+          MANIFEST_SHA: ${{ needs.prepare.outputs.manifest_sha }}
+        run: |
+          mkdir -p control/target/nested-leaves
+          python3 control/tools/mutation_subshards.py assemble --plan control/target/nested-plan \
+            --plan-sha "$PLAN_SHA" --manifest-sha "$MANIFEST_SHA" \
+            --leaves control/target/nested-leaves --output control/target/nested-envelope.json
+      - name: Preserve envelope and independently verified provenance
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mutation-nested-envelope-${{ github.run_id }}-${{ github.run_attempt }}-20
+          path: |
+            control/target/nested-envelope.json
+            control/target/nested-plan/
+            control/target/nested-leaves/
+          if-no-files-found: error
+          retention-days: 3

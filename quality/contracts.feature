@@ -262,12 +262,16 @@ Then it rejects the request before expensive generation
     Given a local validated GGUF and an explicit nonempty layer range
     When the worker admits a dedicated TCP session
     Then token logits equal local inference and invalid limits fail before serving
+    And the maximum representable frame quota admits ordinary small messages
+
 
   @C43
   Scenario: Coordinate an ordered remote inference pipeline
     Given dedicated stages covering every validated model layer exactly once
     When prompt tokens execute or a later stage fails after an earlier commit
     Then successful logits match local inference and partial failure invalidates the whole pipeline
+    And prefill accepts the final exact context slot after rejecting overflow without consuming a partial prompt
+
 
   @C44
   Scenario: Indexed reads require a real result buffer
@@ -499,6 +503,8 @@ Then it rejects the request before expensive generation
     Then every intermediate is checked and outputs match an independent native oracle within measured tolerances
     And the minimal learned-weight case that overflows the legacy expansion remains evaluable
     And malformed parameters and shapes fail before graph mutation while construction grows linearly
+    And public getters reconstruct the same admitted RMS domain and preserve the exact declared boundary
+
 
   @C78
   Scenario: Checked symbolic execution validates every BML intermediate and exact output offset
@@ -554,6 +560,8 @@ Then it rejects the request before expensive generation
     And SwiGLU accepts explicitly declared gate bounds through 18 with every intermediate checked
     And malformed parameters, operands, maximum declarations and node references reject before construction or execution
     And softmax graph growth is linear with fixed configuration literals
+    And asymmetric addition retains its independently canonical literal prefix
+
 
   @C80
   Scenario: Indexed bounded dot templates separate operand roles and keep storage independent of vector width
@@ -578,6 +586,8 @@ Then it rejects the request before expensive generation
     And persisted extended-range SwiGLU executes checked BML across the former boundary
     And profile, literals, layouts and role mismatches reject while floating-point literals survive JSON roundtrip exactly
     And v3 artifacts retain their separate profile and nonindexed bytecode
+    And a canonical residual prefix from the persisted format loads and executes with zero construction budget
+
 
   @C84
   Scenario: CLI complete bounded compilation persists explicit arithmetic and checked indexed programs
@@ -801,11 +811,13 @@ Then it rejects the request before expensive generation
 
 
   @C107
-  Scenario: Native layer openings require valid range and vector dimensions
+  Scenario: Native layer sessions validate peer metadata and local forward admission
     Given a framed layer protocol peer and an authenticated opening request
     When the peer reports an empty or inverted layer range or zero hidden width
     Then the client rejects admission before returning a usable session
     And a valid peer can exchange a forward result and close normally
+    And invalid hidden shapes or nonfinite values send no Forward RPC and a later valid transaction remains usable
+
 
   @C108
   Scenario: Symbolic worker numeric options are validated before help mode finishes
@@ -841,3 +853,10 @@ Then it rejects the request before expensive generation
     When any explicit artifact, source, shard, identity, range or fragment option is also supplied
     Then configuration rejects before reading the plan or listening
     And an absent plan without conflicting options reaches the plan I/O error instead
+
+  @C113
+  Scenario: Autonomous BML weight materialization has an inclusive scalar-count budget
+    Given validated autonomous BML weights and an explicit checked exact F32 evaluation policy
+    When the materialization cap equals the independently counted tensor shapes
+    Then the model loads without its source GGUF and causal logits match the independent oracle
+    And zero or one fewer scalar rejects while one extra scalar remains admissible

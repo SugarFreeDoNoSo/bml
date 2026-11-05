@@ -1,0 +1,68 @@
+{
+  "status": "passed",
+  "observed_at_utc": "2026-11-05T06:07:14.813141+00:00",
+  "base_revision": "cb290927d2727aa4fad699547df884e7fa8bdcc3",
+  "command": "./scripts/check.sh cb290927d2727aa4fad699547df884e7fa8bdcc3",
+  "exit_code": 0,
+  "scope": "Public bounded profile, native remote admission and autonomous materialization contracts; complete nested-recovery controller implementation. The frozen-source hosted workspace preflight and leaves have not executed yet. No global mutation pass, numerical-parity or PMU claim.",
+  "rust_tests_passed": 987,
+  "rust_suites": 144,
+  "python_tooling_tests": 203,
+  "traceability": "113/113",
+  "historical_contract_discrepancies": 0,
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "focused_replay_executions": 11,
+  "focused_unique_candidates_detected": 10,
+  "unique_positive_control_commands": 8,
+  "log": "target/quality/wave-eight-gate.log",
+  "log_sha256": "a8a36c6baeeed07c70298f13fd720e42bf17c4b7cd05f63c512cc8562cd79732",
+  "initial_attempt": {
+    "exit_code": 101,
+    "log": "target/quality/wave-eight-gate-initial-stale-artifact.log",
+    "log_sha256": "40523f4249bdeeabe2fafc472a62d855fc74de7f7fb35f88213045e9edfa8dfa",
+    "cause": "Shared Cargo target reused an isolated replay artifact despite unchanged main sources; resolved by cleaning the three replayed packages before the full rerun.",
+    "cleanup_command": "cargo clean -p bml-domain -p bml-compiler -p bml-inference --locked",
+    "cleanup_log": "target/quality/wave-eight-clean.log",
+    "cleanup_log_sha256": "0b93467170be6646dd3bf3d25460a97520a3a073783f931bb0b5479cea9e3f63",
+    "independent_review": "target/quality/wave-eight-shared-target-review.json",
+    "independent_review_sha256": "321dc9f6582ef9ee470556f07eeabdd23a9dafab29b858a00f381cbe9f0ac837"
+  },
+  "actionlint": {
+    "version": "1.7.12",
+    "exit_code": 0,
+    "log": "target/quality/wave-eight-actionlint.log",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/wave-eight-final-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_rust_test_hashes": {
+    "crates/compiler/tests/full_bounded_contracts.rs": "9e38e429185d2169b134aa5d8bce7c6e7eaaa65413c4a36056276845aa037b26",
+    "crates/domain/tests/bounded_operation_contracts.rs": "59574ec51871ab06cb6287d34c775392f112830139ad9e2a4401b16feb42fbe7",
+    "crates/domain/tests/bounded_transformer_contracts.rs": "e00c7a73b1495f103f17d4cf4bf06f81f6bcd000263b77b8b9a9836edf8ab943",
+    "crates/inference/tests/cli_contracts.rs": "b9c811d1b35122674689bcf91a77ce6f3ad3763783c092dfced6fd40364df2f4",
+    "crates/inference/tests/model_contracts.rs": "124cc210258ad7a625440b77833fffe7b9ef81d3f5ba5d3793ce9d0ac4497505",
+    "crates/inference/tests/remote_handshake_contracts.rs": "b76525011eae5fc0846eb77ade7f1feb6b4e7bc056b50bacbd23384ad0093c73",
+    "crates/runtime/tests/symbolic_causal_contracts.rs": "cdd77ba5d8f49aa74dc6127ba422d34bc05338b99584a54d299bfe38b950d21f"
+  },
+  "tested_tool_workflow_hashes": {
+    ".github/workflows/mutation-subshards.yml": "c42af6887227e60473bd133bb114ad2a8ff06554f30dfbaa49c4be9b3ea63404",
+    "tools/mutation_subshards.py": "f2fbd775f1bbb96369be9685d478fffb7e13c9ba03d07bf6d3fa1e282712c98d",
+    "tools/test_mutation_subshards.py": "583246baffcbada14d1827d6659813725016a31707ed83bd3289f55beb01baca",
+    "tools/merge_mutation_shards.py": "3bcc7b668e6e1bc87a8e25ac425ba18948df154a0d3f7d9c67b90c6513c174a0"
+  },
+  "traceability_hashes": {
+    "quality/traceability.json": "eb1d5d3e6c42ab1b0365b886146d6a21011e68abb07524281fefecd7cf3f7eaa",
+    "quality/contracts.feature": "6214ab69c74b2434b7194fd7ab83d80577a55616ae7a28a918dcf5c9bc67d40e"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  }
+}

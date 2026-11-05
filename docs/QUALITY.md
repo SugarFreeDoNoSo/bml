@@ -116,6 +116,30 @@ con la fuente9a intacta y el mismo sellado posterior. La autorización antigua
 del shard20 sigue siendo compatible con el verificador. Sus fallos de runner
 se registran aparte y no aportan resultados sellados.
 
+`mutation-subshards.yml` prepara una recuperación separada del shard20 tras
+los dos apagados observados, cuya causa sigue sin determinarse. El helper
+original de la fuente9a lista independientemente los 256 shards del mismo
+universo y diff. Sólo ejecuta `20/256`, `84/256`, `148/256` y `212/256`:
+21/20/20/20 candidatos, con unión exacta de los 81 del padre20/64. Mantiene
+`--test-workspace true`, baseline habilitado, tiempos360/600 y entorno original.
+La preparación ejecuta además Build/Test reales del workspace sin mutar.
+
+Cada parte conserva su sello v1 y el baseline de sus propios paquetes.
+El envelope v2 guarda por separado esos cuatro baselines y el preflight real
+del workspace; no fabrica un baseline padre de nueve paquetes. El merger
+valida las hojas con las reglas v1 existentes y conserva todos los resultados
+originales. Exige hashes transmitidos desde prepare, procedencia API y bytes
+ZIP contrastados, fuente comprobada al finalizar y los logs/estados/semillas.
+Los timestamps API sin fracción se interpretan dentro de su segundo declarado;
+los tiempos internos y los timestamps con fracción conservan comparaciones exactas.
+
+Las partes tienen deadline externo de20min y job de25min para reservar margen
+al upload. Cada una publica al terminar. Telemetría, stdout con `tee` y copias
+parciales son sólo diagnóstico; una parte ausente, interrumpida, inconsistente
+o sin fuente atestada impide el envelope completo. No se infiere cero de una
+métrica no disponible ni se aceptan prefijos parciales. Preparar o iniciar este
+workflow no aprueba la campaña completa ni recupera el raw antiguo20/27.
+
 ## Instrumentación optativa
 
 ```sh

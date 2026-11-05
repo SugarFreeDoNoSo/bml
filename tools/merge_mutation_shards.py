@@ -241,34 +241,50 @@ def seal_shard(manifest, shard, source, candidates, outcomes, artifacts=None):
             "artifacts": artifacts or {}}
 
 
+def validate_v1_result(manifest, result):
+    """Validate one original format-1 seal; the acceptance rules are unchanged."""
+    assignments = validate_manifest(manifest)
+    require(isinstance(result, dict) and type(result.get("format_version")) is int
+            and result["format_version"] == 1, "invalid shard result format")
+    shard = result.get("shard")
+    require(isinstance(shard, str) and shard in assignments, "unexpected shard index")
+    require(result.get("manifest_sha256") == manifest["manifest_sha256"],
+            "shard belongs to another candidate manifest")
+    require(result.get("source") == manifest["source"], "shard sources differ")
+    require(result.get("candidates") == assignments[shard]["candidates"],
+            "shard assignment mismatch")
+    require(result.get("outcomes_sha256") == digest(result.get("outcomes")),
+            "shard outcome checksum mismatch")
+    return validate_outcomes(result.get("outcomes"), result["candidates"],
+                             manifest["source"]["workspace_packages"])
+
+
 def merge_shards(manifest, results):
     assignments = validate_manifest(manifest)
     require(isinstance(results, list) and len(results) == len(assignments), "missing or extra shard")
-    by_shard = {}
+    by_shard, nested = {}, {}
     for result in results:
-        require(isinstance(result, dict) and type(result.get("format_version")) is int
-                and result["format_version"] == 1,
-                "invalid shard result format")
+        require(isinstance(result, dict), "invalid shard result format")
         shard = result.get("shard")
         require(isinstance(shard, str) and shard in assignments, "unexpected shard index")
         require(shard not in by_shard, "duplicate shard result")
-        require(result.get("manifest_sha256") == manifest["manifest_sha256"],
-                "shard belongs to another candidate manifest")
-        require(result.get("source") == manifest["source"], "shard sources differ")
-        require(result.get("candidates") == assignments[shard]["candidates"],
-                "shard assignment mismatch")
-        require(result.get("outcomes_sha256") == digest(result.get("outcomes")),
-                "shard outcome checksum mismatch")
-        baseline, mutations = validate_outcomes(result.get("outcomes"), result["candidates"],
-                                               manifest["source"]["workspace_packages"])
-        by_shard[shard] = (result, baseline, mutations)
+        if type(result.get("format_version")) is int and result["format_version"] == 2:
+            # Explicit parent envelopes preserve their real leaf baselines. They
+            # never masquerade as a single original package-scope baseline.
+            from mutation_subshards import validate_envelope
+            baselines, mutations, start, end = validate_envelope(manifest, result)
+            nested[shard] = copy.deepcopy(result)
+        else:
+            baseline, mutations = validate_v1_result(manifest, result)
+            baselines = [copy.deepcopy(baseline)]
+            baselines[0]["source_shard"] = shard
+            start, end = result["outcomes"]["start_time"], result["outcomes"]["end_time"]
+        by_shard[shard] = (result, baselines, mutations, start, end)
     baselines, mutations, seen = [], [], set()
     artifacts = {}
     for shard in assignments:
-        result, baseline, outcomes = by_shard[shard]
-        original = copy.deepcopy(baseline)
-        original["source_shard"] = shard
-        baselines.append(original)
+        result, originals, outcomes, _, _ = by_shard[shard]
+        baselines.extend(copy.deepcopy(originals))
         artifacts[shard] = result.get("artifacts", {})
         for outcome in outcomes:
             name = outcome["scenario"]["Mutant"]["name"]
@@ -281,15 +297,18 @@ def merge_shards(manifest, results):
     order = {row["name"]: index for index, row in enumerate(manifest["candidates"])}
     mutations.sort(key=lambda row: order[row["scenario"]["Mutant"]["name"]])
     counts = Counter(row["summary"] for row in mutations)
-    starts = [row[0]["outcomes"]["start_time"] for row in by_shard.values()]
-    ends = [row[0]["outcomes"]["end_time"] for row in by_shard.values()]
-    return {"outcomes": [copy.deepcopy(baselines[0]), *mutations],
-            "total_mutants": len(mutations),
-            **{key: counts[summary] for summary, key in COUNTS.items()}, "success": 0,
-            "start_time": min(starts, key=timestamp), "end_time": max(ends, key=timestamp),
-            "cargo_mutants_version": TOOL_VERSION, "campaign_manifest": manifest,
-            "shard_baselines": baselines, "shard_artifacts": artifacts,
-            "baseline_scope": "Every shard baseline passed; first original baseline retained above."}
+    starts = [row[3] for row in by_shard.values()]
+    ends = [row[4] for row in by_shard.values()]
+    merged = {"outcomes": [copy.deepcopy(baselines[0]), *mutations],
+              "total_mutants": len(mutations),
+              **{key: counts[summary] for summary, key in COUNTS.items()}, "success": 0,
+              "start_time": min(starts, key=timestamp), "end_time": max(ends, key=timestamp),
+              "cargo_mutants_version": TOOL_VERSION, "campaign_manifest": manifest,
+              "shard_baselines": baselines, "shard_artifacts": artifacts,
+              "baseline_scope": "Every real shard/leaf baseline passed; first original baseline retained above."}
+    if nested:
+        merged["nested_recoveries"] = nested
+    return merged
 
 
 def read_json(path):

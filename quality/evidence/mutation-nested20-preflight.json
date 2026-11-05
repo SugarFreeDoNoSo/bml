@@ -1,0 +1,112 @@
+{
+  "format_version": 1,
+  "scope": "wave8 implementation preflight; listing-only source9a, no Cargo build/test/mutation or Actions dispatch locally",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "original_manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "original_manifest_sha256": "cfee7050785ae54c46f84826c3c9e155540d4b22a4dab4793adfb14471d9322e",
+  "nested_manifest_file": "target/wave8-manifest256.json",
+  "nested_manifest_file_sha256": "00b8dd67209bb0e07e8e1c42c2bca84cbdb2e4ef54861ac2e381962f41f74162",
+  "nested_manifest_sha256": "4a27f88e46c1e2f088d3293b14e17d69c4976f55b67a7ce8160d5077dd08cee7",
+  "independently_listed_partitions": 256,
+  "candidate_universe_count": 5183,
+  "parent_shard": "20/64",
+  "parent_candidate_count": 81,
+  "leaf_counts": {
+    "20/256": 21,
+    "84/256": 20,
+    "148/256": 20,
+    "212/256": 20
+  },
+  "leaf_candidate_sha256": {
+    "20/256": "7377aeb4fc2f8a47c99b11ca6faeba2b4894dda552d25955f45706e98464a19d",
+    "84/256": "f2fabdd524ce1fe64e94b5c70698e7d87fc2adc1971a8f84b307fa59d5b491f0",
+    "148/256": "c07ffa3304a9eb1d47c5178f5c30ae8c727ae0f59dde4b9bfd9850fe38e331b4",
+    "212/256": "a107f75ae6c4e5d6b0d4dd46a6c2345cb3d664f03343cab24d84e04e369cf940"
+  },
+  "source_verified_after_listing": true,
+  "source_git_status_porcelain": "",
+  "implementation_sha256": {
+    ".github/workflows/mutation-subshards.yml": "c42af6887227e60473bd133bb114ad2a8ff06554f30dfbaa49c4be9b3ea63404",
+    "tools/mutation_subshards.py": "f2fbd775f1bbb96369be9685d478fffb7e13c9ba03d07bf6d3fa1e282712c98d",
+    "tools/test_mutation_subshards.py": "583246baffcbada14d1827d6659813725016a31707ed83bd3289f55beb01baca",
+    "tools/merge_mutation_shards.py": "3bcc7b668e6e1bc87a8e25ac425ba18948df154a0d3f7d9c67b90c6513c174a0"
+  },
+  "checks": {
+    "python": {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools"
+      ],
+      "tests": 203,
+      "exit_code": 0,
+      "log_file": "target/wave8-all-tools-timestamp.log",
+      "log_sha256": "4b18f0bb529af712e9cb6e9fd5770a9acc3684f105752202fee1d778ec6bd6c9"
+    },
+    "actionlint": {
+      "version": "1.7.12",
+      "binary_sha256": "c872d6db8c6bf83a8eaa704fc93999f027d55dffbc63b8a6abdccb47df5f4cd4",
+      "argv": [
+        "actionlint",
+        ".github/workflows/mutation-subshards.yml"
+      ],
+      "exit_code": 0
+    },
+    "diff_check": {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0
+    },
+    "origin_api": {
+      "file": "target/wave8-origin-preflight.json",
+      "sha256": "7927c08e41f61a44bd4377279d5fda1016a386f5bc6934a6f266bbc7b5710b11",
+      "original_job": 126992338567,
+      "second_run": 41967922830,
+      "second_job": 127049145325,
+      "state": "both terminal shutdown143 verified; cause unknown; no fabricated recovery run"
+    },
+    "original_prepare": {
+      "argv": [
+        "python3",
+        "/home/dev/Work/bml/target/wave-complete-mutation-prepare/tools/merge_mutation_shards.py",
+        "prepare",
+        "--root",
+        "/home/dev/Work/bml/target/wave-complete-mutation-prepare",
+        "--revision",
+        "9a6bc9680d5915576ca92528f60956efe9796cef",
+        "--base",
+        "40b3f1be2d3f97028b741750ed61ab72f501a555",
+        "--shards",
+        "256",
+        "--diff",
+        "/home/dev/Work/bml/target/quality/mutation-plan-41950170549/final.diff",
+        "--output",
+        "/home/dev/Work/bml/target/wave-eight-subshards-cb/target/wave8-manifest256.json"
+      ],
+      "exit_code": 0,
+      "log_file": "target/wave8-listing256.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "frozen_helper_sha256": "9a63c6ce36611e6c6cfb6e18df68392b8ffe4d30c0ca1c3674de4c1f1499400c"
+    }
+  },
+  "quality_gate": "not evaluated; raw statuses must remain unchanged; complete original union required",
+  "timestamp_upper_bound_review": {
+    "previous_preflight_sha256": "72f5f1f3ea2dfd140cc6a50d5c34d560eddb3b9034c886f0e41bfd0ad0530ccc",
+    "previous_preflight_file": "target/wave8-preflight-before-timestamp.json",
+    "scope": "Only prepare/leaf API completion upper bounds: second-only RFC3339 completion t permits precise event < t+1s; explicit fractions use event <= t. All internal precise comparisons unchanged.",
+    "regressions": [
+      "leaf +.500 within API second accepted",
+      "leaf next exact second rejected",
+      "prepare +.500 within API second accepted",
+      "prepare next exact second rejected",
+      "explicit API .750 allows .500; explicit .000 rejects .500 for both producers"
+    ],
+    "tests": "203 all-tools tests passed; actionlint, diff-check and py_compile passed; no repeated listing campaign or Cargo build"
+  }
+}

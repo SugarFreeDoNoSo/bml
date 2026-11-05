@@ -725,7 +725,8 @@
       "bounded_rms_matches_independent_oracle_across_signs_zeros_widths_and_epsilon",
       "bounded_rms_uses_correlation_for_sparse_vectors_and_accepts_safe_extreme_bounds",
       "bounded_rms_rejects_parameters_and_operand_declarations_before_execution",
-      "bounded_rms_validates_structure_without_mutation_and_has_affine_node_growth"
+      "bounded_rms_validates_structure_without_mutation_and_has_affine_node_growth",
+      "rms_bound_getters_reconstruct_the_same_admitted_domain"
     ]
   },
   "C78": {
@@ -790,7 +791,8 @@
       "bounded_softmax_uses_selected_maximum_for_negative_extremes_and_permutations",
       "bounded_operation_parameters_and_contexts_are_enforced_without_builder_mutation",
       "bounded_softmax_literals_and_graph_growth_are_independent_of_observed_values",
-      "bounded_swiglu_extended_range_checks_every_node_and_matches_silu"
+      "bounded_swiglu_extended_range_checks_every_node_and_matches_silu",
+      "asymmetric_addition_keeps_its_canonical_literal_prefix"
     ]
   },
   "C80": {
@@ -819,7 +821,8 @@
       "persisted_extended_swiglu_executes_checked_bml_across_boundary",
       "persisted_down_projection_has_independent_bounds_and_checked_execution",
       "residual_bound_errors_identify_layer_element_and_operands_without_committing",
-      "rms_bound_errors_identify_tensor_and_operand_maxima_without_committing"
+      "rms_bound_errors_identify_tensor_and_operand_maxima_without_committing",
+      "bounded_v4_accepts_the_independently_canonical_residual_prefix"
     ]
   },
   "C84": {
@@ -1102,7 +1105,8 @@
     "package": "bml-inference",
     "target": "remote_handshake_contracts",
     "tests": [
-      "opening_requires_a_nonempty_ordered_range_and_positive_hidden_width"
+      "opening_requires_a_nonempty_ordered_range_and_positive_hidden_width",
+      "forward_rejects_shape_and_nonfinite_values_locally_without_poisoning_the_session"
     ]
   },
   "C108": {
@@ -1140,6 +1144,13 @@
     "target": "timeout_cli_contracts",
     "tests": [
       "prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io"
+    ]
+  },
+  "C113": {
+    "package": "bml-runtime",
+    "target": "symbolic_causal_contracts",
+    "tests": [
+      "converted_autonomous_model_tokenizer_logits_and_generation_match_independent_oracle"
     ]
   }
 }
