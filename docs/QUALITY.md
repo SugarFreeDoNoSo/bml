@@ -328,21 +328,23 @@ Las pruebas `frame_budget_rejects_header_before_body_and_accepts_exact_limit` y
 `configured_frame_limit_closes_oversized_session_before_reading_body` verifican
 el límite inclusivo y el rechazo usando sockets reales sin enviar el cuerpo.
 
-Dentro de ese framing, `BatchRequest` legado exige una dimensión u32 que coincida
-con el shard y exactamente esa cantidad de valores f64 little-endian. Rechaza
-truncamientos, dimensiones discordantes y bytes sobrantes con `BatchResult` vacío
-y cierre de sesión. `legacy_batch_tcp_validates_dimensions_and_exact_payload_length`
-comprueba por TCP la carga del shard, su ACK y los mensajes válidos e inválidos;
-un shard sin capas preserva el vector byte por byte. Esta prueba valida el protocolo
-legado, no inferencia causal completa ni generación de tokens.
+Dentro de ese framing, la inferencia `BatchRequest` legacy está retirada: el
+worker responde siempre con `BatchResult` vacío y conserva la conexión para
+otros comandos. `legacy_batch_tcp_rejects_valid_inference_without_disabling_health`
+comprueba por TCP la admisión y su ACK, el rechazo de un shard RMS/Q y un hidden
+state válidos y un health posterior. La ruta causal completa usa
+`--symbolic-artifact` o `--prepared`. La antigua aceptación de vectores está
+conservada como evidencia histórica en `quality/evidence/worker-batch-protocol.json`;
+no describe el contrato actual.
 
 La carga legacy de `--fragment` restaura la configuración desde el header hermano.
 El lector limita el header a 1 MiB y el shard a 512 MiB; comprueba versión, UTF-8,
 truncamientos, conteos y rangos antes de reservar por conteos declarados. El worker
-valida las formas que ejecuta: RMSNorm `[n_embd, 1]` y Q `[n_embd, n_embd]`, con
+conserva las comprobaciones de admisión: RMSNorm `[n_embd, 1]` y Q `[n_embd, n_embd]`, con
 dimensión positiva y rangos de pesos válidos. Un shard malformado se rechaza sin
-sustituir el cargado ni envenenar el mutex. El ejecutor recorre sólo capas con
-operaciones presentes, en orden, sin iterar rangos declarados de capas vacías.
+sustituir el cargado ni envenenar el mutex. La admisión recorre sólo los metadatos
+recibidos, sin iterar rangos declarados de capas vacías; el ACK de carga no ejecuta
+un transformer.
 El límite de archivo no equivale al pico de RSS: bytes y pesos decodificados
 coexisten. C68 y las regresiones TCP/file del
 worker acreditan estos límites, no un transformer completo.

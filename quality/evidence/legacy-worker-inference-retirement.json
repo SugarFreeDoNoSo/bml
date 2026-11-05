@@ -1,0 +1,166 @@
+{
+  "format_version": 1,
+  "captured_at": "2026-11-05T14:11:19.819887+00:00",
+  "base_revision": "6b2394ab20bb1f3f792b752a4a8bb59b8202505d",
+  "problem": "Legacy BatchRequest returned successful RMS/Q-only hidden states while omitting the rest of the causal transformer.",
+  "behavior": "Explicit empty BatchResult rejection and migration diagnostic to --symbolic-artifact/--prepared. Compatibility admission/ACK, frame and shard validation, pending queue, health, graph/vector and causal symbolic modes preserved.",
+  "tested_source_sha256": {
+    "crates/worker/src/main.rs": "c75f242ab108ff7ef8682ea1320ff9d4b4936fbfa722a54c5546e9a3812cfd80",
+    "crates/runtime/src/net.rs": "142a0b6da796fb8e5e930d418f08a92e3e0febce31da22a8b21b17941ff4ca8e",
+    "docs/QUALITY.md": "327c98b9cc6a339d12bb8093f26e80a981b0a6a72acf9b93efddfff3771621df",
+    "openspec/changes/bml-implementation-plan/tasks.md": "3f807d66d110a4d9709dd1e8621470084bfc428a533f5b19eddc7adbb3e7a558",
+    "openspec/changes/bml-inference-pipeline/tasks.md": "f3284d7fb39805d32e71d09ee0d34da7a8876e906be085a1e72d190a1cc3a6d7",
+    "openspec/changes/fix-placeholders/tasks.md": "cb344b059bd199d2fd9cdaf6d879ce9f7be7a1b80d187daa6c4e9ae562b46fc1"
+  },
+  "final_patch_sha256": "7166160c22639d2a3a76e55adcdcc077a60cdc8dfe265a2515444a264eced24a",
+  "canonical_gate": {
+    "argv": [
+      "./scripts/check.sh",
+      "6d8ad482783b9d480a89215539c435016c94d745"
+    ],
+    "exit_code": 0,
+    "rust_passed": 1003,
+    "suites": 145,
+    "ignored": 28,
+    "filtered": 0,
+    "python_passed": 236,
+    "historical_contract_discrepancies": 0,
+    "traceability_registered": 115,
+    "traceability_total": 115,
+    "clippy_diagnostics": 50,
+    "clippy_baseline": 192,
+    "clippy_new": 0
+  },
+  "features": {
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "bml",
+      "-p",
+      "bml-runtime",
+      "-p",
+      "bml-kernels",
+      "-p",
+      "bml-queue",
+      "--all-features",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "rust_passed": 225,
+    "suites": 32,
+    "ignored": 5,
+    "filtered": 0,
+    "actual_loom_models": [
+      "model::tests::bounded_admission_preserves_rejected_ownership",
+      "model::tests::consumed_and_retained_values_are_dropped_exactly_once",
+      "model::tests::publication_and_slot_reuse_preserve_payload",
+      "model::tests::concurrent_reuse_publishes_the_next_lap_after_consumption",
+      "model::tests::simultaneous_consumers_transfer_each_item_once",
+      "model::tests::publication_precedes_producer_completion_without_join_synchronization",
+      "append_only::loom_tests::concurrent_complete_records_receive_disjoint_stable_ranges",
+      "append_only::loom_tests::record_reservations_do_not_overlap_or_consume_capacity_on_failure",
+      "append_only::loom_tests::saturation_race_preserves_the_winner",
+      "append_only::loom_tests::concurrent_publish_and_read_explores_real_storage_atomics"
+    ]
+  },
+  "public_consumer_tests": {
+    "legacy_worker_binary": {
+      "passed": 13,
+      "new_regression": "connection_tests::legacy_batch_tcp_rejects_valid_inference_without_disabling_health",
+      "oracle": "Numerically valid RMS/Q shard and [1,2] hidden state: admissionACK1, inference rejected, subsequent health succeeds."
+    },
+    "symbolic_worker_contracts": {
+      "passed": 11,
+      "ignored": 2,
+      "scope": "Existing real local worker processes, source-free loading, 1/2/extra ranges, causal logits and independent sessions."
+    },
+    "symbolic_distributed_cli": {
+      "passed": 9,
+      "ignored": 1,
+      "scope": "Existing modern CLI partition/deployment/prepared shards, persisted causal generation, EOS and UTF8 output."
+    }
+  },
+  "independent_reviews": {
+    "source_review_sha256": "2a609cfd615a67dec16feb1a1fdf0d01acf16fd4d840c39b0e8e9f7136b6eda4",
+    "integration_doc_review_sha256": "69596d8b254316cc8a43f22739f2b81043da93b638c0b6dbf596f238018be818",
+    "conclusion": "No blocking source defect; DOC-1 resolved, net.rs noncomment lines identical, historical evidence unchanged."
+  },
+  "openspec": {
+    "initial_all_strict_items": 16,
+    "after_task_update_all_strict_items": 16,
+    "exit_code": 0
+  },
+  "raw_archive": {
+    "path": "legacy-worker-inference-retirement.tar.gz",
+    "sha256": "fe50087fd0c5faa9bfafe568aad4a80e22e45591acfd5cf2dcca2d52ae486a80",
+    "bytes": 79888,
+    "members": {
+      "consumer-audit/audit.json": {
+        "sha256": "cf328398e2e6561cf4a8150856d213a23ac9b3178326820e04b5c3018e9c011e",
+        "bytes": 1969
+      },
+      "consumer-audit/report.md": {
+        "sha256": "4cd468c1da6468b211a1dff1ddc6afe1bc6abe722cd2a40b8ddc5ced2fe12fe5",
+        "bytes": 5415
+      },
+      "gate/check-0.log": {
+        "sha256": "2dfbac064f4c4c085609b3abf80f447a0ddfcee2e1dd268d5149686858e7688d",
+        "bytes": 26675
+      },
+      "gate/check-1.log": {
+        "sha256": "375b5623f4fd582886c4a5fb526331d2622dae870d9f21d9bc15a7aa39672b2f",
+        "bytes": 117299
+      },
+      "gate/check-2.log": {
+        "sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598",
+        "bytes": 499
+      },
+      "gate/final-integration.patch": {
+        "sha256": "7166160c22639d2a3a76e55adcdcc077a60cdc8dfe265a2515444a264eced24a",
+        "bytes": 33073
+      },
+      "gate/final-task-openspec.log": {
+        "sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598",
+        "bytes": 499
+      },
+      "gate/results.json": {
+        "sha256": "9f803a040dbf545b343d0e4ad63fbd0ae34c33c44a7a23e8eace6ae0a127fcfd",
+        "bytes": 43486
+      },
+      "independent-review/integration-doc-review.json": {
+        "sha256": "69596d8b254316cc8a43f22739f2b81043da93b638c0b6dbf596f238018be818",
+        "bytes": 2731
+      },
+      "independent-review/integration-doc-review.md": {
+        "sha256": "ff3c6aea5cfdb328a2fe21a46b2af60c25c1122705b4b538abd3204d17ec2be1",
+        "bytes": 1261
+      },
+      "independent-review/review.json": {
+        "sha256": "2a609cfd615a67dec16feb1a1fdf0d01acf16fd4d840c39b0e8e9f7136b6eda4",
+        "bytes": 7265
+      },
+      "independent-review/review.md": {
+        "sha256": "ec42d598e0abe8552ae5e0a90ff208c5249f5d9f25ec0afa7a19dd1e68be5fab",
+        "bytes": 4179
+      },
+      "original-handoff/NOTES.md": {
+        "sha256": "ab3219c5082026054a50101d20f46cea0e8d3c3ddb3db1e1d85b43540a0a008f",
+        "bytes": 4258
+      },
+      "original-handoff/checks.json": {
+        "sha256": "4397601c68e174655179d5b465870dea9aee204269a383e7799f9d3286720201",
+        "bytes": 983
+      },
+      "original-handoff/legacy-worker-retirement.patch": {
+        "sha256": "723bb05bf767a16826ee52996700b663429fc138d8e8bd7d0d172c9b48c53f09",
+        "bytes": 20253
+      },
+      "original-handoff/legacy-worker-retirement.patch.sha256": {
+        "sha256": "6faf9951121eac00b23f2d8b10b0a5b983f83db799115878f5dcb0c44ddacde1",
+        "bytes": 97
+      }
+    }
+  },
+  "scope": "Closes this explicit local consumer retirement only. fix-placeholders8.5.8/8.5.9, real-host validation, full larger-model inference, release6.2 full current mutation campaign and6.3 remain open. Ignored real-model tests are not counted as validated."
+}

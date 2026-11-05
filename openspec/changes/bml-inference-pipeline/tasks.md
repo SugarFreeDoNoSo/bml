@@ -55,7 +55,7 @@ una prueba con sockets locales ejecuta health, steal vacío, dos matmuls vectori
 con oráculo `[11,16]` y nuevos health sobre la misma conexión. El cliente rechaza
 tipos de respuesta incorrectos en health/steal. `cargo test -p bml-worker -p
 bml-runtime --locked` pasa. Esto no completa inferencia distribuida:
-`ExecuteFragment` sigue cargando pesos y `execute_layers` sigue siendo parcial.
+`ExecuteFragment` sólo admite pesos; la ejecución parcial RMS/Q de `BatchRequest` está ahora retirada con rechazo explícito y migración a `--symbolic-artifact`/`--prepared`.
 El decodificador de esos fragmentos comprueba todos los accesos, UTF-8, conteos
 antes de reservar, rangos de capas/tensores y bytes sobrantes. Sus pruebas
 recorren cada truncamiento del fixture y longitudes maliciosas; las tres pruebas

@@ -10,6 +10,7 @@
 //!
 //! # Con un fragmento pre-cargado
 //! bml-worker --port 9999 --fragment /path/to/fragment_0.bmlgraph
+//! # Legacy admission only; causal inference uses --symbolic-artifact or --prepared.
 //! ```
 //!
 //! # Protocolo
@@ -23,7 +24,7 @@
 //! | HealthCheck | Responde alive |
 //! | StealWork | Retira un fragmento pendiente y lo transfiere al requester |
 //! | EnqueueFragment | Valida y admite trabajo pendiente en una cola acotada |
-//! | BatchRequest | Recibe dimensión + hidden state, ejecuta las operaciones legadas, responde BatchResult |
+//! | BatchRequest | Legacy inference retired; returns an empty BatchResult |
 
 use bml_compiler::distributed::{
     deserialize_vector_fragment, load_distributed_fragment, DistributedFragment,
@@ -275,7 +276,7 @@ fn main() {
             "-h" | "--help" => {
                 println!("bml-worker [--port 9999] [--fragment /path/to/fragment_N.bmlgraph]");
                 println!("  --port N        Puerto TCP (default: 9999)");
-                println!("  --fragment PATH Fragmento .bmlgraph pre-cargado");
+                println!("  --fragment PATH Legacy admission only; no transformer inference");
                 println!("  --max-message-bytes N Maximum incoming payload (default: 67108864)");
                 println!("  --symbolic-artifact PATH --layer-start N --layer-end N: serve persisted symbolic layer sessions");
                 println!("  --symbolic-source PATH --symbolic-context N --symbolic-kv-bytes N: source override and per-session budgets");
@@ -499,7 +500,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<Mutex<WorkerState>>) {
             }
 
             MsgType::ExecuteFragment => {
-                // Deserializar fragmento desde el payload
+                // Compatibility admission only; this acknowledgement is not inference.
                 let frag = match deserialize_fragment_from_bytes(&msg.payload) {
                     Ok(f) => f,
                     Err(e) => {
@@ -534,57 +535,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<Mutex<WorkerState>>) {
             }
 
             MsgType::BatchRequest => {
-                // Recibe: hidden state (n_embd × f64) + ejecuta sus capas
-                // Formato payload: [n_embd 4B][hidden: n_embd × 8B f64]
-                let s = state.lock().unwrap();
-                if let Some(ref frag) = s.fragment {
-                    let n_embd = frag.config.n_embd as usize;
-
-                    let expected_len = n_embd.checked_mul(8).and_then(|n| n.checked_add(4));
-                    let declared_dimension = msg
-                        .payload
-                        .get(..4)
-                        .map(|bytes| u32::from_le_bytes(bytes.try_into().unwrap()));
-                    if expected_len != Some(msg.payload.len())
-                        || declared_dimension != Some(frag.config.n_embd)
-                    {
-                        let _ = send_msg(&mut stream, &Message::new(MsgType::BatchResult, vec![]));
-                        return;
-                    }
-
-                    // Leer hidden state
-                    let mut hidden = vec![0.0_f64; n_embd];
-                    for i in 0..n_embd {
-                        let offset = 4 + i * 8;
-                        hidden[i] =
-                            f64::from_le_bytes(msg.payload[offset..offset + 8].try_into().unwrap());
-                    }
-
-                    // Ejecutar las capas de este fragmento
-                    let result_hidden = match execute_layers(frag, &hidden) {
-                        Ok(result) => result,
-                        Err(error) => {
-                            eprintln!("[{peer}] Invalid legacy shard: {error}");
-                            let _ =
-                                send_msg(&mut stream, &Message::new(MsgType::BatchResult, vec![]));
-                            return;
-                        }
-                    };
-
-                    // Responder con el nuevo hidden state
-                    let mut response_payload = Vec::with_capacity(4 + result_hidden.len() * 8);
-                    response_payload.extend_from_slice(&(result_hidden.len() as u32).to_le_bytes());
-                    for v in &result_hidden {
-                        response_payload.extend_from_slice(&v.to_le_bytes());
-                    }
-
-                    let _ = send_msg(
-                        &mut stream,
-                        &Message::new(MsgType::BatchResult, response_payload),
-                    );
-                } else {
-                    eprintln!("[{peer}] BatchRequest sin fragmento cargado");
-                    let _ = send_msg(&mut stream, &Message::new(MsgType::BatchResult, vec![]));
+                // Keep the existing rejection frame; a partial RMS/Q result is
+                // not a causal transformer output. Other commands remain usable.
+                eprintln!("[{peer}] Legacy transformer inference is retired: use --symbolic-artifact or --prepared");
+                if send_msg(&mut stream, &Message::new(MsgType::BatchResult, vec![])).is_err() {
+                    return;
                 }
             }
 
@@ -650,7 +605,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<Mutex<WorkerState>>) {
     }
 }
 
-/// Validate the shapes consumed by the legacy layer executor. Inspect actual
+/// Preserve compatibility admission checks for legacy fragment shapes. Inspect actual
 /// tensor metadata, not every declared layer, so admission work is bounded by
 /// the received metadata even when a shard declares a very large layer range.
 fn validate_legacy_fragment(fragment: &DistributedFragment) -> Result<(), String> {
@@ -698,63 +653,6 @@ fn load_legacy_fragment(path: &std::path::Path) -> Result<DistributedFragment, S
     let fragment = load_distributed_fragment(path)?;
     validate_legacy_fragment(&fragment)?;
     Ok(fragment)
-}
-
-/// Execute the historical RMSNorm/Q-only path after validating all dimensions.
-/// This is not a complete causal transformer implementation.
-fn execute_layers(frag: &DistributedFragment, hidden: &[f64]) -> Result<Vec<f64>, String> {
-    validate_legacy_fragment(frag)?;
-    let n_embd = frag.config.n_embd as usize;
-    if hidden.len() != n_embd {
-        return Err("legacy hidden-state dimension mismatch".into());
-    }
-    // Missing operations are no-ops in this legacy path. Build only the layers
-    // represented by executable metadata, rather than walking a potentially
-    // enormous declared range. Keep ascending layers and the first tensor with
-    // each canonical name, exactly as the former per-layer searches did.
-    let mut layers = std::collections::BTreeMap::new();
-    for tensor in &frag.tensors {
-        let Some((layer, operation)) = legacy_tensor_layer(&tensor.name) else {
-            continue;
-        };
-        if !(frag.layer_start..frag.layer_end).contains(&layer) {
-            continue;
-        }
-        if operation == "attn_norm.weight" || operation == "attn_q.weight" {
-            let entry = layers.entry(layer).or_insert((None, None));
-            let slot = if operation == "attn_norm.weight" {
-                &mut entry.0
-            } else {
-                &mut entry.1
-            };
-            slot.get_or_insert(tensor);
-        }
-    }
-    let mut h = hidden.to_vec();
-    for (norm, projection) in layers.into_values() {
-        if let Some(meta) = norm {
-            let offset = meta.offset as usize;
-            let mean_sq: f64 = h.iter().map(|v| v * v).sum::<f64>() / n_embd as f64;
-            let rms = (mean_sq + 1e-5).sqrt();
-            for i in 0..n_embd {
-                h[i] = h[i] / rms * f64::from(frag.weights[offset + i]);
-            }
-        }
-        if let Some(meta) = projection {
-            let offset = meta.offset as usize;
-            let mut q = vec![0.0_f64; n_embd];
-            for j in 0..n_embd {
-                let mut dot = 0.0;
-                for i in 0..n_embd {
-                    let idx = offset + i * n_embd + j;
-                    dot += h[i] * f64::from(frag.weights[idx]);
-                }
-                q[j] = dot;
-            }
-            h = q;
-        }
-    }
-    Ok(h)
 }
 
 /// Serializa un DistributedFragment a bytes (para envío via TCP).
@@ -1056,86 +954,73 @@ mod connection_tests {
     }
 
     #[test]
-    fn legacy_batch_tcp_validates_dimensions_and_exact_payload_length() {
+    fn legacy_batch_tcp_rejects_valid_inference_without_disabling_health() {
+        use bml_compiler::distributed::TensorMeta;
         let mut fragment = fragment_fixture();
-        fragment.layer_end = 0;
-        fragment.config.n_embd = 3;
-        fragment.weights.clear();
-        fragment.tensors.clear();
-        let mut valid = 3_u32.to_le_bytes().to_vec();
-        for value in [1.25_f64, -2.5, 7.0] {
-            valid.extend_from_slice(&value.to_le_bytes());
-        }
-        let mut wrong_dimension = valid.clone();
-        wrong_dimension[..4].copy_from_slice(&2_u32.to_le_bytes());
-        let mut trailing = valid.clone();
-        trailing.push(0);
-        let mut cases = vec![
-            (valid.clone(), true),
-            (wrong_dimension, false),
-            (trailing, false),
+        fragment.config.n_embd = 2;
+        fragment.head_dim = 2;
+        fragment.weights = vec![1.0, 1.0, 1.0, 2.0, 3.0, 4.0];
+        fragment.tensors = vec![
+            TensorMeta {
+                name: "blk.0.attn_norm.weight".into(),
+                offset: 0,
+                n_rows: 2,
+                n_cols: 1,
+            },
+            TensorMeta {
+                name: "blk.0.attn_q.weight".into(),
+                offset: 2,
+                n_rows: 2,
+                n_cols: 2,
+            },
         ];
-        for end in 0..valid.len() {
-            cases.push((valid[..end].to_vec(), false));
-        }
-        for (payload, accepted) in cases {
-            let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-            let address = listener.local_addr().unwrap();
-            let server = std::thread::spawn(move || {
-                let (stream, _) = listener.accept().unwrap();
-                handle_connection(
-                    stream,
-                    Arc::new(Mutex::new(WorkerState {
-                        fragment: None,
-                        pending: Arc::new(bml_runtime::queue::PendingWork::new(1).unwrap()),
-                        max_payload_bytes: DEFAULT_MAX_PAYLOAD_BYTES,
-                    })),
-                );
-            });
-            let mut client = TcpStream::connect(address).unwrap();
-            client
-                .set_read_timeout(Some(std::time::Duration::from_secs(2)))
-                .unwrap();
-            client
-                .set_write_timeout(Some(std::time::Duration::from_secs(2)))
-                .unwrap();
-            send_msg(
-                &mut client,
-                &Message::new(
-                    MsgType::ExecuteFragment,
-                    serialize_fragment_to_bytes(&fragment),
-                ),
-            )
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            handle_connection(
+                stream,
+                Arc::new(Mutex::new(WorkerState {
+                    fragment: None,
+                    pending: Arc::new(bml_runtime::queue::PendingWork::new(1).unwrap()),
+                    max_payload_bytes: DEFAULT_MAX_PAYLOAD_BYTES,
+                })),
+            );
+        });
+        let mut client = TcpStream::connect(address).unwrap();
+        client
+            .set_read_timeout(Some(std::time::Duration::from_secs(2)))
             .unwrap();
-            let ack = recv_msg(&mut client).unwrap();
-            assert_eq!(ack.msg_type, MsgType::ReportResult);
-            assert_eq!(ack.payload, 1.0_f64.to_le_bytes());
-            send_msg(
-                &mut client,
-                &Message::new(MsgType::BatchRequest, payload.clone()),
-            )
+        client
+            .set_write_timeout(Some(std::time::Duration::from_secs(2)))
             .unwrap();
-            let response = recv_msg(&mut client).unwrap();
-            assert_eq!(response.msg_type, MsgType::BatchResult);
-            if accepted {
-                // No layers: the independently encoded vector is preserved byte for byte.
-                assert_eq!(response.payload, valid);
-                send_msg(&mut client, &Message::new(MsgType::HealthCheck, vec![])).unwrap();
-                let health = recv_msg(&mut client).unwrap();
-                assert_eq!(health.msg_type, MsgType::HealthCheck);
-                assert_eq!(health.payload[0], 1);
-            } else {
-                assert!(response.payload.is_empty(), "payload={payload:?}");
-                use std::io::Read;
-                assert_eq!(
-                    client.read(&mut [0_u8; 1]).unwrap(),
-                    0,
-                    "invalid session must close"
-                );
-            }
-            drop(client);
-            server.join().unwrap();
+        send_msg(
+            &mut client,
+            &Message::new(
+                MsgType::ExecuteFragment,
+                serialize_fragment_to_bytes(&fragment),
+            ),
+        )
+        .unwrap();
+        let ack = recv_msg(&mut client).unwrap();
+        assert_eq!(ack.msg_type, MsgType::ReportResult);
+        assert_eq!(ack.payload, 1.0_f64.to_le_bytes());
+        // Valid input and finite RMS/Q weights used to return
+        // [7,10]/sqrt(2.5+1e-5), despite omitting the rest of the layer.
+        let mut payload = 2_u32.to_le_bytes().to_vec();
+        for value in [1.0_f64, 2.0] {
+            payload.extend_from_slice(&value.to_le_bytes());
         }
+        send_msg(&mut client, &Message::new(MsgType::BatchRequest, payload)).unwrap();
+        let result = recv_msg(&mut client).unwrap();
+        assert_eq!(result.msg_type, MsgType::BatchResult);
+        assert!(result.payload.is_empty());
+        send_msg(&mut client, &Message::new(MsgType::HealthCheck, vec![])).unwrap();
+        let health = recv_msg(&mut client).unwrap();
+        assert_eq!(health.msg_type, MsgType::HealthCheck);
+        assert_eq!(health.payload[0], 1);
+        drop(client);
+        server.join().unwrap();
     }
 
     #[test]
@@ -1222,16 +1107,13 @@ mod connection_tests {
     }
 
     #[test]
-    fn legacy_shard_preflight_rejects_unsafe_shapes_before_execution() {
+    fn legacy_shard_preflight_rejects_unsafe_shapes_before_admission() {
         for fragment in malformed_legacy_shapes() {
             assert!(validate_legacy_fragment(&fragment).is_err());
             assert!(
                 deserialize_fragment_from_bytes(&serialize_fragment_to_bytes(&fragment)).is_err()
             );
         }
-        let mut bad = malformed_legacy_shapes();
-        // This small malformed model previously panicked in its second layer.
-        assert!(execute_layers(&bad.remove(1), &[1.0, 2.0]).is_err());
         let mut valid = fragment_fixture();
         valid.config.n_embd = 2;
         valid.weights = vec![1.0, 1.0, 1.0, 2.0, 3.0, 4.0];
@@ -1249,12 +1131,7 @@ mod connection_tests {
                 n_cols: 2,
             },
         ];
-        let result = execute_layers(&valid, &[1.0, 2.0]).unwrap();
-        let rms = (2.5_f64 + 1e-5).sqrt();
-        for (actual, expected) in result.iter().zip([7.0 / rms, 10.0 / rms]) {
-            assert!((actual - expected).abs() < 1e-12);
-        }
-        assert!(execute_layers(&valid, &[1.0]).is_err());
+        validate_legacy_fragment(&valid).unwrap();
         // Admission traverses metadata only, not this enormous but legal range.
         valid.tensors.clear();
         valid.weights.clear();
@@ -1275,11 +1152,12 @@ mod connection_tests {
             pending: Arc::new(bml_runtime::queue::PendingWork::new(1).unwrap()),
             max_payload_bytes: DEFAULT_MAX_PAYLOAD_BYTES,
         }));
+        let server_state = shared.clone();
         let server = std::thread::spawn(move || {
             let mut handlers = Vec::new();
             for _ in 0..connections {
                 let (stream, _) = listener.accept().unwrap();
-                let state = shared.clone();
+                let state = server_state.clone();
                 handlers.push(std::thread::spawn(move || handle_connection(stream, state)));
             }
             for handler in handlers {
@@ -1311,8 +1189,6 @@ mod connection_tests {
             recv_msg(&mut healthy).unwrap().payload,
             1.0_f64.to_le_bytes()
         );
-        let mut batch = 1_u32.to_le_bytes().to_vec();
-        batch.extend_from_slice(&2.5_f64.to_le_bytes());
         for fragment in invalid {
             let mut rejected = connect();
             send_msg(
@@ -1331,29 +1207,28 @@ mod connection_tests {
             let health = recv_msg(&mut healthy).unwrap();
             assert_eq!(health.msg_type, MsgType::HealthCheck);
             assert_eq!(health.payload[0], 1);
-            send_msg(
-                &mut healthy,
-                &Message::new(MsgType::BatchRequest, batch.clone()),
-            )
-            .unwrap();
-            let output = recv_msg(&mut healthy).unwrap();
-            assert_eq!(output.msg_type, MsgType::BatchResult);
-            assert_eq!(output.payload, batch);
+            // A rejected upload must not replace previously admitted data.
+            let admitted = shared.lock().unwrap();
+            assert_eq!(
+                admitted.fragment.as_ref().unwrap().fragment_id,
+                valid.fragment_id
+            );
+            assert_eq!(admitted.fragment.as_ref().unwrap().weights, valid.weights);
         }
         drop(healthy);
         server.join().unwrap();
     }
 
     #[test]
-    fn legacy_sparse_layers_preserve_order_without_visiting_empty_layer_ranges() {
+    fn legacy_sparse_metadata_admission_does_not_visit_empty_layer_ranges() {
         use bml_compiler::distributed::TensorMeta;
         let mut fragment = fragment_fixture();
         fragment.config.n_layers = u32::MAX;
         fragment.layer_end = u32::MAX;
         fragment.weights = vec![2.0, 3.0, 99.0];
         let last_projection = format!("blk.{}.attn_q.weight", u32::MAX - 1);
-        // Deliberately reversed metadata order, with a duplicate: execute norm
-        // before projection by layer number and use the first projection only.
+        // Sparse admission must inspect metadata without visiting every layer,
+        // even with reversed and duplicate canonical names.
         fragment.tensors = vec![
             TensorMeta {
                 name: last_projection.clone(),
@@ -1374,10 +1249,9 @@ mod connection_tests {
                 n_cols: 1,
             },
         ];
-        let expected = 3.0_f64 / (9.0_f64 + 1e-5).sqrt() * 2.0 * 3.0;
-        assert_eq!(execute_layers(&fragment, &[3.0]).unwrap(), [expected]);
+        validate_legacy_fragment(&fragment).unwrap();
         fragment.tensors.clear();
-        assert_eq!(execute_layers(&fragment, &[3.0]).unwrap(), [3.0]);
+        validate_legacy_fragment(&fragment).unwrap();
     }
 
     #[test]
@@ -1390,7 +1264,8 @@ mod connection_tests {
         let path = directory.join("fragment_9.bmlgraph");
         let loaded = load_legacy_fragment(&path).unwrap();
         assert_eq!(loaded.config, valid.config);
-        assert_eq!(execute_layers(&loaded, &[2.0]).unwrap(), [2.0]);
+        assert_eq!(loaded.weights, valid.weights);
+        assert_eq!(loaded.ops, valid.ops);
         for invalid in malformed_legacy_shapes() {
             serialize_distributed(&[invalid], &directory).unwrap();
             assert!(load_legacy_fragment(&path).is_err());

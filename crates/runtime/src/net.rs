@@ -7,12 +7,12 @@
 //!
 //! | msg_type | Nombre | Payload |
 //! |---|---|---|
-//! | 0 | `ExecuteFragment` | fragmento `.bmlgraph` serializado |
-//! | 1 | `ReportResult` | resultado f64 + metadata |
+//! | 0 | `ExecuteFragment` | admisión de un fragmento `.bmlgraph` serializado |
+//! | 1 | `ReportResult` | respuesta f64 legacy; el worker confirma admisión, no inferencia |
 //! | 2 | `StealWork` | vacío (request) / fragmento (response) |
 //! | 3 | `HealthCheck` | vacío (request) / status (response) |
-//! | 4 | `BatchRequest` | dimensión u32 + hidden state f64, little-endian, longitud exacta |
-//! | 5 | `BatchResult` | dimensión u32 + hidden state f64; vacío si inválido o sin fragmento |
+//! | 4 | `BatchRequest` | solicitud legacy retirada; migrar al transporte simbólico causal |
+//! | 5 | `BatchResult` | vacío: rechazo de la inferencia legacy retirada |
 //! | 8 | `EnqueueFragment` | fragmento pendiente serializado |
 //! | 9 | `EnqueueResult` | byte: 1 aceptado, 0 cola llena, 2 inválido |
 
@@ -25,15 +25,15 @@ use std::net::TcpStream;
 pub enum MsgType {
     /// Legacy model-shard upload; its response acknowledges loading only.
     ExecuteFragment = 0,
-    /// Reporta el resultado de una ejecución.
+    /// Legacy f64 response; the worker uses it to acknowledge admission only.
     ReportResult = 1,
     /// Roba trabajo de otro nodo.
     StealWork = 2,
     /// Verifica que un nodo está vivo.
     HealthCheck = 3,
-    /// Legacy hidden-state request; dimension must match the loaded shard.
+    /// Retired legacy hidden-state request; the worker explicitly rejects it.
     BatchRequest = 4,
-    /// Legacy hidden-state response, or an empty payload on rejection.
+    /// Legacy response tag; the worker returns an empty rejection payload.
     BatchResult = 5,
     /// Ejecuta un VectorFragment (matmul de columnas).
     VectorMatmul = 6,
@@ -196,13 +196,13 @@ impl NodeHandle {
         Ok(Self { stream })
     }
 
-    /// Envía un fragmento a ejecutar.
+    /// Submit a legacy fragment for admission, without executing inference.
     pub fn send_fragment(&mut self, fragment_bytes: &[u8]) -> io::Result<()> {
         let msg = Message::new(MsgType::ExecuteFragment, fragment_bytes.to_vec());
         send_msg(&mut self.stream, &msg)
     }
 
-    /// Recibe el resultado de una ejecución.
+    /// Read the legacy f64 response; a worker upload acknowledgement is not inference.
     pub fn recv_result(&mut self) -> io::Result<f64> {
         let msg = recv_msg(&mut self.stream)?;
         if msg.msg_type != MsgType::ReportResult {
