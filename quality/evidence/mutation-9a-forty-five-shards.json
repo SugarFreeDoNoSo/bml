@@ -1,0 +1,25 @@
+{
+  "status": "incomplete_frozen_campaign_partial_results",
+  "observed_at_utc": "2026-11-05T07:52:19.897160+00:00",
+  "original_run_id": 41950170549,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "verified_shards": 45,
+  "candidate_count": 3645,
+  "counts": {
+    "CaughtMutant": 2880,
+    "MissedMutant": 435,
+    "Unviable": 299,
+    "Timeout": 31
+  },
+  "original_sealed_shards": 43,
+  "fresh_recovery_shards": [
+    "21/64",
+    "27/64"
+  ],
+  "inputs": {
+    "quality/evidence/mutation-9a-forty-four-shards.json": "fd586ef70e467779aa6eb7e030fb21cc2d7fddf4f8bad44267c04d23b20e8063",
+    "quality/evidence/mutation-recovery-27-completion.json": "a77fd79d2d875766132e5370a46c2dbd3e6ddac1fc61ea9efb68adb58429d44e"
+  },
+  "limits": "Incomplete original union. Old unsealed21/27 raw excluded; each fresh recovery counted once. Parent20 has no complete envelope. Raw Missed/Timeout classifications unchanged; no global quality pass."
+}

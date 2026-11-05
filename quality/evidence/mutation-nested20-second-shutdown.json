@@ -1,0 +1,89 @@
+{
+  "created_at": "2026-11-05T07:44:24.578478+00:00",
+  "cases": [
+    {
+      "run_id": 41978564427,
+      "job_id": 127085196076,
+      "controller_revision": "ab04db2884da3f69e3b1f794f1185e964f7ecf2f",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "job_status": "completed",
+      "job_conclusion": "failure",
+      "execution_step": {
+        "name": "Execute frozen leaf with diagnostic telemetry",
+        "status": "completed",
+        "conclusion": "failure",
+        "number": 8,
+        "started_at": "2026-11-05T06:16:01Z",
+        "completed_at": "2026-11-05T06:23:55Z"
+      },
+      "upload_step": {
+        "name": "Upload complete or partial leaf evidence",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 10,
+        "started_at": "2026-11-05T06:23:55Z",
+        "completed_at": "2026-11-05T06:23:55Z"
+      },
+      "baseline_line": "2026-11-05T06:17:24.5998546Z ok       Unmutated baseline in 36s build + 44s test",
+      "last_observed_missed_line": "2026-11-05T06:20:00.7395994Z MISSED   crates/compiler/src/symbolic_kernels.rs:151:22: replace > with >= in Operation::signature_for_layout_with_rms_bounds in 10s build + 45s test",
+      "terminal_error_lines": [
+        "2026-11-05T06:23:54.9581538Z ##[error]Process completed with exit code 143.",
+        "2026-11-05T06:23:54.9905133Z ##[error]The runner has received a shutdown signal. This can happen when the runner service is stopped, or a manually started runner is canceled."
+      ],
+      "process_exit_observed": 143,
+      "runner_shutdown_observed": true,
+      "matching_leaf84_artifacts": [],
+      "stdout_telemetry_samples": 0,
+      "oom_or_kill_evidence_lines": [],
+      "scope": "No complete raw, live source/seed inventory or leaf source seal survived; nothing added to quality counts."
+    },
+    {
+      "run_id": 41981676751,
+      "job_id": 127095167451,
+      "controller_revision": "e8c9338d601d776f0b856c1c5eaf5e319ae175ae",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "job_status": "completed",
+      "job_conclusion": "failure",
+      "execution_step": {
+        "name": "Execute frozen leaf with diagnostic telemetry",
+        "status": "completed",
+        "conclusion": "failure",
+        "number": 8,
+        "started_at": "2026-11-05T06:44:05Z",
+        "completed_at": "2026-11-05T06:53:47Z"
+      },
+      "upload_step": {
+        "name": "Upload complete or partial leaf evidence",
+        "status": "completed",
+        "conclusion": "skipped",
+        "number": 10,
+        "started_at": "2026-11-05T06:53:47Z",
+        "completed_at": "2026-11-05T06:53:47Z"
+      },
+      "baseline_line": "2026-11-05T06:45:46.7823948Z ok       Unmutated baseline in 48s build + 49s test",
+      "last_observed_missed_line": "2026-11-05T06:48:58.2398910Z MISSED   crates/compiler/src/symbolic_kernels.rs:151:22: replace > with >= in Operation::signature_for_layout_with_rms_bounds in 15s build + 54s test",
+      "terminal_error_lines": [
+        "2026-11-05T06:53:47.0787344Z ##[error]Process completed with exit code 143.",
+        "2026-11-05T06:53:47.0904873Z ##[error]The runner has received a shutdown signal. This can happen when the runner service is stopped, or a manually started runner is canceled."
+      ],
+      "process_exit_observed": 143,
+      "runner_shutdown_observed": true,
+      "matching_leaf84_artifacts": [],
+      "stdout_telemetry_samples": 0,
+      "oom_or_kill_evidence_lines": [],
+      "scope": "No complete raw, live source/seed inventory or leaf source seal survived; nothing added to quality counts."
+    }
+  ],
+  "same_last_observed_candidate": "crates/compiler/src/symbolic_kernels.rs:151:22: replace > with >= in Operation::signature_for_layout_with_rms_bounds",
+  "same_nested_manifest": true,
+  "nested_manifest_sha256": "4a27f88e46c1e2f088d3293b14e17d69c4976f55b67a7ce8160d5077dd08cee7",
+  "workflow_identical": true,
+  "cause": "UNKNOWN. Two same-leaf runner shutdown143 failures, no OOM evidence.",
+  "guard151_hypothesis": "The >= mutant strengthens rejection and cannot permit a32GiB allocation blocked by the original > guard; it completed before the observed shutdown in both runs.",
+  "public_u32_calls": "Frozen9a has two direct test call sites for signature_for_layout using small model dimensions/widths1..128; usizeMAX contract calls compile_operation and its prior node preflight. No known oversized Buffer test was found in9a.",
+  "execution_order_limit": "cargo-mutants27.1 defaults shuffle=false and jobs1 under the recorded in-place command; caught mutants are not printed by default. The next listed candidate after the completed >= is attention layout297<->==, but any later caught/unviable results could have completed silently. Active mutant at death remains unknown without debug/outcomes/log files.",
+  "telemetry_loss": "Controller writes telemetry only to a local file every30s. That file was not streamed to job stdout, and Upload was skipped after runner shutdown; no leaf84 artifact exists in either exact API inventory.",
+  "timeout_limit": "Both execution steps ended well before the recorded20m soft and25m job deadlines. Exit143/shutdown is not a cargo-mutants Timeout outcome.",
+  "next_diagnostic": "No blind third full retry. Stream bounded diagnostic JSON to stdout+file with flush; record newest mutation log metadata and raw progress without claiming it is active. A manual single-leaf84 mode must preserve full workspace baseline/list256 and forbid parent envelopes.",
+  "memory_limit_policy": "No cap inferred or applied. Any later cap must be an explicitly recorded diagnostic environment, with fresh baseline under that exact cap and controller/source/toolchain/cgroup limits. Resource-killed outcomes remain diagnostic and cannot masquerade as unchanged original protocol evidence."
+}

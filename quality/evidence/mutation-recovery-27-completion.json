@@ -1,0 +1,196 @@
+{
+  "format_version": 1,
+  "verified_at_utc": "2026-11-05T07:35:25.577484+00:00",
+  "status": "verified_fresh_complete_v1_controller_live_source_seal",
+  "scope": "Independent artifact/API authorization/raw/seed/seal verification; no Cargo, live model, dispatch, restart, partial seal or original27 raw rehabilitation.",
+  "run_id": 41981023084,
+  "job_id": 127090895721,
+  "attempt": 1,
+  "controller_revision": "ec39e3fdfd3ddf69089975e70bb1de3a0d27238d",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "artifact": {
+    "id": 13396801157,
+    "node_id": "MDg6QXJ0aWZhY3QxMzM5NjgwMTE1Nw==",
+    "name": "mutation-recovery-41950170549-41981023084-1-27",
+    "size_in_bytes": 10085797,
+    "url": "https://api.github.com/repos/SugarFreeDoNoSo/bml/actions/artifacts/13396801157",
+    "archive_download_url": "https://api.github.com/repos/SugarFreeDoNoSo/bml/actions/artifacts/13396801157/zip",
+    "expired": false,
+    "digest": "sha256:5d3c97bfd5adbbd9b9996961a02e1891533afda7c149cdc32cca39bb6a692adb",
+    "created_at": "2026-11-05T07:26:10Z",
+    "updated_at": "2026-11-05T07:26:10Z",
+    "expires_at": "2026-11-08T07:26:09Z",
+    "workflow_run": {
+      "id": 41981023084,
+      "repository_id": 1291412160,
+      "head_repository_id": 1291412160,
+      "head_branch": "master",
+      "head_sha": "ec39e3fdfd3ddf69089975e70bb1de3a0d27238d"
+    }
+  },
+  "artifact_zip_sha256": "5d3c97bfd5adbbd9b9996961a02e1891533afda7c149cdc32cca39bb6a692adb",
+  "original_plan_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "original_manifest_sha256": "cfee7050785ae54c46f84826c3c9e155540d4b22a4dab4793adfb14471d9322e",
+  "shard": "27/64",
+  "candidates": 81,
+  "counts": {
+    "caught": 61,
+    "missed": 11,
+    "unviable": 8,
+    "timeout": 1
+  },
+  "baseline": {
+    "scenario": "Baseline",
+    "summary": "Success",
+    "log_path": "log/baseline.log",
+    "diff_path": null,
+    "phase_results": [
+      {
+        "phase": "Build",
+        "duration": 47.560072189,
+        "process_status": "Success",
+        "argv": [
+          "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+          "test",
+          "--no-run",
+          "--verbose",
+          "--package=bml-cli@0.1.0",
+          "--package=bml-compiler@0.1.0",
+          "--package=bml-domain@1.0.0",
+          "--package=bml-gguf@1.0.0",
+          "--package=bml-inference@1.0.0",
+          "--package=bml-kernels@1.0.0",
+          "--package=bml-model-weights@1.0.0",
+          "--package=bml-runtime@0.1.0",
+          "--package=bml-server@0.1.0",
+          "--package=bml-worker@0.1.0",
+          "--locked"
+        ]
+      },
+      {
+        "phase": "Test",
+        "duration": 52.068021147,
+        "process_status": "Success",
+        "argv": [
+          "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+          "test",
+          "--verbose",
+          "--package=bml-cli@0.1.0",
+          "--package=bml-compiler@0.1.0",
+          "--package=bml-domain@1.0.0",
+          "--package=bml-gguf@1.0.0",
+          "--package=bml-inference@1.0.0",
+          "--package=bml-kernels@1.0.0",
+          "--package=bml-model-weights@1.0.0",
+          "--package=bml-runtime@0.1.0",
+          "--package=bml-server@0.1.0",
+          "--package=bml-worker@0.1.0",
+          "--locked"
+        ]
+      }
+    ]
+  },
+  "raw_start_time": "2026-11-05T06:32:17.233216589Z",
+  "raw_end_time": "2026-11-05T07:26:03.102288942Z",
+  "seal": {
+    "format_version": 1,
+    "method": "controller-live-source-sealer",
+    "file": "extracted/source/target/quality/controller-shard-result-27.json",
+    "file_sha256": "b1ab5658aeabc9d41d228dda9a9dfe4ecdcb6722a59e41b2a7fd0f8a21b312b0",
+    "sealer_tool_sha256": "3bcc7b668e6e1bc87a8e25ac425ba18948df154a0d3f7d9c67b90c6513c174a0",
+    "runner_exit_code": 1,
+    "cargo_mutants_exit_code": null,
+    "fresh_source_snapshot_matches_pinned_manifest": true,
+    "generated_regressions_sha256": {
+      "crates/runtime/tests/operation_schedule_contracts.proptest-regressions": "0ed16e2c5dee216c5847a95b977ed243908992d1fa59697ef1cdff9c2de61420"
+    },
+    "frozen9a_seal_present": false
+  },
+  "authorization": {
+    "format_version": 1,
+    "repository": "SugarFreeDoNoSo/bml",
+    "origin_run_id": 41950170549,
+    "origin_attempt": 1,
+    "origin_job_id": 126992339813,
+    "origin_exit_code": 1,
+    "eligibility_state": "retry_eligible_from_collection_failure",
+    "artifact_id": 13379899471,
+    "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+    "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+    "shard": "27/64",
+    "index": 27,
+    "recovery_run_id": 41981023084,
+    "recovery_attempt": 1,
+    "controller_revision": "ec39e3fdfd3ddf69089975e70bb1de3a0d27238d",
+    "origin_api_sha256": "885c20c61e55537452ea345afff4eceaaed2985f9420a5826937884882823266",
+    "origin_log_sha256": "d1922b624353184e11da27b1fc43147b372f042ec1d253329a57c0aa1f0891de",
+    "collection_inspection": {
+      "state": "retry_eligible_from_collection_failure",
+      "artifact_id": 13389245750,
+      "zip_sha256": "faa89ea81b3b6624da0563d752b46ea0cda78d712b4edb5413c8df97dbb1009f",
+      "candidate_count": 81,
+      "raw_counts": {
+        "caught": 61,
+        "missed": 11,
+        "unviable": 8,
+        "timeout": 1
+      },
+      "members_sha256": {
+        "target/final-mutation-shard-27/mutants.out/outcomes.json": "e58ade65d136c4e4993710f111f504cf18182e355a8acbc587f35476dbcc9fd9",
+        "target/quality/shard-27/exit-code.txt": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+        "target/quality/shard-27/runner.log": "90427c72be765e951420a8aec93f40ed45f1ddda0830973fa1ac7dd429a8281b",
+        "target/final-mutation-shard-27/mutants.out/mutants.json": "4380177128bfcce942990d5a2a34666ccb645cffc379337ff348bc4750819438"
+      },
+      "source_state": "unattested; original live source and seed inventory are unavailable",
+      "fresh_execution_required": true
+    },
+    "inspection_plan_zip_sha256": "88f35174af278236030091f9fa44f6caae2ffdf0842818cd3e02966e05f0674b",
+    "original_collection_zip_sha256": "faa89ea81b3b6624da0563d752b46ea0cda78d712b4edb5413c8df97dbb1009f"
+  },
+  "old27_raw_reused": false,
+  "fresh_outcomes_file_sha256": "6833e34f586527111cf7279524bd6b301f728a45046ff1ec8dbc60ab196a442b",
+  "old_unattested_outcomes_file_sha256": "e58ade65d136c4e4993710f111f504cf18182e355a8acbc587f35476dbcc9fd9",
+  "raw_candidate_diffs_matched": 81,
+  "runner_argv": [
+    "env",
+    "-u",
+    "CARGO_MUTANTS_JOBS",
+    "CARGO_TARGET_DIR=/home/runner/work/bml/bml/source/target/final-mutation-build-27",
+    "CARGO_INCREMENTAL=0",
+    "cargo",
+    "mutants",
+    "--workspace",
+    "--cargo-arg=--locked",
+    "--test-workspace",
+    "true",
+    "--in-place",
+    "--timeout",
+    "360",
+    "--build-timeout",
+    "600",
+    "--in-diff",
+    "/home/runner/work/bml/bml/source/target/quality/original-plan/final.diff",
+    "--sharding",
+    "round-robin",
+    "--shard",
+    "27/64",
+    "--output",
+    "/home/runner/work/bml/bml/source/target/final-mutation-shard-27"
+  ],
+  "live_source_attestation_basis": "Immutable ec39 controller attest and finish both call the corrected live source guard and compare seed inventory/raw/seal; actual CI steps succeeded after raw completion. Historical runner source cannot be re-read locally, so this review does not claim a new local live-source recheck.",
+  "chronology_verified": true,
+  "quality_gate": "not evaluated; 11 Missed and1 Timeout preserved. This authenticates one shard replacement, not score approval or the full64-way union.",
+  "collection_effect": "Eligible as exactly one fresh replacement for index27. If the separately verified43 original indices and fresh21 are distinct and retained, this contributes the45th shard; never add old27 too.",
+  "files_sha256": {
+    "run-api.json": "19dfb9a6dabf588a8722b54573f46a3ce1ae79591d0457d905a4ecf2ee8f54bf",
+    "job-api.json": "06bdee531699860d956cb94b4c7e7fd11bb6ff27ff9e6a93852033634283d9af",
+    "artifact-api.json": "debac2e3ffcd78a6488c0a7d0bab69a2fe57cb7e01101aeeb4b982db440362f1",
+    "artifacts-api.json": "dbf211366d689e0dd9870b72dcc30b8151a98184c458918c47ab290eb213b170",
+    "artifact.zip": "5d3c97bfd5adbbd9b9996961a02e1891533afda7c149cdc32cca39bb6a692adb",
+    "job.log": "ca0ed5de58632fa0216799145766e932523ba7072c23393e4d0e5d2323e4fe65"
+  },
+  "controller_tools_sha256": {
+    "merge_mutation_shards.py": "3bcc7b668e6e1bc87a8e25ac425ba18948df154a0d3f7d9c67b90c6513c174a0",
+    "mutation_recovery.py": "dfea908c3cfa544236e2b79b518765725b54d4ce8e5e3de76b1c7cada37ce5c9"
+  }
+}
