@@ -1,0 +1,114 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "63c9b4375a45745a9cde5a2e20fe3782f6fa3860",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "resource_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "autonomous_metadata_profile_rejects_unrecognized_llama_parameters"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-hashmap-metadata-unknown-llama-profile.log",
+      "log_sha256": "e8204f7bc4d254a88ec1be88105c8f14ee8cb8e1a3fcf65f9501fa1932c93ecb",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "autonomous_metadata_profile_rejects_unrecognized_llama_parameters",
+          "ok"
+        ]
+      ]
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "resource_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "autonomous_metadata_profile_rejects_unrecognized_llama_parameters"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-hashmap-metadata-unknown-llama-profile.log",
+      "log_sha256": "53c47c719d5eee298b972feb7b5a82d5ee0430deb2d769bcf463f9738cc7d85e",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "autonomous_metadata_profile_rejects_unrecognized_llama_parameters",
+          "FAILED"
+        ]
+      ],
+      "label": "hashmap-metadata-unknown-llama-profile",
+      "candidate": "crates/inference/src/lib.rs:42:9: replace <impl ModelMetadata for std::collections::HashMap<String, bml_gguf::GgufMetadataValue>>::metadata -> &Self with Box::leak(Box::new(Default::default()))",
+      "original_source_sha256": "539ee58fee57e429841f76a785e3a17b4ec0586b02c5c852bd0350d57dca54d3",
+      "mutated_source_sha256": "b854af12a678a2b7095e5941df935c125f29aeb67d61a334621cbc9c90a3f743",
+      "original_diff_sha256": "d5924844cc578be2f00689734e44dc78239602fb51d415ed40b77cecc2a77d3b",
+      "original_span": {
+        "end": {
+          "column": 13,
+          "line": 42
+        },
+        "start": {
+          "column": 9,
+          "line": 42
+        }
+      },
+      "detected": true
+    }
+  ],
+  "build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "cleaned_packages": [
+    "bml-inference"
+  ],
+  "cleanup": [
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-inference"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-replay-results-before-baselines.log",
+      "log_sha256": "2615a573b9a2a880f66e4f4d40f58940abdb64ce00c03d1febd679b492a00cfe",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-inference"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-replay-results-restored-hashmap-metadata-unknown-llama-profile.log",
+      "log_sha256": "9c98d7a9335991c2b3a3a12640b820c6f05053b26b23742fa69e3caa241c8c3c",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    }
+  ],
+  "observed_at_utc": "2026-11-05T09:41:43.568241+00:00",
+  "status": "passed_focused_replays"
+}

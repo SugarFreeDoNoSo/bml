@@ -1,0 +1,56 @@
+{
+  "status": "verified_one_focused_semantic_replay",
+  "observed_at_utc": "2026-11-05T09:50:44.810140+00:00",
+  "archive": "quality/evidence/hashmap-profile-admission-replay.tar.gz",
+  "archive_sha256": "a0f976cb4b83783d8e7d417e0cd01b9b4687cbaf575355c3e473ac71b76a3dc5",
+  "archive_bytes": 8984,
+  "members": {
+    "preparation/replay-results.json": {
+      "sha256": "b86abf4a1b3d8ce499f791dc37fcae17bd0fa2eb6c3c73933afc53954f24989d",
+      "bytes": 3646
+    },
+    "preparation/audit.md": {
+      "sha256": "23c4e2a02cabaa722e8e1e8dd40935a9bd981fd0b378ff7c8928d03ef917cac5",
+      "bytes": 4389
+    },
+    "preparation/consumer-regression.patch": {
+      "sha256": "e96a2ec95d68a9635872f33b35d479e7225e42049c9fa06a7f29bf9a1e6b6dfb",
+      "bytes": 1912
+    },
+    "preparation/manifest.json": {
+      "sha256": "0c91132802cc0b15288b4124691ea2f30c78563a0e560fc756e0f02247b71747",
+      "bytes": 2377
+    },
+    "preparation/replay-runner.log": {
+      "sha256": "51f33b71a1a6fadc85135f90a734225fc79bd3ef219efabe47e5761dfb054a00",
+      "bytes": 67
+    },
+    "preparation/replay-plan.json": {
+      "sha256": "4732ca2c2bfcc330c08b6d99a02fc61d204e296b9e1e010e88d735fae01a7f68",
+      "bytes": 533
+    },
+    "execution/survivor-replay-baseline-hashmap-metadata-unknown-llama-profile.log": {
+      "sha256": "e8204f7bc4d254a88ec1be88105c8f14ee8cb8e1a3fcf65f9501fa1932c93ecb",
+      "bytes": 600
+    },
+    "execution/survivor-replay-hashmap-metadata-unknown-llama-profile.log": {
+      "sha256": "53c47c719d5eee298b972feb7b5a82d5ee0430deb2d769bcf463f9738cc7d85e",
+      "bytes": 6327
+    },
+    "execution/survivor-replay-clean-replay-results-before-baselines.log": {
+      "sha256": "2615a573b9a2a880f66e4f4d40f58940abdb64ce00c03d1febd679b492a00cfe",
+      "bytes": 35
+    },
+    "execution/survivor-replay-clean-replay-results-restored-hashmap-metadata-unknown-llama-profile.log": {
+      "sha256": "9c98d7a9335991c2b3a3a12640b820c6f05053b26b23742fa69e3caa241c8c3c",
+      "bytes": 37
+    },
+    "execution/runner.py": {
+      "sha256": "a233b5fbe35ea0395d4d095c0b02c1aa1d1488dc41ebbceaeb96acddc14726a6",
+      "bytes": 6071
+    }
+  },
+  "test_source_sha256": "28ad9e10f0c08ac69ecd442e3fef3721ba39b9625c882e225350b2d84589146b",
+  "root_verified_source_restored_sha256": "539ee58fee57e429841f76a785e3a17b4ec0586b02c5c852bd0350d57dca54d3",
+  "scope": "Public Model::profile_metadata consumer: valid autonomous HashMap metadata, tolerated general.description and rejected unknown llama.* key; tiny local model fixture, no download. Exact frozen9a lib bytes replayed with a new test on worktree63c; baseline exactly one selected pass and mutant exactly one selected FAILED/101 without compiler error. Isolated Cargo target and package clean before/after. Raw original Missed unchanged; not a full campaign or newest-main qualification."
+}

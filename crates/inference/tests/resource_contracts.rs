@@ -241,6 +241,38 @@ fn write(path: &Path, bytes: &[u8]) {
 }
 
 #[test]
+fn autonomous_metadata_profile_rejects_unrecognized_llama_parameters() {
+    use bml_gguf::GgufMetadataValue;
+    use bml_inference::model::Model;
+
+    let files = Files::new();
+    let source = files.path("profile.gguf");
+    std::fs::write(&source, fixture()).unwrap();
+    let reader = GgufReader::open(&source).unwrap();
+    // Autonomous weight containers supply a HashMap instead of a GGUF reader.
+    let mut metadata = reader.metadata().clone();
+    let (config, tokenizer) = Model::profile_metadata(&metadata).unwrap();
+    assert_eq!(config.embedding_length, 32);
+    assert_eq!(config.head_count, 4);
+    assert_eq!(config.head_count_kv, 2);
+    assert_eq!(tokenizer.tokens.len(), 260);
+
+    // Descriptive metadata may evolve without changing the execution profile.
+    metadata.insert(
+        "general.description".into(),
+        GgufMetadataValue::String("tiny autonomous model".into()),
+    );
+    assert_eq!(Model::profile_metadata(&metadata).unwrap().0, config);
+
+    // An undeclared Llama parameter must never be silently ignored, even when
+    // all required dimensions and tokenizer data still describe a valid model.
+    let key = "llama.rope.scaling.original_context_length";
+    metadata.insert(key.into(), GgufMetadataValue::U32(4096));
+    let error = Model::profile_metadata(&metadata).unwrap_err().to_string();
+    assert_eq!(error, format!("unsupported Llama parameter: {key}"));
+}
+
+#[test]
 fn normalized_resources_preserve_compressed_rows_and_model_identity() {
     let files = Files::new();
     let bytes = files.resources();
