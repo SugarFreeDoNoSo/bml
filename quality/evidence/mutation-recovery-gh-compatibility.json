@@ -1,5 +1,5 @@
 {
-  "status": "compatibility_fix_verified_pending_hosted_retry",
+  "status": "hosted_admission_passed_recovery_in_progress",
   "observed_at_utc": "2026-11-05T04:27:06.272324+00:00",
   "origin_run": 41950170549,
   "origin_shard": "20/64",
@@ -52,5 +52,24 @@
     "No original mutation outcomes are changed and no global mutation pass is claimed.",
     "The retry must pass hosted admission and eventually finish/seal before it is accepted."
   ],
-  "unchanged_rust_and_traceability_proof": "wave-six-gate.json still matches every Rust test and traceability hash; the compatibility patch changes only two Python files."
+  "unchanged_rust_and_traceability_proof": "wave-six-gate.json still matches every Rust test and traceability hash; the compatibility patch changes only two Python files.",
+  "hosted_retry": {
+    "run_id": 41967922830,
+    "job_id": 127049145325,
+    "url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41967922830",
+    "controller_revision": "17769835b84ca36d49439116dcedace561ae5b2c",
+    "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+    "shard": "20/64",
+    "observed_at_utc": "2026-11-05T04:29:17.066510+00:00",
+    "status": "in_progress",
+    "admission_steps_passed": [
+      "Authorize the original source, artifact and interrupted job via API",
+      "Download only the immutable original plan artifact",
+      "Verify independent manifest SHA and original partition"
+    ],
+    "execution_step_status": "in_progress",
+    "run_api_sha256": "c2aed2fb288ee179a361ad111c3abb71d9ded8e40a086a028137e62ade8fb081",
+    "jobs_api_sha256": "879b7b5c893382cdeaaa9225a2187138066b7e8b2269de7c2c5a1b9851f64ff8",
+    "scope": "Hosted gh compatibility and original-plan admission verified. Baseline/mutation execution, final source attestation and complete outcomes remain pending."
+  }
 }
