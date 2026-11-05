@@ -1,0 +1,53 @@
+{
+  "status": "failed_incomplete_parent",
+  "observed_at_utc": "2026-11-05T06:35:13.065861+00:00",
+  "run_id": 41978564427,
+  "controller_revision": "ab04db2884da3f69e3b1f794f1185e964f7ecf2f",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "jobs": [
+    {
+      "job_id": 127083088612,
+      "name": "prepare",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "job_id": 127085196017,
+      "name": "leaf (20)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "job_id": 127085196076,
+      "name": "leaf (84)",
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "job_id": 127085196139,
+      "name": "leaf (148)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "job_id": 127085196207,
+      "name": "leaf (212)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "job_id": 127092032657,
+      "name": "envelope",
+      "status": "completed",
+      "conclusion": "failure"
+    }
+  ],
+  "snapshot": "target/quality/wave-nine-nested20-final-check.json",
+  "snapshot_sha256": "0777a53c764b6ddcbfc6e1ea25811d3c1c9819fd0184a9fde15e936f3cf697f2",
+  "failed_step": "Execute frozen leaf with diagnostic telemetry",
+  "failure_cause": "Runner shutdown signal during leaf84 execution: exit143 after474 seconds, before external20-minute deadline. Underlying cause UNKNOWN; attest/upload skipped, no leaf84 raw or seal available.",
+  "scope": "Workspace preflight verified separately. Leaf84 failed; no complete parent20 envelope and no candidate union or quality pass.",
+  "recorded_at_utc": "2026-11-05T06:37:38.588528+00:00",
+  "failure_analysis": "quality/evidence/mutation-nested20-leaf84-shutdown.json",
+  "failure_analysis_sha256": "71dbac24c0ffd7a2ad8f8716e018a84d289250fec84a21c1ead49ed776aa0e4c"
+}

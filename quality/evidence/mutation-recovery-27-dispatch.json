@@ -1,0 +1,22 @@
+{
+  "status": "started_not_completed",
+  "observed_at_utc": "2026-11-05T06:35:13.065501+00:00",
+  "run_id": 41981023084,
+  "attempt": 1,
+  "job_id": 127090895721,
+  "url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41981023084",
+  "controller_revision": "ec39e3fdfd3ddf69089975e70bb1de3a0d27238d",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "original_job_id": 126992339813,
+  "shard": "27/64",
+  "job_status": "in_progress",
+  "phase": "Actual authorization and checkout passed; frozen baseline/mutants step is in progress. No fresh seal observed.",
+  "snapshots": {
+    "target/quality/wave-nine-recovery27-runs.json": "a58d4343993218ea39f2bec9918ed8ff6b68f1d8362507806b2f4dc791c9b784",
+    "target/quality/wave-nine-recovery27-dispatch-request.json": "c234d60ea010b6e6647ddbe8a89011e2954b132180ebf5772707381add226e51",
+    "target/quality/wave-nine-recovery27-initial-jobs.json": "ff0f51e69f4426b6c28d483a722ea93f02ef200ff9e0cea36e11842545693c33"
+  },
+  "eligibility_preflight": "quality/evidence/mutation-recovery-27-preflight.json",
+  "scope": "Fresh execution only. Old unsealed raw excluded and no quality pass implied.",
+  "snapshot_captured_at_utc": "2026-11-05T06:33:09.628046+00:00"
+}

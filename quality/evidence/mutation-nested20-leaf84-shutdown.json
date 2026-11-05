@@ -1,0 +1,127 @@
+{
+  "format_version": 1,
+  "observed_at_utc": "2026-11-05T06:36:18.161421+00:00",
+  "scope": "Read-only terminal leaf84 investigation. No Cargo, source edit, dispatch, restart, partial seal or outcome reuse.",
+  "repository": "SugarFreeDoNoSo/bml",
+  "run_id": 41978564427,
+  "attempt": 1,
+  "job_id": 127085196076,
+  "job_name": "leaf (84)",
+  "controller_revision": "ab04db2884da3f69e3b1f794f1185e964f7ecf2f",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "original_manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "nested_manifest_sha256": "4a27f88e46c1e2f088d3293b14e17d69c4976f55b67a7ce8160d5077dd08cee7",
+  "shard": "84/256",
+  "assigned_candidates": 20,
+  "terminal_step": {
+    "name": "Execute frozen leaf with diagnostic telemetry",
+    "status": "completed",
+    "conclusion": "failure",
+    "number": 8,
+    "started_at": "2026-11-05T06:16:01Z",
+    "completed_at": "2026-11-05T06:23:55Z"
+  },
+  "process_exit_code_observed": 143,
+  "terminal_error_line": "2026-11-05T06:23:54.9581538Z ##[error]Process completed with exit code 143.",
+  "runner_shutdown_line": "2026-11-05T06:23:54.9905133Z ##[error]The runner has received a shutdown signal. This can happen when the runner service is stopped, or a manually started runner is canceled.",
+  "step_elapsed_seconds_api": 474.0,
+  "configured_soft_deadline_seconds": 1200,
+  "configured_job_deadline_seconds": 1500,
+  "configured_deadline_expired": false,
+  "underlying_cause": "UNKNOWN. Runner shutdown143 is observed; no OOM or timeout cause is established.",
+  "baseline_diagnostic_line": "2026-11-05T06:17:24.5998546Z ok       Unmutated baseline in 36s build + 44s test",
+  "last_observed_mutant": {
+    "line": "2026-11-05T06:20:00.7395994Z MISSED   crates/compiler/src/symbolic_kernels.rs:151:22: replace > with >= in Operation::signature_for_layout_with_rms_bounds in 10s build + 45s test",
+    "candidate": {
+      "diff": "--- crates/compiler/src/symbolic_kernels.rs\n+++ replace > with >= in Operation::signature_for_layout_with_rms_bounds\n@@ -143,17 +143,17 @@\n             if OutputLayout::for_operation(self) != OutputLayout::Buffer {\n                 return Err(\"buffer output is unsupported for this symbolic operation\".into());\n             }\n             let count = signature\n                 .fixed\n                 .len()\n                 .checked_add(signature.outputs)\n                 .ok_or(\"symbolic output constant size overflow\")?;\n-            if count > u32::MAX as usize {\n+            if count >= /* ~ changed by cargo-mutants ~ */ u32::MAX as usize {\n                 return Err(\"symbolic output constant index overflow\".into());\n             }\n             signature\n                 .fixed\n                 .try_reserve_exact(signature.outputs)\n                 .map_err(|_| \"cannot reserve symbolic output constants\")?;\n             signature\n                 .fixed\n",
+      "file": "crates/compiler/src/symbolic_kernels.rs",
+      "function": {
+        "function_name": "Operation::signature_for_layout_with_rms_bounds",
+        "return_type": "-> Result<KernelSignature, String>",
+        "span": {
+          "end": {
+            "column": 6,
+            "line": 163
+          },
+          "start": {
+            "column": 5,
+            "line": 130
+          }
+        }
+      },
+      "genre": "BinaryOperator",
+      "name": "crates/compiler/src/symbolic_kernels.rs:151:22: replace > with >= in Operation::signature_for_layout_with_rms_bounds",
+      "package": "bml-compiler",
+      "replacement": ">=",
+      "span": {
+        "end": {
+          "column": 23,
+          "line": 151
+        },
+        "start": {
+          "column": 22,
+          "line": 151
+        }
+      }
+    },
+    "original_diff_sha256": "6b0bdfeb28828d45ce98ff3436f3591145ae377cad960322a15f76364d787a6d",
+    "diagnostic_classification": "MISSED printed by cargo-mutants; not an attested complete leaf outcome",
+    "active_at_shutdown": "UNKNOWN; default stdout does not identify every intervening mutant"
+  },
+  "artifacts": {
+    "inventory_total_count": 3,
+    "matching_current_attempt_leaf84_artifacts": 0,
+    "inventory_entries": [
+      {
+        "id": 13394290398,
+        "name": "mutation-subleaf-41978564427-1-148",
+        "digest": "sha256:3238a3024618be56faea80b29bf99453dce1ed80a590592c9bffaad37d53da37"
+      },
+      {
+        "id": 13393038716,
+        "name": "mutation-subleaf-41978564427-1-20",
+        "digest": "sha256:f3dbd9e2bab3193ecaa71e4d69ef4bc090ddff75ecf286eaf1fa9f29a25e1abc"
+      },
+      {
+        "id": 13392564153,
+        "name": "mutation-subplan-41978564427-1",
+        "digest": "sha256:b6626ddcb80df850f8969b612e3f92fe2cdb79e068cd6b29763e92a0ed318921"
+      }
+    ],
+    "zip_download_status": "unavailable: no matching leaf84 artifact exists; upload step was skipped",
+    "raw_reports": "unavailable; no retained mutants.json/outcomes.json/seed inventory/live source for this leaf",
+    "seal_status": "ABSENT; no partial results accepted"
+  },
+  "check_run_annotations": {
+    "count": 3,
+    "messages": [
+      "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+      "Process completed with exit code 143.",
+      " replace > with >= in Operation::signature_for_layout_with_rms_bounds"
+    ],
+    "output_title": null,
+    "output_summary": null
+  },
+  "controller_bug_found": false,
+  "controller_timestamp_or_artifact_mismatch_found": false,
+  "fix_recommendation": "No controller timestamp/sealing fix is indicated by this failure. The worker stopped before attestation/upload. Preserve failed-run evidence; any later recovery must perform a fresh complete attested execution. This report authorizes no retry.",
+  "quality_status": "No quality approval or score update. The 81-candidate parent union still lacks complete leaf84 evidence.",
+  "api_provenance": {
+    "run_html_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41978564427",
+    "job_html_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41978564427/job/127085196076",
+    "runner_id": 1000001398,
+    "runner_name": "GitHub Actions 1000001398",
+    "runner_group_id": 0,
+    "labels": [
+      "ubuntu-24.04"
+    ]
+  },
+  "evidence_sha256": {
+    "run-api.json": "7a92c2504159bb36f09bf23479110bbb7200970d68701eebda5b11f45f8c41b8",
+    "job-api.json": "f7d9388634d07db82a1a4c401540cb7ebe906abba796675d52ef9ce446f67945",
+    "artifacts-api.json": "cd088491e73b8bd2db62f4aedf16a83c891010bb539ab20718840f998c740b04",
+    "job.log": "3dd56acfa651f67c712d9f06c0f39e694c934cb629df70660995a8ce1e1367c3",
+    "check-run-api.json": "9d62ab065c652b172ffefe171c0e10fe21c118db9c07520c87c34c18be7bc90e",
+    "annotations-api.json": "03d70f324fb41e4029dc4dfcfaab3fb04f230bdda9d51f192ed73a60ba30e88a"
+  }
+}

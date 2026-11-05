@@ -1,0 +1,27 @@
+{
+  "status": "started_not_completed",
+  "recorded_at_utc": "2026-11-05T06:40:20.796631+00:00",
+  "snapshot_captured_at_utc": "2026-11-05T06:39:49.208031+00:00",
+  "run_id": 41981676751,
+  "attempt": 1,
+  "url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41981676751",
+  "controller_revision": "e8c9338d601d776f0b856c1c5eaf5e319ae175ae",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "previous_run_id": 41978564427,
+  "previous_run_terminal": "failure; three successful leaves and one runner shutdown143; no complete envelope",
+  "reason": "Fresh full plan after verified leaf84 runner shutdown; no missing raw or seal is reconstructed and no prior leaves are blended.",
+  "jobs": [
+    {
+      "job_id": 127092965338,
+      "name": "prepare",
+      "status": "in_progress",
+      "conclusion": null
+    }
+  ],
+  "snapshots": {
+    "target/quality/wave-nine-nested20-second-dispatch-request.json": "53d4cbd4f5a08446d943abaeca0dc3133bba7e9bd3b2aba7adddb0d552bc0682",
+    "target/quality/wave-nine-nested20-second-runs.json": "73fdff2fd6200d3db202ca7b019cf339945f91eb4be913e9bad6fe220056a607",
+    "target/quality/wave-nine-nested20-second-jobs.json": "18998082889e16f10fa8540e6874d77d29d5326795f58a14b0e2ad3342b19d44"
+  },
+  "scope": "Fresh full four-leaf plan on source9a. No prior leaves blended, incomplete raw reconstructed, source seal or global quality pass inferred."
+}

@@ -1,0 +1,542 @@
+{
+  "status": "incomplete_frozen_campaign_partial_results",
+  "observed_at_utc": "2026-11-05T06:29:41.932590+00:00",
+  "run_id": 41950170549,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "verified_shards": 40,
+  "counts": {
+    "CaughtMutant": 2557,
+    "MissedMutant": 391,
+    "Unviable": 266,
+    "Timeout": 26
+  },
+  "shards": [
+    {
+      "shard": "0/64",
+      "counts": {
+        "CaughtMutant": 61,
+        "MissedMutant": 11,
+        "Unviable": 7,
+        "Timeout": 2
+      },
+      "seal_sha256": "044ed4f0b73c75ed82ed1478e305f07f064322f02d01654ce0e40141b8d1b0b5",
+      "raw_candidates_sha256": "c0b355d2ec2462f64d43970825d0f6b2c38c533864dd05e38c7f486613507a47",
+      "raw_outcomes_sha256": "1d78cb932584bf815a31b0b4c1e9756c0e981605643817828df2023f23d1edb5"
+    },
+    {
+      "shard": "1/64",
+      "counts": {
+        "CaughtMutant": 66,
+        "Unviable": 5,
+        "MissedMutant": 8,
+        "Timeout": 2
+      },
+      "seal_sha256": "393ddc58abbc39c7ec00875089e9615b2cb6af488f7ea17811a6cdca3b04bbab",
+      "raw_candidates_sha256": "dc8cc0c9c11652770cbbd6842b3d0812463d89ccc241be1f53c21cb024794fe3",
+      "raw_outcomes_sha256": "6ffa8e46919d07d9ea15a9493d82cb78362dc2fc835be0acc6362b9ce1072162"
+    },
+    {
+      "shard": "2/64",
+      "counts": {
+        "CaughtMutant": 68,
+        "Unviable": 5,
+        "MissedMutant": 8
+      },
+      "seal_sha256": "4cf4e4f1d6db858d5a1c6054482e3a9cdde5b0236262cf6f937550784c213bfe",
+      "raw_candidates_sha256": "b0b9db57cd4212e82532a5daec052bbf6bf0059d37fe9888cbaaedb8fef5c4a7",
+      "raw_outcomes_sha256": "cc8df9c899b8072c9bc059b17da520dfd71f85691ad5378238fb77de2a689686"
+    },
+    {
+      "shard": "3/64",
+      "counts": {
+        "CaughtMutant": 65,
+        "Unviable": 7,
+        "MissedMutant": 9
+      },
+      "seal_sha256": "73f08073432b4069eb89ece06f83dc1f30239937cb9e63837ccf54a79d3f973c",
+      "raw_candidates_sha256": "b6a19890d1f40452ddfe50df3d3a7d4eda8fdfe409bedb1f86e91dc85f23bbc7",
+      "raw_outcomes_sha256": "891e80a2df8e66cb06416d06f4ff344ef7e01b4f8d7ab2bf7d0133ccaa334a92"
+    },
+    {
+      "shard": "4/64",
+      "counts": {
+        "CaughtMutant": 67,
+        "MissedMutant": 8,
+        "Unviable": 4,
+        "Timeout": 2
+      },
+      "seal_sha256": "55edcffbe7a3b24bc1f5eb6264fde14cfc251e42b252d3247755f1224a8b22a2",
+      "raw_candidates_sha256": "e8888051891b68b5fa15dd90f78f51c7306a358be086ef2fca65dc320664f0b5",
+      "raw_outcomes_sha256": "69f4a1da0a93ee3242387ca79240197af2b37f3b9fcad0c9ec55b266a44ad224"
+    },
+    {
+      "shard": "5/64",
+      "counts": {
+        "CaughtMutant": 65,
+        "MissedMutant": 10,
+        "Unviable": 6
+      },
+      "seal_sha256": "4c6b809abd74d1043909e6f9a2dbebf33322f0cd5678d17293de065594aed9de",
+      "raw_candidates_sha256": "8cc034f84a221648bc7ccdbf495a2575035b2ddf08c03857ed6b5b5ee3a0526d",
+      "raw_outcomes_sha256": "42cd3a5f5fa662c5c610760bb728be4a4367b41d8f1e65eea72faec47f1c28a8"
+    },
+    {
+      "shard": "6/64",
+      "counts": {
+        "CaughtMutant": 65,
+        "MissedMutant": 11,
+        "Unviable": 5
+      },
+      "seal_sha256": "b942dada0811d0287c0efa47cac1ac41010756f19a24fbf6a9f55a9528d7b0ce",
+      "raw_candidates_sha256": "d07385ce03396b59fb13c7c23ab0ac1ad53205b63308e42e1ff635e8baf8aa7f",
+      "raw_outcomes_sha256": "ae04cfe95a45da8d0e20262c210b2f74dd3ffa0c2de8788321015da6cda9bbf3"
+    },
+    {
+      "shard": "7/64",
+      "counts": {
+        "CaughtMutant": 71,
+        "MissedMutant": 6,
+        "Unviable": 4
+      },
+      "seal_sha256": "1a05af85f2aa4bb986a17bbbc7f91ac520af029037077f2174b4af72cf101979",
+      "raw_candidates_sha256": "276fc0c8468fc1582e60196163d2338ec5aa5b34246caf8fbcc7a5c860d4fee0",
+      "raw_outcomes_sha256": "4e864e0efcb675cef6691d67d0829e8a8ceafc4a0257969522f692e3a7705e98"
+    },
+    {
+      "shard": "8/64",
+      "counts": {
+        "CaughtMutant": 61,
+        "Unviable": 7,
+        "MissedMutant": 12,
+        "Timeout": 1
+      },
+      "seal_sha256": "2a8e9bd2d22d48181eb7b4259949e8fcb1729db1b22eab47e8635159ba1fd0e3",
+      "raw_candidates_sha256": "71c46fa06ef66cff6f500ede8652b2770566cb26653c533b36b038e9e02990ac",
+      "raw_outcomes_sha256": "0daa07d1fe6e1486de4afe071d0cbe2caa62583e8f565bcf72037d25f5ed04bd"
+    },
+    {
+      "shard": "9/64",
+      "counts": {
+        "CaughtMutant": 65,
+        "MissedMutant": 8,
+        "Unviable": 8
+      },
+      "seal_sha256": "144315e05d8cbce4f8de14890862cda156349b5db2e7fd743a9ecae364cd972f",
+      "raw_candidates_sha256": "5a65182efcb2b3dbd3bec4c920aa5715973fbe6625d3eba9aa480e2d0b5a82c0",
+      "raw_outcomes_sha256": "039870ed92a24d6d3d276ca26397c01d9360bcaf329a6d1c4145966dd2b9e5d6"
+    },
+    {
+      "shard": "10/64",
+      "counts": {
+        "CaughtMutant": 64,
+        "MissedMutant": 11,
+        "Unviable": 4,
+        "Timeout": 2
+      },
+      "seal_sha256": "a7467d45e6afb6195cd19048224e2a1f4326e6faf36c2dcc7577b903b1e8ac2b",
+      "raw_candidates_sha256": "578854fcfe971e12b7a720abf89385e9af15b7c8974ef6e3e240a93b477ea0e2",
+      "raw_outcomes_sha256": "b8e67361774da0e21c28ce975bf909ec354fa95ce46b2a8d27bfbaf400430f34"
+    },
+    {
+      "shard": "11/64",
+      "counts": {
+        "CaughtMutant": 59,
+        "Unviable": 9,
+        "MissedMutant": 12,
+        "Timeout": 1
+      },
+      "seal_sha256": "e4fc04a729ce097caf5b1197e22c7fd2c7dada3481a1da39151aa43a8c1bf014",
+      "raw_candidates_sha256": "e2240cd8e81dffd974bb7967be98ee2b42d6b8353eb564f39b84a5df2e67dc18",
+      "raw_outcomes_sha256": "c9025f19ef352c33a94c8d4779d9af6ada68f22e04c803d1bfe914a2fc4e65ea"
+    },
+    {
+      "shard": "12/64",
+      "counts": {
+        "CaughtMutant": 62,
+        "Unviable": 8,
+        "MissedMutant": 10,
+        "Timeout": 1
+      },
+      "seal_sha256": "aa3922b90c1fdf4256fedef174bee4211a7a7edbe3c4137ac662e21a0fee44c6",
+      "raw_candidates_sha256": "5c28c1d701b206ff4f605e461de202d187f6752b1c2604ec1a172a1b20e763d0",
+      "raw_outcomes_sha256": "2b81ae83b8693cb492aa25c38e9ce4f4dd3341a4ba18ea42d62298f6304ac2a3"
+    },
+    {
+      "shard": "13/64",
+      "counts": {
+        "CaughtMutant": 57,
+        "Unviable": 10,
+        "MissedMutant": 14
+      },
+      "seal_sha256": "b0fc156e1c3c4640aafa09095fa3aaf2c5483b7d9308d2feea7e290396cbe7b8",
+      "raw_candidates_sha256": "6aa38a1818b0a15558e9464565d20409b2ed1315ab0fb07dc541f57ad489da59",
+      "raw_outcomes_sha256": "0cacb81259c1e119524538aedd24762939693b49066b25ea5d30e1344f345793"
+    },
+    {
+      "shard": "14/64",
+      "counts": {
+        "CaughtMutant": 61,
+        "Unviable": 10,
+        "MissedMutant": 10
+      },
+      "seal_sha256": "8d80a18a9beb861840ec6491d2c20eb2f828c5b8c7246968ecb620ae9ff29f4c",
+      "raw_candidates_sha256": "9889761be6106b812382259a20557596435d233fe5bbc3d4eaa77f4d0c92a123",
+      "raw_outcomes_sha256": "5dea5fc553463e95b9676b5c7b2af81c4f055410dda19195e46e4d76a4eaaf62"
+    },
+    {
+      "shard": "15/64",
+      "counts": {
+        "CaughtMutant": 66,
+        "Unviable": 6,
+        "MissedMutant": 8,
+        "Timeout": 1
+      },
+      "seal_sha256": "1fa20844c27150193db41e59bd29903f197d848265fa6082a811a1c10eac252e",
+      "raw_candidates_sha256": "523cab506ec245e272253ffc6ec331aa4b08a2a2af020a07abe913acef7f8f4a",
+      "raw_outcomes_sha256": "119a5f2cd414f7b540f38f2feaf340dbfd7a467b52e681979b6871106c0b475a"
+    },
+    {
+      "shard": "16/64",
+      "counts": {
+        "CaughtMutant": 68,
+        "Unviable": 5,
+        "MissedMutant": 8
+      },
+      "seal_sha256": "fe308db34f31d512bf74a2385ad03612977a50dc3b03482f5808ebcae6011877",
+      "raw_candidates_sha256": "0bf883c032ab754a8dbff0fbe15714c668cd861b94dcf7bf8712c9cbb18c3e0f",
+      "raw_outcomes_sha256": "069dbbc0f29c878a40e06fef258764dd54a483c4e3e8e34296182b14109c484e"
+    },
+    {
+      "shard": "17/64",
+      "counts": {
+        "CaughtMutant": 67,
+        "Unviable": 6,
+        "MissedMutant": 8
+      },
+      "seal_sha256": "a05e855ec2b89937fb50cacd0a822d5d553f54196dacb7907969ea9be559c642",
+      "raw_candidates_sha256": "3ad71a08f79e2b3319389a2e31f2b14d94d928464da338baeed2a93384db73e3",
+      "raw_outcomes_sha256": "c1d6d48835f494e34340e6f0ac8325e402bc8ced7a201c5ff84287da976c0f31"
+    },
+    {
+      "shard": "18/64",
+      "counts": {
+        "CaughtMutant": 63,
+        "Unviable": 5,
+        "MissedMutant": 13
+      },
+      "seal_sha256": "0287e6ae3efc7b5bc633e71df601ad559567d1705e5f754b0c2d890cb24e3559",
+      "raw_candidates_sha256": "d5da72b30b351f7a9737884c996488f5bacd5273f4d4027ef34c8b2fcafa1aeb",
+      "raw_outcomes_sha256": "1d037d2194798bca308c0e519a28894a760559ba86165a236cd4fcd14d267d4f"
+    },
+    {
+      "shard": "19/64",
+      "counts": {
+        "CaughtMutant": 70,
+        "MissedMutant": 7,
+        "Timeout": 2,
+        "Unviable": 2
+      },
+      "seal_sha256": "5148e5147f6257f4b4102cebffde6a9db5d825a58fee08f99f2505ee085d24bc",
+      "raw_candidates_sha256": "e5f96ba6dcbbe3f303a9a32133be79b2f38a128f4f0caa96b82036bbe8a153ef",
+      "raw_outcomes_sha256": "341a3a7b348149580fafa005fbd41bf0481ede33cba83cba122c53aef71fe174"
+    },
+    {
+      "shard": "22/64",
+      "counts": {
+        "CaughtMutant": 67,
+        "MissedMutant": 8,
+        "Unviable": 5,
+        "Timeout": 1
+      },
+      "seal_sha256": "09d57dafb410a0535391e911eb8960fea2cd8118746368a0fcfa2b1dead9036e",
+      "raw_candidates_sha256": "a260534884f83b9ec824d325e91ba4511a83880e7fa0c085bae1055a8d726c8e",
+      "raw_outcomes_sha256": "a71c1eee53d0672a96400d56d4bccebba7f318b2305c4be6bfbc270a8f77d8ca"
+    },
+    {
+      "shard": "23/64",
+      "counts": {
+        "CaughtMutant": 70,
+        "Unviable": 3,
+        "MissedMutant": 8
+      },
+      "seal_sha256": "b0bd72b40280e16d2dcc586bcd5b74082a1226e30c81e46f558da6cdfad132b6",
+      "raw_candidates_sha256": "e088f00e853b9f446c6fc25259759358a45a139d6b9b21b6d863fc0be6d22e2c",
+      "raw_outcomes_sha256": "72fb03c973a623cb402398a6d1384a988b47d32f3721b6d3e5f69c4e02871d7e"
+    },
+    {
+      "shard": "24/64",
+      "counts": {
+        "CaughtMutant": 63,
+        "MissedMutant": 9,
+        "Unviable": 9
+      },
+      "seal_sha256": "e2cec916398c250430e86c91a8914e3fdc69c9b8da9977bf5949b57d229033ef",
+      "raw_candidates_sha256": "5da5247b63a6513462d492dadbe4d3064fef35b19a904da2e3fa2958ebc659a9",
+      "raw_outcomes_sha256": "80e74d8f9696d4e196b9002a2f7141712f18361b754e7f5bf86bd26a55752d76"
+    },
+    {
+      "shard": "25/64",
+      "counts": {
+        "CaughtMutant": 62,
+        "Unviable": 10,
+        "MissedMutant": 8,
+        "Timeout": 1
+      },
+      "seal_sha256": "556d9a17006a057de58677dda27b45ea36baf0da9d0a26651ccdade241ebb400",
+      "raw_candidates_sha256": "6178d5c081df9e8e6f6d8b87077039950221ed4c0b266c0f94faed9cfd40ca7d",
+      "raw_outcomes_sha256": "d463d033a197497497f643c6f74cc46fee6f05869bd7629310df6a33d575b375"
+    },
+    {
+      "shard": "26/64",
+      "counts": {
+        "CaughtMutant": 63,
+        "Unviable": 4,
+        "MissedMutant": 14
+      },
+      "seal_sha256": "e44208bdc4e2987d06f011b2b02982d96f5826098265263f24e54871aeedc2cf",
+      "raw_candidates_sha256": "4bc859882cd0750785b6f52feb07dad22816ac8818e1822a4c51458001d28011",
+      "raw_outcomes_sha256": "bb19e33770f19a2bcf4d9ee581cb3583e40192b12609c0605dd3dff87e89335b"
+    },
+    {
+      "shard": "28/64",
+      "counts": {
+        "CaughtMutant": 64,
+        "MissedMutant": 8,
+        "Unviable": 6,
+        "Timeout": 3
+      },
+      "seal_sha256": "d5b9b6b5221f314cbf1fd6cb7ec9bfbe80aa328d1635f81f1491b41164030b3f",
+      "raw_candidates_sha256": "ecf70deccf8bcc8a450f5b8f63ffb677101408a98ee737039ceb72e9b40ed1aa",
+      "raw_outcomes_sha256": "76a648f966693f6df390a5287f6caced3691a2b7fd99cf0b66c385a503d16bca"
+    },
+    {
+      "shard": "30/64",
+      "counts": {
+        "CaughtMutant": 68,
+        "MissedMutant": 9,
+        "Unviable": 3,
+        "Timeout": 1
+      },
+      "seal_sha256": "13ce8f5c6904caad990adc472a713b65d6da6b2bbaea527a570f99a1f6893e6a",
+      "raw_candidates_sha256": "b9aa8d6983c458e8d8a65f05192974c610a30a192dadfb5449bca8440d27377b",
+      "raw_outcomes_sha256": "7ef7db8bdcc457f60e5cf0e5253743d3538ae7fb6fede3a2133a33a7ca65c2f1"
+    },
+    {
+      "shard": "32/64",
+      "counts": {
+        "Unviable": 12,
+        "CaughtMutant": 59,
+        "MissedMutant": 10
+      },
+      "seal_sha256": "d424c29ab5c8e0cd8151c1357d1213dd9a00857df76e5b4f847829661b07901c",
+      "raw_candidates_sha256": "a9dfe53b581aaadad6278eb95402acb51db94c19398b6eb923a4fdb6c9481e85",
+      "raw_outcomes_sha256": "65498d37c8e653ea00423307f10b6630851d6cce3bf69bae58eeefa4f68dfdee"
+    },
+    {
+      "shard": "33/64",
+      "counts": {
+        "CaughtMutant": 61,
+        "MissedMutant": 9,
+        "Unviable": 11
+      },
+      "seal_sha256": "f9f3b613a3507810e52f1fee38adf749732bb4500c2a16b9f673438f66858584",
+      "raw_candidates_sha256": "397edd29a0860a3345dda917e2d7d7564bf01b5ba6d73668bd42ec44cc0fc516",
+      "raw_outcomes_sha256": "9ee0aeddcff2a82d22fed75c8bae9ab998e82fd92e87adcd2a321f8ecfee2643"
+    },
+    {
+      "shard": "34/64",
+      "counts": {
+        "CaughtMutant": 64,
+        "Unviable": 11,
+        "MissedMutant": 6
+      },
+      "seal_sha256": "055add0199163d225063721889c17def14209a6004c0e9448f5bcc61e703261c",
+      "raw_candidates_sha256": "992af523e5b04c925137a61feab5cd39105abbc2b21cb0e7adb8dcfa6b3478ea",
+      "raw_outcomes_sha256": "a5234851a0a03e313c73c88310018579425d9dcf8d94d0d505776c85e6b1d3b7"
+    },
+    {
+      "shard": "35/64",
+      "counts": {
+        "CaughtMutant": 64,
+        "Unviable": 7,
+        "MissedMutant": 10
+      },
+      "seal_sha256": "a9b820a629e9efa976db4d2040102fbbdb23b5b4013325b30e4e19832ff22cf9",
+      "raw_candidates_sha256": "fbf45e35c6c3f0306df73a2cd5464c49d08fea028a124ec6ff61454e10004e56",
+      "raw_outcomes_sha256": "89b16b2fd3b6564c29fc9faf6dfca4a6250ed5591f7b20f4f988e6f72b3367d5",
+      "api_job_id": 126992340851,
+      "api_artifact_id": 13390174211,
+      "artifact_zip_sha256": "09d865b5f3e74f26a5f026780beefdfa7a608a4d39e74d93701c32eaab5adb9a"
+    },
+    {
+      "shard": "36/64",
+      "counts": {
+        "CaughtMutant": 58,
+        "Unviable": 12,
+        "MissedMutant": 10,
+        "Timeout": 1
+      },
+      "seal_sha256": "2979008b430ee9db49473798bc60ffc269107ddc398692a20ec65e5734acebc5",
+      "raw_candidates_sha256": "d3776beedd3f8e48c549a0bf434eb378ca681b12e6f56694c3dfb1f3b30e9a9b",
+      "raw_outcomes_sha256": "e05ca383ea0389c4560c9dde903e3a49485f83fa5f7151eb024616e12bc6b60b",
+      "api_job_id": 126992341029,
+      "api_artifact_id": 13391871155,
+      "artifact_zip_sha256": "d8b44cfc0898e3b10ad48d948f9c1d12b0c8ea6112745968813e0fd879874173"
+    },
+    {
+      "shard": "37/64",
+      "counts": {
+        "CaughtMutant": 63,
+        "Unviable": 10,
+        "MissedMutant": 6,
+        "Timeout": 2
+      },
+      "seal_sha256": "cec2b15e7c0875f42fac3e8b21de1f6940444dcf96e95718c179e6dba92c92c0",
+      "raw_candidates_sha256": "6e5dca50509dd3013f3d2ddc83d01f0001efa2620c0f73b675a57faac032ff20",
+      "raw_outcomes_sha256": "96586ecc8e2334e5fc5589d8ebc4a819c92e81a119efd28b6ef90a5d584ed6bb",
+      "api_job_id": 126992341668,
+      "api_artifact_id": 13391656061,
+      "artifact_zip_sha256": "4ce0d7a59b11e438b62245fc4d177754a4d481939ea54da5e046e3d488020418"
+    },
+    {
+      "shard": "38/64",
+      "counts": {
+        "CaughtMutant": 64,
+        "MissedMutant": 11,
+        "Unviable": 6
+      },
+      "seal_sha256": "f93d4a704a2b1ee496d72972f147a7890c41e4f4c05a84f09bb8c11348415672",
+      "raw_candidates_sha256": "f477ccc6ed3807e0ee8dd9bf646cdc1af4b4ee59a0215bb2e63e971d6c05e56d",
+      "raw_outcomes_sha256": "e8b6894d02522bde72890d50ad533b633a2a228e970ad2318023348342a08eb4",
+      "api_job_id": 126992342503,
+      "api_artifact_id": 13392236377,
+      "artifact_zip_sha256": "33073214c04c7a914133bca6ba0ac92e3822b02d8a3ce8b4972c1fd55be6126b"
+    },
+    {
+      "shard": "41/64",
+      "counts": {
+        "CaughtMutant": 66,
+        "MissedMutant": 9,
+        "Unviable": 5,
+        "Timeout": 1
+      },
+      "seal_sha256": "a67096d343bfee77d75e5bff1565911adc0923b7de7995cd9ef63483b0c01ade",
+      "raw_candidates_sha256": "6d576e9f07a23194461b5d9aef347a10d2bb15bcc92773606c8778ad15e0478e",
+      "raw_outcomes_sha256": "6a72059f385facc696a4e88c7c16c5c15defac8a926ad2e28fc11a02dffbcda4",
+      "api_job_id": 126992342553,
+      "api_artifact_id": 13392143301,
+      "artifact_zip_sha256": "d0771750f59c6e994089c3bb69d83a554a09dafbb5f578b1c403b10211c96e05"
+    },
+    {
+      "shard": "42/64",
+      "counts": {
+        "CaughtMutant": 61,
+        "MissedMutant": 10,
+        "Unviable": 10
+      },
+      "seal_sha256": "c68beb3db8d6a3df85224ae119ed87c54ca4d7648bf70c9f438585aebd123eb7",
+      "raw_candidates_sha256": "c6f97c53704f29309e0f66ff4dcf98d53ceb21d514a1011851e5e667c9f0879d",
+      "raw_outcomes_sha256": "1d82ed7411e701b78aa1e7a79f10e9543718d6f2888cbed1f1259299b74b176b",
+      "api_job_id": 126992342875,
+      "api_artifact_id": 13391304996,
+      "artifact_zip_sha256": "4e1dfa21eaab8af038b6cb3c88aea21f990501e667cef3d9682dd23def21e691"
+    },
+    {
+      "shard": "44/64",
+      "counts": {
+        "CaughtMutant": 66,
+        "MissedMutant": 11,
+        "Unviable": 3,
+        "Timeout": 1
+      },
+      "seal_sha256": "2920ddee58e68080cb541f70e3a318003929dccfebfe41128836ff853f78f994",
+      "raw_candidates_sha256": "1a72183b6316afc13aa6755beec4423910de6f37c842b9f63e9b3aea812f9def",
+      "raw_outcomes_sha256": "fc2dc1e8401c0bc66737604cba54df77d8d6ce9a9d18097335c36bb308a808e2",
+      "api_job_id": 126992342781,
+      "api_artifact_id": 13392732426,
+      "artifact_zip_sha256": "454abcad12438e03e54f66d2bcc076ba22c3ddff1ff270b5521b8249cd373bef"
+    },
+    {
+      "shard": "45/64",
+      "counts": {
+        "CaughtMutant": 62,
+        "MissedMutant": 14,
+        "Unviable": 4,
+        "Timeout": 1
+      },
+      "seal_sha256": "945ba3d8974852573d7b72016dd14032a10b3812944fbd155038709974612f55",
+      "raw_candidates_sha256": "52d8447a38b7e2c261662ed646db19fdfafcb5e531404f16d61a990ea2e0dc4b",
+      "raw_outcomes_sha256": "b12c53e5f06653d42111831dd3929742bfb8329204378cddb7991fb142491f88",
+      "api_job_id": 126992343017,
+      "api_artifact_id": 13393276709,
+      "artifact_zip_sha256": "1a113858a765275ff3bc2be6d04e4f4bdcbbdbcb682397ffc63a9fe5a883e33f"
+    },
+    {
+      "shard": "47/64",
+      "counts": {
+        "CaughtMutant": 61,
+        "MissedMutant": 15,
+        "Unviable": 5
+      },
+      "seal_sha256": "ddc5eecab6ba0a910a645527a0d04117f5708368310f8dd78f7bf291a17fb3a1",
+      "raw_candidates_sha256": "b0ba383098e0d6cd48b2fadfdf302350d8f89bd2528231bcadfa36337a190295",
+      "raw_outcomes_sha256": "e4c824b1e4002086f6ee5ddd62dd11acf7db7b0de6222356172a82d0b77b16b6",
+      "api_job_id": 126992343557,
+      "api_artifact_id": 13393532656,
+      "artifact_zip_sha256": "fd5eda38d7d802a80cbe44aaca5eb4aeac9efd065e6a15d5afe443fb1c54cd56"
+    },
+    {
+      "shard": "48/64",
+      "counts": {
+        "CaughtMutant": 60,
+        "MissedMutant": 14,
+        "Unviable": 7
+      },
+      "seal_sha256": "43ea7948e49ea37733c83341dd3e75467129fa010ed422d1c974658672b538f0",
+      "raw_candidates_sha256": "65e092c845e7a9ac6ec42d80f854e086825b3723367abec008527ae6c91d389c",
+      "raw_outcomes_sha256": "e6a523550267c80af0cb74df6d60089afe5983275703210758040b830ee8f3b5",
+      "api_job_id": 126992344171,
+      "api_artifact_id": 13392679079,
+      "artifact_zip_sha256": "d34fd52e5c80c8c6f53963239d0e68999ee3202866013d314c77f6553e3f9bfc"
+    }
+  ],
+  "excluded_unsealed": [
+    {
+      "shard": "21/64",
+      "job_id": 126992338544,
+      "artifact_id": 13386138847,
+      "raw_counts": {
+        "caught": 67,
+        "missed": 6,
+        "unviable": 7,
+        "timeout": 1
+      },
+      "raw_outcomes_sha256": "dd64e61398ba2daf00db0b9c0b757bc7598b865446a9a0d526dbceff2dc6c248",
+      "runner_log_sha256": "6090b784dd6e53ec5d00a3d191be738bb3b3039d5e443625c61f3d2421c689b7",
+      "reason": "Final source/input guard rejected untracked files; lost original seed/source inventory prevents retrospective attestation. No seal fabricated.",
+      "included_in_verified_counts": false
+    },
+    {
+      "shard": "27/64",
+      "job_id": 126992339813,
+      "artifact_id": 13389245750,
+      "raw_counts": {
+        "caught": 61,
+        "missed": 11,
+        "unviable": 8,
+        "timeout": 1
+      },
+      "raw_outcomes_sha256": "e58ade65d136c4e4993710f111f504cf18182e355a8acbc587f35476dbcc9fd9",
+      "runner_log_sha256": "90427c72be765e951420a8aec93f40ed45f1ddda0830973fa1ac7dd429a8281b",
+      "reason": "Final source/input guard rejected untracked files; lost original seed/source inventory prevents retrospective attestation. No seal fabricated.",
+      "included_in_verified_counts": false
+    }
+  ],
+  "limits": "Forty original sealed shards only; incomplete original union and no global quality pass. Fresh recoveries are counted separately; original unsealed21/27 raw is excluded.",
+  "incremental_verification": {
+    "path": "target/quality/wave-nine-original-incremental-20261105T062740Z/incremental-summary.json",
+    "sha256": "d4115acc749f8cf249346b50422a66d4792f61b045ed504096332aef2686b5dc",
+    "checks": "Authenticated original API/ZIP/source/manifest/v1 seal/raw/baselines/seed/statuses for five new originals, exact prior-set exclusion."
+  }
+}
