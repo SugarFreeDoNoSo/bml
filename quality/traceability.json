@@ -458,7 +458,9 @@
       "nested_loops_use_inclusive_work_and_stack_budgets",
       "malformed_references_loops_and_stack_effects_fail_before_execution",
       "buffer_context_mismatch_is_transactional_and_valid_stores_are_visible",
-      "compiled_serialized_shared_dag_executes_after_preflight"
+      "compiled_serialized_shared_dag_executes_after_preflight",
+      "empty_loop_result_accepts_its_exact_step_budget",
+      "single_literal_graph_validation_completes_in_a_bounded_child"
     ]
   },
   "C47": {
@@ -470,7 +472,9 @@
       "graph_rpc_rejects_invalid_execution_and_preserves_ieee_bits",
       "graph_frame_limit_is_enforced_before_body_even_with_larger_legacy_budget",
       "client_rejects_malformed_or_wrong_type_graph_replies",
-      "graph_encoder_accepts_exact_wire_limit_and_rejects_one_more_opcode_byte"
+      "graph_encoder_accepts_exact_wire_limit_and_rejects_one_more_opcode_byte",
+      "graph_encoder_accepts_exact_value_quota_and_rejects_one_more_input",
+      "graph_rpc_zero_and_two_inputs_execute_closed_sum_and_preserve_buffer_bits"
     ]
   },
   "C48": {
@@ -603,7 +607,8 @@
     "tests": [
       "external_constants_are_borrowed_per_execution_and_do_not_replace_owned_pools",
       "external_constant_context_is_checked_before_buffer_writes",
-      "external_constant_references_and_value_budgets_are_inclusive"
+      "external_constant_references_and_value_budgets_are_inclusive",
+      "context_value_budget_is_independent_of_opcode_budget"
     ]
   },
   "C63": {
@@ -860,7 +865,9 @@
       "mutex_entrypoint_finishes_the_same_dependency_chain",
       "empty_or_zero_sized_buffers_keep_sequential_behavior",
       "scheduled_buffer_programs_match_an_independent_sequential_oracle",
-      "per_operation_constant_pools_bind_in_sequential_and_parallel_execution"
+      "per_operation_constant_pools_bind_in_sequential_and_parallel_execution",
+      "loop_carried_swaps_preserve_the_actual_read_after_a_prior_write",
+      "zero_trip_loop_keeps_its_body_inactive_with_multiple_cores"
     ]
   },
   "C88": {
@@ -1057,7 +1064,10 @@
       "pipeline_accepts_only_fresh_unprepared_worker_sessions",
       "source_free_worker_executes_with_only_authenticated_artifact_and_shard",
       "worker_explicit_step_budget_is_enforced_regardless_of_argument_order",
-      "prepared_plan_starts_worker_and_rejects_invalid_or_conflicting_assignments"
+      "prepared_plan_starts_worker_and_rejects_invalid_or_conflicting_assignments",
+      "prepared_plan_byte_budget_is_inclusive_and_does_not_accept_truncated_padding",
+      "prepared_plan_checks_version_and_canonical_directories_with_valid_relocated_bytes",
+      "prepared_plan_assignment_index_is_checked_even_when_all_provider_bytes_are_valid"
     ]
   },
   "C104": {

@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "observed_at_utc": "2026-11-05T05:06:24.208317+00:00",
+  "base_revision": "d837b868af656254f5d7922a0750f57308b8eeea",
+  "command": "./scripts/check.sh d837b86",
+  "exit_code": 0,
+  "scope": "Public graph/scheduler/RPC/prepared-plan test contracts and source21 fresh-recovery authorization tooling. No global mutation pass, inference parity or PMU claim.",
+  "rust_tests_passed": 983,
+  "rust_suites": 144,
+  "python_tooling_tests": 181,
+  "traceability": "112/112",
+  "historical_contract_discrepancies": 0,
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "focused_candidates_detected": 17,
+  "unique_positive_control_commands": 11,
+  "log": "target/quality/wave-seven-gate.log",
+  "log_sha256": "cc773a4e4191b83ff5dbcce5c7edaf2409affec29397b9576cd0362d89daf336",
+  "actionlint": {
+    "version": "1.7.12",
+    "exit_code": 0,
+    "log": "target/quality/wave-seven-actionlint.log",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/wave-seven-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_rust_test_hashes": {
+    "crates/runtime/tests/graph_contracts.rs": "65e3ecd5266e14aeddb8f9928cd2d649d2a5dadcbe737ef430a8f76087e99033",
+    "crates/runtime/tests/graph_rpc_contracts.rs": "8028cede3cfa72cc8b18a41b8c28fbfbc5b817edf6375df2b1886d87e213c116",
+    "crates/runtime/tests/operation_schedule_contracts.rs": "01e78fdc7259fb65f8a331991d1c586b340e51977b0d184b62b6792ce6ba3386",
+    "crates/worker/tests/symbolic_worker_contracts.rs": "c7cc80f970796299adc9c7c18a9b45e4e3ceead5047efd93cb2d878138a669f6"
+  },
+  "tested_tool_workflow_hashes": {
+    "tools/mutation_recovery.py": "43954e2c234c87ad261a8d7ff69de8eddadf49a77918a155cecb05e60376557e",
+    "tools/test_mutation_recovery.py": "da1839af89550333c05169c635a851936f454ad8a303ea7c6fb71e1c5b9a6544",
+    ".github/workflows/mutation-recovery.yml": "36006fc80c1c5697d43e2a776f52326de5f3f24c335413fb5884a1639225e7d7"
+  },
+  "traceability_hashes": {
+    "quality/traceability.json": "c368f2d5998e157f16adbdc155af8e3ac29d773a309d8586f40ab3e1c7996560",
+    "quality/contracts.feature": "7f88fab7d259985f6d3ab54ce0a339da93b9f5bfda64e743a16e17b62cca0e0b"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  }
+}

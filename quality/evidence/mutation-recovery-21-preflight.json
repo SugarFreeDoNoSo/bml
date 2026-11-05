@@ -1,0 +1,44 @@
+{
+  "status": "passed_readonly_retry_eligibility_preflight",
+  "observed_at_utc": "2026-11-05T04:49:18.557780+00:00",
+  "controller_checkout_base": "d837b868af656254f5d7922a0750f57308b8eeea",
+  "origin_run": 41950170549,
+  "origin_job": 126992338544,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "original_artifact_id": 13386138847,
+  "original_zip_sha256": "0ecabdc7b8758dcf7b8686f0e145de9c4e9f5cdfad54b085fc77ed6af52f5b50",
+  "inspection_plan_zip_sha256": "88f35174af278236030091f9fa44f6caae2ffdf0842818cd3e02966e05f0674b",
+  "origin_job_log_utf8_sha256": "85e77f88c2b8f3b139549e9d8105128706dfc1bfd076b1670ecc35619cc0585b",
+  "eligibility": {
+    "state": "retry_eligible_from_collection_failure",
+    "exit_code": 1
+  },
+  "inspection": {
+    "state": "retry_eligible_from_collection_failure",
+    "artifact_id": 13386138847,
+    "zip_sha256": "0ecabdc7b8758dcf7b8686f0e145de9c4e9f5cdfad54b085fc77ed6af52f5b50",
+    "candidate_count": 81,
+    "raw_counts": {
+      "caught": 67,
+      "missed": 6,
+      "unviable": 7,
+      "timeout": 1
+    },
+    "members_sha256": {
+      "target/final-mutation-shard-21/mutants.out/mutants.json": "352afa5a01635445b4f0e6fcbc2cd5d7f541c2cd91cabdcab4378e162c4fde16",
+      "target/final-mutation-shard-21/mutants.out/outcomes.json": "dd64e61398ba2daf00db0b9c0b757bc7598b865446a9a0d526dbceff2dc6c248",
+      "target/quality/shard-21/runner.log": "6090b784dd6e53ec5d00a3d191be738bb3b3039d5e443625c61f3d2421c689b7",
+      "target/quality/shard-21/exit-code.txt": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    "source_state": "unattested; original live source and seed inventory are unavailable",
+    "fresh_execution_required": true
+  },
+  "new_authorization_or_dispatch_created": false,
+  "limits": "Old raw outcomes establish eligibility for fresh execution only; no original source attestation or seal is created, no original outcome is counted as verified.",
+  "tested_file_hashes": {
+    "tools/mutation_recovery.py": "43954e2c234c87ad261a8d7ff69de8eddadf49a77918a155cecb05e60376557e",
+    "tools/test_mutation_recovery.py": "da1839af89550333c05169c635a851936f454ad8a303ea7c6fb71e1c5b9a6544",
+    ".github/workflows/mutation-recovery.yml": "36006fc80c1c5697d43e2a776f52326de5f3f24c335413fb5884a1639225e7d7"
+  }
+}

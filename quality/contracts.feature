@@ -288,6 +288,9 @@ Then it rejects the request before expensive generation
     When validated against instruction, step and value budgets
     Then malformed references, stack effects and loop bounds are rejected before execution
     And valid execution preserves context across fragments without partial writes on setup failure
+    And an empty loop accepts its exact two-step budget and rejects one fewer step
+    And validating and executing a single literal terminates
+
 
   @C47
   Scenario: Graph RPC validates framing and complete context
@@ -296,6 +299,9 @@ Then it rejects the request before expensive generation
     Then exact IEEE values are preserved and malformed requests or replies fail
     And oversized graph headers are rejected before reading or allocating their bodies
     And the encoder accepts exactly its wire-byte budget and rejects one additional opcode byte
+    And the encoder admits its exact value quota and rejects one additional input
+    And requests with zero or two inputs execute the literal sum and preserve every unused buffer bit
+
 
   @C48
   Scenario: Completed graph results publish into fresh append-only slots
@@ -379,6 +385,8 @@ Then it rejects the request before expensive generation
     Then references and the full value budget are checked inclusively
     And changed constants affect repeated executions without being retained
     And wrong context sizes or mixed constant modes fail before buffer writes
+    And declared context limits reject independently of an exactly fitting opcode budget
+
 
   @C63
   Scenario: Symbolic projections read GGUF rows without embedding their weights
@@ -605,6 +613,9 @@ Then it rejects the request before expensive generation
     And loop-carried, crossing-slot and unknown indices retain the legacy buffer conversion semantics
     And independent fragments share input slices and write disjoint output slices without copying tensor data
     And shared interpreter stacks fall back to sequential execution and an independent generated-program oracle agrees
+    And swaps carried through a loop preserve the actual read-after-write dependency
+    And a zero-trip loop leaves its inactive body unwritten with one or several cores
+
 
   @C88
   Scenario: Bounded RMS stages preserve the existing arithmetic with constant construction size
@@ -757,6 +768,8 @@ Then it rejects the request before expensive generation
     And authenticated worker processes execute their assigned shards without access to the source GGUF
     And a trusted prepared plan selects the matching range and rejects malformed or conflicting assignments
     And an explicit worker graph step budget is enforced regardless of argument order
+    And a plan of exactly one MiB starts a complete session while one extra whitespace byte rejects
+    And version, assignment index and canonical directory names reject independently even with valid authenticated provider bytes
 
 
   @C104

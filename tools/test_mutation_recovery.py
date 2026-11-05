@@ -1,11 +1,14 @@
 import copy
 import hashlib
+import io
 import json
 from pathlib import Path
+import stat
 import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
+import zipfile
 
 import mutation_recovery as recovery
 from merge_mutation_shards import file_digest, make_manifest, seal_shard
@@ -100,6 +103,161 @@ class ActionApiLogCompatibility(unittest.TestCase):
         with patch.object(recovery.subprocess, "check_output", return_value='{"id": 1}') as check:
             self.assertEqual(recovery.api("metadata"), {"id": 1})
         check.assert_called_once_with(["gh", "api", "metadata"], text=True)
+
+    def test_binary_archives_remain_bytes_and_are_not_decoded_or_rendered(self):
+        payload = b"PK\x03\x04\xff\x1b\r\n"
+        with patch.object(recovery.subprocess, "check_output", side_effect=[
+            "--allow-escape-sequences", payload
+        ]) as check:
+            self.assertEqual(recovery.api_bytes("artifact/zip"), payload)
+        self.assertNotIn("text", check.call_args_list[-1].kwargs)
+
+
+def inspection_zip(entries):
+    data = io.BytesIO()
+    with zipfile.ZipFile(data, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, value in entries.items():
+            archive.writestr(name, value)
+    return data.getvalue()
+
+
+class CollectionFailureEligibility(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        source = copy.deepcopy(campaign()[0]["source"])
+        source["revision"] = recovery.SOURCE
+        self.diff = b"original scope\n"
+        candidates = [candidate(i) for i in range(64)]
+        self.manifest = make_manifest(source, hashlib.sha256(self.diff).hexdigest(), candidates,
+                                      [[value] for value in candidates])
+        self.plan = json.dumps(self.manifest).encode()
+        self.plan_zip = inspection_zip({"campaign.json": self.plan, "final.diff": self.diff})
+        self.base = "target/final-mutation-shard-21/mutants.out/"
+        self.evidence = "target/quality/shard-21/"
+        values = self.manifest["shards"][21]["candidates"]
+        self.outcomes = report(values, ["MissedMutant"])
+        self.entries = {
+            self.base + "mutants.json": json.dumps(values),
+            self.base + "outcomes.json": json.dumps(self.outcomes),
+            self.evidence + "runner.log": recovery.UNTRACKED_ERROR + "\n",
+            self.evidence + "exit-code.txt": "1\n"}
+        self.archive = inspection_zip(self.entries)
+        for name, value in [("MANIFEST_SHA256", hashlib.sha256(self.plan).hexdigest()),
+                            ("COLLECTION_ZIP_SHA256", hashlib.sha256(self.archive).hexdigest())]:
+            patcher = patch.object(recovery, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def bundle(self):
+        bundle = origin()
+        bundle["job"].update(id=recovery.COLLECTION_JOB, name="shard (21, 21/64)")
+        bundle["job"]["steps"][-1]["conclusion"] = "success"
+        bundle["collection_artifact"] = {
+            "id": recovery.COLLECTION_ARTIFACT, "name": f"mutation-shard-{recovery.ORIGIN_RUN}-1-21",
+            "expired": False, "digest": "sha256:" + recovery.COLLECTION_ZIP_SHA256,
+            "size_in_bytes": len(self.archive),
+            "workflow_run": copy.deepcopy(bundle["artifact"]["workflow_run"])}
+        bundle["artifacts"]["artifacts"].append(copy.deepcopy(bundle["collection_artifact"]))
+        bundle["artifacts"]["total_count"] = 2
+        return bundle
+
+    def test_complete_original_collection_is_only_retry_eligibility(self):
+        manifest = recovery.inspection_plan(self.plan_zip)
+        inspected = recovery.inspect_collection_zip(self.archive, manifest)
+        eligibility = recovery.validate_origin(recovery.REPOSITORY, recovery.COLLECTION_JOB, 21,
+            self.bundle(), "2026-11-05T03:51:55Z ##[error]Process completed with exit code 1.\n",
+            inspected)
+        self.assertEqual(eligibility["state"], "retry_eligible_from_collection_failure")
+        self.assertTrue(inspected["fresh_execution_required"])
+        self.assertIn("unattested", inspected["source_state"])
+        self.assertEqual(inspected["raw_counts"]["missed"], 1)
+
+    def test_zip_and_plan_digest_must_match_before_inspection(self):
+        with self.assertRaisesRegex(ValueError, "ZIP digest"):
+            recovery.inspect_collection_zip(self.archive + b"tampered", self.manifest)
+        changed_plan = inspection_zip({"campaign.json": self.plan + b" ", "final.diff": self.diff})
+        with self.assertRaisesRegex(ValueError, "manifest file digest"):
+            recovery.inspection_plan(changed_plan)
+
+    def test_reauthenticated_wrong_guard_incomplete_raw_wrong_candidates_or_seal_fail(self):
+        for name in ["guard", "incomplete", "candidate", "seal", "baseline"]:
+            entries = dict(self.entries)
+            if name == "guard":
+                entries[self.evidence + "runner.log"] = "another failure\n"
+            elif name in {"incomplete", "baseline"}:
+                outcomes = copy.deepcopy(self.outcomes)
+                if name == "incomplete":
+                    outcomes["end_time"] = None
+                else:
+                    outcomes["outcomes"][0]["summary"] = "Failure"
+                entries[self.base + "outcomes.json"] = json.dumps(outcomes)
+            elif name == "candidate":
+                entries[self.base + "mutants.json"] = json.dumps([candidate(22)])
+            else:
+                entries["target/quality/shard-result-21.json"] = "{}"
+            blob = inspection_zip(entries)
+            with self.subTest(name=name), patch.object(recovery, "COLLECTION_ZIP_SHA256",
+                    hashlib.sha256(blob).hexdigest()), self.assertRaises(ValueError):
+                recovery.inspect_collection_zip(blob, self.manifest)
+
+    def test_collection_metadata_cannot_select_another_source_or_artifact(self):
+        inspection = recovery.inspect_collection_zip(self.archive, self.manifest)
+        for key, value in [("id", 1), ("digest", "sha256:" + "0" * 64),
+                           ("expired", True), ("name", "other")]:
+            bundle = self.bundle()
+            bundle["collection_artifact"][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                recovery.validate_origin(recovery.REPOSITORY, recovery.COLLECTION_JOB, 21, bundle,
+                    "2026-11-05T03:51:55Z ##[error]Process completed with exit code 1.\n", inspection)
+        bundle = self.bundle()
+        bundle["collection_artifact"]["workflow_run"]["head_sha"] = "f" * 40
+        with self.assertRaises(ValueError):
+            recovery.validate_origin(recovery.REPOSITORY, recovery.COLLECTION_JOB, 21, bundle,
+                "2026-11-05T03:51:55Z ##[error]Process completed with exit code 1.\n", inspection)
+
+    def test_authorization_keeps_archives_in_control_without_extracting_or_sealing(self):
+        bundle = self.bundle()
+        def api(path, raw=False):
+            if raw:
+                return "2026-11-05T03:51:55Z ##[error]Process completed with exit code 1.\n"
+            if path.endswith(f"artifacts/{recovery.COLLECTION_ARTIFACT}"):
+                return bundle["collection_artifact"]
+            if "/jobs/" in path:
+                return bundle["job"]
+            if path.endswith("artifacts?per_page=100"):
+                return bundle["artifacts"]
+            if path.endswith(f"artifacts/{recovery.ARTIFACT_ID}"):
+                return bundle["artifact"]
+            return bundle["run"]
+        output = self.root / "control/target/recovery"
+        with patch.object(recovery, "api", side_effect=api), \
+                patch.object(recovery, "api_bytes", side_effect=[self.plan_zip, self.archive]):
+            recovery.authorize(recovery.REPOSITORY, recovery.COLLECTION_JOB, 21, 1234, 1,
+                               "a" * 40, output)
+        record = recovery.authorization(output)
+        self.assertEqual(record["eligibility_state"], "retry_eligible_from_collection_failure")
+        self.assertEqual(record["origin_exit_code"], 1)
+        self.assertEqual((output / "original-collection.zip").read_bytes(), self.archive)
+        self.assertFalse((self.root / "source").exists())
+        self.assertEqual(list(self.root.rglob("*shard-result*.json")), [])
+        self.assertEqual(list(self.root.rglob("outcomes.json")), [])
+        (output / "original-collection.zip").write_bytes(self.archive + b"changed")
+        with self.assertRaisesRegex(ValueError, "archives changed"):
+            recovery.authorization(output)
+
+    def test_zip_inspection_rejects_traversal_absolute_and_symlink_entries(self):
+        for name in ["../escape.rs", "/absolute.rs", "dir\\escape.rs"]:
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "unsafe"):
+                recovery.zip_members(inspection_zip({name: "data"}), set())
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as archive:
+            link = zipfile.ZipInfo("link")
+            link.external_attr = (stat.S_IFLNK | 0o777) << 16
+            archive.writestr(link, "../../outside")
+        with self.assertRaisesRegex(ValueError, "unsafe"):
+            recovery.zip_members(data.getvalue(), set())
 
 
 class RecoveredShardEvidence(unittest.TestCase):

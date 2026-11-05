@@ -105,6 +105,17 @@ seleccionar exactamente un sello por índice y aplicar después la misma unión
 completa y el gate de mutaciones original. Preparar o iniciar la recuperación
 no acredita que haya terminado ni que el gate esté aprobado.
 
+La misma recuperación admite únicamente el fallo de recolección revisado del
+shard21/job `126992338544`. Su ZIP `13386138847` se fija por SHA256 y se
+inspecciona en memoria con límites de tamaño, rutas, entradas y expansión;
+se contrastan candidatos, baseline, argv y el error final del recolector.
+Esos resultados siguen sin atestación de fuentes/semillas: sólo justifican
+un nuevo intento, y se conservan bajo el controlador sin copiarse al checkout
+fresh. La partición21/64 debe ejecutar de nuevo baseline y todos sus mutantes,
+con la fuente9a intacta y el mismo sellado posterior. La autorización antigua
+del shard20 sigue siendo compatible con el verificador. Sus fallos de runner
+se registran aparte y no aportan resultados sellados.
+
 ## Instrumentación optativa
 
 ```sh

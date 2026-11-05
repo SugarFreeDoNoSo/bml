@@ -1,20 +1,20 @@
-name: Recover an interrupted 9a mutation shard
+name: Recover a failed 9a mutation shard with fresh execution
 
 # This separate run cannot satisfy the original attempt's artifact pattern.
-# A later explicit collection must validate recovery metadata and exactly 63
-# original seals plus this one before the unchanged union/quality gate.
+# A later explicit collection must validate recovery metadata and exactly one
+# attested seal per index before the unchanged 64-way union/quality gate.
 
 on:
   workflow_dispatch:
     inputs:
       original_job:
-        description: Terminal runner-shutdown job from the original campaign
+        description: Original terminal shutdown job, or reviewed collection-failure job 126992338544
         required: true
-        default: '126992338567'
+        default: '126992338544'
       shard_index:
         description: Its zero-based shard index (0 through 63)
         required: true
-        default: '20'
+        default: '21'
 
 permissions:
   contents: read
@@ -43,7 +43,7 @@ jobs:
           ref: ${{ github.sha }}
           path: control
           persist-credentials: false
-      - name: Authorize the original source, artifact and interrupted job via API
+      - name: Authorize original source and failure eligibility; inspect original evidence only
         id: authorize
         env:
           GH_TOKEN: ${{ github.token }}
