@@ -186,6 +186,49 @@ fn cache_step_budget_evicts_independently_of_the_bit_budget() {
 }
 
 #[test]
+fn repeated_search_does_not_duplicate_the_same_certified_cache_entry() {
+    let mut searcher = ExactSearcher::new(ExactSearchOptions::default());
+    let cold = searcher.search(&target(2)).best.unwrap();
+    for _ in 0..3 {
+        let warm = searcher.search(&target(2));
+        assert_eq!(warm.best.as_ref().unwrap(), &cold);
+        assert_eq!(warm.report.cache_lookups, 1);
+        assert_eq!(warm.report.candidates[0].strategy, ExactStrategy::Previous);
+        assert_eq!(searcher.cached_results(), 1);
+    }
+}
+
+#[test]
+fn cumulative_cache_budgets_accept_exact_totals() {
+    for options in [
+        ExactSearchOptions {
+            max_cache_bits: 4,
+            ..ExactSearchOptions::default()
+        },
+        ExactSearchOptions {
+            max_cache_steps: 3,
+            ..ExactSearchOptions::default()
+        },
+    ] {
+        let mut searcher = ExactSearcher::new(options);
+        let one = searcher.search(&target(1)).best.unwrap();
+        let two = searcher.search(&target(2)).best.unwrap();
+        assert_eq!(one.term().bit_len() + two.term().bit_len(), 4);
+        assert_eq!(
+            one.derivation().steps.len() + two.derivation().steps.len(),
+            3
+        );
+        assert_eq!(searcher.cached_results(), 2, "{options:?}");
+        for (n, lookups) in [(1, 1), (2, 2)] {
+            let warm = searcher.search(&target(n));
+            assert_eq!(warm.report.cache_lookups, lookups);
+            assert_eq!(warm.report.candidates[0].strategy, ExactStrategy::Previous);
+            assert_eq!(searcher.cached_results(), 2);
+        }
+    }
+}
+
+#[test]
 fn failures_are_reported_without_approximate_success_and_ties_are_deterministic() {
     let mut options = ExactSearchOptions::default();
     options.synthesis.max_bits = 0;

@@ -135,6 +135,41 @@ fn reference_evaluators_load_context_vectors_inside_loops_and_reject_lossy_indic
 }
 
 #[test]
+fn indexed_reference_arithmetic_and_pick_consume_distinct_operands() {
+    let context = EvalContext::new(&[2.0], &[5.0]);
+    // The explicit input load selects indexed semantics. Literal answers
+    // distinguish addition, multiplication and division independently of
+    // either interpreter's implementation.
+    for (tail, expected) in [
+        (vec![RpnOp::FAdd], 7.0),
+        (vec![RpnOp::FMul], 10.0),
+        (
+            vec![RpnOp::Pick { depth: 1 }, RpnOp::FMul, RpnOp::FAdd],
+            12.0,
+        ),
+        (
+            vec![RpnOp::Pick { depth: 0 }, RpnOp::FMul, RpnOp::FAdd],
+            27.0,
+        ),
+    ] {
+        let mut ops = vec![
+            RpnOp::Zero,
+            RpnOp::ContextVarIndexed { base: 0 },
+            RpnOp::Const(0),
+        ];
+        ops.extend(tail);
+        let program = RpnProgram {
+            ops: ops.clone(),
+            const_pool: vec![],
+        };
+        assert_eq!(program.evaluate_with_ctx(&context), expected);
+        let mut stack = Vec::new();
+        Fragment { ops }.evaluate_on_stack_with_ctx(&mut stack, &context);
+        assert_eq!(stack, vec![expected]);
+    }
+}
+
+#[test]
 fn legacy_directory_containers_reject_context_loads_before_creating_outputs() {
     use bml_compiler::{
         distributed::{

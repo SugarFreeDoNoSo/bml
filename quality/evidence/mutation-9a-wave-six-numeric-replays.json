@@ -1,0 +1,554 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "26a4a16971a6f8ec4c927653c9438696f2f17ee6",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_matrix",
+        "--locked",
+        "scalar_work_budget_reports_the_last_row_major_position_transactionally",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-numeric-0.log",
+      "log_sha256": "20ceca170de64a7ca564969345efdd79a813b2f0befee60d0f2ae505af2b06c5",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "repeated_search_does_not_duplicate_the_same_certified_cache_entry",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-numeric-1.log",
+      "log_sha256": "43d63595803dd29240157730d1d444462211b81fda2e867f4ba484406ed16dc5",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "indexed_context_codec_contracts",
+        "--locked",
+        "indexed_reference_arithmetic_and_pick_consume_distinct_operands",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-numeric-2.log",
+      "log_sha256": "8151983a6c09a72cdcb455033e634092659fb394bb53545dd56b4ca56aaf2e60",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "cumulative_cache_budgets_accept_exact_totals",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-six-numeric-4.log",
+      "log_sha256": "e86a64f7812edc72f906f8d12fbc004958c3fbab75b499b2f0e2cb9726378d80",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_matrix",
+        "--locked",
+        "scalar_work_budget_reports_the_last_row_major_position_transactionally",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-0.log",
+      "log_sha256": "3861bf5aa3f49e18dc1e4dca618c24f655d0f0a14b4f260a2af773ba3ceabc19",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-0",
+      "candidate": "crates/domain/src/number/matrix.rs:353:27: replace % with + in BmlMatrix::scalar_map",
+      "original_source_sha256": "f742872b25fb7929e289741248d572e108f7aadbea8497c193bccbba02499d77",
+      "mutated_source_sha256": "dc9f2edbe9657cdce4afd76f97a44424907b0ba1e1feb305072f437f2dc0ef24",
+      "original_diff_sha256": "38413b3ffa6faab2b2bc45919143bf3b4fb448c02a341c1a22414105c86967ec",
+      "original_span": {
+        "end": {
+          "column": 28,
+          "line": 353
+        },
+        "start": {
+          "column": 27,
+          "line": 353
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "repeated_search_does_not_duplicate_the_same_certified_cache_entry",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-1.log",
+      "log_sha256": "f0e4fca7d03878aef8dc482a61a5478e5fea6aa6267552f658e75d375496f3bb",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-1",
+      "candidate": "crates/domain/src/number/search.rs:354:75: replace == with != in ExactSearcher::remember",
+      "original_source_sha256": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+      "mutated_source_sha256": "bb266bf8dd4e98064a3a2bee52bda49980f81658cd2a81e724ec3294424f42f0",
+      "original_diff_sha256": "4329e75ce72b1602f4715e5edd3ec20de7e73992f5e038f2a8213ecacfe79442",
+      "original_span": {
+        "end": {
+          "column": 77,
+          "line": 354
+        },
+        "start": {
+          "column": 75,
+          "line": 354
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "indexed_context_codec_contracts",
+        "--locked",
+        "indexed_reference_arithmetic_and_pick_consume_distinct_operands",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-2.log",
+      "log_sha256": "a8ad4b13ed196a0d8b7ac615b6f63c47059619235b9bafeabe47347c0b0209f1",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-2",
+      "candidate": "crates/compiler/src/rpn.rs:480:31: replace * with + in evaluate_indexed_ops",
+      "original_source_sha256": "c5dbfad6884dce6892b2d352568a5ff285a6951fc80ba8fd4b6c45f962fc8895",
+      "mutated_source_sha256": "cd746cdaad80975bf8672909959c3f70957624a2030f4ae5a82ebea3d7adf686",
+      "original_diff_sha256": "e66507d8ef6ccda5489039c488e81da339b7e4c01d8a8c6987d4c86996ff9788",
+      "original_span": {
+        "end": {
+          "column": 32,
+          "line": 480
+        },
+        "start": {
+          "column": 31,
+          "line": 480
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "indexed_context_codec_contracts",
+        "--locked",
+        "indexed_reference_arithmetic_and_pick_consume_distinct_operands",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-3.log",
+      "log_sha256": "ba4057eba3b504dc39a09e1532bb71487a3e623788548b640fa37577bef87576",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-3",
+      "candidate": "crates/compiler/src/rpn.rs:480:31: replace * with / in evaluate_indexed_ops",
+      "original_source_sha256": "c5dbfad6884dce6892b2d352568a5ff285a6951fc80ba8fd4b6c45f962fc8895",
+      "mutated_source_sha256": "16b665928a52662fa07697cc7ecbe9783e60e37b3b03fabd321c1d7c5fc730cf",
+      "original_diff_sha256": "eff3bca2064b3b89aad53afb12b9c05b5d6a9b3d42f691fc095f759f29739ad0",
+      "original_span": {
+        "end": {
+          "column": 32,
+          "line": 480
+        },
+        "start": {
+          "column": 31,
+          "line": 480
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "cumulative_cache_budgets_accept_exact_totals",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-4.log",
+      "log_sha256": "111edf1ea652dd7c2e0191b684d4be5e9c22d9fee787e9a349b80f721b060d8d",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-4",
+      "candidate": "crates/domain/src/number/search.rs:373:39: replace > with >= in ExactSearcher::remember",
+      "original_source_sha256": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+      "mutated_source_sha256": "c468bd5449c86162fc24c5347bd0e60e368b0fa1123d1df3e6003c1d906ce8c9",
+      "original_diff_sha256": "129a4aac08410ba4a422ac09be206b22ae8a04287485347f4f6a40cdc115cbcd",
+      "original_span": {
+        "end": {
+          "column": 40,
+          "line": 373
+        },
+        "start": {
+          "column": 39,
+          "line": 373
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "indexed_context_codec_contracts",
+        "--locked",
+        "indexed_reference_arithmetic_and_pick_consume_distinct_operands",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-5.log",
+      "log_sha256": "b18d2846911693b5b3cff9610fb5e08ef6dfc747f6e2e0b531de59b18fe1c9f9",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-5",
+      "candidate": "crates/compiler/src/rpn.rs:485:68: replace + with - in evaluate_indexed_ops",
+      "original_source_sha256": "c5dbfad6884dce6892b2d352568a5ff285a6951fc80ba8fd4b6c45f962fc8895",
+      "mutated_source_sha256": "6034fdf601005b02b8ea170b5b69c384fb7cdfdfb6533218797fe6f8664381f1",
+      "original_diff_sha256": "a10fae0cdb8851398e3813ee656fccb707a372ca478f540589332192c6ab5882",
+      "original_span": {
+        "end": {
+          "column": 69,
+          "line": 485
+        },
+        "start": {
+          "column": 68,
+          "line": 485
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "indexed_context_codec_contracts",
+        "--locked",
+        "indexed_reference_arithmetic_and_pick_consume_distinct_operands",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-6.log",
+      "log_sha256": "b00af846c227110abf3dd6bbba887495ba859d524d10994f05b397dcf839c44c",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-6",
+      "candidate": "crates/compiler/src/rpn.rs:485:68: replace + with * in evaluate_indexed_ops",
+      "original_source_sha256": "c5dbfad6884dce6892b2d352568a5ff285a6951fc80ba8fd4b6c45f962fc8895",
+      "mutated_source_sha256": "89770609a7facd1fb4dbe45a9fe3d7be4de84b77fbe33f34843f4e341eb62790",
+      "original_diff_sha256": "a40d801ebea46dabe71da5aca3500e211ca910230ae33cafd7c3dca31d214ec9",
+      "original_span": {
+        "end": {
+          "column": 69,
+          "line": 485
+        },
+        "start": {
+          "column": 68,
+          "line": 485
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "indexed_context_codec_contracts",
+        "--locked",
+        "indexed_reference_arithmetic_and_pick_consume_distinct_operands",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-7.log",
+      "log_sha256": "ecd0c31fed9c8a7e7ea6f1aba0629b9acf24d9925d1e67aaa33997a5e478295b",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-7",
+      "candidate": "crates/compiler/src/rpn.rs:478:21: delete match arm RpnOp::FAdd in evaluate_indexed_ops",
+      "original_source_sha256": "c5dbfad6884dce6892b2d352568a5ff285a6951fc80ba8fd4b6c45f962fc8895",
+      "mutated_source_sha256": "9486d3c245587a5f33c7ec5aa3b6c3f0197856ed89c8fa94b3b0b33a0e558917",
+      "original_diff_sha256": "9b652b40c7c0e21ff650a9d2dc5f3ed9ccb88a53d0d78a91312ef7b4e36683eb",
+      "original_span": {
+        "end": {
+          "column": 49,
+          "line": 478
+        },
+        "start": {
+          "column": 21,
+          "line": 478
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "cumulative_cache_budgets_accept_exact_totals",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-8.log",
+      "log_sha256": "410ec982f910ea3399b3e574b332eca068a23424d6f0b0482349cb5ed775cc9f",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-8",
+      "candidate": "crates/domain/src/number/search.rs:366:39: replace > with == in ExactSearcher::remember",
+      "original_source_sha256": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+      "mutated_source_sha256": "5e2d00b13a66a26885f2c068384626f9c18598648c97e86407dcddc0f8501713",
+      "original_diff_sha256": "b135a480cf7ca23a0a5bd2ef98e122015e1fa61808d4b7004655e1502c0a02c8",
+      "original_span": {
+        "end": {
+          "column": 40,
+          "line": 366
+        },
+        "start": {
+          "column": 39,
+          "line": 366
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "indexed_context_codec_contracts",
+        "--locked",
+        "indexed_reference_arithmetic_and_pick_consume_distinct_operands",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-9.log",
+      "log_sha256": "634379d41e02e0df585927fcca4495ecf9e224796ff5b2e099ddf7273fcedbbe",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-9",
+      "candidate": "crates/compiler/src/rpn.rs:478:41: replace + with - in evaluate_indexed_ops",
+      "original_source_sha256": "c5dbfad6884dce6892b2d352568a5ff285a6951fc80ba8fd4b6c45f962fc8895",
+      "mutated_source_sha256": "8b897b694012f591eec24397430a53c37fe52fb59b1668b9df978e61f76f112d",
+      "original_diff_sha256": "819da9e82b2eab4613042a529ba4357cf84f42c2926e0672723788121e37351e",
+      "original_span": {
+        "end": {
+          "column": 42,
+          "line": 478
+        },
+        "start": {
+          "column": 41,
+          "line": 478
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "cumulative_cache_budgets_accept_exact_totals",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-10.log",
+      "log_sha256": "336c3d432df50683be9becfdcebd965230d3a822f4bdf1756fd8f1e3695e2f51",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-10",
+      "candidate": "crates/domain/src/number/search.rs:366:39: replace > with >= in ExactSearcher::remember",
+      "original_source_sha256": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+      "mutated_source_sha256": "d565c8c9e5690e33c8059ae91a61f5b04a4a54741b27d7b0c972da2949a21fcd",
+      "original_diff_sha256": "2f0296fbf115355d9ad075b27eb87f53e939db59ae18e734872d217028682feb",
+      "original_span": {
+        "end": {
+          "column": 40,
+          "line": 366
+        },
+        "start": {
+          "column": 39,
+          "line": 366
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "indexed_context_codec_contracts",
+        "--locked",
+        "indexed_reference_arithmetic_and_pick_consume_distinct_operands",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-11.log",
+      "log_sha256": "732eeb396f7df029d625d9329455638dae54f8159d40170aa87650fdd4e43bb5",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-11",
+      "candidate": "crates/compiler/src/rpn.rs:478:41: replace + with * in evaluate_indexed_ops",
+      "original_source_sha256": "c5dbfad6884dce6892b2d352568a5ff285a6951fc80ba8fd4b6c45f962fc8895",
+      "mutated_source_sha256": "a6736ce01f3a661bf2d1b890afe6493ab41051adaa77975b134b312e9bce29d6",
+      "original_diff_sha256": "80012eba59a183012d6cea6e0c64894ca426c93e93a74e30e25fbcb21639c34e",
+      "original_span": {
+        "end": {
+          "column": 42,
+          "line": 478
+        },
+        "start": {
+          "column": 41,
+          "line": 478
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_search",
+        "--locked",
+        "cumulative_cache_budgets_accept_exact_totals",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-six-numeric-12.log",
+      "log_sha256": "3dea720a49e1e0c0bcd1f3130673c3100cfa6274152d1ed7e634ba7fc9a1af44",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-six-numeric-12",
+      "candidate": "crates/domain/src/number/search.rs:373:39: replace > with == in ExactSearcher::remember",
+      "original_source_sha256": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+      "mutated_source_sha256": "5aa53b069d6ab672de9e0c2e260720d77704fc811b353f6352d1f9eba6652af2",
+      "original_diff_sha256": "03fbc9f0f2d07d20109b2ecf4fbae2112ec4471d1edaca8189d3a3c73bb92162",
+      "original_span": {
+        "end": {
+          "column": 40,
+          "line": 373
+        },
+        "start": {
+          "column": 39,
+          "line": 373
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T03:53:26.625881+00:00",
+  "status": "passed_focused_replays",
+  "patched_test_hashes": {
+    "crates/compiler/tests/indexed_context_codec_contracts.rs": "da1469545b5d4aa999590d96fac430fc7ec69dfcfbfcd5c645aefb99910a5a6f",
+    "crates/domain/tests/bml_search.rs": "f19c5f067be5c392905db562841894fe22d854d5abe5ce83fbba1d325d43d49e",
+    "crates/domain/tests/bml_matrix.rs": "4bd113496cad48fa05b3b80ad22562dbbfd2ded2f71d6182511e3866da5bdfab"
+  },
+  "integrated_formatted_test_hashes": {
+    "crates/compiler/tests/indexed_context_codec_contracts.rs": "da1469545b5d4aa999590d96fac430fc7ec69dfcfbfcd5c645aefb99910a5a6f",
+    "crates/domain/tests/bml_search.rs": "00e7d73103f896eeac1245d951e3d2a42b890a07f29144e298742c0468dfafb8",
+    "crates/domain/tests/bml_matrix.rs": "4bd113496cad48fa05b3b80ad22562dbbfd2ded2f71d6182511e3866da5bdfab"
+  },
+  "format_note": "patched_test_hashes identify the focused replay inputs; integrated_formatted_test_hashes identify the rustfmt-formatted files checked by the canonical gate."
+}

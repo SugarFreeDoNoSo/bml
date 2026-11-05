@@ -292,6 +292,36 @@ fn scalar_output_budget_reports_the_last_row_major_position_transactionally() {
 }
 
 #[test]
+fn scalar_work_budget_reports_the_last_row_major_position_transactionally() {
+    let input = matrix(2, 3, &[1; 6]);
+    let before = input.clone();
+    let scalar_sum = (&Bml::one() + &Bml::one()).unwrap();
+    let work_bits = 6 * scalar_sum.bit_len();
+    let tight = MatrixLimits {
+        max_work_bits: work_bits - 1,
+        ..MatrixLimits::default()
+    };
+    assert_eq!(
+        input.add_scalar(1i32, tight),
+        Err(MatrixError::Budget {
+            row: 1,
+            column: 2,
+            inner: None,
+        })
+    );
+    assert_eq!(input, before);
+    let exact = MatrixLimits {
+        max_work_bits: work_bits,
+        ..tight
+    };
+    assert_eq!(
+        targets(&input.add_scalar(1i32, exact).unwrap()),
+        vec![ExactRational::from_i64(2); 6]
+    );
+    assert_eq!(input, before);
+}
+
+#[test]
 fn signed_matmul_and_output_budget_preserve_inputs() {
     let limits = MatrixLimits::default();
     let a = matrix(1, 3, &[-1, 0, 1]);
