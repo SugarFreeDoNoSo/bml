@@ -485,7 +485,8 @@ async fn health(State(state): State<Arc<ServerState>>) -> impl IntoResponse {
 // Keep a trailing incomplete UTF-8 sequence buffered across token boundaries.
 fn complete_utf8_prefix(bytes: &[u8]) -> usize {
     let mut offset = 0;
-    while offset < bytes.len() {
+    // Each complete error consumes at least one input byte.
+    for _ in bytes {
         match std::str::from_utf8(&bytes[offset..]) {
             Ok(_) => return bytes.len(),
             Err(error) => match error.error_len() {
