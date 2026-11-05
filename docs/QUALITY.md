@@ -66,6 +66,53 @@ BML_TEST_GGUF=/ruta/modelo.gguf cargo test -p bml-gguf open_real_tinyllama -- --
 
 Strace traza el proceso del parser; perf mide un proceso que ejecuta el evaluador. Si se solicitan sin permisos o herramientas, fallan. No ejecutar `--ignored` indiscriminadamente, pues incluye las entradas auxiliares de esos hijos. Los tests `thread_concurrency` usan hilos del sistema, sin demostrar exploración exhaustiva de interleavings mediante Loom.
 
+### Sonda de subfragmentos con control externo de PMU
+
+```sh
+cargo build --release -p bml-runtime --example subfragment_cache_probe --locked
+target/release/examples/subfragment_cache_probe --verify
+target/release/examples/subfragment_cache_probe --warmup 10000 --iterations 1000000
+```
+
+La sonda llama a `Runtime::execute_sub_fragments` con cuatro arrays de opcodes
+prestados, bucles anidados y un buffer compartido entre subfragmentos. Las cuatro
+entradas `[x,y]` son `[0,1]`, `[1,2]`, `[2,3]`, `[3,4]`; el resultado independiente
+`2^x + 4*y + 8` da los literales `[13,18,24,32]`. `--verify` comprueba cada caso,
+el contenido del buffer y un checksum de 12 llamadas sin PMU ni interacción.
+Los contadores `--warmup` y `--iterations` deben ser positivos y como máximo
+`2^48`, para que el checksum entero sea representable exactamente en `f64`.
+
+El setup reserva arrays, pila y buffers. El workload reutiliza esa memoria,
+mantiene sus entradas/resultados opacos mediante `black_box` y no asigna memoria.
+Después del calentamiento y sus comprobaciones, `READY` identifica PID, ruta,
+iteraciones y `totalfragmenttransitions = 4*iterations - 1`: cuenta las parejas
+adyacentes de arrays ejecutados, incluidas las que cruzan llamadas; excluye el
+calentamiento. El operador conecta y habilita sus contadores al PID publicado y
+envía `go` seguido de salto de línea por stdin. La sonda ejecuta el workload,
+comprueba checksum/buffer, emite `FINISHED` y espera `stop` seguido de salto de
+línea. El operador deshabilita los contadores antes de enviar `stop`; el detalle
+`RESULT` y la salida del proceso ocurren después. La sonda no invoca `perf`.
+
+Este protocolo deja dentro del intervalo externo el overhead mínimo de
+sincronización: lectura de `go`, comprobaciones finales, escritura/vaciado de
+`FINISHED` y la espera hasta que el operador deshabilite los contadores. No mide
+ni resta ese overhead. Los arrays son bytecode para el mismo dispatcher; esta
+sonda ejercita esa ruta y no establece residencia L1i ni una medición exclusiva
+del dispatcher. Los archivos de contadores por sí solos tampoco lo establecen.
+
+Para la campaña, seguir el [protocolo L1i acordado](../openspec/changes/bml-implementation-plan/specs/bml-runtime/spec.md):
+fijar la afinidad al mismo core antes del calentamiento y conservarla en las
+siete repeticiones, con cantidades idénticas de calentamiento y trabajo.
+Registrar `instructions` y `L1-icache-load-misses` sobre el mismo PID e intervalo,
+ambos sin calificador o ambos con `:u`, sin multiplexado parcial. Conservar los
+JSON originales, CPU, afinidad, comandos y hashes de fuentes y ejecutable;
+auditar el tamaño y alcance del código máquina del binario que se mide, sin
+reutilizar el tamaño de otro worker. El límite es menor de 32 KiB y como máximo
+un miss por mil instrucciones en cada repetición. Tras comprobar procedencia
+y significado de los eventos en esa CPU, validar el sobre JSON con
+`python3 tools/validate_l1i_campaign.py campaña.json`; el formato se documenta
+en la cabecera del script. La validación de datos no sustituye esas auditorías.
+
 ## Contratos y límites
 
 - El escalar `Bml` codificado en bits, sus reglas y síntesis acotada están

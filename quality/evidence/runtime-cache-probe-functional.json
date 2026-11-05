@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "status": "passed_functional_only",
+  "recorded_at": "2026-11-05T01:11:17.191597+00:00",
+  "base_revision": "236a46d3cff6cb1f1951894a231743fc90154c8c",
+  "scope": "Functional oracle and synchronization barriers only. No PMU counters, L1i residency, code-size closure or throughput claim.",
+  "binary": {
+    "path": "target/entrypoint-repair-build/release/examples/subfragment_cache_probe",
+    "sha256": "8da2c7a945dc111ba135f23cd9d0c65368db923151b4c06f816d336cbae79373"
+  },
+  "verify": "VERIFIED route=Runtime::execute_sub_fragments cases=4 iterations=12 checksum=261",
+  "barrier_check": {
+    "command": [
+      "--warmup",
+      "4",
+      "--iterations",
+      "5"
+    ],
+    "ready": "READY pid=3688994 route=Runtime::execute_sub_fragments warmup=4 iterations=5 totalfragmenttransitions=19",
+    "finished": "FINISHED",
+    "result": "RESULT route=Runtime::execute_sub_fragments iterations=5 subfragments=4 totalfragmenttransitions=19 checksum=100 expected=100 stack_capacity=8",
+    "exit_code": 0
+  },
+  "invalid_zero_warmup": {
+    "exit_code": 1,
+    "stderr": "Error: \"--warmup must be in 1..=281474976710656\""
+  },
+  "sources": {
+    "crates/runtime/examples/subfragment_cache_probe.rs": "51d1395d9d24c71f105d1988fbb2a543516602fc889a214f49907e956ce566e0",
+    "docs/QUALITY.md": "107405d99183f38c4ad9b12934a4b7fa4e7c59fe16f05ce6506db1051c0f01c9"
+  }
+}
