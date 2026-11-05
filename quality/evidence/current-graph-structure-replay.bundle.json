@@ -1,0 +1,173 @@
+{
+  "status": "verified_one_current_workspace_structure_replay",
+  "observed_at_utc": "2026-11-05T12:20:21.244814+00:00",
+  "archive": "quality/evidence/current-graph-structure-replay.tar.gz",
+  "archive_sha256": "c99720daeebd1324123e9336273925ab80a79d4861b5d44def8f7419a8a79722",
+  "archive_bytes": 118859,
+  "members": {
+    "execution/artifact-hashes.json": {
+      "sha256": "7886d0c3acb5394108d0b96d03f52a055e2189e13d329a339fe718a440a6cc65",
+      "bytes": 4685
+    },
+    "execution/baseline-build.stderr": {
+      "sha256": "ac97e2c909bf4f1c6ae6cd7c767fbee55d1b1e7e154d992bf8aa56b8751d6ee2",
+      "bytes": 29632
+    },
+    "execution/baseline-build.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/baseline-test.stderr": {
+      "sha256": "dfd3d7d7a78e5765b53921ec6c165c5f5f7afa17ce6ba735c20977f50ec347ee",
+      "bytes": 28225
+    },
+    "execution/baseline-test.stdout": {
+      "sha256": "25dcfd456bc45c13a632d772ba3a006a72b0ad2f620c3d89c3045e898cdd0179",
+      "bytes": 90826
+    },
+    "execution/cargo-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/cargo-version.stdout": {
+      "sha256": "9950bbb2d5c3417b1a068f0e81f6d3cac991a363193bdf2a22d447f5acf8b503",
+      "bytes": 36
+    },
+    "execution/clean-before-baseline.stderr": {
+      "sha256": "6f4a68c606ab372f9ddbeddf2bc04b2e1f7e796fc3f32b0deccd376b61ceaa0c",
+      "bytes": 38
+    },
+    "execution/clean-before-baseline.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-before-graph-skip-boundary.stderr": {
+      "sha256": "d461b581002be2773ea34761c158886312e32bc1e9a1ae833a4fa74fed6c0713",
+      "bytes": 39
+    },
+    "execution/clean-before-graph-skip-boundary.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-restored-graph-skip-boundary.stderr": {
+      "sha256": "d461b581002be2773ea34761c158886312e32bc1e9a1ae833a4fa74fed6c0713",
+      "bytes": 39
+    },
+    "execution/clean-restored-graph-skip-boundary.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/current-mutants.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/current-mutants.stdout": {
+      "sha256": "8f14dd466a6fc7511deb579add418a0cafa437e0bd53be5c8abb8f9f41e7ea34",
+      "bytes": 252504
+    },
+    "execution/final-summary.json": {
+      "sha256": "40a9e6d421697c567f87f039507c73a9cbc19753d28271bf736f78aecf664cfc",
+      "bytes": 2203
+    },
+    "execution/graph-skip-boundary-build.stderr": {
+      "sha256": "610c53292401407b60ddd38f5a048c3133244d6787d66a939083cfd995bcaefb",
+      "bytes": 29521
+    },
+    "execution/graph-skip-boundary-build.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/graph-skip-boundary-test.stderr": {
+      "sha256": "8d2b0e119b4c055d40516a6032bd2d4309df67bbe1a0f1238bc5088717d041dc",
+      "bytes": 9722
+    },
+    "execution/graph-skip-boundary-test.stdout": {
+      "sha256": "41cb3253b78cb1be10408cdf1a4e2e642e44c4cb8dbd46e0a9f78f2bede696d2",
+      "bytes": 14622
+    },
+    "execution/prepare-report.json": {
+      "sha256": "800ae39de39c20f6529540b9372828d51193343c111f7ffbb5cf15763f242e8f",
+      "bytes": 4116
+    },
+    "execution/producer-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/producer-version.stdout": {
+      "sha256": "ba3c35073708a1da94eef75cafca1e263013077a73d090b5a798135dac2ffbe5",
+      "bytes": 21
+    },
+    "execution/report.json": {
+      "sha256": "42734ba20fce8d745f82d6182546f1251adcca4d9a29e33c2d2ed645d4867c5f",
+      "bytes": 12981
+    },
+    "execution/runner.py": {
+      "sha256": "b6a5de83a352eb4aebf172d453a7b5512e2da652db453c3082c7791e24ef7ccd",
+      "bytes": 25989
+    },
+    "execution/rustc-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/rustc-version.stdout": {
+      "sha256": "778fbc643a806f0dd123c056e66201d7e8a56a61928ec0a33171be8d6c2d5a37",
+      "bytes": 196
+    },
+    "execution/source.json": {
+      "sha256": "acd174cb71880a4bf720de9e52ad53f6bb14dcfe112c694f47770ad19f6fe399",
+      "bytes": 108305
+    },
+    "execution/workspace-metadata.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/workspace-metadata.stdout": {
+      "sha256": "1265f34ceea9483b247ea36ea60e0b9629a9af5333a8262f3bda87db8dc33d7d",
+      "bytes": 71458
+    },
+    "review/author/checks.log": {
+      "sha256": "b128cfb0b47f0215d2c9d84abd08618d2e65fac88238680875fb43619049f5b4",
+      "bytes": 166
+    },
+    "review/author/PROOF.md": {
+      "sha256": "2d18aab3ef3b0963ae613efb62f52b9e9daea526eb73fe9fbbd6287204fd916d",
+      "bytes": 5175
+    },
+    "review/author/graph-structure.patch": {
+      "sha256": "f74795b607c4b8bee8dbfdbe200439a429abb5f68a5a7ce5047bcaad36f7a454",
+      "bytes": 1066
+    },
+    "review/author/graph-structure.patch.sha256": {
+      "sha256": "3eac4745a099aef39c9e3ce982db9a9c81962f640a052119bd6e095e097c20b4",
+      "bytes": 88
+    },
+    "review/independent/review.md": {
+      "sha256": "e6ec56dfb1c4af11decaa0d79dd6f4ba200b7f0c6344d576b8f756ef89d39730",
+      "bytes": 1548
+    },
+    "review/independent/review.json": {
+      "sha256": "d6347d8108ef6345edf05df327d39de3eb3d53ac69d9114c00b0281e5b41e112",
+      "bytes": 4494
+    },
+    "review/independent/index.json": {
+      "sha256": "40c697261a7e66dfa7393720f2d16bef7101a647cfc1c8518ecf33279a774f7e",
+      "bytes": 740
+    },
+    "review/independent/current-candidate-proposal.json": {
+      "sha256": "4d6d4be0957cc71dc36a95f7e6e24c1f4545111767df66ff5b95a8b9f3c275c5",
+      "bytes": 1598
+    }
+  },
+  "independent_review_sha256": "d6347d8108ef6345edf05df327d39de3eb3d53ac69d9114c00b0281e5b41e112",
+  "root_independent_rehash": {
+    "tracked_inputs": 855,
+    "mismatches": 0
+  },
+  "scope": "Finite enumerate+skip preserves recursive reference/depth/end checks and exact first error, no allocation/newlimits/numeric policy. Real27.1 less-than to less-than-or-equal current skip-boundary candidate compiles and makes the existing compiled-causal-artifact structural-validation oracle fail with whole-workspace Test101. Baseline1003/145suites, no timeout/compile error. Current855 restored, parentCURRENT3 853 verified by owner; owned targetcleanup0. Main canonical+feature/Loom gate is current-finite-traversals-gate.json. Frozen9aTimeout remains unchanged; not a global mutation/performance/model qualification.",
+  "openspec": {
+    "version": "1.13.0",
+    "passed": 16,
+    "failed": 0,
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  }
+}

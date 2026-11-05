@@ -414,9 +414,12 @@ fn structure(
     constants: usize,
     slots: usize,
 ) -> Result<(), GraphError> {
-    let mut i = 0;
-    while i < ops.len() {
-        match ops[i] {
+    let mut skip_until = 0;
+    for (i, op) in ops.iter().enumerate() {
+        if i < skip_until {
+            continue;
+        }
+        match *op {
             RpnOp::Var(id) | RpnOp::ContextVarIndexed { base: id } if id as usize >= inputs => {
                 return Err(GraphError::Reference)
             }
@@ -437,12 +440,10 @@ fn structure(
                     .filter(|end| *end <= ops.len())
                     .ok_or(GraphError::Loop)?;
                 structure(&ops[i + 1..end], depth + 1, inputs, constants, slots)?;
-                i = end;
-                continue;
+                skip_until = end;
             }
             _ => {}
         }
-        i += 1;
     }
     Ok(())
 }

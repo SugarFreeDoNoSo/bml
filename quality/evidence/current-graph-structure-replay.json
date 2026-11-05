@@ -1,0 +1,323 @@
+{
+  "scope": "One CURRENT graph21 source replay with exact whole-workspace commands; not historical9a or a complete mutation campaign.",
+  "runner_pid": 59749,
+  "started_at": "2026-11-05T12:12:46.082692+00:00",
+  "commands": [
+    {
+      "label": "clean-before-baseline",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-runtime",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-server"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:12:46.093568+00:00",
+      "stdout": "clean-before-baseline.stdout",
+      "stderr": "clean-before-baseline.stderr",
+      "disk_free_before": 3816112128,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:12:46.263577+00:00",
+      "elapsed_seconds": 0.17003695596940815,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "6f4a68c606ab372f9ddbeddf2bc04b2e1f7e796fc3f32b0deccd376b61ceaa0c",
+      "disk_free_after": 3895308288
+    },
+    {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:12:46.264176+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 3895304192,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:14:01.821201+00:00",
+      "elapsed_seconds": 75.55707448901376,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "ac97e2c909bf4f1c6ae6cd7c767fbee55d1b1e7e154d992bf8aa56b8751d6ee2",
+      "disk_free_after": 3752587264
+    },
+    {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T12:14:01.822310+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 3752587264,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:15:40.779397+00:00",
+      "elapsed_seconds": 98.95712290500524,
+      "stdout_sha256": "25dcfd456bc45c13a632d772ba3a006a72b0ad2f620c3d89c3045e898cdd0179",
+      "stderr_sha256": "dfd3d7d7a78e5765b53921ec6c165c5f5f7afa17ce6ba735c20977f50ec347ee",
+      "disk_free_after": 3751305216
+    },
+    {
+      "label": "clean-before-graph-skip-boundary",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-runtime",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-server"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:15:40.977231+00:00",
+      "stdout": "clean-before-graph-skip-boundary.stdout",
+      "stderr": "clean-before-graph-skip-boundary.stderr",
+      "disk_free_before": 3751305216,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:15:41.144728+00:00",
+      "elapsed_seconds": 0.1675284169614315,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "d461b581002be2773ea34761c158886312e32bc1e9a1ae833a4fa74fed6c0713",
+      "disk_free_after": 3893825536
+    },
+    {
+      "label": "graph-skip-boundary-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:15:41.146030+00:00",
+      "stdout": "graph-skip-boundary-build.stdout",
+      "stderr": "graph-skip-boundary-build.stderr",
+      "disk_free_before": 3893825536,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:16:54.634281+00:00",
+      "elapsed_seconds": 73.48828126996523,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "610c53292401407b60ddd38f5a048c3133244d6787d66a939083cfd995bcaefb",
+      "disk_free_after": 3751264256
+    },
+    {
+      "label": "graph-skip-boundary-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T12:16:54.635089+00:00",
+      "stdout": "graph-skip-boundary-test.stdout",
+      "stderr": "graph-skip-boundary-test.stderr",
+      "disk_free_before": 3751264256,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:17:28.943524+00:00",
+      "elapsed_seconds": 34.308476664009504,
+      "stdout_sha256": "41cb3253b78cb1be10408cdf1a4e2e642e44c4cb8dbd46e0a9f78f2bede696d2",
+      "stderr_sha256": "8d2b0e119b4c055d40516a6032bd2d4309df67bbe1a0f1238bc5088717d041dc",
+      "disk_free_after": 3751145472
+    },
+    {
+      "label": "clean-restored-graph-skip-boundary",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-runtime",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-server"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:17:29.064318+00:00",
+      "stdout": "clean-restored-graph-skip-boundary.stdout",
+      "stderr": "clean-restored-graph-skip-boundary.stderr",
+      "disk_free_before": 3751145472,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:17:29.231184+00:00",
+      "elapsed_seconds": 0.16689629497705027,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "d461b581002be2773ea34761c158886312e32bc1e9a1ae833a4fa74fed6c0713",
+      "disk_free_after": 3893653504
+    }
+  ],
+  "cases": [
+    {
+      "build": {
+        "label": "graph-skip-boundary-build",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 600,
+        "started_at": "2026-11-05T12:15:41.146030+00:00",
+        "stdout": "graph-skip-boundary-build.stdout",
+        "stderr": "graph-skip-boundary-build.stderr",
+        "disk_free_before": 3893825536,
+        "exit_code": 0,
+        "timed_out": false,
+        "ended_at": "2026-11-05T12:16:54.634281+00:00",
+        "elapsed_seconds": 73.48828126996523,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "610c53292401407b60ddd38f5a048c3133244d6787d66a939083cfd995bcaefb",
+        "disk_free_after": 3751264256
+      },
+      "test": {
+        "label": "graph-skip-boundary-test",
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 360,
+        "started_at": "2026-11-05T12:16:54.635089+00:00",
+        "stdout": "graph-skip-boundary-test.stdout",
+        "stderr": "graph-skip-boundary-test.stderr",
+        "disk_free_before": 3751264256,
+        "exit_code": 101,
+        "timed_out": false,
+        "ended_at": "2026-11-05T12:17:28.943524+00:00",
+        "elapsed_seconds": 34.308476664009504,
+        "stdout_sha256": "41cb3253b78cb1be10408cdf1a4e2e642e44c4cb8dbd46e0a9f78f2bede696d2",
+        "stderr_sha256": "8d2b0e119b4c055d40516a6032bd2d4309df67bbe1a0f1238bc5088717d041dc",
+        "disk_free_after": 3751145472
+      },
+      "failed_tests": [
+        "runtime_preflight_rejects_bad_stacks_and_expanded_loop_budgets"
+      ],
+      "compile_error": false,
+      "caught_current_workspace": true,
+      "label": "graph-skip-boundary",
+      "candidate": "crates/runtime/src/graph.rs:419:14: replace < with <= in structure",
+      "source_before_sha256": "1a586bb31524f24bf517d25fb91b92cd46a2fd99d379f743c04ac128d1b8dfba",
+      "source_mutated_sha256": "9a35e075fdd83b94dfb479b8e42b1409746ccb353e429e9ee286807dea87ab45",
+      "producer_diff_sha256": "353ae7e596c9a44a4bec5bef418dddeed38f125b3c768b7fb0bfbe9476689f0a"
+    }
+  ],
+  "active": null,
+  "prepared_source_sha256": "acd174cb71880a4bf720de9e52ad53f6bb14dcfe112c694f47770ad19f6fe399",
+  "prepare_report_sha256": "800ae39de39c20f6529540b9372828d51193343c111f7ffbb5cf15763f242e8f",
+  "identity": "CURRENT published 7f14292 plus exact UTF8, normalize and finite graph structure Rust overlays; not historical9a",
+  "environment": {
+    "PATH": "/tmp/bml-cargo/bin:/home/dev/.local/bin:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/home/dev/.opencode/bin:/home/dev/.local/share/mise/installs/node/24.22.2/bin:/home/dev/.local/share/mise/installs/uv/0.13.6/.mise-bins:/home/dev/.local/share/mise/shims:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.cargo/bin:/home/dev/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/games:/home/dev/.codex/tmp/arg0-linux/codex-arg0q6I2SF:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin",
+    "CARGO_HOME": "/tmp/bml-cargo",
+    "RUSTUP_HOME": "/tmp/bml-rustup",
+    "TMPDIR": "/home/dev/Work/bml/target/quality/wave-twenty-one-current-20261105T120945Z/tmp",
+    "CARGO_TARGET_DIR": "/home/dev/Work/bml/target/wave-twelve-current-build-20261105T092132Z",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "PROPTEST_RNG_SEED": "20260923",
+    "CARGO_TERM_COLOR": "never"
+  },
+  "cache_receipt": {
+    "previous_output": "/home/dev/Work/bml/target/quality/wave-twenty-current-20261105T115206Z",
+    "previous_source_sha256": "4733ba811f59d2e50874781087bcd9a86c665e7ca95049303b8b217fbd4471e7",
+    "previous_report_sha256": "c1c090cf9fdf85d08aca7faf22f6f905153196d35cb707365a3f3de7f796133c",
+    "changed_source_paths": [
+      "crates/runtime/src/graph.rs",
+      "openspec/changes/bml-1-0-release/tasks.md",
+      "quality/evidence/generic-campaign-telemetry-preparation.json",
+      "quality/evidence/generic-campaign-telemetry-preparation.tar.gz"
+    ],
+    "published_base": "7f1429255db537f9ae1440f9ec2f234d03e7419c",
+    "patch_paths_against_published_base": [
+      "crates/api/src/main.rs",
+      "crates/domain/src/number/exact.rs",
+      "crates/runtime/src/graph.rs"
+    ],
+    "current_inventory_sha256": "a00c49cc9f01fa522bcf72e2eb54ed31eac261cd7f8dbfecb23f9554f2992251",
+    "policy": "Reuse only the owned restored completed three-case CURRENT3 wave20 target for 7f14292 plus the three exact reviewed Rust overlays. Require exact source/report/runner hashes and restored853 inventory before ownership transfer. Clean bml-runtime, bml-domain and bml-server before baseline, the one negative and after restoration. Preserve previous source/worktrees/receipts; no CURRENT outcome before producer listing and workspace baseline plus negative."
+  },
+  "updated_at": "2026-11-05T12:17:29.323744+00:00",
+  "baseline": {
+    "build": {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T12:12:46.264176+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 3895304192,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:14:01.821201+00:00",
+      "elapsed_seconds": 75.55707448901376,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "ac97e2c909bf4f1c6ae6cd7c767fbee55d1b1e7e154d992bf8aa56b8751d6ee2",
+      "disk_free_after": 3752587264
+    },
+    "test": {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T12:14:01.822310+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 3752587264,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T12:15:40.779397+00:00",
+      "elapsed_seconds": 98.95712290500524,
+      "stdout_sha256": "25dcfd456bc45c13a632d772ba3a006a72b0ad2f620c3d89c3045e898cdd0179",
+      "stderr_sha256": "dfd3d7d7a78e5765b53921ec6c165c5f5f7afa17ce6ba735c20977f50ec347ee",
+      "disk_free_after": 3751305216
+    },
+    "failed_tests": [],
+    "compile_error": false,
+    "caught_current_workspace": false
+  },
+  "restores": [
+    {
+      "label": "graph-skip-boundary",
+      "source_sha256": "1a586bb31524f24bf517d25fb91b92cd46a2fd99d379f743c04ac128d1b8dfba",
+      "all_tracked_inputs_restored": true
+    }
+  ],
+  "status": "passed_current_workspace_replays",
+  "all_tracked_inputs_restored": true,
+  "ended_at": "2026-11-05T12:17:29.323724+00:00"
+}
