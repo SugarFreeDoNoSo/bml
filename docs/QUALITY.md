@@ -56,6 +56,13 @@ La cobertura estable mide líneas y funciones del workspace ordinario. No incluy
 
 La mutación compara el árbol base formateado con el código actual para excluir cambios exclusivamente de formato. Cada mutante viable debe ser detectado. El porcentaje es `caught / (caught + missed + timeout)`; los no compilables se reportan aparte. Una campaña vacía o sin mutantes viables es N/A, nunca 100 %. Una campaña incompleta falla. La opción manual `full_mutation` mide todo el workspace. No hay exclusiones por equivalencia preaprobadas.
 
+El CI ordinario lista primero sus candidatos y conserva revisión, base, hashes
+del diff y de la selección, comando y salida original en `target/quality/`.
+Una selección vacía verificada produce N/A sin ejecutar ni simular un baseline.
+Un listado fallido, una respuesta ambigua o resultados incompletos hacen fallar
+el job. Las selecciones no vacías siguen pasando por el gate original; N/A no
+acredita la campaña completa del desarrollo.
+
 La campaña completa del desarrollo se puede lanzar manualmente con
 `gh workflow run mutation-campaign.yml --ref master -f shards=64`.
 El workflow congela su propio SHA y el diff completo contra

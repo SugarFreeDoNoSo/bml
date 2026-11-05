@@ -76,20 +76,15 @@ jobs:
       - uses: taiki-e/install-action@7623a79cdfecb99d681017af368ca353d9f49bb5 # v2
         with:
           tool: cargo-mutants@27.1.0
-      - name: Run mutations after an unaltered baseline
+      - name: List candidates, run an unaltered baseline and score mutations
         env:
           FULL_MUTATION: ${{ inputs.full_mutation }}
         run: |
-          mkdir -p target/quality
           args=()
-          if [[ "$FULL_MUTATION" != true ]]; then
-            python3 tools/mutation_diff.py "$BASE_SHA" target/quality/changes.diff
-            args+=(--in-diff target/quality/changes.diff)
+          if [[ "$FULL_MUTATION" == true ]]; then
+            args+=(--full)
           fi
-          cargo mutants --workspace --cargo-arg=--locked --test-workspace true --jobs 2 --timeout 30 --build-timeout 180 "${args[@]}"
-      - name: Score mutation evidence
-        if: always()
-        run: python3 tools/quality.py mutations --report mutants.out/outcomes.json
+          python3 tools/ci_mutations.py --base "$BASE_SHA" "${args[@]}"
       - name: Mutation evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

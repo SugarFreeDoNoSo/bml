@@ -1,0 +1,39 @@
+{
+  "status": "passed_integrated_gate",
+  "observed_at_utc": "2026-11-05T02:11:18.705017+00:00",
+  "base_revision": "a1b978c49be70a4c9e3623645af5d9aa2b31dbc8",
+  "scope": "Ordinary changed-code CI only. Zero candidates produce N/A, never 100% or an invented baseline. The complete frozen mutation campaign is unchanged and remains pending.",
+  "original_failure": {
+    "run_id": 41950063738,
+    "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+    "reason": "Empty formatting-aware diff: cargo-mutants returned before writing outcomes.json; the separate scoring step tried to open that absent report."
+  },
+  "contracts": [
+    "Candidate selection records base/head, command, raw stdout/stderr, version, diff hash and candidate hash",
+    "N/A requires successful valid JSON[] or one complete known INFO message from cargo-mutants 27.1.0 in diff mode; any extra diagnostic rejects",
+    "Real parser tests cover empty diff, a diff without Rust source and a diff outside production functions",
+    "Full mode applies no diff and requires JSON; nonempty selections must match all outcome identities and use the unchanged quality gate",
+    "Missing/incomplete results, baseline failure, survivors, timeouts and cargo errors fail"
+  ],
+  "python_tooling_tests": 150,
+  "workflow_lint": {
+    "tool": "actionlint1.7.12",
+    "exit_code": 0,
+    "log": "target/quality/ci-empty-scope-actionlint.log",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "source_hashes": {
+    ".github/workflows/quality.yml": "13fb529bd525c7c52c5a04bfde70f00c921d753aff74369f9738beaa54b92364",
+    "tools/ci_mutations.py": "1670aecbb751c5dd7f01946c265d360d790efefd910adab2d693c6ef360ec995",
+    "tools/test_ci_mutations.py": "e332ea456cfe57bc42154f919ac78e3bbd4cefee7b47523c0c41d403c3bf7ccf"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5",
+    ".github/workflows/mutation-campaign.yml": "bed4f476ff34ff8563d764722cd06ef99323fca4b560f6c106c499e828b77ab7"
+  },
+  "log": "target/quality/wave-four-gate.log",
+  "log_sha256": "fab6fbc58625ee14e841b6b3349489d87c6be9f1271ac2a6d3f4b0c421ad48c1",
+  "python_command": "python3 -m unittest discover -s tools -p 'test_*.py'"
+}
