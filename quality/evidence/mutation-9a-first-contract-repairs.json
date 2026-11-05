@@ -1,0 +1,68 @@
+{
+  "status": "partial_results_with_focused_repairs",
+  "observed_at_utc": "2026-11-05T03:25:57.804692+00:00",
+  "run_id": 41950170549,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "scope": "First three downloaded completed shards only. Original campaign outcomes remain unchanged; focused replays are not a complete campaign or a global passing score.",
+  "shards": [
+    {
+      "shard": "2/64",
+      "seal": "target/quality/mutation-shard-41950170549-2/target/quality/shard-result-2.json",
+      "seal_sha256": "4cf4e4f1d6db858d5a1c6054482e3a9cdde5b0236262cf6f937550784c213bfe",
+      "counts": {
+        "total_mutants": 81,
+        "caught": 68,
+        "missed": 8,
+        "timeout": 0,
+        "unviable": 5
+      }
+    },
+    {
+      "shard": "3/64",
+      "seal": "target/quality/mutation-shard-41950170549-3/target/quality/shard-result-3.json",
+      "seal_sha256": "73f08073432b4069eb89ece06f83dc1f30239937cb9e63837ccf54a79d3f973c",
+      "counts": {
+        "total_mutants": 81,
+        "caught": 65,
+        "missed": 9,
+        "timeout": 0,
+        "unviable": 7
+      }
+    },
+    {
+      "shard": "5/64",
+      "seal": "target/quality/mutation-shard-41950170549-5/target/quality/shard-result-5.json",
+      "seal_sha256": "4c6b809abd74d1043909e6f9a2dbebf33322f0cd5678d17293de065594aed9de",
+      "counts": {
+        "total_mutants": 81,
+        "caught": 65,
+        "missed": 10,
+        "timeout": 0,
+        "unviable": 6
+      }
+    }
+  ],
+  "totals": {
+    "processed": 243,
+    "caught": 198,
+    "missed": 27,
+    "unviable": 18,
+    "timeout": 0
+  },
+  "focused_replays_detected": 21,
+  "reviewed_redundant_rms_guard_removed": {
+    "candidate": "crates/domain/src/transformer/bounded.rs:260:62: replace - with / in BMLTransformer::bounded_rms_stage_literals",
+    "invariant": "const_pool.len() <= soa.len(); node preflight reserves16384 entries, enough for17 constants",
+    "production_source": "crates/domain/src/transformer/bounded.rs",
+    "sha256": "6d57cd1c4d00e9e275328667ad01c9b0624f74dee738cc24231dfb42a16c0727"
+  },
+  "remaining_unresolved_original_missed": [
+    "crates/cli/src/deployment.rs:71:9: replace || with && in destination",
+    "crates/compiler/src/symbolic_artifact.rs:156:32: replace > with < in required_kernels",
+    "crates/domain/src/number/exact.rs:470:21: replace || with && in multiply",
+    "crates/domain/src/number/exact.rs:623:46: replace | with ^ in ExactRational::to_f64_rounded",
+    "crates/runtime/src/operation_schedule.rs:141:43: replace + with * in Analyzer<'_>::visit"
+  ],
+  "equivalence_review": "quality/evidence/mutation-equivalence-review-9a.md",
+  "policy": "Original strict gate unchanged; no exclusions approved."
+}

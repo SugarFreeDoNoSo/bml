@@ -334,7 +334,8 @@
       "unsupported_domains_and_budgets_do_not_gain_certificates",
       "raw_tree_operators_preserve_order_and_support_chaining",
       "raw_tree_assignment_failures_are_transactional",
-      "structural_methods_remain_distinct_from_checked_operators"
+      "structural_methods_remain_distinct_from_checked_operators",
+      "recognition_accepts_the_inclusive_tree_bit_limit"
     ]
   },
   "C35": {
@@ -346,7 +347,8 @@
       "generalized_product_preserves_nonassociative_order_and_empty_policy",
       "failures_are_localized_and_do_not_mutate_inputs",
       "numeric_scalar_is_prepared_once_before_the_kernel",
-      "shapes_access_and_transactional_replacement"
+      "shapes_access_and_transactional_replacement",
+      "scalar_output_budget_reports_the_last_row_major_position_transactionally"
     ]
   },
   "C36": {
@@ -358,7 +360,9 @@
       "budgets_limit_candidates_factorization_and_cache",
       "failures_are_reported_without_approximate_success_and_ties_are_deterministic",
       "numeric_observations_are_explicit_and_cannot_change_exact_ranking",
-      "logical_growth_storage_and_structural_equality_are_separate"
+      "logical_growth_storage_and_structural_equality_are_separate",
+      "cache_bit_budget_evicts_independently_of_the_step_budget",
+      "cache_step_budget_evicts_independently_of_the_bit_budget"
     ]
   },
   "C37": {
@@ -462,7 +466,8 @@
       "bounded_graph_decoder_rejects_declared_allocations_before_payload_reads",
       "graph_rpc_rejects_invalid_execution_and_preserves_ieee_bits",
       "graph_frame_limit_is_enforced_before_body_even_with_larger_legacy_budget",
-      "client_rejects_malformed_or_wrong_type_graph_replies"
+      "client_rejects_malformed_or_wrong_type_graph_replies",
+      "graph_encoder_accepts_exact_wire_limit_and_rejects_one_more_opcode_byte"
     ]
   },
   "C48": {
@@ -622,7 +627,8 @@
       "symbolic_aot_executes_saved_programs_without_lazy_compilation_or_weight_copies",
       "symbolic_artifacts_reject_stale_sources_incomplete_plans_and_changed_literals",
       "symbolic_aot_preflight_rejects_bad_bytecode_and_runtime_budgets",
-      "symbolic_aot_compile_budgets_do_not_publish_partial_manifests_or_overwrite_files"
+      "symbolic_aot_compile_budgets_do_not_publish_partial_manifests_or_overwrite_files",
+      "aot_runtime_program_and_opcode_budgets_accept_exact_totals"
     ]
   },
   "C66": {
@@ -672,7 +678,8 @@
     "target": "symbolic_artifact_contracts",
     "tests": [
       "historical_scalar_v1_artifacts_execute_bitwise_like_buffered_v2",
-      "buffered_artifact_execution_rejects_missing_outputs_and_uses_stored_writes"
+      "buffered_artifact_execution_rejects_missing_outputs_and_uses_stored_writes",
+      "persisted_v2_and_v3_keep_per_family_intermediate_checks"
     ]
   },
   "C72": {
@@ -818,7 +825,8 @@
       "configurable_matmul_owns_constants_and_checks_actual_finite_real_recurrence",
       "configurable_matmul_rejects_invalid_shapes_addresses_bounds_and_numerical_range",
       "public_matmul_matches_independent_oracle_across_rectangular_dimensions",
-      "matmul_bytecode_size_is_independent_of_dimensions"
+      "matmul_bytecode_size_is_independent_of_dimensions",
+      "matmul_input_address_budget_includes_the_last_u32_element"
     ]
   },
   "C86": {
@@ -958,7 +966,8 @@
       "attention_rejects_bad_dimensions_addresses_profiles_and_actual_intermediates",
       "attention_layout_preflight_rejects_overlap_bad_scratch_and_capacity",
       "scratch_attention_code_literals_and_stack_are_constant_across_dimensions",
-      "attention_native_arithmetic_is_only_used_for_indices"
+      "attention_native_arithmetic_is_only_used_for_indices",
+      "attention_rejects_read_capacity_even_when_addresses_fit_u32"
     ]
   },
   "C98": {
@@ -1059,6 +1068,34 @@
     "target": "quantized_symbolic_causal_contracts",
     "tests": [
       "persisted_q4_causal_model_matches_literal_f32_representation_across_gqa_positions"
+    ]
+  },
+  "C107": {
+    "package": "bml-inference",
+    "target": "remote_handshake_contracts",
+    "tests": [
+      "opening_requires_a_nonempty_ordered_range_and_positive_hidden_width"
+    ]
+  },
+  "C108": {
+    "package": "bml-worker",
+    "target": "timeout_cli_contracts",
+    "tests": [
+      "symbolic_timeout_must_be_positive_before_help_can_complete"
+    ]
+  },
+  "C109": {
+    "package": "bml-compiler",
+    "target": "symbolic_weight_shard_contracts",
+    "tests": [
+      "authenticated_layer_shards_reject_independent_range_mismatches_and_empty_ranges"
+    ]
+  },
+  "C110": {
+    "package": "bml-compiler",
+    "target": "symbolic_kernel_boundaries",
+    "tests": [
+      "rms_signature_rejects_invalid_epsilon_before_exposing_configuration"
     ]
   }
 }

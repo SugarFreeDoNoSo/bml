@@ -170,6 +170,41 @@ fn configurable_matmul_owns_constants_and_checks_actual_finite_real_recurrence()
 }
 
 #[test]
+fn matmul_input_address_budget_includes_the_last_u32_element() {
+    for columns in 1..=4 {
+        let last_valid_base = u32::MAX - (columns - 1);
+        let compiled = compile_matmul_fragment_checked(
+            "last address",
+            last_valid_base,
+            3,
+            0,
+            1,
+            columns,
+            MatmulBounds::default(),
+        )
+        .expect("the final u32 address is an inclusive endpoint");
+        compiled
+            .validate_values(&vec![1.0; columns as usize], &vec![1.0; columns as usize])
+            .unwrap();
+        // This tests declaration arithmetic without allocating a buffer with
+        // billions of elements or attempting a read at those addresses.
+        if columns > 1 {
+            let error = compile_matmul_fragment_checked(
+                "one past the address space",
+                last_valid_base + 1,
+                3,
+                0,
+                1,
+                columns,
+                MatmulBounds::default(),
+            )
+            .unwrap_err();
+            assert!(error.contains("matmul input address overflow"));
+        }
+    }
+}
+
+#[test]
 fn configurable_matmul_rejects_invalid_shapes_addresses_bounds_and_numerical_range() {
     let compile = |rows, cols, input_base, weight_base, bounds| {
         compile_matmul_fragment_checked("checked", input_base, 3, weight_base, rows, cols, bounds)

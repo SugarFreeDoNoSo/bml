@@ -53,6 +53,54 @@ fn bounded_graph_decoder_rejects_declared_allocations_before_payload_reads() {
     }
 }
 #[test]
+fn graph_encoder_accepts_exact_wire_limit_and_rejects_one_more_opcode_byte() {
+    use bml_runtime::graph_rpc::MAX_WIRE_BYTES;
+    // Independent wire arithmetic: 20 request bytes, 24 graph-header bytes,
+    // 99_996 nine-byte Loop opcodes and two declared f64 arrays.
+    // The fixture stays around 50 MiB at peak, including temporary serialization.
+    // This is an encoding boundary, not a claim of server execution admission:
+    // ValidatedGraph has a separate combined-value budget.
+    const OPERATIONS: usize = 99_996;
+    const CONSTANTS: usize = 1_000_000;
+    const INPUTS: usize = 984_651;
+    let mut graph = BmlGraph {
+        fragments: vec![Fragment {
+            ops: vec![
+                RpnOp::Loop {
+                    count: 0,
+                    body_len: 0
+                };
+                OPERATIONS
+            ],
+        }],
+        const_pool: vec![1.0; CONSTANTS],
+        threshold: 32,
+    };
+    let inputs = vec![2.0; INPUTS];
+    let buffer = ResultBuffer::new(0, 0);
+    assert_eq!(
+        44 + 9 * graph.fragments[0].ops.len() + 8 * (graph.const_pool.len() + inputs.len()),
+        MAX_WIRE_BYTES
+    );
+    let encoded = encode_request(&graph, &inputs, &buffer)
+        .expect("a frame exactly at the wire limit must be encodable");
+    assert_eq!(encoded.len(), MAX_WIRE_BYTES);
+    let fields: Vec<u32> = encoded[..20]
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|bytes| u32::from_le_bytes(*bytes))
+        .collect();
+    assert_eq!(&fields[..4], &[1, INPUTS as u32, 0, 0]);
+    assert_eq!(fields[4] as usize, MAX_WIRE_BYTES - 20 - 8 * INPUTS);
+    drop(encoded);
+    graph.fragments[0].ops.push(RpnOp::One); // One byte, still below the opcode count limit.
+    let error = encode_request(&graph, &inputs, &buffer).unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    assert!(error.to_string().contains("graph frame budget exceeded"));
+}
+
+#[test]
 fn graph_rpc_rejects_invalid_execution_and_preserves_ieee_bits() {
     let (mut g, b) = fixture();
     g.fragments[0].ops = vec![RpnOp::FAdd];

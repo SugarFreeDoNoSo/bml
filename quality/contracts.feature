@@ -210,18 +210,21 @@ Then it rejects the request before expensive generation
     Given serialized BML trees without retained certificates
     When checked operators or transactional assignment are used
     Then recognized rules are replayed, unjustified domains fail and structural methods retain their contracts
+    And a tree with exactly the declared bit budget remains certifiable
 
   @C35
   Scenario: Execute bounded symbolic matrix operations without implicit floats
     Given row-major BML matrices with checked shapes and prepared numeric scalars
     When standard or generalized products reduce from left to right
     Then independent results, empty reductions, localized failures and transactional replacement satisfy their contracts
+    And exhausting the aggregate scalar-output bit budget reports the last row-major coordinate without mutating inputs
 
   @C36
   Scenario: Compare exact synthesis strategies with explicit bounded evidence
     Given an exact target and candidate, factorization and cache budgets
     When certified candidates are ranked by expanded operators, depth and code
     Then attempts and failures are reported without claiming global minimality or inferring numeric stability
+    And retained cache bits and derivation steps independently enforce their cumulative budgets
 
   @C37
   Scenario: Simplify certified rational expressions before explicitly rounded evaluation
@@ -291,6 +294,7 @@ Then it rejects the request before expensive generation
     When encoded, received and executed under explicit resource limits
     Then exact IEEE values are preserved and malformed requests or replies fail
     And oversized graph headers are rejected before reading or allocating their bodies
+    And the encoder accepts exactly its wire-byte budget and rejects one additional opcode byte
 
   @C48
   Scenario: Completed graph results publish into fresh append-only slots
@@ -400,6 +404,7 @@ Then it rejects the request before expensive generation
     And changing a stored residual program changes the independently predicted logits
     And source, literal, plan, bytecode, context and resource mismatches are rejected
     And failed compilation does not publish a manifest or overwrite existing files
+    And persisted program and opcode budgets accept exact totals and reject one fewer
 
   @C66
   Scenario: The CLI compiles and runs symbolic AOT artifacts
@@ -451,6 +456,7 @@ Then it rejects the request before expensive generation
     Then their output bits agree and their persisted profile identifiers remain distinct
     And missing or nonfinite outputs fail without advancing committed KV positions
     And valid modified stored writes change the independently predicted logits
+    And each historical profile retains its declared per-family checks on discarded intermediate values
 
   @C72
   Scenario: Public GGUF compiler entry points produce complete symbolic causal plans
@@ -576,6 +582,7 @@ Then it rejects the request before expensive generation
     Then every row matches an independent sum of products and preserves the surrounding buffer and stack
     And configurable preflight checks dimensions, address overflow, declared bounds and every real BML intermediate
     And empty dimensions are defined and stored bytecode size is independent of matrix dimensions
+    And the last absolute input address may equal u32::MAX without allocating that buffer during compilation
 
   @C86
   Scenario: Public SwiGLU bytecode writes the standard signed activation to the output buffer
@@ -674,6 +681,7 @@ Then it rejects the request before expensive generation
     Then signed nonuniform outputs agree with an independent attention oracle
     And explicit scratch retains linear work and compact code while preserving unrelated storage
     And the historical signature represents one KV token and invalid shapes or layouts reject
+    And reported scratch dimensions support execution while address capacity and u32 limits are checked independently
 
   @C98
   Scenario: Public MLP uses complete rectangular projections and standard SwiGLU
@@ -682,6 +690,7 @@ Then it rejects the request before expensive generation
     Then every learned matrix element affects the independently checked result
     And declared scratch yields linear matrix work with safe complete-loop fragments and owned constants
     And invalid dimensions, ranges, addressing or numeric stages reject without native data arithmetic
+    And reported custom bounds admit the same declared edge operands used by the compiled program
 
   @C99
   Scenario: Public layer composition preserves causal KV and both original residuals
@@ -723,7 +732,7 @@ Then it rejects the request before expensive generation
     And changed manifests cannot impersonate the admitted artifact
     And a lost commit response invalidates the entire coordinator without advancing its confirmed position
     And replacing a shard rejects new sessions while an established session retains verified bytes
-
+    And reported server width matches the hidden vectors carried by its admitted sessions
 
   @C103
   Scenario: Real symbolic worker processes execute complete causal layer ranges
@@ -763,3 +772,32 @@ Then it rejects the request before expensive generation
     Then each backend has identical finite logits and committed KV bits across the two representations
     And prefill followed by decode agrees with the complete causal prefix
     And every required bounded operation family executes and an MLP weight perturbation changes the output
+    And rotary key lanes agree bit for bit with the stored BML program evaluated at an independently known angle
+
+
+  @C107
+  Scenario: Native layer openings require valid range and vector dimensions
+    Given a framed layer protocol peer and an authenticated opening request
+    When the peer reports an empty or inverted layer range or zero hidden width
+    Then the client rejects admission before returning a usable session
+    And a valid peer can exchange a forward result and close normally
+
+  @C108
+  Scenario: Symbolic worker timeout is validated before help mode finishes
+    Given the worker command-line parser
+    When an explicit timeout is zero even when help is requested
+    Then it exits with a configuration error before binding a worker listener
+    And positive timeout values preserve successful help output
+
+  @C109
+  Scenario: Authenticated layer weight descriptors must match their requested range
+    Given a valid descriptor digest, payload digest and artifact identity
+    When one declared range endpoint differs or an authenticated range is empty
+    Then the provider rejects it independently of authentication and payload-size errors
+
+  @C110
+  Scenario: Symbolic RMS signatures reject invalid epsilon metadata
+    Given a positive symbolic RMS width
+    When epsilon is zero, negative, infinite or NaN
+    Then no configuration signature is exposed
+    And finite positive epsilon values retain their exact declarations

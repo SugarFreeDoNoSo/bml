@@ -879,6 +879,12 @@ fn remote_coordinator_validates_prompt_and_runs_full_layer_pipeline() {
             })
             .collect();
         let mut pipeline = RemotePipeline::connect(&model, &addresses, 4, limits).unwrap();
+        assert!(pipeline
+            .prefill(&[])
+            .unwrap_err()
+            .to_string()
+            .contains("invalid remote prompt"));
+        assert_eq!(pipeline.position(), 0);
         assert!(pipeline.prefill(&[TOKENS[0], u32::MAX]).is_err());
         assert!(pipeline.decode(u32::MAX).is_err());
         assert_eq!(pipeline.position(), 0);
@@ -888,6 +894,22 @@ fn remote_coordinator_validates_prompt_and_runs_full_layer_pipeline() {
         );
         assert_eq!(pipeline.position(), 3);
         assert!(pipeline.prefill(&TOKENS).is_err());
+        assert_eq!(
+            pipeline.position(),
+            3,
+            "overflow must not consume the last slot"
+        );
+        // A rejected prompt leaves both remote KV sessions and the coordinator
+        // healthy: the remaining slot can still commit the expected next token.
+        assert_eq!(
+            pipeline.decode(TOKENS[0]).unwrap(),
+            model
+                .session(4)
+                .unwrap()
+                .prefill(&[TOKENS[0], TOKENS[1], TOKENS[2], TOKENS[0]])
+                .unwrap()
+        );
+        assert_eq!(pipeline.position(), 4);
         pipeline.reset().unwrap();
         assert_eq!(
             pipeline.decode(TOKENS[2]).unwrap(),

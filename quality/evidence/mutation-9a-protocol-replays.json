@@ -1,0 +1,392 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "22c443649d9d5ba52c929dc707553cf0f7e23fa8",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "remote_handshake_contracts",
+        "--locked",
+        "opening_requires_a_nonempty_ordered_range_and_positive_hidden_width",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-protocol-ready-guard.log",
+      "log_sha256": "1ea02ec41105d7e80f3c57c3dfe31cfa820786ac10837be1c959a38758259f62",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "remote_coordinator_validates_prompt_and_runs_full_layer_pipeline",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-protocol-prefill-state.log",
+      "log_sha256": "cc893d1f2ab51b8db581c8d2782ba2c76ac8ef489880c4bdbb6295aa444ab311",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_matmul_contracts",
+        "--locked",
+        "matmul_input_address_budget_includes_the_last_u32_element",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-protocol-matmul-u32.log",
+      "log_sha256": "4cf31fc34afb21155ea8147b3d8bfcdc71a609a0005de901be6bb3560948cc70",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "two_tcp_ranges_match_persisted_causal_logits_and_keep_sessions_independent",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-protocol-server-width.log",
+      "log_sha256": "0b6f987559063204f1d80296e4ad6c31715b3f3183b6840d2c55b5edf2106c2b",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_rpc_contracts",
+        "--locked",
+        "graph_encoder_accepts_exact_wire_limit_and_rejects_one_more_opcode_byte",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-protocol-encoder-max.log",
+      "log_sha256": "fc8e5fa34e6d6bd8724f56ffa063c972178d857095328a96d7c77ecbe70d3148",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "symbolic_timeout_must_be_positive_before_help_can_complete",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-protocol-worker-timeout.log",
+      "log_sha256": "5184dd74c8da5350c5b9ef88c1978cccc01fddecc5072a495b5658e814f90963",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "remote_handshake_contracts",
+        "--locked",
+        "opening_requires_a_nonempty_ordered_range_and_positive_hidden_width",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-protocol-ready-guard.log",
+      "log_sha256": "8dd79869b900613fd363adce0a9990a3107ab6f83f0d1688c5e028f06899483a",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "protocol-ready-guard",
+      "candidate": "crates/inference/src/remote.rs:198:54: replace match guard start < end && width > 0 with true in LayerClient::connect",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "4a97ccea31c8ee943d64352c1521c78c7735039961909a6f3b0a567eed3ea9e5",
+      "original_diff_sha256": "7dca6571ec9ed9d8fba85ee0add9253ebef4c9a58ed5f76fea2bca31f8329d8c",
+      "original_span": {
+        "end": {
+          "column": 78,
+          "line": 198
+        },
+        "start": {
+          "column": 54,
+          "line": 198
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "remote_handshake_contracts",
+        "--locked",
+        "opening_requires_a_nonempty_ordered_range_and_positive_hidden_width",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-protocol-ready-or.log",
+      "log_sha256": "d83d5434053987ed44d07255691c689ed28a8eba7e58d00a416a17291182a700",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "protocol-ready-or",
+      "candidate": "crates/inference/src/remote.rs:198:66: replace && with || in LayerClient::connect",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "b0df4cca8910b2c73979d0d2fda102cfc620288acaf95d31f94ac20cf05af602",
+      "original_diff_sha256": "cc025121b0cfcce3bc46e66b957e5536225b8b34a3ca64e1453d4807fe1073b2",
+      "original_span": {
+        "end": {
+          "column": 68,
+          "line": 198
+        },
+        "start": {
+          "column": 66,
+          "line": 198
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "remote_coordinator_validates_prompt_and_runs_full_layer_pipeline",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-protocol-prefill-state.log",
+      "log_sha256": "944f564db2d171e0f8cab9d4da293757e6998855f67772a9cec68e5db85e8c75",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "protocol-prefill-state",
+      "candidate": "crates/inference/src/remote.rs:369:13: replace || with && in RemotePipeline<'a>::prefill",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "becd135702b4e8a3c78e4fc69e48bd802e1adbc98b99dde08a066e739b5647c4",
+      "original_diff_sha256": "3475afb1da6856f06cc85423cd9bcb57f2b0efc7d6fdfa14a19a31295fbfbf30",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 369
+        },
+        "start": {
+          "column": 13,
+          "line": 369
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_matmul_contracts",
+        "--locked",
+        "matmul_input_address_budget_includes_the_last_u32_element",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-protocol-matmul-u32.log",
+      "log_sha256": "29d79cdcaaf9854b4f506c4e199d6a0c507d1b366592b3f1d07d737bb9dfc8ce",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "protocol-matmul-u32",
+      "candidate": "crates/compiler/src/op_fragments.rs:219:33: replace - with / in compile_matmul_fragment_checked",
+      "original_source_sha256": "a6fe35f49522dfd30c6191669e0de2c23fbc47048a90f25f779b55288fcfb215",
+      "mutated_source_sha256": "a0ebb8adc4ccb58933d9e410dd84f3e38d0814ae393931c782fca501aaa89626",
+      "original_diff_sha256": "98a3625acaf6db72d7e12ba6b8ac4b2e8b0f1ddfd84d3d722dc34be2b7f66acd",
+      "original_span": {
+        "end": {
+          "column": 34,
+          "line": 219
+        },
+        "start": {
+          "column": 33,
+          "line": 219
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "symbolic_transport_contracts",
+        "--locked",
+        "two_tcp_ranges_match_persisted_causal_logits_and_keep_sessions_independent",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-protocol-server-width.log",
+      "log_sha256": "e20d146ebbc58c39de916fb804677dbbb3a5ce0054d3dedceb638ba718c82a98",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "protocol-server-width",
+      "candidate": "crates/runtime/src/symbolic_transport.rs:272:9: replace SymbolicLayerServer::width -> usize with 1",
+      "original_source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "mutated_source_sha256": "acdb2034a88e43ff49c670c465aef22dbb6627ab67f0a0155cae257f925ca939",
+      "original_diff_sha256": "c16e2fcb6774119aaf94e7e54e7ce5be6abb12153f99ecb518bce1396f343cac",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 272
+        },
+        "start": {
+          "column": 9,
+          "line": 272
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_rpc_contracts",
+        "--locked",
+        "graph_encoder_accepts_exact_wire_limit_and_rejects_one_more_opcode_byte",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-protocol-encoder-max.log",
+      "log_sha256": "bd9360dcdba164a5e200bd4b3e17dd9a7736c59c8ba6adfbdaf7f9745abd830b",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "protocol-encoder-max",
+      "candidate": "crates/runtime/src/graph_rpc.rs:126:13: replace > with >= in encode_request",
+      "original_source_sha256": "6218ee9369072d3b39d2159eefd608442d4ae9f94b9c5f4c4ea3fabd9aee0a7e",
+      "mutated_source_sha256": "a3b2a3259b38049e0d13f66e29b143c67a6a08fdac5cd0f763afc197d70eabd4",
+      "original_diff_sha256": "253dbebe82447da59f5a7e00b191592db9bf22b2a3f854337c3ed52dd653affd",
+      "original_span": {
+        "end": {
+          "column": 14,
+          "line": 126
+        },
+        "start": {
+          "column": 13,
+          "line": 126
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-worker",
+        "--test",
+        "timeout_cli_contracts",
+        "--locked",
+        "symbolic_timeout_must_be_positive_before_help_can_complete",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-protocol-worker-timeout.log",
+      "log_sha256": "9c53bfcbd30ee828864315541c407a7ce2e315f08fec3b588cd34ee512b60631",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "protocol-worker-timeout",
+      "candidate": "crates/worker/src/main.rs:256:21: delete match arm \"--symbolic-timeout-seconds\" in main",
+      "original_source_sha256": "860a143cadbf254baf72877d8b90b7efced7506cd791fe2e7f62670061944831",
+      "mutated_source_sha256": "0a438bb4e61de2c77ebf087c449faf6317f42f3f687b0ab2f7e4036253789a67",
+      "original_diff_sha256": "7d52c4cdc6a1b6faf23e498e52a28295d451588dda257a480cff8ef259ffca99",
+      "original_span": {
+        "end": {
+          "column": 22,
+          "line": 262
+        },
+        "start": {
+          "column": 21,
+          "line": 256
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T03:12:04.452285+00:00",
+  "status": "passed_focused_replays",
+  "patched_input_hashes": {
+    "crates/compiler/tests/symbolic_artifact_contracts.rs": "ff50ca24a3fd9202375abf5b7c436c434df0b4e3cd180f64ac8a8cee567bd239",
+    "crates/compiler/tests/symbolic_kernel_boundaries.rs": "73c4ec65164bd5b996e7272a33660e55079e3af2a1e55bc4f1a6f4aa4a90e600",
+    "crates/compiler/tests/symbolic_weight_shard_contracts.rs": "bfcd97a2a9ab28adeeacc0951198a371f7073c8422b867f14f14b8cd82248226",
+    "crates/domain/src/transformer/bounded.rs": "6d57cd1c4d00e9e275328667ad01c9b0624f74dee738cc24231dfb42a16c0727",
+    "crates/domain/tests/bml_matrix.rs": "cbaae6467f8dc8b50e8aacdb448d393dded85fd80c32566be44fa9ae3536207e",
+    "crates/domain/tests/bml_recognition.rs": "863165effdc7d6c51481e71f19ca5989608963de1cc0c1aa575d92d719575908",
+    "crates/domain/tests/bml_search.rs": "0cb6bfc38fd6a7ce7da2c965c577d5fbc6fbc9c991cc6d54af31031bcc2c5245",
+    "crates/inference/tests/model_contracts.rs": "8610e358b6dcbb157d4d1395981523831f484351f68642344d3aac34d71ca708",
+    "crates/inference/tests/remote_handshake_contracts.rs": "8c97b719e5330a7d58c3d84a5f8e2183f06866c8c88483019f8717a03e1fd076",
+    "crates/runtime/tests/graph_rpc_contracts.rs": "7beed5319ec28f6a5f02924434418b19bc6a59f6bf68a8c49949c9f7b7d318c2",
+    "crates/runtime/tests/operation_attention_contracts.rs": "9e0263caf1103c9e1b615b675343ce23cfe9529327fa44e5823dc0e35e0eb146",
+    "crates/runtime/tests/operation_matmul_contracts.rs": "234d6cad722d078d3b97fb82b4b7f4f1af5a1bc9fdcd3e454fc43aca8ca165dd",
+    "crates/runtime/tests/operation_mlp_contracts.rs": "846ebadb017477b4931fb88a5385ce17cd79fc75f68ca5dc26fb870f8d6fbaf8",
+    "crates/runtime/tests/quantized_symbolic_causal_contracts.rs": "cfb816c71725f84773f86afb4638b92a247a7e19aae892d7ccb728e301126c99",
+    "crates/runtime/tests/symbolic_transport_contracts.rs": "b31283ea376cc485faa746a82d422b394cfa3b235b3fc7573c1b0ead923b8a55",
+    "crates/worker/tests/timeout_cli_contracts.rs": "a58b9b5beb8ec95aa7e101c54ff53c2b228bc378c71a46ffc5b21be8a60807f5"
+  },
+  "source_files_restored": true,
+  "verified_restored_at_utc": "2026-11-05T03:25:57.776658+00:00",
+  "positive_target_verification": "target/quality/survivor-focused.json"
+}

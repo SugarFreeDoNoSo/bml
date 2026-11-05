@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "base_revision": "22c443649d9d5ba52c929dc707553cf0f7e23fa8",
+  "command": "./scripts/check.sh 22c4436",
+  "exit_code": 0,
+  "observed_at_utc": "2026-11-05T03:35:40.414188+00:00",
+  "scope": "Integrated public-contract regressions for21historical survivors and a redundant RMS capacity guard removed under its builder invariant. Full frozen campaign and equivalence policy decisions remain separate; no global mutation pass is claimed.",
+  "python_tooling_tests": 150,
+  "rust_tests_passed": 951,
+  "rust_suites": 143,
+  "traceability": "110/110",
+  "historical_contract_discrepancies": 0,
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "focused_replays_detected": 21,
+  "log": "target/quality/wave-five-gate.log",
+  "log_sha256": "f4c9cd7f9bc999c4ace22b021ec468cb833ba454c72871c5912e227df7ed7501",
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/wave-five-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_rust_source_hashes": {
+    "crates/compiler/tests/symbolic_artifact_contracts.rs": "ff50ca24a3fd9202375abf5b7c436c434df0b4e3cd180f64ac8a8cee567bd239",
+    "crates/compiler/tests/symbolic_kernel_boundaries.rs": "73c4ec65164bd5b996e7272a33660e55079e3af2a1e55bc4f1a6f4aa4a90e600",
+    "crates/compiler/tests/symbolic_weight_shard_contracts.rs": "bfcd97a2a9ab28adeeacc0951198a371f7073c8422b867f14f14b8cd82248226",
+    "crates/domain/src/transformer/bounded.rs": "6d57cd1c4d00e9e275328667ad01c9b0624f74dee738cc24231dfb42a16c0727",
+    "crates/domain/tests/bml_matrix.rs": "cbaae6467f8dc8b50e8aacdb448d393dded85fd80c32566be44fa9ae3536207e",
+    "crates/domain/tests/bml_recognition.rs": "863165effdc7d6c51481e71f19ca5989608963de1cc0c1aa575d92d719575908",
+    "crates/domain/tests/bml_search.rs": "0cb6bfc38fd6a7ce7da2c965c577d5fbc6fbc9c991cc6d54af31031bcc2c5245",
+    "crates/inference/tests/model_contracts.rs": "8610e358b6dcbb157d4d1395981523831f484351f68642344d3aac34d71ca708",
+    "crates/inference/tests/remote_handshake_contracts.rs": "8c97b719e5330a7d58c3d84a5f8e2183f06866c8c88483019f8717a03e1fd076",
+    "crates/runtime/tests/graph_rpc_contracts.rs": "7beed5319ec28f6a5f02924434418b19bc6a59f6bf68a8c49949c9f7b7d318c2",
+    "crates/runtime/tests/operation_attention_contracts.rs": "9e0263caf1103c9e1b615b675343ce23cfe9529327fa44e5823dc0e35e0eb146",
+    "crates/runtime/tests/operation_matmul_contracts.rs": "234d6cad722d078d3b97fb82b4b7f4f1af5a1bc9fdcd3e454fc43aca8ca165dd",
+    "crates/runtime/tests/operation_mlp_contracts.rs": "846ebadb017477b4931fb88a5385ce17cd79fc75f68ca5dc26fb870f8d6fbaf8",
+    "crates/runtime/tests/quantized_symbolic_causal_contracts.rs": "cfb816c71725f84773f86afb4638b92a247a7e19aae892d7ccb728e301126c99",
+    "crates/runtime/tests/symbolic_transport_contracts.rs": "b31283ea376cc485faa746a82d422b394cfa3b235b3fc7573c1b0ead923b8a55",
+    "crates/worker/tests/timeout_cli_contracts.rs": "a58b9b5beb8ec95aa7e101c54ff53c2b228bc378c71a46ffc5b21be8a60807f5"
+  },
+  "traceability_hashes": {
+    "quality/contracts.feature": "79520b914ccfa91a5bef8ceb3b5ad13e33102634695afdb53a9d478e0c3d4db5",
+    "quality/traceability.json": "48bf21a8499ca3f1e5e16efacfe5481db803caf3baeb7629a655ac39eec89565"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  }
+}

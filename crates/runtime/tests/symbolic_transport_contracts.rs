@@ -124,6 +124,8 @@ fn two_tcp_ranges_match_persisted_causal_logits_and_keep_sessions_independent() 
         let position = position as u32;
         let input = model.compiler().get_embedding(id).unwrap();
         let initial = a.prepare(position, &input).unwrap();
+        assert_eq!(server_a.width(), input.len());
+        assert_eq!(initial.len(), server_a.width());
         assert!(a.prepare(position, &input).is_err());
         assert!(a.is_healthy());
         a.abort(position).unwrap();
@@ -140,6 +142,8 @@ fn two_tcp_ranges_match_persisted_causal_logits_and_keep_sessions_independent() 
             other.abort(1).unwrap();
         }
         let hidden = b.prepare(position, &next).unwrap();
+        assert_eq!(server_b.width(), next.len());
+        assert_eq!(hidden.len(), server_b.width());
         let actual = model.project_output(&hidden).unwrap();
         let expected = full.forward_cached(&[id], &mut cache).unwrap();
         assert_eq!(
