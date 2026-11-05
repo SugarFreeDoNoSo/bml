@@ -1,0 +1,248 @@
+{
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "manifest_file_sha256": "00b8dd67209bb0e07e8e1c42c2bca84cbdb2e4ef54861ac2e381962f41f74162",
+  "shard": "84/256",
+  "candidate_count": 20,
+  "candidates_sha256": "f2fabdd524ce1fe64e94b5c70698e7d87fc2adc1971a8f84b307fa59d5b491f0",
+  "candidates": [
+    {
+      "ordinal_in_manifest": 0,
+      "id": "crates/cli/src/main.rs:888:59: replace / with % in layer_ranges",
+      "file": "crates/cli/src/main.rs",
+      "line": 888,
+      "replacement": "%",
+      "source_sha256": "23f24d7076011a9648d1452378bb7f299514af06b2d1bcc9baa76f6b19a5d8a8",
+      "diff_sha256": "2b8fca9ea50305770d05f0017ea3ea46e80fc4b409be4459f35620799eef848d",
+      "assessment": "Finite count-sized partition collection; changed range start can cause invalid ranges, not a new unbounded traversal.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 1,
+      "id": "crates/compiler/src/bml_ops.rs:700:29: replace * with + in CheckedRopeProgram::validate_values",
+      "file": "crates/compiler/src/bml_ops.rs",
+      "line": 700,
+      "replacement": "+",
+      "source_sha256": "80565438c0e35ba8496be898bc34f4f889659a4bf25f36f26149aedaa99849ac",
+      "diff_sha256": "7987ca789445a33eb44cf33761f504fd2180f213d177f964e92d7d41faed3919",
+      "assessment": "Shape arithmetic only; validation zips existing slices and coefficients and allocates no growing frontier.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 2,
+      "id": "crates/compiler/src/gguf_compiler.rs:333:16: delete ! in InferenceCompiler::from_authenticated_manifest",
+      "file": "crates/compiler/src/gguf_compiler.rs",
+      "line": 333,
+      "replacement": "",
+      "source_sha256": "42ddd4f8cbcba87ec7ae8d3c8b187af8bb384fbbfb2ab2a8af3a70b5f7dc0bcd",
+      "diff_sha256": "433d2fd4c98326d886365cd2248628ca46a6caa9f077dee444f94a6b9f7bdf43",
+      "assessment": "Metadata divisibility gate changes. Downstream sizes remain metadata-derived; this site supplies no unbounded traversal or new large count.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 3,
+      "id": "crates/compiler/src/kv_cache.rs:233:9: replace HashConsedKV::capacity -> u32 with 0",
+      "file": "crates/compiler/src/kv_cache.rs",
+      "line": 233,
+      "replacement": "0",
+      "source_sha256": "e67a0f3c5f45c79358fb32c7e3ad3940c3ccc27197364b97143bc05987f04d64",
+      "diff_sha256": "9124b9817bb4dbaea6de523ff07a61ad42675f741aedbf480b50a7ec7447b860",
+      "assessment": "Capacity getter becomes0; callers generally reject earlier. No allocation occurs at getter.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 4,
+      "id": "crates/compiler/src/symbolic_artifact.rs:236:5: replace compile_directory -> Result<Manifest, String> with Ok(Default::default())",
+      "file": "crates/compiler/src/symbolic_artifact.rs",
+      "line": 236,
+      "replacement": "Ok(Default::default())",
+      "source_sha256": "a3d9a26824a0d5e9862333d06c479925c4c2c9e037f579bf9e91415657e17481",
+      "diff_sha256": "338f74b58bf4fc2311be74ed4bd83801c99381c961c859a19c60584396cd1a1a",
+      "assessment": "Function body returns empty default manifest, skipping compilation and publication. No new allocation growth at this site.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 5,
+      "id": "crates/compiler/src/symbolic_kernels.rs:151:22: replace > with >= in Operation::signature_for_layout_with_rms_bounds",
+      "file": "crates/compiler/src/symbolic_kernels.rs",
+      "line": 151,
+      "replacement": ">=",
+      "source_sha256": "d3ad3aa5a5cb4011f02d497fc595aaeb329281406687bf70e69847611999966d",
+      "diff_sha256": "6b0bdfeb28828d45ce98ff3436f3591145ae377cad960322a15f76364d787a6d",
+      "assessment": "Tightens count>u32MAX to count>=u32MAX before try_reserve_exact(outputs). It cannot newly admit a32GiB reserve. count==u32MAX could already request huge memory in original if called; no such path is enabled by this mutant.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 6,
+      "id": "crates/compiler/src/operation_attention.rs:297:21: replace < with == in CheckedAttentionFragment::validate_layout",
+      "file": "crates/compiler/src/operation_attention.rs",
+      "line": 297,
+      "replacement": "==",
+      "source_sha256": "9cfd830108355de7b9d1926fca7806c124082bed050df9c0512c4ff9e4c7e279",
+      "diff_sha256": "4470d658e112dd34fb4ae2d9bc734bcc3cbcb1e1505e8d855bcd7c1870770807",
+      "assessment": "Operand/output overlap validation weakens; range and buffer capacities remain independently checked. No loop-bound expansion at this site.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 7,
+      "id": "crates/compiler/src/operation_layer.rs:388:29: replace + with * in compile_layer_fragments_checked",
+      "file": "crates/compiler/src/operation_layer.rs",
+      "line": 388,
+      "replacement": "*",
+      "source_sha256": "840a863bdb68bed4d2514adadce68af34dbd78b67e7596b5f535d09daf118724",
+      "diff_sha256": "4d3bdd2f8d69489e9b92051a894aeaa3c0d675061b772da90cf423c578c7e1b9",
+      "assessment": "position+1 becomesposition*1: context decreases by1, yielding an invalid/short context rather than larger allocation.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 8,
+      "id": "crates/domain/src/number/checked.rs:74:18: replace >= with < in CertifiedBml::binary",
+      "file": "crates/domain/src/number/checked.rs",
+      "line": 74,
+      "replacement": "<",
+      "source_sha256": "11972ce60a80d679a9ab3b1c5f3cc50f5147180727908fea286b46f9732ef561",
+      "diff_sha256": "b18708d0711fcbf1737481dc03befe27678a2108eb9a2959c8a405b7204c17b9",
+      "assessment": "Step budget gate reverses; already present input derivation lengths determine finite reserve(count). Possible budget breach, no independent unbounded source at this site.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 9,
+      "id": "crates/domain/src/number/exact.rs:493:18: replace + with * in multiply",
+      "file": "crates/domain/src/number/exact.rs",
+      "line": 493,
+      "replacement": "*",
+      "source_sha256": "da29637bbc49161ca1e684f87bd0e1f971af89e9ed9ff8eda3f2d7af024a73bf",
+      "diff_sha256": "5a5468369fd8f6a3a3f1f601840433d0efc930287022cedf0f18f97e57eb9606",
+      "assessment": "Carry write indexi+b.len becomesi*b.len in a preallocated result. Can index incorrectly or panic; no enlarged reserve or unbounded iteration is introduced.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 10,
+      "id": "crates/domain/src/number/search.rs:228:34: replace == with != in ExactSearcher::search",
+      "file": "crates/domain/src/number/search.rs",
+      "line": 228,
+      "replacement": "!=",
+      "source_sha256": "cdb193250b2647605f319bc663940ba71d7219dab244214dd51f3b3b7d9cd88f",
+      "diff_sha256": "e845655eccfe6929e18c3d829729d3ff9eeb4d080eea4b0cc1f3a710eb536a82",
+      "assessment": "Previous-target match changes which cached proof is verified. Loop remains bounded by existing cache and breaks on matched entry.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 11,
+      "id": "crates/domain/src/symbolic/synthesis.rs:187:34: replace - with + in synthesize",
+      "file": "crates/domain/src/symbolic/synthesis.rs",
+      "line": 187,
+      "replacement": "+",
+      "source_sha256": "690f2e051cc8c8195a34ea7038fdbc7ebe2c888b13492b207b27a96bd1daed54",
+      "diff_sha256": "68f4d85338a3e2d6022b75fc7406d9dead20be9cca126e4a24ad4f30be5b52f4",
+      "assessment": "PROVED unbounded prefix growth when size3 is reached with attempted<max_candidates: mutatedremaining=size+prefix.len()-1 isnever0; no complete tree can be emitted, so attempted doesnot advance. LIFO follows repeatedOp/One, accumulates larger prefix clones and pending branches. This is a candidate-specific source proof, not attribution of the shutdown.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 12,
+      "id": "crates/domain/src/transformer/bounded_ops.rs:286:42: replace > with == in BMLTransformer::bounded_softmax_stage_literals",
+      "file": "crates/domain/src/transformer/bounded_ops.rs",
+      "line": 286,
+      "replacement": "==",
+      "source_sha256": "ee7b5e406263a6e22d604bbb4a01c23090362a0d7ff6cb696668c44dc2f7b202",
+      "diff_sha256": "f6e37769c08d9210a5d207cb4f28d005c244cf57a2fa22218a146cd277ec6d50",
+      "assessment": "Const-pool guard weakens but node checked_add16384 guard remains. Under const_pool.len<=soa.len and only10new constants, node guard dominates. No newly admitted large allocation under that invariant.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 13,
+      "id": "crates/inference/src/remote.rs:228:9: replace LayerClient::layers -> Range<usize> with Range::new(1)",
+      "file": "crates/inference/src/remote.rs",
+      "line": 228,
+      "replacement": "Range::new(1)",
+      "source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "diff_sha256": "debc94d00819ef24d0681db365e1fa671c19b60c290465e2ec176bfce901d742",
+      "assessment": "Range::new(1) is not a stdRange constructor; expected compilation failure, subject to actual raw status. No execution-memory inference.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 14,
+      "id": "crates/model-weights/src/metadata.rs:168:5: replace number -> Result<u64, Error> with Ok(1)",
+      "file": "crates/model-weights/src/metadata.rs",
+      "line": 168,
+      "replacement": "Ok(1)",
+      "source_sha256": "115b3c338c9987974742d91adaca17e982f826fbff849874c6d22effc35b564b",
+      "diff_sha256": "1d8b4622f409c09ca63fd7b8c7a32ea798c31fbc4cff12b491572ea85d615874",
+      "assessment": "Metadata number helper returns1 for all values; may corrupt semantics, but doesnot create a huge count at this return site.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 15,
+      "id": "crates/model-weights/src/writer.rs:321:64: replace % with / in WeightWriter::block",
+      "file": "crates/model-weights/src/writer.rs",
+      "line": 321,
+      "replacement": "/",
+      "source_sha256": "c225b2bd80fbc7e503dfbabfd7c0cb26ba69ad3dca718986541186387ca77168",
+      "diff_sha256": "efd9bf69f698e83d9ac09c02c2ee00ec3d1cb2799432ade2fcbdd0b66cf01680",
+      "assessment": "Ceiling-byte expression changes final remainder predicate. Delta is at most1byte; surrounding resource checks and weight/input sizes remain bounded.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 16,
+      "id": "crates/runtime/src/graph.rs:496:39: replace > with >= in StackBudget::walk",
+      "file": "crates/runtime/src/graph.rs",
+      "line": 496,
+      "replacement": ">=",
+      "source_sha256": "7af83e2bd5b5e91db69ac05d235a57266350d2611bcb70bf626b1688ad2b3666",
+      "diff_sha256": "ae2fb5fa00e521c84a6eb9116f4d16a8f0491b2d9ce331b27e04f283d2529fb0",
+      "assessment": "Loop-step admission tightens >to>=; cannot admit extra iterations or allocations.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 17,
+      "id": "crates/runtime/src/runtime.rs:222:29: replace + with * in Runtime::execute_with_cores",
+      "file": "crates/runtime/src/runtime.rs",
+      "line": 222,
+      "replacement": "*",
+      "source_sha256": "c46e2b4ef384913f3447589e3867aceb3f252b37e43ba77273b43357b97d43d0",
+      "diff_sha256": "cfedecabc9f7fff4035d48babdb270f4c07877b20c81d7484c41c7e9d6fc79ba",
+      "assessment": "PROVED progress loss: atstart0,end=start*count remains0. In count1 branch work repeats withstart=end0; count>1 uses empty slice. Potential unbounded execution, while memory behavior depends on invoked work and is not proved from this site.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 18,
+      "id": "crates/runtime/src/symbolic_transport.rs:98:5: replace reject -> Vec<u8> with vec![]",
+      "file": "crates/runtime/src/symbolic_transport.rs",
+      "line": 98,
+      "replacement": "vec![]",
+      "source_sha256": "fd74bdd892dfaf744d622ec864cf92ffd83ea068dc60d979e7d0ab80a1a21097",
+      "diff_sha256": "eff23c6ee80a6f26c52bebed39029a348b557ab6b873cd86a4027903ddfc8cd9",
+      "assessment": "Rejection frame becomes empty; can affect peer liveness/protocol or fail decode, but allocates less and has no growing local traversal.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    },
+    {
+      "ordinal_in_manifest": 19,
+      "id": "crates/api/src/main.rs:544:21: replace < with <= in generate_remote",
+      "file": "crates/api/src/main.rs",
+      "line": 544,
+      "replacement": "<=",
+      "source_sha256": "6ab43e13fdf326499ee2f5d8e34103b3f684d33c73164bb54954f118434bce64",
+      "diff_sha256": "39412ed1e82ae093de3fdb3d89c49979677cc89104831592ec6a1dc4f1bd85e9",
+      "assessment": "Last-step condition permits one extra pipeline.decode. Outer generation still has unchanged finite max_tokens range; no independent unlimited memory loop introduced.",
+      "runtime_attribution": "NOT_ESTABLISHED"
+    }
+  ],
+  "synthesis_proof": {
+    "mutated_expression": "let remaining = size + prefix.len() - 1;",
+    "conditions": "size3, finite target!=One within tolerance, max_nodes>=3, max_candidates>=2; size1 has attempted1 and then size3 never completes a tree.",
+    "induction": "After n>=1 Op/One pairs, poppedprefix=(10)^n haslength2n andslots1. remaining=2n+2>0 blocks the finalOne and permitsOp. The followingstate has slots2; LIFO visitsOne and returns toslots1 atlength2n+2 while retaining an additionalOp sibling. Repeat indefinitely; prefix clones and pending siblings grow.",
+    "budget_contract": "max_candidates tests attempted, which only increases forslots0; mutated enumeration never reaches that state atsize3. max_nodes caps outer size, not the erroneous prefix length.",
+    "existing_small_fixture": {
+      "file": "crates/domain/tests/symbolic_synthesis_contracts.rs",
+      "sha256": "9d03f09c29c2d74b09705f731b88d426a24fb997b7bdcd386d6629e7df18726f",
+      "test": "synthesis_finds_small_pure_trees_in_both_bases_and_explicit_complex_branch",
+      "lines": "15-30",
+      "input": "BML target2,tolerance1e-14,budget(max_nodes3,max_candidates2); no huge fixture needed."
+    }
+  },
+  "u32_assessment": "No20listed mutation was found to newly permit an outputcount>=u32MAX reserve: the onlydirect pre-reserveu32 guard tightens. This is a static site review, not a universal runtime memory guarantee.",
+  "next_steps_not_executed": [
+    "Do not retry the same complete leaf blindly or attribute its shutdown to the newest log. Preserve frozen9a outcomes and policy unchanged.",
+    "For CURRENT source, review a mathematically equivalent finite enumeration: checked prefix.len()+1 and size.checked_sub(...), or depth-bounded DFS preserving One-first LIFO order, candidate counts, stop reasons and best tie behavior. Existing max_nodes is the legitimate bound, no arbitrarytimer or OOMfixture.",
+    "Prove baseline equivalence over valid search inputs and run existing exact small-budget/order tests, then generate CURRENT candidates and obtain whole-workspace baseline+mutant TestFAILED before claiming newCaught. Such a repair cannot change the original9a report."
+  ]
+}

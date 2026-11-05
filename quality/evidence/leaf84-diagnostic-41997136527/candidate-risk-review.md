@@ -1,0 +1,11 @@
+# Leaf84: static review of all20 pinned candidates
+
+`candidate-risk-review.json` retains every exact candidate ID, source hash, diff hash and assessment against the API-authenticated nested256 manifest and source9a. This is source analysis; it does not identify the active candidate at shutdown.
+
+The candidate `crates/domain/src/symbolic/synthesis.rs:187:34: replace - with + in synthesize` has a demonstrable unbounded path: `remaining=size+prefix.len()-1`. At size3, this cannot be0. The final leaf needed when slots=1 is never emitted. One-first LIFO repeatedly visits prefixes `(10)^n`, accumulates larger prefix clones and pending Op siblings, and never increments `attempted`; therefore max_candidates does not stop it. The existing tiny public test `synthesis_finds_small_pure_trees_in_both_bases_and_explicit_complex_branch` uses target2 and budget(3,2) at lines15-30 and reaches these conditions. This proof needs no OOM execution or enormous input.
+
+`runtime.rs:222:29` (`start+count` to `start*count`) also admits no progress when start=0. Its repeated work may hang; large memory growth is not established by that site alone. The other18 candidates were reviewed individually in the JSON.
+
+The sole direct output-count guard in these20, `symbolic_kernels.rs:151:22`, changes `>` to `>=`, which tightens rejection before reserve. It cannot newly permit the approximately32GiB fixed-output allocation at the u32 boundary. The prior MISSED warning is therefore neither an active-candidate identification nor an explanation of the memory rise. Existing huge dimensions in an original API are a separate resource concern; current allocation-free preflight validation must not be retroactively applied to source9a.
+
+A legitimate next implementation review can replace fragile remaining arithmetic with checked prefix-length/subtraction, or use depth-bounded DFS while preserving exact One-first enumeration, candidate counts, stop reasons and best-candidate tie behavior. These options enforce the existing max_nodes contract, without new arbitrarytimers or large allocation tests. No implementation, Cargo, mutation run, dispatch, exclusion or classification change was performed here; any future CURRENT repair requires its own full-workspace baseline and replay. None repairs historical9a outcomes.
