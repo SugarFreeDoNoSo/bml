@@ -338,6 +338,72 @@ fn attention_rejects_bad_dimensions_addresses_profiles_and_actual_intermediates(
 }
 
 #[test]
+#[cfg(target_pointer_width = "64")]
+fn attention_layout_admits_the_last_u32_element_without_allocating_a_buffer() {
+    let checked = compile_attention_fragment_checked(
+        "last-address",
+        u32::MAX,
+        u32::MAX,
+        u32::MAX,
+        0,
+        1,
+        1,
+        AttentionBounds::default(),
+    )
+    .unwrap();
+    checked.validate_values(&[0.25], &[0.5], &[-0.75]).unwrap();
+    let domain = u32::MAX as usize + 1;
+    // Read-only operands may alias. Their one element occupies the final u32
+    // address, with an exclusive end of 2^32. Output is the disjoint address 0.
+    // This API checks a logical layout only; no ResultBuffer is allocated.
+    checked.validate_layout(domain, 1).unwrap();
+    assert_eq!(
+        checked.validate_layout(domain - 1, 1).unwrap_err(),
+        "attention operand exceeds buffer"
+    );
+}
+
+#[test]
+fn attention_output_stride_is_checked_independently_of_a_valid_output_slot() {
+    let checked = compile_attention_fragment_checked(
+        "output-stride",
+        0,
+        4,
+        8,
+        12,
+        2,
+        1,
+        AttentionBounds::default(),
+    )
+    .unwrap();
+    let query = [1.0, -1.0];
+    let keys = [0.5, -0.25];
+    let values = [2.0, 3.0];
+    checked.validate_values(&query, &keys, &values).unwrap();
+    checked.validate_layout(2, 16).unwrap();
+    let mut buffer = ResultBuffer::new(16, 2);
+    for (base, data) in [(0, &query), (4, &keys), (8, &values)] {
+        for (offset, value) in data.iter().enumerate() {
+            buffer.write_indexed(base, offset as u32, *value);
+        }
+    }
+    Runtime::new(4096, 0).execute_fragments_sequential(
+        std::slice::from_ref(checked.operation()),
+        &EvalContext::new(&[], &[]),
+        &mut buffer,
+    );
+    // One cache row has probability one, so output is exactly its value row
+    // up to the existing checked-attention numerical contract.
+    near(buffer.slot(12), &values);
+    // With stride 1, reads and output remain disjoint and inside 16 slots;
+    // only the per-slot output width is invalid, not its slot number.
+    assert_eq!(
+        checked.validate_layout(1, 16).unwrap_err(),
+        "attention output slot capacity"
+    );
+}
+
+#[test]
 fn attention_rejects_read_capacity_even_when_addresses_fit_u32() {
     let checked = compile_attention_fragment_checked(
         "capacity",

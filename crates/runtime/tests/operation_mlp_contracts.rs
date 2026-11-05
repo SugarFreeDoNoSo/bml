@@ -252,6 +252,127 @@ fn run(
 }
 
 #[test]
+fn mlp_preflight_rejects_each_oversized_matrix_independently() {
+    let layout = Layout::new(1, 1);
+    let inputs = [0.5];
+    let matrices = [vec![0.25], vec![0.25], vec![0.5]];
+    for scratch in [false, true] {
+        let checked = layout.compile(1, 1, scratch, MlpBounds::default());
+        checked
+            .validate_values(&inputs, &matrices[0], &matrices[1], &matrices[2])
+            .unwrap();
+        let actual = run(
+            checked.operation(),
+            layout,
+            &inputs,
+            &matrices[0],
+            &matrices[1],
+            &matrices[2],
+            scratch,
+        );
+        close(
+            &actual,
+            &oracle(&inputs, &matrices[0], &matrices[1], &matrices[2], 1),
+        );
+        for matrix in 0..3 {
+            let mut changed = matrices.clone();
+            // An unused extra element must be rejected by shape preflight,
+            // rather than silently ignored or reached by an indexing panic.
+            changed[matrix].push(f64::NAN);
+            let error = checked
+                .validate_values(&inputs, &changed[0], &changed[1], &changed[2])
+                .unwrap_err();
+            assert_eq!(
+                error, "MLP operand shape mismatch",
+                "matrix={matrix}, scratch={scratch}"
+            );
+        }
+    }
+}
+
+#[test]
+fn empty_ffn_still_checks_input_finiteness_and_declared_bound() {
+    let bounds = MlpBounds::default();
+    let layout = Layout::new(1, 0);
+    for scratch in [false, true] {
+        let checked = layout.compile(1, 0, scratch, bounds);
+        checked
+            .validate_values(&[bounds.input], &[], &[], &[])
+            .unwrap();
+        close(
+            &run(
+                checked.operation(),
+                layout,
+                &[bounds.input],
+                &[],
+                &[],
+                &[],
+                scratch,
+            ),
+            &[0.0],
+        );
+        // With no FFN rows, no later dot or SwiGLU stage can incidentally
+        // enforce the input contract. It remains an entrypoint obligation.
+        for input in [
+            bounds.input + 1.0,
+            f64::NAN,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+        ] {
+            let error = checked
+                .validate_values(&[input], &[], &[], &[])
+                .unwrap_err();
+            assert_eq!(
+                error, "MLP input bound at element 0",
+                "input={input}, scratch={scratch}"
+            );
+        }
+    }
+}
+
+#[test]
+fn scratch_mlp_accepts_adjacent_operand_and_temporary_ranges() {
+    // Eight one-element slots alternate operand and writable storage. Every
+    // range is disjoint, including operands starting exactly at a write's end.
+    let layout = Layout {
+        size: 1,
+        input: 2,
+        gate: 4,
+        up: 6,
+        down: 0,
+        scratch: MlpScratch {
+            gate_slot: 1,
+            gate_base: 1,
+            up_slot: 3,
+            up_base: 3,
+            hidden_slot: 5,
+            hidden_base: 5,
+        },
+    };
+    let inputs = [1.0];
+    let gate = [0.5];
+    let up = [-0.25];
+    let down = [0.5];
+    let checked = layout.compile(1, 1, true, MlpBounds::default());
+    checked.validate_values(&inputs, &gate, &up, &down).unwrap();
+    let mut buffer = layout.buffer(&inputs, &gate, &up, &down);
+    let before = buffer.data().to_vec();
+    Runtime::new(4096, 0).execute_fragments_sequential(
+        checked.operations(),
+        &EvalContext::new(&[], &[]),
+        &mut buffer,
+    );
+    close(buffer.slot(7), &oracle(&inputs, &gate, &up, &down, 1));
+    for slot in [0, 2, 4, 6] {
+        assert_eq!(
+            buffer.slot(slot)[0].to_bits(),
+            before[slot].to_bits(),
+            "operand slot={slot}"
+        );
+    }
+}
+
+#[test]
 fn public_mlp_uses_rectangular_gate_up_and_down_and_preserves_unrelated_state() {
     let cases = [
         (vec![2.0], vec![0.75], vec![1.5], vec![-0.5], 1),

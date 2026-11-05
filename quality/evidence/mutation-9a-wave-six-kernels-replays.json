@@ -1,0 +1,732 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "26a4a16971a6f8ec4c927653c9438696f2f17ee6",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "attention_layout_admits_the_last_u32_element_without_allocating_a_buffer"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-s11_attention_u32_last_address.log",
+      "log_sha256": "13f6e5f34d50925994e3228f84db02cb27247c7306b9e9032f4f85b0b96a5839",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_mlp_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "mlp_preflight_rejects_each_oversized_matrix_independently"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-s11_mlp_independent_matrix_shape.log",
+      "log_sha256": "176335e99674ed5bffbd37141271b78b8285a5b8e95b294cdee802820e54342f",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_rope_configuration_requires_exact_pair_width"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-s12_bounded_rope_width.log",
+      "log_sha256": "36d57e91be4e11289fb12be4e4d54f019e17e7a73c535660dc61ab5754abb08f",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_mlp_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "scratch_mlp_accepts_adjacent_operand_and_temporary_ranges"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-s13_mlp_adjacent_scratch.log",
+      "log_sha256": "d31c24d8f49035c1b01702541941110c62542971a29a7cc0164d0334fe624108",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "attention_output_stride_is_checked_independently_of_a_valid_output_slot"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-s14_attention_output_stride.log",
+      "log_sha256": "f3df5fd0614224b56c0da5b2b23b539f20f91173897ae5c6f6151fd3ddb434e5",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_swiglu_configuration_requires_exact_scalar_width"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-s14_bounded_swiglu_width.log",
+      "log_sha256": "7b2f2edda002a185f9cee431fae0c7acd3a0968dd70eaa5a71e5738dfcbd395f",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_residual_configuration_requires_exact_scalar_width"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-s16_bounded_residual_width.log",
+      "log_sha256": "5069a41e56e0b9a592f93553b54af9cac819fda9e4262a249d7b6680186db1a3",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_scale_configuration_requires_exact_scalar_width"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-s18_bounded_scale_width.log",
+      "log_sha256": "ec98871e5fd408a26cf1dcec7fb1c658b2ed52684bfe070b7a209fb0ef364bf9",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_mlp_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "empty_ffn_still_checks_input_finiteness_and_declared_bound"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-s18_mlp_empty_ffn_input.log",
+      "log_sha256": "a9c88f8f7c375d1ea00dd8b2f635210377d8045441ba285b20a0251a313bff95",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_profile_validation_checks_every_declared_family_before_compilation"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-s4_bounded_profile_validation.log",
+      "log_sha256": "77cae805defa1b4ef5e33190608eefe80a13da9918375e2bd4646be4b21c9dfa",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "attention_layout_admits_the_last_u32_element_without_allocating_a_buffer"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s11_attention_u32_last_address.log",
+      "log_sha256": "2f0251880497f692d1dfbc4b8e64910b2ab512d1ac311f4a0ab16e056d65fe5a",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s11_attention_u32_last_address",
+      "candidate": "crates/compiler/src/operation_attention.rs:279:42: replace > with >= in CheckedAttentionFragment::validate_layout",
+      "original_source_sha256": "9cfd830108355de7b9d1926fca7806c124082bed050df9c0512c4ff9e4c7e279",
+      "mutated_source_sha256": "f2e24d8330c5efe45bb3f6fde79166d85b5cbaf994bff073cb7935c0023d0316",
+      "original_diff_sha256": "8899a666569e3df843bd9577823773c407e61e4a341a055e875df629bc243c4f",
+      "original_span": {
+        "end": {
+          "column": 43,
+          "line": 279
+        },
+        "start": {
+          "column": 42,
+          "line": 279
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_mlp_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "mlp_preflight_rejects_each_oversized_matrix_independently"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s11_mlp_independent_matrix_shape.log",
+      "log_sha256": "fe8ddcf9f67a16c75db93f8ad4ff5f06dec5a4d84ac968b944de5a5c24e24d37",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s11_mlp_independent_matrix_shape",
+      "candidate": "crates/compiler/src/operation_mlp.rs:280:13: replace || with && in CheckedMlpFragment::validate_values",
+      "original_source_sha256": "ca92db81a12fd2be41b874088780d9fa48d192721544c76e0401b9701db5957b",
+      "mutated_source_sha256": "1e337a7d27f92f19f3a2088dd27480db907bedde9d651a8df0eb21dd34dbb745",
+      "original_diff_sha256": "73efb6f78102ce7da07eff3905aa312b8a689d47c61b9e1a17d531fbe0d24900",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 280
+        },
+        "start": {
+          "column": 13,
+          "line": 280
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "attention_layout_admits_the_last_u32_element_without_allocating_a_buffer"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s12_attention_u32_last_address.log",
+      "log_sha256": "f69bdda36b4128f5ee14f70931586045dfadab26fa4c14d3316ce5e890e526c6",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s12_attention_u32_last_address",
+      "candidate": "crates/compiler/src/operation_attention.rs:279:64: replace + with - in CheckedAttentionFragment::validate_layout",
+      "original_source_sha256": "9cfd830108355de7b9d1926fca7806c124082bed050df9c0512c4ff9e4c7e279",
+      "mutated_source_sha256": "79b3269c982d474a422ba7d3e62bd7ff061646d4db6f1698de612aa6d726ed2a",
+      "original_diff_sha256": "4381fdd3633d2b5341c4ffbb2e896e826a959245b3f5e4cecf3fc5af9bc8313a",
+      "original_span": {
+        "end": {
+          "column": 65,
+          "line": 279
+        },
+        "start": {
+          "column": 64,
+          "line": 279
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_rope_configuration_requires_exact_pair_width"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s12_bounded_rope_width.log",
+      "log_sha256": "d41064e45a6ddc58042026fb92208c4ec1d4b1593929bc7521be68f3e70c0982",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s12_bounded_rope_width",
+      "candidate": "crates/compiler/src/symbolic_bounded.rs:125:32: replace match guard width == 2 with true in BoundedProfile::config",
+      "original_source_sha256": "f84a23903e5ae5e5c8ea7a09167ef6a33c60f8ff5763e2551d422e68fbb67fe6",
+      "mutated_source_sha256": "0ec02fc20980a7daaf8da589c155adb6b240e3f6a8d8e65a38e58b8323b1287c",
+      "original_diff_sha256": "56f1ca0b903ca75f29e331d3a41386276c0253c8e12aec9d163e351767c43a3e",
+      "original_span": {
+        "end": {
+          "column": 42,
+          "line": 125
+        },
+        "start": {
+          "column": 32,
+          "line": 125
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_mlp_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "mlp_preflight_rejects_each_oversized_matrix_independently"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s12_mlp_independent_matrix_shape.log",
+      "log_sha256": "5417df1a55cea53b9211c477a5bd41f55091c355549aa07696441d443461f544",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s12_mlp_independent_matrix_shape",
+      "candidate": "crates/compiler/src/operation_mlp.rs:279:13: replace || with && in CheckedMlpFragment::validate_values",
+      "original_source_sha256": "ca92db81a12fd2be41b874088780d9fa48d192721544c76e0401b9701db5957b",
+      "mutated_source_sha256": "9d3fa88973a5f6f4dede2e326028f41ab911cfef725b8e2a3ac4a2c9c96a6b97",
+      "original_diff_sha256": "b23b9f317e2e2cae04b371a627560d604758bca624e674ff7569a031db07c4e0",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 279
+        },
+        "start": {
+          "column": 13,
+          "line": 279
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "attention_layout_admits_the_last_u32_element_without_allocating_a_buffer"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s13_attention_u32_last_address.log",
+      "log_sha256": "969138e1cf01f3cd7ddf227e085b314c2ca85dfd4539668841ad456853956df8",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s13_attention_u32_last_address",
+      "candidate": "crates/compiler/src/operation_attention.rs:279:64: replace + with * in CheckedAttentionFragment::validate_layout",
+      "original_source_sha256": "9cfd830108355de7b9d1926fca7806c124082bed050df9c0512c4ff9e4c7e279",
+      "mutated_source_sha256": "6756af913ecd976a3b938e63628cb997034ff9dbaf6328cfc30939e7ab18ce1a",
+      "original_diff_sha256": "85fdd36ee8de21a9d8ca5b04f9e4172f4a1bd4dce29e560db40b1c2a8d67a09d",
+      "original_span": {
+        "end": {
+          "column": 65,
+          "line": 279
+        },
+        "start": {
+          "column": 64,
+          "line": 279
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_mlp_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "scratch_mlp_accepts_adjacent_operand_and_temporary_ranges"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s13_mlp_adjacent_scratch.log",
+      "log_sha256": "5031665714140f8637c77ecb1616225ac538dc0ddac0fff7d00abe6ddddacc28",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s13_mlp_adjacent_scratch",
+      "candidate": "crates/compiler/src/operation_mlp.rs:583:41: replace < with <= in scratch_layout",
+      "original_source_sha256": "ca92db81a12fd2be41b874088780d9fa48d192721544c76e0401b9701db5957b",
+      "mutated_source_sha256": "8592a44d4dfc4f565d7e9ea22e0751380ff8a604bfef0d102cade79a10886898",
+      "original_diff_sha256": "5356b213bcb3fbe91a4aed93a50bed2a7b141194af0f7e71a38d91d2bbb823a8",
+      "original_span": {
+        "end": {
+          "column": 42,
+          "line": 583
+        },
+        "start": {
+          "column": 41,
+          "line": 583
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "attention_output_stride_is_checked_independently_of_a_valid_output_slot"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s14_attention_output_stride.log",
+      "log_sha256": "6035593d8a5ffb2c81a0ddd7cb38276ddca4311ae58507c58b7933e83b8190a0",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s14_attention_output_stride",
+      "candidate": "crates/compiler/src/operation_attention.rs:289:30: replace || with && in CheckedAttentionFragment::validate_layout",
+      "original_source_sha256": "9cfd830108355de7b9d1926fca7806c124082bed050df9c0512c4ff9e4c7e279",
+      "mutated_source_sha256": "657d4b0d18235a1e3e5c22ec3ee39966457ece8511506bc298568bbd1b02dbfb",
+      "original_diff_sha256": "5d7cab23807d94b1ead8571ba942063eb21b91cd3c23b6e43766b77802a861ab",
+      "original_span": {
+        "end": {
+          "column": 32,
+          "line": 289
+        },
+        "start": {
+          "column": 30,
+          "line": 289
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_swiglu_configuration_requires_exact_scalar_width"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s14_bounded_swiglu_width.log",
+      "log_sha256": "dd090f71c1a9c07275c16dfdd0d64840aa3108108fe2b4f807f26e163431f7da",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s14_bounded_swiglu_width",
+      "candidate": "crates/compiler/src/symbolic_bounded.rs:126:34: replace match guard width == 1 with true in BoundedProfile::config",
+      "original_source_sha256": "f84a23903e5ae5e5c8ea7a09167ef6a33c60f8ff5763e2551d422e68fbb67fe6",
+      "mutated_source_sha256": "a435e73e487cc345f2d1f98faa8326d4678e0d278eb2ea818e85848faefeacb2",
+      "original_diff_sha256": "df6e95c3740aeed81cb8abbdff8ebf483c2ce45f88f6cfe10b0a0f0fc66c40c1",
+      "original_span": {
+        "end": {
+          "column": 44,
+          "line": 126
+        },
+        "start": {
+          "column": 34,
+          "line": 126
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "attention_output_stride_is_checked_independently_of_a_valid_output_slot"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s15_attention_output_stride.log",
+      "log_sha256": "311d86b306460d4852809709a8de3664d7839401291bad1ff4dc29d042a96f55",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s15_attention_output_stride",
+      "candidate": "crates/compiler/src/operation_attention.rs:289:22: replace < with == in CheckedAttentionFragment::validate_layout",
+      "original_source_sha256": "9cfd830108355de7b9d1926fca7806c124082bed050df9c0512c4ff9e4c7e279",
+      "mutated_source_sha256": "484cc338ae3a2037769027247e3ea25b36be815cdc9fcec4a1af03ccf2c91b5c",
+      "original_diff_sha256": "6da86557c340978bfdea4a618c93379b1a703474ebbae699deec4dee802d0deb",
+      "original_span": {
+        "end": {
+          "column": 23,
+          "line": 289
+        },
+        "start": {
+          "column": 22,
+          "line": 289
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_residual_configuration_requires_exact_scalar_width"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s16_bounded_residual_width.log",
+      "log_sha256": "bda0497711148554a8485e16d3f18fd84387f119d314772fc6044badaa4e547a",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s16_bounded_residual_width",
+      "candidate": "crates/compiler/src/symbolic_bounded.rs:128:31: replace match guard width == 1 with true in BoundedProfile::config",
+      "original_source_sha256": "f84a23903e5ae5e5c8ea7a09167ef6a33c60f8ff5763e2551d422e68fbb67fe6",
+      "mutated_source_sha256": "79ff14a72144384bd6a88c6f5a95895ab1173abdcc9761b0a6dd37e322e37580",
+      "original_diff_sha256": "aab2747bd09965dc0dffd5b6f5fbb32b71c662f8b045de0d4c9850aa1bc1f110",
+      "original_span": {
+        "end": {
+          "column": 41,
+          "line": 128
+        },
+        "start": {
+          "column": 31,
+          "line": 128
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_scale_configuration_requires_exact_scalar_width"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s18_bounded_scale_width.log",
+      "log_sha256": "c4c580216c99f1c0562029ede10532fcf3ea548b979c8ed01d3be2f113ad9c62",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s18_bounded_scale_width",
+      "candidate": "crates/compiler/src/symbolic_bounded.rs:129:33: replace match guard width == 1 with true in BoundedProfile::config",
+      "original_source_sha256": "f84a23903e5ae5e5c8ea7a09167ef6a33c60f8ff5763e2551d422e68fbb67fe6",
+      "mutated_source_sha256": "2ec91b7754db8136b5b99161761d9c1078e63f7e77b32857aa2cf88e41483178",
+      "original_diff_sha256": "32c0db99cb62d2c2dc71adb68f8cc5ef5949ff3f6dd6113397722be4626c69b3",
+      "original_span": {
+        "end": {
+          "column": 43,
+          "line": 129
+        },
+        "start": {
+          "column": 33,
+          "line": 129
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_mlp_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "empty_ffn_still_checks_input_finiteness_and_declared_bound"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s18_mlp_empty_ffn_input.log",
+      "log_sha256": "539d1806ea565e479f2853a516e802aa8ffc70d82c51fe69932fd536b6ded550",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s18_mlp_empty_ffn_input",
+      "candidate": "crates/compiler/src/operation_mlp.rs:285:35: replace || with && in CheckedMlpFragment::validate_values",
+      "original_source_sha256": "ca92db81a12fd2be41b874088780d9fa48d192721544c76e0401b9701db5957b",
+      "mutated_source_sha256": "58153fec6a72b96ba7349594daa1b737bf211eb23b8eb6d7032efc7629fc9bda",
+      "original_diff_sha256": "b9cb60c1cd18d0cd89a2322108bba3389ffe2754bbc1da62c5b7a281762d5902",
+      "original_span": {
+        "end": {
+          "column": 37,
+          "line": 285
+        },
+        "start": {
+          "column": 35,
+          "line": 285
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_profile_validation_checks_every_declared_family_before_compilation"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s4_bounded_profile_validation.log",
+      "log_sha256": "62d15fe632d3e1322dd9744b513aa30816f10fbcc9b431daaf83354b6958b408",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s4_bounded_profile_validation",
+      "candidate": "crates/compiler/src/symbolic_bounded.rs:94:9: replace BoundedProfile::validate -> Result<(), String> with Ok(())",
+      "original_source_sha256": "f84a23903e5ae5e5c8ea7a09167ef6a33c60f8ff5763e2551d422e68fbb67fe6",
+      "mutated_source_sha256": "9f12d3ec555db154ddcf3b3c4f6140d07879b1270943575418c48ff42a33f979",
+      "original_diff_sha256": "fea1880a502f992f4db472cd0f2417e7b624d317153f14754fe548825549261f",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 110
+        },
+        "start": {
+          "column": 9,
+          "line": 94
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "attention_layout_admits_the_last_u32_element_without_allocating_a_buffer"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-s9_attention_u32_last_address.log",
+      "log_sha256": "711b80eb71208d7cc54ff5e80211c960aa56434981cfe0d483b7daecdcc1cfb5",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "s9_attention_u32_last_address",
+      "candidate": "crates/compiler/src/operation_attention.rs:279:42: replace > with == in CheckedAttentionFragment::validate_layout",
+      "original_source_sha256": "9cfd830108355de7b9d1926fca7806c124082bed050df9c0512c4ff9e4c7e279",
+      "mutated_source_sha256": "518d6bd307e5bc7c2349394748aeede6579bc392a1d66289f4ca0e33102c7917",
+      "original_diff_sha256": "a38ef8a0e1e12ac5d6b199a5d68610e985c32311ca57597118dc007f937b259d",
+      "original_span": {
+        "end": {
+          "column": 43,
+          "line": 279
+        },
+        "start": {
+          "column": 42,
+          "line": 279
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T04:02:59.713321+00:00",
+  "status": "passed_focused_replays",
+  "patched_test_hashes": {
+    "crates/compiler/tests/full_bounded_contracts.rs": "2960732333f67e7cdb277f68e66e4b5fbcaf2ab04f1c240860e8621df38e1f19",
+    "crates/runtime/tests/operation_attention_contracts.rs": "e375359f78b82cb1459b1b5a85cf0141c7075b1ab84fd707736d7636137b0bb8",
+    "crates/runtime/tests/operation_mlp_contracts.rs": "467b81b66a1a1a16a005b9660cafbb39a53428929dcdb1ab797a9037dd99e951"
+  }
+}

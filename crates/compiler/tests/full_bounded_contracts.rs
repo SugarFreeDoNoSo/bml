@@ -4,7 +4,7 @@ use bml_compiler::{
         compile_directory_bounded, compile_directory_with_rms_bounds, load_directory, Manifest,
         BOUNDED_PROFILE, BOUNDED_RMS_PROFILE, MANIFEST,
     },
-    symbolic_bounded::{compile_operation, BoundedProfile},
+    symbolic_bounded::{compile_operation, BoundedProfile, ProjectionBounds},
     symbolic_kernels::{CompiledKernel, KernelLimits, Operation, OutputLayout, RmsBounds},
     BmlGraph, HashConsedKV, RpnOp,
 };
@@ -122,6 +122,176 @@ fn close(actual: &[f64], expected: &[f64], tolerance: f64) {
             "output {index}: {actual} != {expected}, tolerance={tolerance}"
         );
     }
+}
+
+#[test]
+fn bounded_profile_validation_checks_every_declared_family_before_compilation() {
+    let profile = BoundedProfile {
+        down_projection: Some(ProjectionBounds {
+            input: 16.0,
+            weight: 1.0,
+        }),
+        ..BoundedProfile::default()
+    };
+    profile.validate(32, 0.5).unwrap();
+    for (name, invalid) in [
+        (
+            "RMS input",
+            BoundedProfile {
+                rms: RmsBounds {
+                    input: f64::NAN,
+                    ..profile.rms
+                },
+                ..profile
+            },
+        ),
+        (
+            "RMS weight",
+            BoundedProfile {
+                rms: RmsBounds {
+                    weight: f64::NAN,
+                    ..profile.rms
+                },
+                ..profile
+            },
+        ),
+        (
+            "projection input",
+            BoundedProfile {
+                projection_input: f64::NAN,
+                ..profile
+            },
+        ),
+        (
+            "projection weight",
+            BoundedProfile {
+                projection_weight: f64::NAN,
+                ..profile
+            },
+        ),
+        (
+            "attention",
+            BoundedProfile {
+                attention: f64::NAN,
+                ..profile
+            },
+        ),
+        (
+            "value",
+            BoundedProfile {
+                value: f64::NAN,
+                ..profile
+            },
+        ),
+        (
+            "RoPE",
+            BoundedProfile {
+                rope: f64::NAN,
+                ..profile
+            },
+        ),
+        (
+            "gate",
+            BoundedProfile {
+                gate: f64::NAN,
+                ..profile
+            },
+        ),
+        (
+            "up",
+            BoundedProfile {
+                up: f64::NAN,
+                ..profile
+            },
+        ),
+        (
+            "residual",
+            BoundedProfile {
+                residual: f64::NAN,
+                ..profile
+            },
+        ),
+        (
+            "scale",
+            BoundedProfile {
+                scale_input: f64::NAN,
+                ..profile
+            },
+        ),
+        (
+            "score",
+            BoundedProfile {
+                score: f64::NAN,
+                ..profile
+            },
+        ),
+        (
+            "down projection",
+            BoundedProfile {
+                down_projection: Some(ProjectionBounds {
+                    input: f64::NAN,
+                    weight: 1.0,
+                }),
+                ..profile
+            },
+        ),
+    ] {
+        assert!(invalid.validate(32, 0.5).is_err(), "invalid {name}");
+    }
+    assert!(profile.validate(0, 0.5).is_err());
+    assert!(profile.validate(32, 0.0).is_err());
+}
+
+fn fixed_bounded_width(
+    operation: Operation,
+    width: usize,
+    inputs: &[f64],
+    external: &[f64],
+    expected: &[f64],
+) {
+    let profile = BoundedProfile::default();
+    let layout = BoundedProfile::output_layout(operation);
+    let signature = profile.signature(operation, width, 0.5, layout).unwrap();
+    assert_eq!(signature.inputs, inputs.len());
+    assert_eq!(signature.external, external.len());
+    let compiled =
+        compile_operation(operation, width, 0.5, profile, KernelLimits::default()).unwrap();
+    assert_eq!(compiled.signature, signature);
+    profile
+        .validate_values(operation, width, 0.5, inputs, external)
+        .unwrap();
+    close(&execute(&compiled, inputs, external), expected, 2e-6);
+    // Reject a mismatched public metadata width even when its data would fit
+    // the primitive's actual input count. Config guards must not ignore width.
+    for invalid in [1, 2, 3] {
+        if invalid != width {
+            assert!(
+                profile.base_signature(operation, invalid, 0.5).is_err(),
+                "{operation:?} width={invalid}"
+            );
+            assert!(profile.signature(operation, invalid, 0.5, layout).is_err());
+        }
+    }
+}
+
+#[test]
+fn bounded_rope_configuration_requires_exact_pair_width() {
+    fixed_bounded_width(Operation::Rope, 2, &[0.25, -0.5], &[0.0, 1.0], &[0.5, 0.25]);
+}
+
+#[test]
+fn bounded_swiglu_configuration_requires_exact_scalar_width() {
+    fixed_bounded_width(Operation::Swiglu, 1, &[0.0, 4.0], &[], &[0.0]);
+}
+
+#[test]
+fn bounded_residual_configuration_requires_exact_scalar_width() {
+    fixed_bounded_width(Operation::Add, 1, &[1.0, 2.0], &[], &[3.0]);
+}
+
+#[test]
+fn bounded_scale_configuration_requires_exact_scalar_width() {
+    fixed_bounded_width(Operation::Scale, 1, &[1.5, 0.5], &[], &[0.75]);
 }
 
 #[test]
