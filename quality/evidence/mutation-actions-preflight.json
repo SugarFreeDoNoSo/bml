@@ -1,0 +1,55 @@
+{
+  "status": "passed_preflight_only",
+  "observed_at_utc": "2026-11-05T01:34:03.777567+00:00",
+  "base_revision": "1a259f07a624800adf8c51d1db6bc673d0a191b5",
+  "scope": "Manual GitHub-hosted campaign configuration and adapter verification. No complete mutation run or mutation-score claim.",
+  "configuration": {
+    "runner": "ubuntu-24.04",
+    "default_shards": 64,
+    "allowed_shards": [
+      32,
+      64
+    ],
+    "max_parallel": 8,
+    "shard_timeout_minutes": 300,
+    "job_timeout_minutes": 330,
+    "artifact_retention_days": 3,
+    "mutation_base": "40b3f1be2d3f97028b741750ed61ab72f501a555",
+    "snapshot": "workflow github.sha; no revision input"
+  },
+  "python_tooling": {
+    "passed": 130,
+    "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+    "log": "target/quality/mutation-actions-tooling.log",
+    "log_sha256": "f639c0168b9c8d45157b48726630ffbd22066b5c480fa97358bc2a73d54cacd9"
+  },
+  "workflow_lint": {
+    "command": "target/actionlint-1.7.12/actionlint .github/workflows/mutation-campaign.yml",
+    "exit_code": 0,
+    "log": "target/quality/mutation-actions-actionlint.log",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tool": {
+      "version": "1.7.12",
+      "release": "https://github.com/rhysd/actionlint/releases/tag/v1.7.12",
+      "archive_sha256": "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
+      "binary_sha256": "c872d6db8c6bf83a8eaa704fc93999f027d55dffbc63b8a6abdccb47df5f4cd4"
+    }
+  },
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/mutation-actions-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "prior_rust_gate": {
+    "evidence": "quality/evidence/wave-three-gate.json",
+    "rust_and_cargo_inputs_unchanged_since_commit": "1a259f07a624800adf8c51d1db6bc673d0a191b5"
+  },
+  "source_hashes": {
+    ".github/workflows/mutation-campaign.yml": "bed4f476ff34ff8563d764722cd06ef99323fca4b560f6c106c499e828b77ab7",
+    "tools/mutation_actions.py": "879b2841571359d6807fb53af88ea421130415570ec55f63c71d6b362306c419",
+    "tools/test_mutation_actions.py": "d4960a4d25733d3cdd66baf9e71b961fcbd4d9dcdea8217f73bf6a2c5a841440",
+    "tools/merge_mutation_shards.py": "7891024da8b209f526e01f592dcc63501a01754109697485697765beb5187a2c",
+    "tools/test_merge_mutation_shards.py": "3cb316d353c8114574c234fc90480184a5a3e3879cec00a9e3709f5fbf4dbb08"
+  }
+}

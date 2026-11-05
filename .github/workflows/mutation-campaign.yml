@@ -1,0 +1,197 @@
+name: Complete mutation campaign
+
+# This expensive campaign is manual. Every job checks out this dispatch's SHA;
+# a later push cannot silently change the candidates or their workspace tests.
+on:
+  workflow_dispatch:
+    inputs:
+      shards:
+        description: Round-robin shards (rerun the entire workflow, not individual jobs)
+        type: choice
+        options: ['64', '32']
+        default: '64'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: complete-mutation-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: never
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_PROFILE_TEST_DEBUG: '0'
+  CARGO_BUILD_JOBS: '2'
+  PROPTEST_RNG_SEED: '20260923'
+  MUTATION_BASE: 40b3f1be2d3f97028b741750ed61ab72f501a555
+  SNAPSHOT: ${{ github.sha }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      matrix: ${{ steps.manifest.outputs.matrix }}
+      manifest_sha256: ${{ steps.manifest.outputs.manifest_sha256 }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned Rust
+        run: rustup show active-toolchain
+      - uses: taiki-e/install-action@7623a79cdfecb99d681017af368ca353d9f49bb5 # v2
+        with:
+          tool: cargo-mutants@27.1.0
+      - name: Verify GGUF feature boundaries in the frozen workspace
+        run: |
+          cargo test -p bml-gguf --no-default-features --locked
+          cargo test -p bml-gguf --all-features --locked
+      - name: Freeze complete development diff and independently listed assignments
+        id: manifest
+        env:
+          SHARD_COUNT: ${{ inputs.shards }}
+        run: |
+          mkdir -p target/quality
+          python3 tools/mutation_diff.py "$MUTATION_BASE" target/quality/final.diff
+          python3 tools/merge_mutation_shards.py prepare \
+            --revision "$SNAPSHOT" --base "$MUTATION_BASE" \
+            --diff target/quality/final.diff --shards "$SHARD_COUNT" \
+            --output target/quality/campaign.json
+          python3 tools/mutation_actions.py publish \
+            --manifest target/quality/campaign.json --revision "$SNAPSHOT" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: Preserve frozen plan
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mutation-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/quality/campaign.json
+            target/quality/final.diff
+          if-no-files-found: error
+          retention-days: 3
+
+  shard:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      # 64 x 300 min / 8 slots = 40h, leaving margin within 3-day retention.
+      # External delays or expired/missing artifacts still fail the union check.
+      max-parallel: 8
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: mutation-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/quality/plan
+      - name: Check independent prepare digest and frozen revision
+        env:
+          MANIFEST_SHA256: ${{ needs.prepare.outputs.manifest_sha256 }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python3 tools/mutation_actions.py check \
+            --manifest target/quality/plan/campaign.json --revision "$SNAPSHOT" \
+            --sha256 "$MANIFEST_SHA256" --shard "$SHARD"
+      - name: Install pinned Rust
+        run: rustup show active-toolchain
+      - uses: taiki-e/install-action@7623a79cdfecb99d681017af368ca353d9f49bb5 # v2
+        with:
+          tool: cargo-mutants@27.1.0
+      - name: Run baseline and workspace mutation tests; seal completed outcomes
+        env:
+          SHARD: ${{ matrix.shard }}
+          SHARD_INDEX: ${{ matrix.index }}
+        run: |
+          evidence="target/quality/shard-$SHARD_INDEX"
+          mkdir -p "$evidence"
+          {
+            printf 'snapshot=%s\nimage_os=%s\nimage_version=%s\n' \
+              "$SNAPSHOT" "${ImageOS:-unknown}" "${ImageVersion:-unknown}"
+            uname -a
+            rustc --version --verbose
+            cargo --version
+            cargo mutants --version
+          } > "$evidence/toolchain.txt"
+          df -h . > "$evidence/disk-before.txt"
+          python3 tools/merge_mutation_shards.py commands \
+            --manifest target/quality/plan/campaign.json \
+            --diff target/quality/plan/final.diff --shard "$SHARD" \
+            --timeout 360 --build-timeout 600 > "$evidence/run-shard.sh"
+          # Leave 30 minutes for termination and evidence upload before job timeout.
+          # The generated script seals reports before returning cargo-mutants 2/3.
+          if timeout --signal=TERM --kill-after=60s 300m bash "$evidence/run-shard.sh" \
+              > "$evidence/runner.log" 2>&1; then
+            shard_exit=0
+          else
+            shard_exit=$?
+          fi
+          printf '%s\n' "$shard_exit" > "$evidence/exit-code.txt"
+          df -h . > "$evidence/disk-after.txt"
+          case "$shard_exit" in
+            0|2|3) test -f "target/quality/shard-result-$SHARD_INDEX.json" ;;
+            *) echo "Incomplete shard or infrastructure failure: $shard_exit" >&2; exit 1 ;;
+          esac
+      - name: Preserve raw reports, candidates, logs, seals and generated regressions
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mutation-shard-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.index }}
+          path: |
+            target/quality/shard-${{ matrix.index }}/
+            target/quality/shard-result-${{ matrix.index }}.json
+            target/final-mutation-shard-${{ matrix.index }}/mutants.out/
+            **/proptest-regressions/**/*.txt
+          if-no-files-found: error
+          retention-days: 3
+
+  aggregate:
+    needs: [prepare, shard]
+    if: ${{ always() && needs.prepare.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: mutation-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/quality/plan
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: mutation-shard-${{ github.run_id }}-${{ github.run_attempt }}-*
+          path: target/quality/shards
+          merge-multiple: false
+      - name: Verify manifest and complete shard union; retain every baseline
+        env:
+          MANIFEST_SHA256: ${{ needs.prepare.outputs.manifest_sha256 }}
+        run: |
+          python3 tools/mutation_actions.py merge \
+            --manifest target/quality/plan/campaign.json --revision "$SNAPSHOT" \
+            --sha256 "$MANIFEST_SHA256" --results target/quality/shards \
+            --output target/quality/aggregate.json
+      - name: Apply unchanged mutation quality gate
+        run: python3 tools/quality.py mutations --report target/quality/aggregate.json
+      - name: Preserve aggregate and frozen plan even when the score fails
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mutation-aggregate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            target/quality/aggregate.json
+            target/quality/mutation-summary.json
+            target/quality/plan/
+          if-no-files-found: error
+          retention-days: 3

@@ -56,6 +56,24 @@ La cobertura estable mide líneas y funciones del workspace ordinario. No incluy
 
 La mutación compara el árbol base formateado con el código actual para excluir cambios exclusivamente de formato. Cada mutante viable debe ser detectado. El porcentaje es `caught / (caught + missed + timeout)`; los no compilables se reportan aparte. Una campaña vacía o sin mutantes viables es N/A, nunca 100 %. Una campaña incompleta falla. La opción manual `full_mutation` mide todo el workspace. No hay exclusiones por equivalencia preaprobadas.
 
+La campaña completa del desarrollo se puede lanzar manualmente con
+`gh workflow run mutation-campaign.yml --ref master -f shards=64`.
+El workflow congela su propio SHA y el diff completo contra
+`40b3f1be2d3f97028b741750ed61ab72f501a555`; no usa el diff del último push.
+Comprueba ambas variantes de features GGUF y lista cada shard por separado.
+Usa 64 shards por defecto (32 como alternativa) y hasta ocho runners estándar
+simultáneos. Cada baseline prueba los paquetes mutados de su shard según
+cargo-mutants 27.1.0; cada mutante se prueba contra todo el workspace.
+
+El hash del manifiesto llega desde el job de preparación y se comprueba al
+descargarlo. Se conservan candidatos, resultados originales, logs, regresiones
+generadas y resultados sellados, incluso ante supervivientes o timeouts.
+El agregado exige todos los shards del mismo intento y aplica el gate original.
+Los artefactos duran tres días: descargarlos antes de su caducidad y repetir el
+workflow completo cuando sea necesario; reintentar jobs individuales no mezcla
+evidencia de intentos anteriores. La configuración y el inicio de la campaña
+no acreditan su finalización ni un resultado aprobado.
+
 ## Instrumentación optativa
 
 ```sh
