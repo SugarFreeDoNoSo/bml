@@ -10,6 +10,148 @@ fn graph(parts: Vec<Vec<RpnOp>>, constants: Vec<f64>) -> BmlGraph {
         threshold: 32768,
     }
 }
+
+#[test]
+fn context_value_budget_is_independent_of_opcode_budget() {
+    let raw = graph(vec![vec![RpnOp::Const(0)]], vec![]);
+    let limits = GraphLimits {
+        max_ops: 1,
+        max_steps: 1,
+        max_values: 2,
+    };
+    // One external value and one live stack value exactly fit. The graph also
+    // exactly fits its independent opcode budget.
+    let valid =
+        ValidatedGraph::new_with_external_constants(raw.clone(), 0, 1, 0, 0, limits).unwrap();
+    assert_eq!(
+        valid.execute_with_constants(&[], &[11.0], &mut ResultBuffer::new(0, 0)),
+        Ok(11.0)
+    );
+    // The same valid bytecode references an existing constant, but its declared
+    // context alone exceeds the value budget. Reject before stack subtraction
+    // or allocation; a panic is not an acceptable resource-preflight result.
+    assert!(matches!(
+        ValidatedGraph::new_with_external_constants(raw, 0, 3, 0, 0, limits),
+        Err(GraphError::Limit)
+    ));
+}
+
+#[test]
+fn empty_loop_result_accepts_its_exact_step_budget() {
+    // A single empty iteration leaves its implicit index (zero) as the result.
+    // The loop header and the index push are the complete two-step workload.
+    let raw = graph(
+        vec![vec![RpnOp::Loop {
+            count: 1,
+            body_len: 0,
+        }]],
+        vec![],
+    );
+    let limits = GraphLimits {
+        max_ops: 1,
+        max_steps: 2,
+        max_values: 1,
+    };
+    for steps in [2, 3] {
+        let valid = ValidatedGraph::new(
+            raw.clone(),
+            0,
+            0,
+            0,
+            GraphLimits {
+                max_steps: steps,
+                ..limits
+            },
+        )
+        .unwrap();
+        assert_eq!(valid.execution_steps(), 2);
+        assert_eq!(valid.stack_capacity(), 1);
+        assert_eq!(valid.execute(&[], &mut ResultBuffer::new(0, 0)), Ok(0.0));
+    }
+    assert!(matches!(
+        ValidatedGraph::new(
+            raw,
+            0,
+            0,
+            0,
+            GraphLimits {
+                max_steps: 1,
+                ..limits
+            }
+        ),
+        Err(GraphError::Limit)
+    ));
+}
+
+#[test]
+fn single_literal_graph_validation_completes_in_a_bounded_child() {
+    use std::{
+        process::{Command, Stdio},
+        time::{Duration, Instant},
+    };
+    // Bound this invocation without reclassifying historical campaign timeouts:
+    // other tests may still call the validator directly under the same mutant.
+    let mut child = Command::new(std::env::current_exe().unwrap())
+        .args([
+            "--ignored",
+            "--exact",
+            "single_literal_graph_validation_child",
+            "--nocapture",
+        ])
+        .env("BML_GRAPH_STRUCTURE_CONTRACT_CHILD", "1")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        if child.try_wait().unwrap().is_some() {
+            break;
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let output = child.wait_with_output().unwrap();
+            panic!(
+                "single-literal graph validation exceeded the 5s child deadline; stderr={}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let output = child.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "stdout={} stderr={}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    // Do not mistake a wrong filter, skipped child or early return for success.
+    assert!(String::from_utf8_lossy(&output.stdout).contains("GRAPH_SINGLE_LITERAL_VALIDATED"));
+}
+
+#[test]
+#[ignore = "helper invoked only by the exact parent test with its child marker"]
+fn single_literal_graph_validation_child() {
+    if std::env::var("BML_GRAPH_STRUCTURE_CONTRACT_CHILD").as_deref() != Ok("1") {
+        return;
+    }
+    let valid = ValidatedGraph::new(
+        graph(vec![vec![RpnOp::One]], vec![]),
+        0,
+        0,
+        0,
+        GraphLimits {
+            max_ops: 1,
+            max_steps: 1,
+            max_values: 1,
+        },
+    )
+    .unwrap();
+    assert_eq!(valid.execute(&[], &mut ResultBuffer::new(0, 0)), Ok(1.0));
+    println!("GRAPH_SINGLE_LITERAL_VALIDATED");
+}
+
 #[test]
 fn graph_preserves_stack_constants_inputs_and_results_across_fragments() {
     let g = graph(

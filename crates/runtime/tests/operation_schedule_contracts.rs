@@ -41,6 +41,76 @@ fn bits(buffer: &ResultBuffer) -> Vec<u64> {
 }
 
 #[test]
+fn loop_carried_swaps_preserve_the_actual_read_after_a_prior_write() {
+    let constants = [0.0, 1.0, 13.0];
+    let context = EvalContext::new(&[], &constants);
+    for (count, expected) in [(1, [3.0_f64, 13.0, 3.0]), (2, [3.0, 13.0, 13.0])] {
+        let fragments = [
+            store(2, 1),
+            fragment(vec![
+                RpnOp::Const(0),
+                RpnOp::Const(1),
+                RpnOp::Loop { count, body_len: 2 },
+                RpnOp::Drop,
+                RpnOp::Swap,
+                RpnOp::VarIndexed { base: 0 },
+                RpnOp::Zero,
+                RpnOp::StoreResult { slot: 2 },
+                RpnOp::Drop,
+            ]),
+        ];
+        // One swap selects original slot 0; two swaps select slot 1, which
+        // must observe the preceding writer. These literal answers depend on
+        // program order, not on which worker thread happens to run first.
+        for cores in [1, 2] {
+            let mut buffer = ResultBuffer::from_vec(3, 1, vec![3.0, 5.0, -1.0]).unwrap();
+            let mut runtime = Runtime::new(16, 0);
+            runtime.execute_with_cores(&fragments, &context, &mut buffer, cores);
+            assert_eq!(
+                bits(&buffer),
+                expected
+                    .iter()
+                    .map(|value| value.to_bits())
+                    .collect::<Vec<_>>(),
+                "count={count}, cores={cores}",
+            );
+            assert_eq!(runtime.stack_depth(), 0);
+        }
+    }
+}
+
+#[test]
+fn zero_trip_loop_keeps_its_body_inactive_with_multiple_cores() {
+    let context = EvalContext::new(&[], &[13.0, 5.0]);
+    for (count, expected) in [(0, [3.0_f64, 5.0]), (1, [13.0, 5.0])] {
+        let fragments = [
+            fragment(vec![
+                RpnOp::Loop { count, body_len: 4 },
+                RpnOp::Drop,
+                RpnOp::Const(0),
+                RpnOp::Zero,
+                RpnOp::StoreResult { slot: 0 },
+            ]),
+            store(1, 1),
+        ];
+        for cores in [1, 2] {
+            let mut buffer = ResultBuffer::from_vec(2, 1, vec![3.0, -1.0]).unwrap();
+            let mut runtime = Runtime::new(16, 0);
+            runtime.execute_with_cores(&fragments, &context, &mut buffer, cores);
+            assert_eq!(
+                bits(&buffer),
+                expected
+                    .iter()
+                    .map(|value| value.to_bits())
+                    .collect::<Vec<_>>(),
+                "count={count}, cores={cores}",
+            );
+            assert_eq!(runtime.stack_depth(), 0);
+        }
+    }
+}
+
+#[test]
 fn dependent_fragments_preserve_read_write_and_overwrite_order() {
     let fragments = vec![
         store(0, 1),

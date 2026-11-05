@@ -1,0 +1,322 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "d837b868af656254f5d7922a0750f57308b8eeea",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "context_value_budget_is_independent_of_opcode_budget"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-graph_context_budget_comparison.log",
+      "log_sha256": "039baf38be1f24ea14d3565e7a92abb9760b6f4745324047f5650ac64dfccf29",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "empty_loop_result_accepts_its_exact_step_budget"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-graph_empty_loop_exact_steps.log",
+      "log_sha256": "932f4a616071670fedffb56c495d64a7e740d39f6b7b05bbfe819a555a518018",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "single_literal_graph_validation_completes_in_a_bounded_child"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-graph_structure_child_deadline.log",
+      "log_sha256": "813f0730e4a128ce1f64a96c4f60fe4cbefb4c274c9ecbcd246d7cbf31d4304b",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_schedule_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "loop_carried_swaps_preserve_the_actual_read_after_a_prior_write"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-schedule_swap_loop_raw.log",
+      "log_sha256": "23a87adcf0796142aa12de163e2da10c6d2d538ab1252fb2797d3474b5b2ca5b",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_schedule_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "zero_trip_loop_keeps_its_body_inactive_with_multiple_cores"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-schedule_zero_trip_loop.log",
+      "log_sha256": "ce90b5f832ab7f77159fadc89a27ea78df2336fc526997ae583c9603c8e8336c",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "context_value_budget_is_independent_of_opcode_budget"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-graph_context_budget_comparison.log",
+      "log_sha256": "b9121d4faac7d621b6e7d0b45dba9c480424c84f36f53f3c665d09bc9b3c08fd",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "graph_context_budget_comparison",
+      "candidate": "crates/runtime/src/graph.rs:118:19: replace > with == in ValidatedGraph::validate",
+      "original_source_sha256": "7af83e2bd5b5e91db69ac05d235a57266350d2611bcb70bf626b1688ad2b3666",
+      "mutated_source_sha256": "71e84c4ca806f750801e39881a521aedf8d257513f6def750044862e9b209490",
+      "original_diff_sha256": "605b87e3f3ee3c58f19c96f9bb4b098ff9ea71098f877ffdc4fb8b7c77ea7132",
+      "original_span": {
+        "end": {
+          "column": 20,
+          "line": 118
+        },
+        "start": {
+          "column": 19,
+          "line": 118
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "context_value_budget_is_independent_of_opcode_budget"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-graph_context_budget_conjunction.log",
+      "log_sha256": "0ec43ac6a19414a610b95342cb469e0b84c956fcda4ecb540486827f9fa29d48",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "graph_context_budget_conjunction",
+      "candidate": "crates/runtime/src/graph.rs:118:39: replace || with && in ValidatedGraph::validate",
+      "original_source_sha256": "7af83e2bd5b5e91db69ac05d235a57266350d2611bcb70bf626b1688ad2b3666",
+      "mutated_source_sha256": "0fac36961348574dca534d990a6f0493f7e3131298f3b13f66e4009eff181d2f",
+      "original_diff_sha256": "9f055d4551f82a0d5fb06ddef5700218e7079092b34630011d24e5863c759060",
+      "original_span": {
+        "end": {
+          "column": 41,
+          "line": 118
+        },
+        "start": {
+          "column": 39,
+          "line": 118
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "empty_loop_result_accepts_its_exact_step_budget"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-graph_empty_loop_exact_steps.log",
+      "log_sha256": "094ed755ca7ba98e419ec6905daf74169752c58ad87ce55b049f437259a7e9ce",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "graph_empty_loop_exact_steps",
+      "candidate": "crates/runtime/src/graph.rs:496:39: replace > with == in StackBudget::walk",
+      "original_source_sha256": "7af83e2bd5b5e91db69ac05d235a57266350d2611bcb70bf626b1688ad2b3666",
+      "mutated_source_sha256": "70f3a43d64eda6faf4381382a310449862183bd6781128d46483bc94c61cc564",
+      "original_diff_sha256": "c26f82c74a9e2593b48fa28ab336015a0d19dff2ca010fde0d47a3c49d1727f6",
+      "original_span": {
+        "end": {
+          "column": 40,
+          "line": 496
+        },
+        "start": {
+          "column": 39,
+          "line": 496
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "graph_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "single_literal_graph_validation_completes_in_a_bounded_child"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-graph_structure_child_deadline.log",
+      "log_sha256": "1d61804e6f5beb85474756889552ab0a50f04649a25c523b7e4c13c3a887b110",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "graph_structure_child_deadline",
+      "candidate": "crates/runtime/src/graph.rs:445:11: replace += with *= in structure",
+      "original_source_sha256": "7af83e2bd5b5e91db69ac05d235a57266350d2611bcb70bf626b1688ad2b3666",
+      "mutated_source_sha256": "4c5d42b0dcfce64f841b3fd4cc872a37950050a3ad53cfa4ea59fd6d53c0be53",
+      "original_diff_sha256": "9783d8593b88161bd8e4e362dfb1c56114f1e5e3e5828332431283a42e1ba97c",
+      "original_span": {
+        "end": {
+          "column": 13,
+          "line": 445
+        },
+        "start": {
+          "column": 11,
+          "line": 445
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_schedule_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "loop_carried_swaps_preserve_the_actual_read_after_a_prior_write"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-schedule_swap_loop_raw.log",
+      "log_sha256": "d2f391b7812fc820fd1d7fb91bb6f981a96a6636118808735e19061abb90fdd0",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "schedule_swap_loop_raw",
+      "candidate": "crates/runtime/src/operation_schedule.rs:140:35: replace + with * in Analyzer<'_>::visit",
+      "original_source_sha256": "45bc3c2e88b7ac537f883b58a18ccbdbd7919212d7d7e096d1f2d8dc26a1aad1",
+      "mutated_source_sha256": "da20befa8f9407ac23029a9515442e65b60fd7ebceac11e48c439c06a3bd355e",
+      "original_diff_sha256": "b2d44bdf59b3ae1dc725129b713867a84f29668015906a10720588751a23732e",
+      "original_span": {
+        "end": {
+          "column": 36,
+          "line": 140
+        },
+        "start": {
+          "column": 35,
+          "line": 140
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_schedule_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "zero_trip_loop_keeps_its_body_inactive_with_multiple_cores"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-schedule_zero_trip_loop.log",
+      "log_sha256": "6105e17f8aed7f769a45bff594981a4441b5c1f25d29dc9bcd284eb730bba7e0",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "schedule_zero_trip_loop",
+      "candidate": "crates/runtime/src/operation_schedule.rs:142:30: replace > with >= in Analyzer<'_>::visit",
+      "original_source_sha256": "45bc3c2e88b7ac537f883b58a18ccbdbd7919212d7d7e096d1f2d8dc26a1aad1",
+      "mutated_source_sha256": "701df22789f166a5fb64628d06926abc2dea820aa948ae7024c63908bc0add36",
+      "original_diff_sha256": "f163836cd4843a1f3c9e528d15982dfe785dcf7bd680cbf8897e22b00f667bf9",
+      "original_span": {
+        "end": {
+          "column": 31,
+          "line": 142
+        },
+        "start": {
+          "column": 30,
+          "line": 142
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T04:39:22.978425+00:00",
+  "status": "passed_focused_replays",
+  "patched_test_hashes": {
+    "crates/runtime/tests/graph_contracts.rs": "65e3ecd5266e14aeddb8f9928cd2d649d2a5dadcbe737ef430a8f76087e99033",
+    "crates/runtime/tests/operation_schedule_contracts.rs": "01e78fdc7259fb65f8a331991d1c586b340e51977b0d184b62b6792ce6ba3386"
+  },
+  "bounded_child_scope": "The graph445 candidate failed an explicit 5-second child-completion contract. Its original campaign Timeout remains unchanged; other direct validator callers could still time out in a workspace-wide mutation run."
+}
