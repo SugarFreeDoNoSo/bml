@@ -433,7 +433,9 @@
     "tests": [
       "remote_coordinator_validates_prompt_and_runs_full_layer_pipeline",
       "remote_coordinator_rejects_an_incomplete_layer_plan",
-      "remote_coordinator_invalidates_all_stages_after_partial_commit"
+      "remote_coordinator_invalidates_all_stages_after_partial_commit",
+      "remote_pipeline_context_admission_precedes_a_permissive_peer",
+      "remote_pipeline_requires_a_complete_prefix_and_the_model_hidden_width"
     ]
   },
   "C44": {
@@ -989,7 +991,8 @@
       "attention_native_arithmetic_is_only_used_for_indices",
       "attention_rejects_read_capacity_even_when_addresses_fit_u32",
       "attention_layout_admits_the_last_u32_element_without_allocating_a_buffer",
-      "attention_output_stride_is_checked_independently_of_a_valid_output_slot"
+      "attention_output_stride_is_checked_independently_of_a_valid_output_slot",
+      "attention_operand_bounds_are_inclusive_in_both_executable_layouts"
     ]
   },
   "C98": {

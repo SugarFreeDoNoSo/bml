@@ -1,0 +1,24 @@
+{
+  "status": "incomplete_frozen_campaign_partial_results",
+  "observed_at_utc": "2026-11-05T06:56:27.068514+00:00",
+  "original_run_id": 41950170549,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "verified_shards": 44,
+  "candidate_count": 3564,
+  "counts": {
+    "Unviable": 291,
+    "CaughtMutant": 2819,
+    "MissedMutant": 424,
+    "Timeout": 30
+  },
+  "original_sealed_shards": 43,
+  "fresh_recovery_shards": [
+    "21/64"
+  ],
+  "inputs": {
+    "quality/evidence/mutation-9a-forty-three-shards.json": "fdab76ced14686c165ded18e3051816a24e2e003897aeec731f2051219f27cea",
+    "quality/evidence/mutation-recovery-21-completion.json": "d33739992ef12e7d8edd6282983587b51d573b7a5b20767313fce3c4812db0bd"
+  },
+  "limits": "Incomplete original union. Parent20 and fresh27 not counted without complete verified seals. Old unsealed raw excluded and raw Missed/Timeout classifications unchanged."
+}

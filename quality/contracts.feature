@@ -271,6 +271,8 @@ Then it rejects the request before expensive generation
     When prompt tokens execute or a later stage fails after an earlier commit
     Then successful logits match local inference and partial failure invalidates the whole pipeline
     And prefill accepts the final exact context slot after rejecting overflow without consuming a partial prompt
+    And the exact model context is admitted while a larger context is rejected before reaching a permissive peer
+    And permissive peers cannot admit a missing initial layer prefix or a hidden width different from the model
 
 
   @C44
@@ -710,6 +712,7 @@ Then it rejects the request before expensive generation
     And the historical signature represents one KV token and invalid shapes or layouts reject
     And reported scratch dimensions support execution while address capacity and u32 limits are checked independently
     And layout-only checks admit the final u32 operand address and reject an insufficient output stride independently
+    And finite query/key bounds and value bounds are inclusive with independent singleton output oracles in both scratch routes
 
 
   @C98

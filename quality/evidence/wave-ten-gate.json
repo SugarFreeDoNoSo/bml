@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "observed_at_utc": "2026-11-05T06:56:27.065893+00:00",
+  "base_revision": "86390dae62155aca3686a07f2f86c45456dd684c",
+  "command": "./scripts/check.sh 86390dae62155aca3686a07f2f86c45456dd684c",
+  "exit_code": 0,
+  "scope": "Native pipeline context/layer/width admission against permissive peers and inclusive attention input bounds in both scratch routes. Frozen partial mutation results remain independent; no global mutation, numerical parity or PMU pass.",
+  "rust_tests_passed": 993,
+  "rust_suites": 144,
+  "python_tooling_tests": 213,
+  "traceability": "113/113",
+  "historical_contract_discrepancies": 0,
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "focused_replay_executions": 5,
+  "focused_unique_candidates_detected": 5,
+  "unique_positive_control_commands": 3,
+  "replay_build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "replay_cleanups": 6,
+  "selected_tests": "Exactly one test per positive and negative command, verified in recorded logs.",
+  "log": "target/quality/wave-ten-gate.log",
+  "log_sha256": "097cc615c8802dc4ecf653d0982db468fe726ca0bc9f7685397f9560302933fb",
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/wave-ten-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_rust_test_hashes": {
+    "crates/inference/tests/model_contracts.rs": "1ec1843dd3e2f584498908a626c5cd008cbcf56fa6511c6443901d7a8842b857",
+    "crates/runtime/tests/operation_attention_contracts.rs": "4d51d02e170cf5d092817c13aa5a5077a7c5827493ec44cb99514c0f58479a8a"
+  },
+  "traceability_hashes": {
+    "quality/traceability.json": "53d1d2d2ba4729f59e56da30fb0d0d20eaf66b370fa9c08c00bd46977917cf05",
+    "quality/contracts.feature": "89f8241bcc789b9e5760536e0ec1aca4dbbd54ac039694a0080d0d40ff391512"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  }
+}
