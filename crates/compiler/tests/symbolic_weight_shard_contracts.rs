@@ -10,6 +10,70 @@ use sha2::{Digest, Sha256};
 mod symbolic_fixture;
 
 #[test]
+fn authenticated_tensor_layout_rejects_independent_names_and_offsets() {
+    let source = symbolic_fixture::fixture(0.25);
+    let root = source.0.with_extension("semantic-tensor-layout");
+    struct Cleanup(std::path::PathBuf);
+    impl Drop for Cleanup {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let _cleanup = Cleanup(root.clone());
+    std::fs::create_dir(&root).unwrap();
+    let artifact = root.join("artifact");
+    std::fs::create_dir(&artifact).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &artifact,
+        1,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let identity = checked_identity(&artifact, None).unwrap();
+    let original = root.join("original");
+    let descriptor_hash =
+        export_layer_weights(&artifact, None, 0..1, &original, 1_000_000).unwrap();
+    let valid = VerifiedLayerWeights::open(&original, &descriptor_hash, &identity, 0..1, 1_000_000)
+        .unwrap();
+    assert_eq!(
+        valid.decode_row_f32("blk.0.attn_norm.weight", 0).unwrap(),
+        [0.5; 4]
+    );
+    let descriptor: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(original.join("weights.json")).unwrap()).unwrap();
+    assert_eq!(descriptor["tensors"][0]["name"], "blk.0.attn_norm.weight");
+    assert_eq!(descriptor["tensors"][0]["offset"], 0);
+    let payload = std::fs::read(original.join("weights.bin")).unwrap();
+    for (name, field, value) in [
+        (
+            "wrong-name",
+            "name",
+            serde_json::json!("blk.0.unexpected.weight"),
+        ),
+        ("wrong-offset", "offset", serde_json::json!(1)),
+    ] {
+        let directory = root.join(name);
+        std::fs::create_dir(&directory).unwrap();
+        let mut changed = descriptor.clone();
+        changed["tensors"][0][field] = value;
+        let encoded = serde_json::to_vec(&changed).unwrap();
+        let authenticated = format!("{:x}", Sha256::digest(&encoded));
+        std::fs::write(directory.join("weights.json"), encoded).unwrap();
+        std::fs::write(directory.join("weights.bin"), &payload).unwrap();
+        // Trust the new descriptor hash while preserving every payload and
+        // tensor hash: neither authentication nor a second invalid field may
+        // mask the independent semantic name and contiguous-offset checks.
+        let error =
+            VerifiedLayerWeights::open(&directory, &authenticated, &identity, 0..1, 1_000_000)
+                .err()
+                .unwrap();
+        assert_eq!(error, "invalid shard tensor layout", "{name}");
+    }
+}
+
+#[test]
 fn authenticated_layer_shards_reject_independent_range_mismatches_and_empty_ranges() {
     let source = symbolic_fixture::fixture_layers(0.25, 3);
     let root = source.0.with_extension("semantic-weight-ranges");

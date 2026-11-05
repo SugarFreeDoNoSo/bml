@@ -1,0 +1,149 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "ab04db2884da3f69e3b1f794f1185e964f7ecf2f",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_weight_shard_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "authenticated_tensor_layout_rejects_independent_names_and_offsets"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-authenticated-tensor-layout.log",
+      "log_sha256": "cb196636972ad40219c1eddad47b2d72bf0e8cb4cc6ef1d7c6f7e79e39b6c444",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "authenticated_tensor_layout_rejects_independent_names_and_offsets",
+          "ok"
+        ]
+      ]
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_weight_shard_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "authenticated_tensor_layout_rejects_independent_names_and_offsets"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-authenticated-tensor-layout.log",
+      "log_sha256": "1de678dde2b6d206749aa15a51a385b6e7ef256452193aa1408674f98039e085",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "authenticated_tensor_layout_rejects_independent_names_and_offsets",
+          "FAILED"
+        ]
+      ],
+      "label": "authenticated-tensor-layout",
+      "candidate": "crates/compiler/src/symbolic_weight_shard.rs:214:17: replace || with && in VerifiedLayerWeights::open",
+      "original_source_sha256": "6838e39baf20f26f360343fba1d4c200d946e8a65a981299c5b6bd68958c01b9",
+      "mutated_source_sha256": "5140435e76ef1b172c10f15e65b765fd648749777cd6c2dbb55f2fc716da2026",
+      "original_diff_sha256": "884a6299ad60837332616e072e8d60a47588ca89f28a8ef8c8c48a949c0ad541",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 214
+        },
+        "start": {
+          "column": 17,
+          "line": 214
+        }
+      },
+      "detected": true
+    }
+  ],
+  "build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "cleaned_packages": [
+    "bml-compiler",
+    "bml-domain",
+    "bml-inference",
+    "bml-runtime"
+  ],
+  "cleanup": [
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-inference",
+        "-p",
+        "bml-runtime"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-nine-contract-replays-before-baselines.log",
+      "log_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-inference",
+        "-p",
+        "bml-runtime"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-nine-contract-replays-restored-authenticated-tensor-layout.log",
+      "log_sha256": "2bf8c871ceab5c419ecd1e16157fec13eae01b71ec2d3bbf2e8b25ee5a236224",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    }
+  ],
+  "observed_at_utc": "2026-11-05T06:20:21.357850+00:00",
+  "status": "passed_focused_replays",
+  "source_override": {
+    "file": "crates/domain/src/transformer/bounded.rs",
+    "reason": "Frozen getter source reconstruction in an isolated worktree only; current builder guard cleanup is outside the byte-identical configuration prefix.",
+    "current_source_sha256": "6d57cd1c4d00e9e275328667ad01c9b0624f74dee738cc24231dfb42a16c0727",
+    "frozen_source_sha256": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+    "unchanged_configuration_prefix_sha256": "f364a7e8047f97e8bd911530897244725da5d9c65af80a9643ddc04752198604",
+    "backup": "target/quality/wave-nine-bounded-current-source.bin"
+  },
+  "current_source_restored_after_replays": true,
+  "patched_test_hashes": {
+    "crates/compiler/tests/symbolic_weight_shard_contracts.rs": "fb17081624b3ced76fddb9fb930cb49782dc543a5236f4c89d9123760ef814d5"
+  },
+  "unchanged_test_inputs": {
+    "crates/domain/tests/bounded_transformer_contracts.rs": "e00c7a73b1495f103f17d4cf4bf06f81f6bcd000263b77b8b9a9836edf8ab943"
+  },
+  "runner_sha256": "a233b5fbe35ea0395d4d095c0b02c1aa1d1488dc41ebbceaeb96acddc14726a6",
+  "full_execution_report": {
+    "path": "target/quality/wave-nine-contract-replays.json",
+    "sha256": "2eec05b3a9385b3a400e0d15e50591452f24cc44ac99fac2f7288263eecabdc3"
+  }
+}
