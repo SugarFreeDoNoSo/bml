@@ -1,0 +1,36 @@
+{
+  "status": "verified_partial_frozen_campaign_not_quality_pass",
+  "observed_at_utc": "2026-11-05T09:14:38.009846+00:00",
+  "original_run_id": 41950170549,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "verified_shards": 57,
+  "candidate_count": 4616,
+  "counts": {
+    "CaughtMutant": 3653,
+    "MissedMutant": 535,
+    "Unviable": 388,
+    "Timeout": 40
+  },
+  "original_sealed_shards": 55,
+  "fresh_recovery_shards": [
+    "21/64",
+    "27/64"
+  ],
+  "inputs": {
+    "prior_combined": "quality/evidence/mutation-9a-forty-five-shards.json",
+    "prior_combined_sha256": "3b2e84e5c95349cce1f508b206d3cbb8da59e34c21af9619154c1a123bf825bc",
+    "original_increment_verification": "quality/evidence/mutation-original-final-increment.json",
+    "original_increment_verification_sha256": "54f7195150e1bb55a25290192117aa6d8f8b40ee8c761638d3b7589306249cfd"
+  },
+  "remaining_original_indices": [
+    20,
+    29,
+    31,
+    39,
+    40,
+    43,
+    46
+  ],
+  "limits": "55 original sealed shards plus separately verified fresh21/fresh27. Raw Missed and Timeout unchanged. Parent20 partial leaves excluded. Seven shard assignments unresolved; campaign union incomplete. Original GitHub run has terminal failure; successful shard collection is not a mutation quality pass or validation of current HEAD."
+}

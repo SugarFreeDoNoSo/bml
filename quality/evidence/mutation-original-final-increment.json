@@ -1,0 +1,1531 @@
+{
+  "status": "verified_incremental_original_sealed_results",
+  "observed_at_utc": "2026-11-05T09:13:37.495876+00:00",
+  "campaign": 41950170549,
+  "attempt": 1,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "source_tree": "42ec84ca07eeb4d826cfe40725b9dac6909a8ffe",
+  "historical_source_files_checked": 718,
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "manifest_sha256": "cfee7050785ae54c46f84826c3c9e155540d4b22a4dab4793adfb14471d9322e",
+  "previous_evidence": "quality/evidence/mutation-9a-forty-three-shards.json",
+  "previous_evidence_sha256": "fdab76ced14686c165ded18e3051816a24e2e003897aeec731f2051219f27cea",
+  "previous_original_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    22,
+    23,
+    24,
+    25,
+    26,
+    28,
+    30,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    41,
+    42,
+    44,
+    45,
+    47,
+    48,
+    49,
+    50,
+    51
+  ],
+  "new_original_indices": [
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63
+  ],
+  "new_shards": [
+    {
+      "shard": "52/64",
+      "job_id": 126992344678,
+      "artifact_id": 13395850139,
+      "artifact_name": "mutation-shard-41950170549-1-52",
+      "zip_sha256": "5d9b17bef9eff918d93c207463fe81516ef9ccac16d1aadad9ebf4b00887b338",
+      "zip_bytes": 2240758,
+      "zip_entries": 178,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/52/extracted/target/quality/shard-result-52.json",
+      "seal_file_sha256": "c5c4c92e63c33f660aa2eb231a20b996a06d863f04952ac31a794e62adbf85d1",
+      "outcomes_sha256": "c92df2b2ad29b0484f5cf13b58df41edc0a5716b25ca30928a43949c91de91d7",
+      "mutants_sha256": "4761bc105a9c04d8637ff6797c8b84fad43d191cb87b41f324f764c4410ac080",
+      "runner_log_sha256": "f9347aa342d136b96aec2486c921188b3e311aa970fad128f04a605da590f1f5",
+      "runner_exit_code": 3,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 46.648326837,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 52.016356578,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "a4aa0bb592511334f396e3d2c9c94b12553d43bdc71869e702aa3c7ef4f70d3e",
+      "counts": {
+        "MissedMutant": 11,
+        "CaughtMutant": 64,
+        "Unviable": 5,
+        "Timeout": 1
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    },
+    {
+      "shard": "53/64",
+      "job_id": 126992344649,
+      "artifact_id": 13394619656,
+      "artifact_name": "mutation-shard-41950170549-1-53",
+      "zip_sha256": "3870e85861f26bf80329b9c764055325be666202eb49fbe2637f3a713008cb08",
+      "zip_bytes": 2067788,
+      "zip_entries": 178,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/53/extracted/target/quality/shard-result-53.json",
+      "seal_file_sha256": "56375e7348f4ae0449c8e433cfbf372787c42d0b9a137c82e2e6a4a6e7e7e067",
+      "outcomes_sha256": "f0cadf4a23923f7ca08ec18fcd3eb99a5b525ed75012222ed96d835438adb40c",
+      "mutants_sha256": "357036fcd7956062a182578ca042149bb8927325493d467d478222d582b78dfd",
+      "runner_log_sha256": "3bd2db78230a43ab13f03d4395b9c6261924c4b42b8c902e65553ff05e94f17c",
+      "runner_exit_code": 3,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 46.458041611,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 51.770694168,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "65503fe6185195dc9e8a9a867455b8bf36079fd5dff007872116138b2031164c",
+      "counts": {
+        "CaughtMutant": 65,
+        "MissedMutant": 7,
+        "Unviable": 8,
+        "Timeout": 1
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    },
+    {
+      "shard": "54/64",
+      "job_id": 126992344738,
+      "artifact_id": 13395813292,
+      "artifact_name": "mutation-shard-41950170549-1-54",
+      "zip_sha256": "3f608471ee88fd8d194173489409828024f936f7621026f419489e1363f5e57a",
+      "zip_bytes": 2205770,
+      "zip_entries": 178,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/54/extracted/target/quality/shard-result-54.json",
+      "seal_file_sha256": "e3a2a2a386894f0f4aaa7b7fd799cee0a74f3173f988243c2ef50b19a625c779",
+      "outcomes_sha256": "321fa8ef6795ecf93b5899e6482321b776f96d70bd3bfe083aedef785486c07f",
+      "mutants_sha256": "81e990df33d102f9dc52c4b7bd4d255d4be6d2cad4bba1b6f80f020d64f2318c",
+      "runner_log_sha256": "e52348ac9d035f478f2d291faaf59dcc81de18cc36db0ab0d02ce94cf1ba672c",
+      "runner_exit_code": 3,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 47.160441007,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 55.787265143,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "97a91b681c722147ca700f298e995ddaa875abaabb04fcd4c380b766c97ceb98",
+      "counts": {
+        "MissedMutant": 8,
+        "CaughtMutant": 65,
+        "Unviable": 7,
+        "Timeout": 1
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    },
+    {
+      "shard": "55/64",
+      "job_id": 126992344964,
+      "artifact_id": 13395292824,
+      "artifact_name": "mutation-shard-41950170549-1-55",
+      "zip_sha256": "6085876acd078f00eb08705aa80d17dc8c0aa1d2ca71d7d281a94f78abde532b",
+      "zip_bytes": 2062026,
+      "zip_entries": 178,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/55/extracted/target/quality/shard-result-55.json",
+      "seal_file_sha256": "713acfff11316fda587a9413265486ab75dd44d6846c1895677e5d81e503ab8e",
+      "outcomes_sha256": "57d3dea5084f0e2bcbf089836b23ae0acac24df14893e90ebc1a13875c88e67c",
+      "mutants_sha256": "162120ed7338b0c9d58dc33714a7c189396d57e1ff05e327837856041993ac2e",
+      "runner_log_sha256": "469f5907943e6cc57bb248e5e4afc553b47ad99b0a7ce83791f1bbaee0cb59b0",
+      "runner_exit_code": 3,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 49.469009041,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 52.33944518,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "a4132fb11e9eeff3f1fc19046279762155988b528c354ddffddddef81e279722",
+      "counts": {
+        "CaughtMutant": 64,
+        "Unviable": 10,
+        "MissedMutant": 6,
+        "Timeout": 1
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    },
+    {
+      "shard": "56/64",
+      "job_id": 126992345117,
+      "artifact_id": 13394389064,
+      "artifact_name": "mutation-shard-41950170549-1-56",
+      "zip_sha256": "02bc3eb9023bab37cb42ed75bcf03d5fecba7effffc1776d3e9fbf9dc979b679",
+      "zip_bytes": 2123810,
+      "zip_entries": 178,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/56/extracted/target/quality/shard-result-56.json",
+      "seal_file_sha256": "2a2eeb203c603a2de048c56b879b6771249a3a5c9750cfbf6987c59127200c25",
+      "outcomes_sha256": "c1498f7c812e6bca10d1f337cbaeed9e9c01fbe1ba13c34e9bed18564451cb9f",
+      "mutants_sha256": "8788793bfe883ee6171de34d794b4429ce4e44cba996c342b578bd8814963e5b",
+      "runner_log_sha256": "28f75714c69f154f330dbe10c96455fc3a8af36cf42eb185d5021a3dccbbd1fd",
+      "runner_exit_code": 2,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 28.545899495,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 29.156739585,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "04a744dc5dc0ded2c42eca8d55ddc7d1540ae24da66b05ad5f1147d359543c31",
+      "counts": {
+        "CaughtMutant": 66,
+        "Unviable": 9,
+        "MissedMutant": 6
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    },
+    {
+      "shard": "57/64",
+      "job_id": 126992345310,
+      "artifact_id": 13396402495,
+      "artifact_name": "mutation-shard-41950170549-1-57",
+      "zip_sha256": "09b522019c338fdc39757bb9e8d36649abc157b5e8a996f2e204ccfbd101cb2d",
+      "zip_bytes": 2230600,
+      "zip_entries": 178,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/57/extracted/target/quality/shard-result-57.json",
+      "seal_file_sha256": "6a216193e52abb9774100a117af55882679d804412893b5d937aeb477dea8333",
+      "outcomes_sha256": "ae30d42cadf9f197c4d41d6614f19325d757d0ca583651bfc733a00a56480342",
+      "mutants_sha256": "049ee94cc88ecb4bcac13ee5324980508ebb3bca281410795ae9bf9abb083e9f",
+      "runner_log_sha256": "28bca4d254748170685d3b267d006666b77f1fc7301e2f9a8c7c0b3820044bd2",
+      "runner_exit_code": 3,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 36.205276612,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 44.503678344,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "1d3c63a394c8797a55acd0e7a4f3bfb816a13d4ba8d684ed5d89f823c8675c95",
+      "counts": {
+        "MissedMutant": 8,
+        "CaughtMutant": 66,
+        "Unviable": 6,
+        "Timeout": 1
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    },
+    {
+      "shard": "58/64",
+      "job_id": 126992345946,
+      "artifact_id": 13395949517,
+      "artifact_name": "mutation-shard-41950170549-1-58",
+      "zip_sha256": "cf832ee85e74d8afbc6a69a412e38c9aced5a2eca59ba96b635fe557a95e1ea7",
+      "zip_bytes": 2020063,
+      "zip_entries": 178,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/58/extracted/target/quality/shard-result-58.json",
+      "seal_file_sha256": "a2c5e554d925fb2edda57519b93f7b6b12443fc7a68288b8a6b0aa67010d53b7",
+      "outcomes_sha256": "07baad0c456e001574e8cf8516ef227340693de80a4e2cd0423bfd413fd5eab3",
+      "mutants_sha256": "07ec16c71337ff9b159422541a23a920d081c445f690cf0ed9cc4098d5848d0e",
+      "runner_log_sha256": "0d82cb6478e1d1c158d20d0c1ba598fbfe7da6d4e5e320010b7c4739e5d31f4f",
+      "runner_exit_code": 3,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 42.045639856,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 45.491306147,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "5327fca4677bc6181bb52fdc3e0902856a4c17d01a1cf25c72b027b2355dc209",
+      "counts": {
+        "CaughtMutant": 62,
+        "Unviable": 12,
+        "MissedMutant": 6,
+        "Timeout": 1
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    },
+    {
+      "shard": "59/64",
+      "job_id": 126992346484,
+      "artifact_id": 13397380014,
+      "artifact_name": "mutation-shard-41950170549-1-59",
+      "zip_sha256": "8fc7edfa522ed71adad49e07e2f2745e0124281bd4321ac3117e71e4fee38114",
+      "zip_bytes": 2191468,
+      "zip_entries": 178,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/59/extracted/target/quality/shard-result-59.json",
+      "seal_file_sha256": "43f914d92f4bd64038b5e054fc52dea2cb07b8d95fb36dd6f5f97d3d9dc3ae51",
+      "outcomes_sha256": "f50feaac286f414fa94ac1b9c15602e605b0015fa833412ad73891cf768cda04",
+      "mutants_sha256": "53221e572babb24fbe57eba12ab7a632c13ba6b71b5d89074f3acbc2eacd755c",
+      "runner_log_sha256": "6b6b19e78e7ad8326b95cce6797b6b6f9f104755efd73206f4dbffa52bd4466d",
+      "runner_exit_code": 2,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 44.331014247,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 46.655887347,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "60aea0bcf13f8baa4db2c2432fa2887d772205020c005541a09d02d698c7c874",
+      "counts": {
+        "CaughtMutant": 64,
+        "MissedMutant": 10,
+        "Unviable": 7
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    },
+    {
+      "shard": "60/64",
+      "job_id": 126992346495,
+      "artifact_id": 13397300759,
+      "artifact_name": "mutation-shard-41950170549-1-60",
+      "zip_sha256": "4c7332a9c3398eaf84d5f6c7efa58b5f42e865c2e554297dcb9fd27b024bd818",
+      "zip_bytes": 2198407,
+      "zip_entries": 178,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/60/extracted/target/quality/shard-result-60.json",
+      "seal_file_sha256": "0e58ac4dd8e33e6ebd557f43dc4a513bdc2508147b2164b11e2cb5b0c659f7bd",
+      "outcomes_sha256": "495419ae3b4a5a5489e34571818683aac65ff7e2047fd082659ec19ce99e27f5",
+      "mutants_sha256": "248cba27e8bcae08d7909554e8a3370b6bdff660330f149252956af0b54ed0dd",
+      "runner_log_sha256": "13bf90a520602211bfc5c8b9026afe102476f9073748170356afeecabdd72a24",
+      "runner_exit_code": 2,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 35.817772674,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 44.049195951,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "cde4411b7e2b66c03aa4aed958dd3267ab17441cbc2d1b7f143a2b6cd2826d0e",
+      "counts": {
+        "CaughtMutant": 65,
+        "MissedMutant": 9,
+        "Unviable": 7
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    },
+    {
+      "shard": "61/64",
+      "job_id": 126992346784,
+      "artifact_id": 13396853690,
+      "artifact_name": "crates/compiler/proptest-regressions/rpn.txt",
+      "zip_sha256": "b0a7091c39ff986ecb011adf4c76f0adddb0fb3bc4056b8daa82b941d9f92c53",
+      "zip_bytes": 2144058,
+      "zip_entries": 180,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/61/extracted/target/quality/shard-result-61.json",
+      "seal_file_sha256": "05e7ab8ff7f574d673c773e4758ea3b3af42bde0fa4d03bc34a672153dbd95ba",
+      "outcomes_sha256": "28e257a83e425da04c1d26a7cb4276b434ed92f0827144fbae2a9d60e7c588dd",
+      "mutants_sha256": "b19a4ec5c2dce4a70447ccee8eeef10e7387645f29b7ab1f6d2a936392500eea",
+      "runner_log_sha256": "f9ddbbe21a1348b7604652460a97d12980b38d7779b6f8c392e64bc84cd575f6",
+      "runner_exit_code": 2,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 48.953780583,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 52.378557328,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "13f08e6c66c9a3ce0ffa7ec992ca5ccfa86aeeb0a27bd689b9a58bf59a4d9b5d",
+      "counts": {
+        "CaughtMutant": 67,
+        "Unviable": 6,
+        "MissedMutant": 8
+      },
+      "generated_seed_count": 2,
+      "generated_regressions_sha256": {
+        "crates/compiler/proptest-regressions/fragment.txt": "67bc0ad348dd5546a984f0867046ac5762e41532cd242ea1126342362216dcdd",
+        "crates/compiler/proptest-regressions/rpn.txt": "a91a0619e33be54617a43b0b59cdc8a1a6ce5968c55557c29a61d87b9fb9a17a"
+      }
+    },
+    {
+      "shard": "62/64",
+      "job_id": 126992346895,
+      "artifact_id": 13396367741,
+      "artifact_name": "mutation-shard-41950170549-1-62",
+      "zip_sha256": "f0e2557b76cb92e08cc0f0ae09b78ee7ec4ca39b2bf01235fb0d8d374ca08292",
+      "zip_bytes": 2290203,
+      "zip_entries": 178,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/62/extracted/target/quality/shard-result-62.json",
+      "seal_file_sha256": "850301c24088366d3a34d1721ec2369bf12355f3ba1bce4db581c21c2329fdc5",
+      "outcomes_sha256": "f093839dcc234f12d128b92558147972cc7df20405b8e24778604080bf047781",
+      "mutants_sha256": "285c213cf66679d39b3f8289c39e271fe4128280a0d433ec9fc7203a42e95e1b",
+      "runner_log_sha256": "9687bf4c1d998c132691826956fd5f0e17ddb5668714947ff9310cd5ab7393d8",
+      "runner_exit_code": 2,
+      "candidate_count": 81,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 30.533901401,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 29.358221761,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "e32536bc786e302515c483c1ea2c80efd6a699e4904e888c193e71a60bc38e68",
+      "counts": {
+        "CaughtMutant": 63,
+        "MissedMutant": 11,
+        "Unviable": 7
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    },
+    {
+      "shard": "63/64",
+      "job_id": 126992346787,
+      "artifact_id": 13398523149,
+      "artifact_name": "mutation-shard-41950170549-1-63",
+      "zip_sha256": "d099df8023da42124a644cdd27d835ef15db910349cf6301e45b2bd22fdfc049",
+      "zip_bytes": 2219028,
+      "zip_entries": 176,
+      "seal_path": "target/quality/wave-thirteen-original-final/original-shards/63/extracted/target/quality/shard-result-63.json",
+      "seal_file_sha256": "e1a11509fb72479b9c29426d955ffe2748c2a50a170925b6dba0c4bf4247d538",
+      "outcomes_sha256": "a39ff0af8203e7015297df79d90215db2e34344ca2aeb435620a4e64543cd4fb",
+      "mutants_sha256": "05c6052b5270254f27d12845411c55a00248c00b0c85712d4bf73e71b7c1c59e",
+      "runner_log_sha256": "81ec20e0be47b678c71f211cd6176d0703175c8109c5b523592384feae2a4a5d",
+      "runner_exit_code": 3,
+      "candidate_count": 80,
+      "baseline_summary": "Success",
+      "baseline_scope": "cargo-mutants27.1.0 packages mutated by this shard; each mutant Build/Test uses --workspace",
+      "baseline_phases": [
+        {
+          "phase": "Build",
+          "duration": 39.173212134,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 46.002477477,
+          "process_status": "Success",
+          "argv": [
+            "/home/runner/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=bml-cli@0.1.0",
+            "--package=bml-compiler@0.1.0",
+            "--package=bml-domain@1.0.0",
+            "--package=bml-gguf@1.0.0",
+            "--package=bml-inference@1.0.0",
+            "--package=bml-model-weights@1.0.0",
+            "--package=bml-runtime@0.1.0",
+            "--package=bml-server@0.1.0",
+            "--package=bml-worker@0.1.0",
+            "--locked"
+          ]
+        }
+      ],
+      "baseline_log_sha256": "95e5162af2eb36675a4e56c64277f41f8f7f27c74d33ff6ab8d328d7b337b2cc",
+      "counts": {
+        "CaughtMutant": 62,
+        "Unviable": 5,
+        "MissedMutant": 10,
+        "Timeout": 3
+      },
+      "generated_seed_count": 0,
+      "generated_regressions_sha256": {}
+    }
+  ],
+  "new_counts": {
+    "MissedMutant": 100,
+    "CaughtMutant": 773,
+    "Unviable": 89,
+    "Timeout": 9
+  },
+  "combined_original_count": 55,
+  "combined_original_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    22,
+    23,
+    24,
+    25,
+    26,
+    28,
+    30,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    41,
+    42,
+    44,
+    45,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63
+  ],
+  "combined_original_counts": {
+    "CaughtMutant": 3525,
+    "MissedMutant": 518,
+    "Unviable": 373,
+    "Timeout": 38
+  },
+  "run_statuses": {
+    "original": {
+      "run_id": 41950170549,
+      "head_sha": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "status": "completed",
+      "conclusion": "failure",
+      "job_status_counts": {
+        "completed/success": 56,
+        "completed/failure": 10
+      },
+      "jobs": [
+        {
+          "id": 126991980464,
+          "name": "prepare",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T01:41:08Z",
+          "completed_at": "2026-11-05T01:42:05Z"
+        },
+        {
+          "id": 126992336449,
+          "name": "shard (9, 9/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T02:10:45Z",
+          "completed_at": "2026-11-05T02:48:35Z"
+        },
+        {
+          "id": 126992336453,
+          "name": "shard (12, 12/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T02:32:09Z",
+          "completed_at": "2026-11-05T03:06:10Z"
+        },
+        {
+          "id": 126992336455,
+          "name": "shard (13, 13/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T02:36:47Z",
+          "completed_at": "2026-11-05T03:24:22Z"
+        },
+        {
+          "id": 126992336467,
+          "name": "shard (10, 10/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T02:18:16Z",
+          "completed_at": "2026-11-05T03:10:50Z"
+        },
+        {
+          "id": 126992336472,
+          "name": "shard (7, 7/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T01:42:07Z",
+          "completed_at": "2026-11-05T02:24:21Z"
+        },
+        {
+          "id": 126992336473,
+          "name": "shard (0, 0/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T01:42:07Z",
+          "completed_at": "2026-11-05T02:40:53Z"
+        },
+        {
+          "id": 126992336503,
+          "name": "shard (8, 8/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T02:10:10Z",
+          "completed_at": "2026-11-05T02:58:36Z"
+        },
+        {
+          "id": 126992336524,
+          "name": "shard (11, 11/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T02:24:23Z",
+          "completed_at": "2026-11-05T03:00:26Z"
+        },
+        {
+          "id": 126992336535,
+          "name": "shard (4, 4/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T01:42:07Z",
+          "completed_at": "2026-11-05T02:36:45Z"
+        },
+        {
+          "id": 126992336557,
+          "name": "shard (2, 2/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T01:42:07Z",
+          "completed_at": "2026-11-05T02:10:43Z"
+        },
+        {
+          "id": 126992336563,
+          "name": "shard (16, 16/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T02:48:37Z",
+          "completed_at": "2026-11-05T03:18:27Z"
+        },
+        {
+          "id": 126992336571,
+          "name": "shard (3, 3/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T01:42:07Z",
+          "completed_at": "2026-11-05T02:10:08Z"
+        },
+        {
+          "id": 126992336580,
+          "name": "shard (17, 17/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T02:58:38Z",
+          "completed_at": "2026-11-05T03:37:06Z"
+        },
+        {
+          "id": 126992336583,
+          "name": "shard (14, 14/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T02:40:54Z",
+          "completed_at": "2026-11-05T03:20:59Z"
+        },
+        {
+          "id": 126992336588,
+          "name": "shard (6, 6/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T01:42:07Z",
+          "completed_at": "2026-11-05T02:32:07Z"
+        },
+        {
+          "id": 126992336595,
+          "name": "shard (15, 15/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T02:48:30Z",
+          "completed_at": "2026-11-05T03:40:29Z"
+        },
+        {
+          "id": 126992336602,
+          "name": "shard (1, 1/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T01:42:07Z",
+          "completed_at": "2026-11-05T02:48:28Z"
+        },
+        {
+          "id": 126992336790,
+          "name": "shard (5, 5/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T01:42:07Z",
+          "completed_at": "2026-11-05T02:18:15Z"
+        },
+        {
+          "id": 126992338488,
+          "name": "shard (19, 19/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T03:06:12Z",
+          "completed_at": "2026-11-05T04:05:28Z"
+        },
+        {
+          "id": 126992338497,
+          "name": "shard (18, 18/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T03:00:27Z",
+          "completed_at": "2026-11-05T03:46:38Z"
+        },
+        {
+          "id": 126992338544,
+          "name": "shard (21, 21/64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-05T03:18:29Z",
+          "completed_at": "2026-11-05T03:51:59Z"
+        },
+        {
+          "id": 126992338567,
+          "name": "shard (20, 20/64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-05T03:10:52Z",
+          "completed_at": "2026-11-05T03:37:32Z"
+        },
+        {
+          "id": 126992338587,
+          "name": "shard (22, 22/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T03:21:01Z",
+          "completed_at": "2026-11-05T04:15:34Z"
+        },
+        {
+          "id": 126992338815,
+          "name": "shard (23, 23/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T03:24:24Z",
+          "completed_at": "2026-11-05T04:17:39Z"
+        },
+        {
+          "id": 126992338885,
+          "name": "shard (24, 24/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T03:37:07Z",
+          "completed_at": "2026-11-05T04:26:26Z"
+        },
+        {
+          "id": 126992338949,
+          "name": "shard (25, 25/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T03:37:34Z",
+          "completed_at": "2026-11-05T04:22:05Z"
+        },
+        {
+          "id": 126992339028,
+          "name": "shard (26, 26/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T03:40:31Z",
+          "completed_at": "2026-11-05T04:14:09Z"
+        },
+        {
+          "id": 126992339813,
+          "name": "shard (27, 27/64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-05T03:46:40Z",
+          "completed_at": "2026-11-05T04:35:57Z"
+        },
+        {
+          "id": 126992340382,
+          "name": "shard (28, 28/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T03:52:01Z",
+          "completed_at": "2026-11-05T04:48:48Z"
+        },
+        {
+          "id": 126992340392,
+          "name": "shard (29, 29/64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-05T04:05:30Z",
+          "completed_at": "2026-11-05T04:55:31Z"
+        },
+        {
+          "id": 126992340531,
+          "name": "shard (30, 30/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T04:14:11Z",
+          "completed_at": "2026-11-05T05:08:19Z"
+        },
+        {
+          "id": 126992340554,
+          "name": "shard (32, 32/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T04:17:41Z",
+          "completed_at": "2026-11-05T05:04:44Z"
+        },
+        {
+          "id": 126992340687,
+          "name": "shard (33, 33/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T04:22:07Z",
+          "completed_at": "2026-11-05T04:48:54Z"
+        },
+        {
+          "id": 126992340694,
+          "name": "shard (31, 31/64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-05T04:15:37Z",
+          "completed_at": "2026-11-05T05:12:38Z"
+        },
+        {
+          "id": 126992340851,
+          "name": "shard (35, 35/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T04:35:59Z",
+          "completed_at": "2026-11-05T05:23:02Z"
+        },
+        {
+          "id": 126992341029,
+          "name": "shard (36, 36/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T04:48:49Z",
+          "completed_at": "2026-11-05T05:39:38Z"
+        },
+        {
+          "id": 126992341096,
+          "name": "shard (34, 34/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T04:26:28Z",
+          "completed_at": "2026-11-05T05:04:18Z"
+        },
+        {
+          "id": 126992341668,
+          "name": "shard (37, 37/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T04:48:56Z",
+          "completed_at": "2026-11-05T05:36:49Z"
+        },
+        {
+          "id": 126992342461,
+          "name": "shard (39, 39/64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-05T05:04:20Z",
+          "completed_at": "2026-11-05T05:14:58Z"
+        },
+        {
+          "id": 126992342503,
+          "name": "shard (38, 38/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T04:55:33Z",
+          "completed_at": "2026-11-05T05:47:17Z"
+        },
+        {
+          "id": 126992342513,
+          "name": "shard (40, 40/64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-05T05:04:46Z",
+          "completed_at": "2026-11-05T05:13:34Z"
+        },
+        {
+          "id": 126992342553,
+          "name": "shard (41, 41/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T05:08:21Z",
+          "completed_at": "2026-11-05T06:02:35Z"
+        },
+        {
+          "id": 126992342771,
+          "name": "shard (43, 43/64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-05T05:13:36Z",
+          "completed_at": "2026-11-05T05:19:43Z"
+        },
+        {
+          "id": 126992342781,
+          "name": "shard (44, 44/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T05:15:00Z",
+          "completed_at": "2026-11-05T06:12:03Z"
+        },
+        {
+          "id": 126992342875,
+          "name": "shard (42, 42/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T05:12:40Z",
+          "completed_at": "2026-11-05T05:54:35Z"
+        },
+        {
+          "id": 126992343007,
+          "name": "shard (46, 46/64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-05T05:23:04Z",
+          "completed_at": "2026-11-05T06:02:49Z"
+        },
+        {
+          "id": 126992343017,
+          "name": "shard (45, 45/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T05:19:45Z",
+          "completed_at": "2026-11-05T06:18:31Z"
+        },
+        {
+          "id": 126992343557,
+          "name": "shard (47, 47/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T05:36:51Z",
+          "completed_at": "2026-11-05T06:25:00Z"
+        },
+        {
+          "id": 126992344171,
+          "name": "shard (48, 48/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T05:39:40Z",
+          "completed_at": "2026-11-05T06:18:58Z"
+        },
+        {
+          "id": 126992344416,
+          "name": "shard (49, 49/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T05:47:19Z",
+          "completed_at": "2026-11-05T06:42:04Z"
+        },
+        {
+          "id": 126992344508,
+          "name": "shard (51, 51/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:02:37Z",
+          "completed_at": "2026-11-05T06:40:42Z"
+        },
+        {
+          "id": 126992344649,
+          "name": "shard (53, 53/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:12:05Z",
+          "completed_at": "2026-11-05T07:01:10Z"
+        },
+        {
+          "id": 126992344678,
+          "name": "shard (52, 52/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:02:51Z",
+          "completed_at": "2026-11-05T06:59:43Z"
+        },
+        {
+          "id": 126992344738,
+          "name": "shard (54, 54/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:18:32Z",
+          "completed_at": "2026-11-05T07:14:57Z"
+        },
+        {
+          "id": 126992344739,
+          "name": "shard (50, 50/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T05:54:37Z",
+          "completed_at": "2026-11-05T06:45:52Z"
+        },
+        {
+          "id": 126992344964,
+          "name": "shard (55, 55/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:19:01Z",
+          "completed_at": "2026-11-05T07:09:38Z"
+        },
+        {
+          "id": 126992345117,
+          "name": "shard (56, 56/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:25:01Z",
+          "completed_at": "2026-11-05T06:51:59Z"
+        },
+        {
+          "id": 126992345310,
+          "name": "shard (57, 57/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:40:43Z",
+          "completed_at": "2026-11-05T07:27:13Z"
+        },
+        {
+          "id": 126992345946,
+          "name": "shard (58, 58/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:42:07Z",
+          "completed_at": "2026-11-05T07:25:46Z"
+        },
+        {
+          "id": 126992346484,
+          "name": "shard (59, 59/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:45:54Z",
+          "completed_at": "2026-11-05T07:29:31Z"
+        },
+        {
+          "id": 126992346495,
+          "name": "shard (60, 60/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:52:01Z",
+          "completed_at": "2026-11-05T07:30:54Z"
+        },
+        {
+          "id": 126992346784,
+          "name": "shard (61, 61/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T06:59:45Z",
+          "completed_at": "2026-11-05T07:45:41Z"
+        },
+        {
+          "id": 126992346787,
+          "name": "shard (63, 63/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T07:09:40Z",
+          "completed_at": "2026-11-05T08:08:21Z"
+        },
+        {
+          "id": 126992346895,
+          "name": "shard (62, 62/64)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-05T07:01:11Z",
+          "completed_at": "2026-11-05T07:32:27Z"
+        },
+        {
+          "id": 127126771315,
+          "name": "aggregate",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-11-05T08:08:24Z",
+          "completed_at": "2026-11-05T08:08:37Z"
+        }
+      ]
+    }
+  },
+  "limits": "Only original sealed 52-63 added to original set43. Recoveries remain separate; incomplete union and no global score pass. API job success is not mutation score success. Terminal job failure does not establish its cause.",
+  "verifier_sha256": "66a0233abd339d1cf4f46e3fb600ff4e5c07a0bc468a30b3435844307ba515b6",
+  "api_snapshot_hashes": {
+    "original-artifacts-page1.json": "0a30d815fded58991baf9ac713a2abda92fdd282d50d2b70ddb8da07875e2b34",
+    "original-jobs-page1.json": "8b105954047abc70e2d3bdd16f2b0e30d10fd1fa72a4517bad42c479b2364f11",
+    "original-run-page1.json": "31c983d6227d89f42987bd7620e05f740bd07d915424be01b1ed3614ed3c9623"
+  }
+}
