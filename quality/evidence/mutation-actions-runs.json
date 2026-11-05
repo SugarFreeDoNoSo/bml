@@ -1,0 +1,33 @@
+{
+  "status": "preparation_failed_fix_validated",
+  "observed_at_utc": "2026-11-05T01:39:56.785481+00:00",
+  "scope": "Full development mutation campaign attempts; no passing complete campaign claim.",
+  "runs": [
+    {
+      "id": 41949562179,
+      "attempt": 1,
+      "url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41949562179",
+      "source_revision": "61d82624ac066068db29330f7c7cb422cd849960",
+      "requested_shards": 64,
+      "conclusion": "failure",
+      "stage": "prepare",
+      "gguf_no_default_features": "passed",
+      "gguf_all_features": "passed",
+      "mutant_shards_started": 0,
+      "failure": "cargo-mutants27.1.0 requires --shard when --sharding is passed; global listing incorrectly included --sharding",
+      "log": "target/quality/mutation-actions-first-failure.log",
+      "log_sha256": "46460f1346b5e95ed8aa2bd3f79ed699d6200de9804c811462ade25606c05080"
+    }
+  ],
+  "fix": {
+    "scope": "Global listing omits sharding options; each partial listing supplies both --sharding round-robin and --shard i/N. Real parser regressions cover full and partial lists.",
+    "python_tooling_passed": 132,
+    "log": "target/quality/mutation-actions-listing-fix-tests.log",
+    "log_sha256": "f28e87a76ff0f5ac585cd8cefd07117626cbb0bf036f03ad00cdf62ca07ef1fd",
+    "source_hashes": {
+      "tools/merge_mutation_shards.py": "9a63c6ce36611e6c6cfb6e18df68392b8ffe4d30c0ca1c3674de4c1f1499400c",
+      "tools/test_merge_mutation_shards.py": "6e252cbc65c23d753b2edc71eef73863401a14e8c5df4c634e9d2b1ba4940ca1"
+    },
+    "full_frozen_prepare_smoke": "pending"
+  }
+}

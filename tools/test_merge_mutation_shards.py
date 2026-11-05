@@ -16,6 +16,7 @@ from merge_mutation_shards import (
     BASE_REVISION, TOOL_VERSION, digest, make_manifest, merge_shards, seal_shard,
     validate_manifest, source_snapshot, verify_worktree, file_digest, write_new,
     workspace_packages,
+    listing_argv,
     main as shard_main,
 )
 import quality
@@ -83,6 +84,30 @@ def rehash(result):
 
 
 class MutationShardContracts(unittest.TestCase):
+    def require_pinned_mutants(self):
+        if not shutil.which("cargo") or not shutil.which("cargo-mutants"):
+            self.skipTest("cargo-mutants 27.1.0 is optional for the parser-only integration check")
+        version = subprocess.check_output(["cargo", "mutants", "--version"], text=True).strip()
+        if version != f"cargo-mutants {TOOL_VERSION}":
+            self.skipTest(f"parser-only integration check needs cargo-mutants {TOOL_VERSION}")
+
+    def minimal_workspace(self, root, functions=1):
+        (root / "Cargo.toml").write_text(
+            '[package]\nname = "merge-shard-cli-probe"\nversion = "0.1.0"\n'
+            'edition = "2021"\n[workspace]\n')
+        (root / "Cargo.lock").write_text(
+            'version = 4\n\n[[package]]\nname = "merge-shard-cli-probe"\nversion = "0.1.0"\n')
+        (root / "src").mkdir()
+        lines = [f"pub fn flag_{index}() -> bool {{ true }}" for index in range(functions)]
+        (root / "src/lib.rs").write_text("\n".join(lines) + "\n")
+        diff = root / "scope.diff"
+        diff.write_text(
+            'diff --git a/src/lib.rs b/src/lib.rs\n--- a/src/lib.rs\n+++ b/src/lib.rs\n'
+            f'@@ -1,{functions} +1,{functions} @@\n'
+            + "\n".join("-" + line.replace("true", "false") for line in lines) + "\n"
+            + "\n".join("+" + line for line in lines) + "\n")
+        return diff
+
     def runner_command(self, root, diff):
         stdout = io.StringIO()
         argv = ["merge_mutation_shards.py", "commands", "--manifest", str(root / "campaign.json"),
@@ -106,24 +131,10 @@ class MutationShardContracts(unittest.TestCase):
         self.assertFalse(any(arg.startswith("--jobs=") for arg in command))
 
     def test_generated_runner_parses_with_real_pinned_cargo_mutants_list_only(self):
-        if not shutil.which("cargo") or not shutil.which("cargo-mutants"):
-            self.skipTest("cargo-mutants 27.1.0 is optional for the parser-only integration check")
-        version = subprocess.check_output(["cargo", "mutants", "--version"], text=True).strip()
-        if version != f"cargo-mutants {TOOL_VERSION}":
-            self.skipTest(f"parser-only integration check needs cargo-mutants {TOOL_VERSION}")
+        self.require_pinned_mutants()
         with tempfile.TemporaryDirectory(prefix="bml-mutants-cli-") as directory:
             root = Path(directory)
-            (root / "Cargo.toml").write_text(
-                '[package]\nname = "merge-shard-cli-probe"\nversion = "0.1.0"\n'
-                'edition = "2021"\n[workspace]\n')
-            (root / "Cargo.lock").write_text(
-                'version = 4\n\n[[package]]\nname = "merge-shard-cli-probe"\nversion = "0.1.0"\n')
-            (root / "src").mkdir()
-            (root / "src/lib.rs").write_text("pub fn flag() -> bool { true }\n")
-            diff = root / "scope.diff"
-            diff.write_text(
-                'diff --git a/src/lib.rs b/src/lib.rs\n--- a/src/lib.rs\n+++ b/src/lib.rs\n'
-                '@@ -1 +1 @@\n-pub fn flag() -> bool { false }\n+pub fn flag() -> bool { true }\n')
+            diff = self.minimal_workspace(root)
             command = self.runner_command(root, diff) + ["--list", "--json"]
             inherited = {**os.environ, "CARGO_MUTANTS_JOBS": "7"}
             result = subprocess.run(command, cwd=root, env=inherited, text=True,
@@ -134,6 +145,32 @@ class MutationShardContracts(unittest.TestCase):
             self.assertEqual(candidates[0]["replacement"], "false")
             self.assertFalse((root / "target/final-mutation-build-0").exists())
             self.assertFalse((root / "target/final-mutation-shard-0").exists())
+
+    def test_listing_argv_uses_sharding_only_with_a_shard(self):
+        diff = Path("scope.diff")
+        global_argv = listing_argv(diff)
+        self.assertNotIn("--sharding", global_argv)
+        self.assertNotIn("--shard", global_argv)
+        self.assertEqual(listing_argv(diff, "0/2"),
+                         global_argv + ["--sharding", "round-robin", "--shard", "0/2"])
+
+    def test_global_and_partial_listings_parse_with_real_pinned_cargo_mutants(self):
+        self.require_pinned_mutants()
+        with tempfile.TemporaryDirectory(prefix="bml-mutants-list-") as directory:
+            root = Path(directory)
+            diff = self.minimal_workspace(root, functions=2)
+
+            def listing(shard=None):
+                result = subprocess.run(listing_argv(diff, shard), cwd=root, text=True,
+                                        capture_output=True, check=True, timeout=60)
+                return json.loads(result.stdout)
+
+            candidates = listing()
+            self.assertEqual(len(candidates), 2)
+            for index in range(2):
+                self.assertEqual(listing(f"{index}/2"), candidates[index::2])
+            self.assertFalse((root / "target").exists())
+            self.assertFalse((root / "mutants.out").exists())
 
     def test_zero_based_round_robin_lists_and_complete_merge(self):
         manifest, results = campaign()

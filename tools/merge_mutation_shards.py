@@ -356,6 +356,15 @@ def verify_full_scope(root, diff, base):
                 "scope diff is not the complete formatting-aware development diff")
 
 
+def listing_argv(diff, shard=None):
+    argv = ["cargo", "mutants", "--workspace", "--cargo-arg=--locked", "--list", "--json",
+            "--in-diff", str(Path(diff).resolve())]
+    # In 27.1.0, --sharding requires --shard even for a list-only invocation.
+    if shard is not None:
+        argv += ["--sharding", "round-robin", "--shard", shard]
+    return argv
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -392,11 +401,9 @@ def main():
             verify_full_scope(root, args.diff, args.base)
             version = subprocess.check_output(["cargo", "mutants", "--version"], cwd=root).decode()
             require(version.strip() == f"cargo-mutants {TOOL_VERSION}", "cargo-mutants version differs")
-            listing = ["cargo", "mutants", "--workspace", "--cargo-arg=--locked", "--list", "--json",
-                       "--in-diff", str(args.diff.resolve()), "--sharding", "round-robin"]
-            candidates = json.loads(subprocess.check_output(listing, cwd=root))
+            candidates = json.loads(subprocess.check_output(listing_argv(args.diff), cwd=root))
             require(args.shards <= len(candidates), "shard count creates empty shards")
-            shards = [json.loads(subprocess.check_output(listing + ["--shard", f"{i}/{args.shards}"],
+            shards = [json.loads(subprocess.check_output(listing_argv(args.diff, f"{i}/{args.shards}"),
                                                         cwd=root)) for i in range(args.shards)]
             manifest = make_manifest(source, file_digest(args.diff), candidates, shards)
             verify_worktree(manifest, root, args.diff)
