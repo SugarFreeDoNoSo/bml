@@ -130,12 +130,23 @@ jobs:
             --timeout 360 --build-timeout 600 > "$evidence/run-shard.sh"
           # Leave 30 minutes for termination and evidence upload before job timeout.
           # The generated script seals reports before returning cargo-mutants 2/3.
-          if timeout --signal=TERM --kill-after=60s 300m bash "$evidence/run-shard.sh" \
-              > "$evidence/runner.log" 2>&1; then
+          # Monitor the timeout process and its runner subtree, separately from
+          # runner.log: guard parsers require the runner's exact output.
+          timeout --signal=TERM --kill-after=60s 300m bash "$evidence/run-shard.sh" \
+            > "$evidence/runner.log" 2>&1 &
+          runner_pid=$!
+          python3 tools/mutation_subshards.py telemetry --pid "$runner_pid" \
+            --source . --output "$evidence/telemetry.jsonl" &
+          telemetry_pid=$!
+          trap 'kill "$telemetry_pid" 2>/dev/null || true; wait "$telemetry_pid" 2>/dev/null || true' EXIT
+          if wait "$runner_pid"; then
             shard_exit=0
           else
             shard_exit=$?
           fi
+          kill "$telemetry_pid" 2>/dev/null || true
+          wait "$telemetry_pid" 2>/dev/null || true
+          trap - EXIT
           printf '%s\n' "$shard_exit" > "$evidence/exit-code.txt"
           df -h . > "$evidence/disk-after.txt"
           case "$shard_exit" in

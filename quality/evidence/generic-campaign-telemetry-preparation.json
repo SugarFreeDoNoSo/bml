@@ -1,0 +1,63 @@
+{
+  "status": "verified_tooling_change_not_campaign_execution",
+  "observed_at_utc": "2026-11-05T11:58:36.559220+00:00",
+  "base_revision": "f1062073f655c95d98b1d250033ca1495c786ba8",
+  "scope": "Background the unchanged timeout/bash runner with exclusive runner.log redirection; sample its actual subtree with existing generic telemetryCLI, boundedJSON32KiB/30s stdout+file. Conditional wait preserves original exit codes and reaps monitor. No argv/seed/source/flags/timeout/memory/score/seal changes. Missing metrics null and active_mutant unknown.",
+  "tested_source_sha256": {
+    ".github/workflows/mutation-campaign.yml": "a9c832c70c5552ad79f85bdd8dad37449f425eb2a274e4739fc9dc2814777556",
+    "tools/test_mutation_campaign.py": "267767a0739379412280a484168319612a2f4fe13976ebff0f45fff1a9413493"
+  },
+  "python_tooling_tests": 236,
+  "python_exit_code": 0,
+  "python_log_sha256": "539f15cd7db6d19001e7741803ec33e18bf7f7320c7ccafb48b0f36e3f5f4c6f",
+  "actionlint": {
+    "version": "1.7.12",
+    "exit_code": 0,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "independent_review_sha256": "86f32fb443288ce56964b1eefebc4640d67a5da08db1998c7e7ecc0294aa67b5",
+  "archive": "quality/evidence/generic-campaign-telemetry-preparation.tar.gz",
+  "archive_sha256": "f5e13ee34c1b8d79244b649443f733edd7917eb2a8e2eb14705d824bf92845d0",
+  "archive_bytes": 6577,
+  "archive_members": {
+    "NOTES.md": {
+      "sha256": "2db85ede55e4096c5b61142175b0a4b5ac9b2af7508ec321c530544eec59a739",
+      "bytes": 3335
+    },
+    "actionlint.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "campaign-telemetry.patch": {
+      "sha256": "a82f25a1a177129ca863220f0fcdaa9a378d3e50487f6857ee06ebd36dd79238",
+      "bytes": 6604
+    },
+    "campaign-telemetry.patch.sha256": {
+      "sha256": "832bbc11c12f800660b5277661b8559ce461873da8a0121eab266aa11fe906fd",
+      "bytes": 91
+    },
+    "python-tests.log": {
+      "sha256": "539f15cd7db6d19001e7741803ec33e18bf7f7320c7ccafb48b0f36e3f5f4c6f",
+      "bytes": 449
+    },
+    "term-probe.log": {
+      "sha256": "b312debd7c14f9eab1bc956fdc86d1deb60b41bdebf31df168ddaca5d91bbbe9",
+      "bytes": 514
+    },
+    "term-probe.py": {
+      "sha256": "5983c418c09b67fa588bc5fa20a6be257c3c510c30acbaabc138b519e401e91c",
+      "bytes": 2171
+    },
+    "independent-review.json": {
+      "sha256": "86f32fb443288ce56964b1eefebc4640d67a5da08db1998c7e7ecc0294aa67b5",
+      "bytes": 3758
+    }
+  },
+  "known_preexisting_limitation": "Outer-shell-only TERM may leave timeout/runner alive in both original foreground and new background implementations. This change cleans the new monitor and preserves original runner cancellation semantics; not claimed fixed. Paired disposable-process probes retained.",
+  "test_method": "Actual workflow fragment, real CLI and proc sampling; deterministic descendant-observed AND stdout/file-flushed handshake. Actual exit0/2/3/124/143 log/status preservation, stdout/file equality, boundedJSON and process reaping. Not a fixed sleep startup assumption.",
+  "unchanged_policy_sha256": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  }
+}
