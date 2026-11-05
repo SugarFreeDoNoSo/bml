@@ -37,7 +37,7 @@ con reparto round-robin entre réplicas completas. Falta ejecución numérica co
 
 - [x] 8.6.6 Preparar el diagnóstico actual de prompts adicionales Hello/Hi, con IDs confirmados por encoder Rust, contexto2, modos nativo y BML separados y protocolos escritos antes del forward. C115 verifica observador completo por roles contra el modelo nativo pequeño, selección estricta y rechazo de una activación realmente fuera de un perfil válido; fuente histórica fija permanece intacta. Protocolo operativo en `docs/REAL_PROMPT_DIAGNOSTICS.md`.
 
-- [ ] 8.6.7 Capturar build original y fuentes actuales de ese driver en target exclusivo; verificar ambos preflights nativos Hello/Hi antes de ejecutar los dos casos completos con cachés independientes, max_nodes=0 y vectores íntegros por posición. Sólo un resumen completo y verificado por caso aporta evidencia; los reportes parciales o sólo nativos no cierran esta tarea ni 8.6.
+- [ ] 8.6.7 Capturar build original y fuentes actuales de ese driver en target exclusivo; verificar ambos preflights nativos Hello/Hi antes de ejecutar los dos casos completos con cachés independientes, max_nodes=0 y vectores íntegros por posición. Sólo un resumen completo y verificado por caso aporta evidencia; los reportes parciales o sólo nativos no cierran esta tarea ni 8.6. Captura original del build bbb8973 verificada y conservada en `quality/evidence/current-real-prompts-build-native.tar.gz`; ambos preflights nativos completaron. Hello ejecuta BML con PID4116115 y Hi queda en cola serial; el lanzamiento no acredita resultados completos (`quality/evidence/current-real-prompts-launch.json`).
 
 ## 9. Pruebas de concurrencia
 

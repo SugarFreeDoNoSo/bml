@@ -1,0 +1,145 @@
+{
+  "status": "verified_build_and_native_only_capture",
+  "source_revision": "bbb89735100e2e4ec6486f3b7029e48977944f3c",
+  "archive": "quality/evidence/current-real-prompts-build-native.tar.gz",
+  "bytes": 1279925,
+  "sha256": "b841fbe317c8dd96e37f6975f606adfac1adf365bb38d5cb625cd27a478f8528",
+  "members": [
+    {
+      "path": "README.txt",
+      "bytes": 603,
+      "sha256": "f4db766636be0e8a83f0ab7b2fef7c99290926855c055bba64286e58ec52b94a"
+    },
+    {
+      "path": "build-report.json",
+      "bytes": 11684,
+      "sha256": "696abc1f09f795d9301dbad44a5782a8ab65f0d4ec4c58489a50a7cb4c88a4db"
+    },
+    {
+      "path": "cargo-build.jsonl",
+      "bytes": 94707,
+      "sha256": "ad3c36d3dc12d1da489e1b2a97b42713b44418674cb55ed7a43dd06b1456608b"
+    },
+    {
+      "path": "cargo-build.stderr",
+      "bytes": 120246,
+      "sha256": "f8e987bb3d3b3d186cada0aa8629c17d5ce5ffd6acecda2fd351bb2cf80891cd"
+    },
+    {
+      "path": "controllers/build-current-real-prompts.py",
+      "bytes": 7808,
+      "sha256": "c1039d0b3c918a982ca887f3b73af9fad5e13cd7e0e29f6678703051dd74322d"
+    },
+    {
+      "path": "controllers/run-current-prompt-full-cases.py",
+      "bytes": 5588,
+      "sha256": "5e313841dbb0935bbc7b1c719ff70c251981354d108cf1d7e5d634131d14a560"
+    },
+    {
+      "path": "controllers/run-current-prompt-preflights.py",
+      "bytes": 4632,
+      "sha256": "e244b3783b6867aa09e706e1eb8dfd1528694e385eeb5a970dac9eb0ed873be2"
+    },
+    {
+      "path": "native-hello.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "native-hello.log",
+      "bytes": 137669,
+      "sha256": "79234db3e501ee7f12c1f42f6a0e6ca51bd4ed5d6db45555d519e8746986f851"
+    },
+    {
+      "path": "native-hello/native-0.f64le",
+      "bytes": 256000,
+      "sha256": "0481d190297c6f1bb2224c175f7c0ac5808b4883760b94bf3a615bccce30449d"
+    },
+    {
+      "path": "native-hello/native-1.f64le",
+      "bytes": 256000,
+      "sha256": "3420dc3ba326b46dfe18f4116a867be657d9b475bc4604052b153707c5f1bcd9"
+    },
+    {
+      "path": "native-hello/native-position-0.json",
+      "bytes": 109103,
+      "sha256": "4e3ff53f9c3ca2ee89bff40a30a16a33bc76114faaf7509ec3da9f11ea4a3381"
+    },
+    {
+      "path": "native-hello/native-position-1.json",
+      "bytes": 109078,
+      "sha256": "5faaae9e7413c3a3ef6db97ffc799ee918cdcad91fd0ed1ef9d47be170e5859d"
+    },
+    {
+      "path": "native-hello/native-preflight-summary.json",
+      "bytes": 248960,
+      "sha256": "d0fdd4589767374832e7803eaac07a6277d81351119d4116e11c6a97a751263b"
+    },
+    {
+      "path": "native-hello/protocol.json",
+      "bytes": 3945,
+      "sha256": "2ef74d8ba8d1790046667a9d3dbf0ee0ffce35e64e8998ae5c3914ede341b647"
+    },
+    {
+      "path": "native-hi.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "native-hi.log",
+      "bytes": 137689,
+      "sha256": "627dbf8a630158a6733c462eda347bcb37964d3d151bd619dce2229228b8dbcb"
+    },
+    {
+      "path": "native-hi/native-0.f64le",
+      "bytes": 256000,
+      "sha256": "0481d190297c6f1bb2224c175f7c0ac5808b4883760b94bf3a615bccce30449d"
+    },
+    {
+      "path": "native-hi/native-1.f64le",
+      "bytes": 256000,
+      "sha256": "7c550e8e69edbf3fc30941a945b59aeae935ab2647982627009ad34b3b52a852"
+    },
+    {
+      "path": "native-hi/native-position-0.json",
+      "bytes": 109099,
+      "sha256": "3bd9361ab8739eabd6b2de00560030c2c1b8d52a1fbb6f9634b089140bd526b7"
+    },
+    {
+      "path": "native-hi/native-position-1.json",
+      "bytes": 109102,
+      "sha256": "50d562dec6b4512dc90128299bb995e343625a7d397239aa3e9c065cd0d660c3"
+    },
+    {
+      "path": "native-hi/native-preflight-summary.json",
+      "bytes": 248976,
+      "sha256": "65e07b474d3024f847a0aa8b54842a8ca3bf6c155bc9b66b1f892b4e879f920f"
+    },
+    {
+      "path": "native-hi/protocol.json",
+      "bytes": 3941,
+      "sha256": "fc4100bb4b789a0d8611ee2ddbf20bd9759c36545c6d836fae9405bfad0fb7e8"
+    },
+    {
+      "path": "native-preflights.json",
+      "bytes": 598860,
+      "sha256": "1f4286479a361491fb0dc9f7b52e7c493c213457af8fd4babbdd364db13d8cd1"
+    },
+    {
+      "path": "release-helper-tests.log",
+      "bytes": 964,
+      "sha256": "78ecf436f921ea83afac966efb684707f9f7f49bd365351a1d4cb9c15e28154e"
+    },
+    {
+      "path": "source-after.json",
+      "bytes": 139614,
+      "sha256": "ad751a2048ee37f16db9e9a075376234b8419495a3c1338d61a22c0dbfe1e7a7"
+    },
+    {
+      "path": "source-before.json",
+      "bytes": 139614,
+      "sha256": "ad751a2048ee37f16db9e9a075376234b8419495a3c1338d61a22c0dbfe1e7a7"
+    }
+  ],
+  "scope": "Clean current-source original compilation and two native-only preflights. No full BML result in this archive."
+}

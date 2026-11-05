@@ -1,0 +1,33 @@
+{
+  "status": "started_diagnostic_only",
+  "observed_at_utc": "2026-11-05T08:50:55.087915+00:00",
+  "run_id": 41997136527,
+  "attempt": 1,
+  "url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41997136527",
+  "controller_revision": "cca182543987dfc8cf39e3966ca527c28011166e",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "mode": "diagnostic84",
+  "scheduled_shards": [
+    "84/256"
+  ],
+  "jobs": [
+    {
+      "job_id": 127142973506,
+      "name": "prepare",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "job_id": 127144578053,
+      "name": "leaf (84)",
+      "status": "in_progress",
+      "conclusion": null
+    }
+  ],
+  "snapshots": {
+    "target/quality/leaf84-diagnostic-dispatch-request.json": "d2c5817cddd2bdea17e5e44841b9d573202ef2bfdce30a83c67984230749db7e",
+    "target/quality/leaf84-diagnostic-runs.json": "5c8fba8755c6dafa30e3bffde9b0ee42d15693d21fc4a39ab2c21e0a93630b12",
+    "target/quality/leaf84-diagnostic-jobs.json": "60bb97d4a01e55f9c7de50501fdc5eb7d993f4c35fababaffab2145baf487ca6"
+  },
+  "scope": "Only diagnostic leaf84; prepare still lists256 and executes a real workspace baseline. No parent envelope or mutation quality pass is permitted."
+}

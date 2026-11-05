@@ -1,0 +1,104 @@
+{
+  "status": "full_Hello_running_Hi_queued",
+  "observed_at_utc": "2026-11-05T08:44:05.522081+00:00",
+  "source_revision": "bbb89735100e2e4ec6486f3b7029e48977944f3c",
+  "source_tree": "81da51727c6598fc70a863f4177b71eb2baf352f",
+  "tracked_inputs_before_after": 796,
+  "source_inputs_unchanged": true,
+  "binary_sha256": "f65902f207d85ff0cb0a3ccb148604d1f177199c7de8fdaead0bb0ffbd931c2f",
+  "binary": "/home/dev/Work/bml/target/quality/real-prompts-bbb89735100e/real-prompts-measured",
+  "build_command": [
+    "cargo",
+    "test",
+    "--release",
+    "--verbose",
+    "-p",
+    "bml-runtime",
+    "--test",
+    "real_model_two_position_diagnostic",
+    "--locked",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "original_compiler_capture": true,
+  "fresh_numeric_packages": [
+    "bml_gguf",
+    "bml_domain",
+    "bml_model_weights",
+    "bml_inference",
+    "bml_compiler",
+    "bml_runtime"
+  ],
+  "release_helper_tests": {
+    "command": [
+      "/home/dev/Work/bml/target/quality/real-prompts-bbb89735100e/real-prompts-measured",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "passed": 3,
+    "ignored": 3,
+    "log": "/home/dev/Work/bml/target/quality/real-prompts-bbb89735100e/release-helper-tests.log",
+    "log_sha256": "78ecf436f921ea83afac966efb684707f9f7f49bd365351a1d4cb9c15e28154e"
+  },
+  "archive": "quality/evidence/current-real-prompts-build-native.tar.gz",
+  "archive_sha256": "b841fbe317c8dd96e37f6975f606adfac1adf365bb38d5cb625cd27a478f8528",
+  "native_preflights": [
+    {
+      "prompt": "Hello",
+      "ids": [
+        1,
+        15043
+      ],
+      "exit_code": 0,
+      "status": "native_only_preflight_pass",
+      "bml_executed": false,
+      "positions": [
+        {
+          "position": 0,
+          "native_argmax": 29958,
+          "cache_position": 1
+        },
+        {
+          "position": 1,
+          "native_argmax": 29892,
+          "cache_position": 2
+        }
+      ],
+      "max_rss_kib": 656944,
+      "max_pss_kib": 654886
+    },
+    {
+      "prompt": "Hi",
+      "ids": [
+        1,
+        6324
+      ],
+      "exit_code": 0,
+      "status": "native_only_preflight_pass",
+      "bml_executed": false,
+      "positions": [
+        {
+          "position": 0,
+          "native_argmax": 29958,
+          "cache_position": 1
+        },
+        {
+          "position": 1,
+          "native_argmax": 29892,
+          "cache_position": 2
+        }
+      ],
+      "max_rss_kib": 657124,
+      "max_pss_kib": 654869
+    }
+  ],
+  "execution": {
+    "concurrency": 1,
+    "controller_pid": 4116114,
+    "Hello_pid": 4116115,
+    "Hello_started_at_utc": "2026-11-05T08:18:24.486385+00:00",
+    "Hi_status": "queued",
+    "report": "target/quality/real-prompts-bbb89735100e/full-cases.json"
+  },
+  "limits": "Running PID confirmed against immutable executable now. Both complete finite vectors and all ten actual BML families must finish per case before independent result verification. No preset tolerance, parity, throughput or task8.6 completion claimed."
+}
