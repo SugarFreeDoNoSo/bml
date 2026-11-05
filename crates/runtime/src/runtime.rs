@@ -130,16 +130,16 @@ impl Runtime {
         self.hot_loop.stack_capacity()
     }
 
-    /// Ejecuta sub-fragmentos L1i secuencialmente con cambio de hot loop.
+    /// Ejecuta subfragmentos secuencialmente sobre la misma pila del intérprete.
     ///
-    /// Cada sub-fragmento cabe en L1i (< 30 KB de bytecode). El runtime
-    /// los ejecuta uno a uno, cambiando el slice de ops entre cada uno.
-    /// Los pesos se sirven desde L2/L3 (no se copian al sub-fragmento).
+    /// Los opcodes se leen como datos mediante slices prestados. Su tamaño
+    /// no mide el código máquina del dispatcher ni acredita residencia en L1i.
+    /// El contexto y el buffer de resultados también se prestan.
     ///
     /// # Cero allocs
     ///
-    /// La pila se reutiliza entre sub-fragmentos. No se hacen allocs
-    /// durante la ejecución.
+    /// La pila se reutiliza entre subfragmentos. Con capacidad de pila
+    /// suficiente, no se hacen asignaciones durante la ejecución.
     pub fn execute_sub_fragments(
         &mut self,
         sub_fragments: &[bml_compiler::distributed::SubFragment],
@@ -148,15 +148,7 @@ impl Runtime {
     ) -> f64 {
         self.hot_loop.stack_clear();
         for sf in sub_fragments {
-            // El cambio de hot loop es O(1): dispatch_ops recibe un nuevo slice.
-            // El L1i se carga con el bytecode del nuevo sub-fragmento.
-            self.hot_loop.execute_fragment_full(
-                &bml_compiler::Fragment {
-                    ops: sf.ops.clone(),
-                },
-                ctx,
-                buf,
-            );
+            self.hot_loop.execute_ops_full(&sf.ops, ctx, buf);
         }
         self.hot_loop.stack_pop().unwrap_or(f64::NAN)
     }
@@ -166,11 +158,11 @@ impl Runtime {
     /// Cada fragmento lee del `ResultBuffer` y escribe a él.
     /// Los fragmentos se ejecutan en orden, pasando resultados via slots.
     ///
-    /// # Cambio de hot loop
+    /// # Cambio de fragmento
     ///
     /// Cuando hay más fragmentos que cores, un core ejecuta varios
-    /// fragmentos secuencialmente. El cambio es cargar el siguiente
-    /// fragmento (< 32KB) en L1i.
+    /// fragmentos secuencialmente. El mismo dispatcher recibe otro slice
+    /// de bytecode; ese cambio de datos no implica cargar nuevo código en L1i.
     pub fn execute_fragments_sequential(
         &mut self,
         fragments: &[OperationFragment],

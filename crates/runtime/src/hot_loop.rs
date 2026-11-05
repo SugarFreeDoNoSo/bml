@@ -109,9 +109,20 @@ impl HotLoop {
         ctx: &bml_domain::EvalContext,
         buf: &mut crate::buffer::ResultBuffer,
     ) {
+        self.execute_ops_full(&fragment.ops, ctx, buf);
+    }
+
+    /// Execute borrowed opcodes without clearing the shared stack or copying bytecode.
+    #[inline]
+    pub(crate) fn execute_ops_full(
+        &mut self,
+        ops: &[RpnOp],
+        ctx: &bml_domain::EvalContext,
+        buf: &mut crate::buffer::ResultBuffer,
+    ) {
         dispatch_ops(
             &mut self.stack,
-            &fragment.ops,
+            ops,
             ctx,
             &mut crate::buffer::ResultStore::Contiguous(buf),
         );

@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "base_revision": "9aa114a9d74e72e8f09d45e367df5caaa936b375",
+  "command": "./scripts/check.sh 9aa114a",
+  "exit_code": 0,
+  "observed_at_utc": "2026-11-05T00:55:14.481300+00:00",
+  "scope": "Integrated working tree for the first subagent wave. Exact compiled source hashes are recorded; this is not a final release/mutation/PMU gate.",
+  "historical_contract_discrepancies": 0,
+  "traceability": "105/105",
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "log": "target/quality/wave-one-gate.log",
+  "log_sha256": "38b2b353b55a59a1a58745dd690aa931c0990bf479d65846d69f314c771ce2f2",
+  "tested_source_hashes": {
+    "crates/compiler/tests/causal_contracts.rs": "09a6a9eefb5d429bee3968dfd354244c2b740e75879498aa02794b7f8b8b35c2",
+    "crates/runtime/src/hot_loop.rs": "4a0af81627bfb43d78516f5fada49cef5dc31cebc772a663d603849d9f2217c9",
+    "crates/runtime/src/runtime.rs": "c46e2b4ef384913f3447589e3867aceb3f252b37e43ba77273b43357b97d43d0",
+    "crates/runtime/tests/subfragment_allocation_contracts.rs": "6d0a707c82f0a025cf36322a50321b5dc822e66cf702680ba3c0356f1112042e",
+    "tools/validate_l1i_campaign.py": "9b69c90a07207ff2f440528c235ec25b406506eb6a61917cd1f2050309d13f36",
+    "tools/test_validate_l1i_campaign.py": "c15f7129876ea5195c0eb9333928f5e53d8531890d98d86e40a51ed041e58979"
+  }
+}

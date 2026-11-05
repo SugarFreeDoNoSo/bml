@@ -65,6 +65,8 @@
 - [ ] 5.10 Pruebas de estrés finales en entorno cloud. (**Deferred**: requires cloud environment and bare metal PMU. Current environment lacks both.)
 - [ ] 5.11 Validar hito completo: ejecución `.bmlgraph`, tamaño real del hot loop, RPC y pruebas cloud. Las pruebas actuales no acreditan todos estos contratos.
 
+- [x] 5.12 Eliminar asignaciones durante `Runtime::execute_sub_fragments` con pila y buffers preasignados. La ruta usa un slice prestado compartido con `HotLoop::execute_fragment_full`; el contrato público comprueba cuatro subfragmentos, bucles anidados, pila, resultados y entradas vacías. Registra cero asignaciones; restaurar `ops.clone()` en una copia aislada provoca 128 asignaciones y hace fallar la prueba. Evidencia: `quality/evidence/subfragment-allocation-contract.json`. Esto no acredita residencia L1i ni throughput.
+
 ## 6. Cierre del Change
 
 - [x] 6.1 `cargo test --workspace` pasa (bml-domain, bml-parser, bml-compiler, bml-runtime).

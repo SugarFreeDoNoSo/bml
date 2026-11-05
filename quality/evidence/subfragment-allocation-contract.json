@@ -1,0 +1,21 @@
+{
+  "base_commit": "9aa114a9d74e72e8f09d45e367df5caaa936b375",
+  "scope": "Public sequential subfragment API with preallocated stack and buffers; no cache-residency or throughput claim.",
+  "baseline": {
+    "command": "cargo test -p bml-runtime --test subfragment_allocation_contracts --locked",
+    "passed": 1,
+    "failed": 0
+  },
+  "negative_control": {
+    "change": "restore per-subfragment ops.clone()",
+    "exit_code": 101,
+    "detected": true,
+    "log": "target/quality/wave-subfragment-allocation-negative.log",
+    "log_sha256": "8a0748f7ebafca54a718752ef10acfd996f01dd71099101d8f21916482c254db"
+  },
+  "source_hashes": {
+    "crates/runtime/src/runtime.rs": "c46e2b4ef384913f3447589e3867aceb3f252b37e43ba77273b43357b97d43d0",
+    "crates/runtime/src/hot_loop.rs": "4a0af81627bfb43d78516f5fada49cef5dc31cebc772a663d603849d9f2217c9",
+    "crates/runtime/tests/subfragment_allocation_contracts.rs": "6d0a707c82f0a025cf36322a50321b5dc822e66cf702680ba3c0356f1112042e"
+  }
+}
