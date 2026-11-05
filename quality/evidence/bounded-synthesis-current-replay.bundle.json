@@ -1,0 +1,150 @@
+{
+  "status": "verified_one_current_whole_workspace_replay",
+  "observed_at_utc": "2026-11-05T10:02:44.579095+00:00",
+  "archive": "quality/evidence/bounded-synthesis-current-replay.tar.gz",
+  "archive_sha256": "9bc463e1d685ce0cf0d52c704e60b393f4dee9e457df4077e5411b09da74c553",
+  "archive_bytes": 138671,
+  "members": {
+    "execution/artifact-hashes.json": {
+      "sha256": "fe928b36dc4ea03a1372587a4728a063f04ab17dd91335349fca58dec71ba98d",
+      "bytes": 5440
+    },
+    "execution/baseline-build.stderr": {
+      "sha256": "a1ff38f33515faeb7cdaf78b81ad1cd0cae00144683dbbfe844d006b47d3d2eb",
+      "bytes": 29512
+    },
+    "execution/baseline-build.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/baseline-test.stderr": {
+      "sha256": "0da17116d99fe1d425b93da201e9c943da3b4125e2bc0996afe9bd3518712932",
+      "bytes": 28225
+    },
+    "execution/baseline-test.stdout": {
+      "sha256": "d9ea65419baebd0acc02d6f78690301cb39530decf2bd272e505762083423f6f",
+      "bytes": 90564
+    },
+    "execution/cargo-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/cargo-version.stdout": {
+      "sha256": "9950bbb2d5c3417b1a068f0e81f6d3cac991a363193bdf2a22d447f5acf8b503",
+      "bytes": 36
+    },
+    "execution/clean-before-baseline.stderr": {
+      "sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "bytes": 21
+    },
+    "execution/clean-before-baseline.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-before-synthesis-prefix-reservation.stderr": {
+      "sha256": "2cb65cc6f6c475dfd99a89b52bbd14143c2e69195012f282af0169836d238cbf",
+      "bytes": 39
+    },
+    "execution/clean-before-synthesis-prefix-reservation.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/clean-restored-synthesis-prefix-reservation.stderr": {
+      "sha256": "2cb65cc6f6c475dfd99a89b52bbd14143c2e69195012f282af0169836d238cbf",
+      "bytes": 39
+    },
+    "execution/clean-restored-synthesis-prefix-reservation.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/current-mutants.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/current-mutants.stdout": {
+      "sha256": "a0fc4f2d0e9b4979f255cdf4375ce5a9429cfc56200f9d60a0bca8aaa53e579e",
+      "bytes": 77496
+    },
+    "execution/final-summary.json": {
+      "sha256": "9a5fe650c210bc98db262eb5f0be97fc64822bbce945957304e0b7594b9fda33",
+      "bytes": 4042
+    },
+    "execution/prepare-report.json": {
+      "sha256": "a9c4548c34d06d5fd67aaddf74308ce3e55096836debe95922f660d5c00a7e9a",
+      "bytes": 4136
+    },
+    "execution/producer-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/producer-version.stdout": {
+      "sha256": "ba3c35073708a1da94eef75cafca1e263013077a73d090b5a798135dac2ffbe5",
+      "bytes": 21
+    },
+    "execution/report.json": {
+      "sha256": "71f62bb5cab76b3b8a5dfd47c7d0b745497e454f6166a172891a7e5b777c092a",
+      "bytes": 12679
+    },
+    "execution/runner.py": {
+      "sha256": "0ea44340a5f133fe318c3a3ad8d4accbadf620ef27bf27aaddc6cdbf03dc3256",
+      "bytes": 24445
+    },
+    "execution/rustc-version.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/rustc-version.stdout": {
+      "sha256": "778fbc643a806f0dd123c056e66201d7e8a56a61928ec0a33171be8d6c2d5a37",
+      "bytes": 196
+    },
+    "execution/source.json": {
+      "sha256": "4070a16e56e5851b7a7b5f489b7cdf9515e359f60483cf706ebc418a3b041ceb",
+      "bytes": 100558
+    },
+    "execution/synthesis-prefix-reservation-build.stderr": {
+      "sha256": "028ff577af3458e035719701e76cff8c15e838151723e6fc37e5f8b12afd23be",
+      "bytes": 29409
+    },
+    "execution/synthesis-prefix-reservation-build.stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/synthesis-prefix-reservation-test.stderr": {
+      "sha256": "5e00b934d1538d1b60c7901386f61ab0c2c31472819d435aef258b181fa399ac",
+      "bytes": 17259
+    },
+    "execution/synthesis-prefix-reservation-test.stdout": {
+      "sha256": "53c98b48ede8667a68b1518dc5651f62940cb81d9a0efadf227588e4a9d00d45",
+      "bytes": 44543
+    },
+    "execution/workspace-metadata.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "execution/workspace-metadata.stdout": {
+      "sha256": "6af93e24d2a2615cd7c133e9594f122777c6043b9b516b42f6e27c4f7f8eb504",
+      "bytes": 69386
+    },
+    "source/final-two-files.patch": {
+      "sha256": "585108bf881b414a377c67b26585eb81ace10e1023ddd3a4f166d5cd8a1f9bcc",
+      "bytes": 5181
+    },
+    "source/original-equivalence-proof.json": {
+      "sha256": "f886f2f6ffdba4fda316e41ff9328b42cd93d0e8952e0884ec26c1da575f85c5",
+      "bytes": 4430
+    },
+    "source/progress-precontrol.patch": {
+      "sha256": "9e59038d4ef606949a08af88e54cd5385992a479939d56170ac94ae872a1415d",
+      "bytes": 930
+    },
+    "execution/canonical-main.log": {
+      "sha256": "6a3991a026e8ded7164d498f3767a72ea416f614b814396f161adefd97eb3282",
+      "bytes": 116206
+    }
+  },
+  "root_independent_rehash": {
+    "tracked_files": 801,
+    "mismatches": 0
+  },
+  "scope": "One actual27.1 current plus-to-multiply candidate in checked_sub(prefix.len()+1); isolated whole-workspace baseline1000pass, mutantBuild0/Test101 and5realFAILED without timeout. Small progress assertion fails before unchanged255-node case. Current-main canonical gate1001Rust/235Python passes separately. Restored source/owned Cargo target, no historical9a reclassification, no full mutation or model qualification."
+}

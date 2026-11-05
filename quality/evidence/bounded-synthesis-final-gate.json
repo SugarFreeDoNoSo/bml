@@ -1,0 +1,44 @@
+{
+  "status": "canonical_gate_passed",
+  "observed_at_utc": "2026-11-05T10:02:44.533967+00:00",
+  "base_revision": "b524e63c281f4c6d15dfe45633d4beb21c1d1462",
+  "command": [
+    "./scripts/check.sh",
+    "b524e63c281f4c6d15dfe45633d4beb21c1d1462"
+  ],
+  "exit_code": 0,
+  "source_overlay_sha256": "585108bf881b414a377c67b26585eb81ace10e1023ddd3a4f166d5cd8a1f9bcc",
+  "tested_file_sha256": {
+    "crates/domain/src/symbolic/synthesis.rs": "f9350911dffe414773cbfe80653018814149a427adaa8b6792aa550bd6b86cc6",
+    "crates/domain/tests/symbolic_synthesis_contracts.rs": "f7d4c4dd8270b51a9f6de41b1d4c864db1c8f1b56f0b06725aebe72128d410a5"
+  },
+  "rust_tests_passed": 1001,
+  "rust_suites": 145,
+  "python_tooling_tests": 235,
+  "historical_contract_discrepancies": 0,
+  "traceability": "115/115",
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "log": "target/quality/synthesis-metadata-precontrol-final-gate.log",
+  "log_sha256": "6a3991a026e8ded7164d498f3767a72ea416f614b814396f161adefd97eb3282",
+  "scope": "Checked finite prefix boundary preserves valid One-first synthesis enumeration, candidate counts and tie behavior. Small known progress is checked before the intact255-node candidate-budget test. Metadata consumer and earlier finite-harness regressions included in the main gate. Real full-prompt execution remains separate.",
+  "unchanged_policy_sha256": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  },
+  "openspec": {
+    "version": "1.13.0",
+    "command": [
+      "openspec",
+      "validate",
+      "--all",
+      "--strict"
+    ],
+    "exit_code": 0,
+    "passed": 16,
+    "failed": 0,
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  }
+}

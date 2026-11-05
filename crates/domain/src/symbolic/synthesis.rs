@@ -184,7 +184,11 @@ pub fn synthesize(
                 }
                 continue;
             }
-            let remaining = size - prefix.len() - 1;
+            // Construction is bounded independently of the feasibility pruning:
+            // even an unclosable prefix cannot expand beyond this tree's size.
+            let Some(remaining) = size.checked_sub(prefix.len() + 1) else {
+                continue;
+            };
             // Push Op first so One is visited first by the LIFO traversal.
             if slots < remaining {
                 let mut next = prefix.clone();

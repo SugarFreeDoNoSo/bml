@@ -1,0 +1,312 @@
+{
+  "scope": "One CURRENT synthesis14 source replay with exact whole-workspace commands; not historical9a or a complete mutation campaign.",
+  "runner_pid": 4169176,
+  "started_at": "2026-11-05T09:53:09.843412+00:00",
+  "commands": [
+    {
+      "label": "clean-before-baseline",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:53:09.854119+00:00",
+      "stdout": "clean-before-baseline.stdout",
+      "stderr": "clean-before-baseline.stderr",
+      "disk_free_before": 4361150464,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:53:10.025214+00:00",
+      "elapsed_seconds": 0.17112539598019794,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "disk_free_after": 4361146368
+    },
+    {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:53:10.025814+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 4361146368,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:54:21.930945+00:00",
+      "elapsed_seconds": 71.90515993203735,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "a1ff38f33515faeb7cdaf78b81ad1cd0cae00144683dbbfe844d006b47d3d2eb",
+      "disk_free_after": 4242964480
+    },
+    {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:54:21.931594+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 4242960384,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:55:58.559957+00:00",
+      "elapsed_seconds": 96.62840988498647,
+      "stdout_sha256": "d9ea65419baebd0acc02d6f78690301cb39530decf2bd272e505762083423f6f",
+      "stderr_sha256": "0da17116d99fe1d425b93da201e9c943da3b4125e2bc0996afe9bd3518712932",
+      "disk_free_after": 4229931008
+    },
+    {
+      "label": "clean-before-synthesis-prefix-reservation",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:55:58.767607+00:00",
+      "stdout": "clean-before-synthesis-prefix-reservation.stdout",
+      "stderr": "clean-before-synthesis-prefix-reservation.stderr",
+      "disk_free_before": 4229931008,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:55:59.236859+00:00",
+      "elapsed_seconds": 0.46931851899717003,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2cb65cc6f6c475dfd99a89b52bbd14143c2e69195012f282af0169836d238cbf",
+      "disk_free_after": 4347760640
+    },
+    {
+      "label": "synthesis-prefix-reservation-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:55:59.239067+00:00",
+      "stdout": "synthesis-prefix-reservation-build.stdout",
+      "stderr": "synthesis-prefix-reservation-build.stderr",
+      "disk_free_before": 4347760640,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:57:13.430829+00:00",
+      "elapsed_seconds": 74.19178923498839,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "028ff577af3458e035719701e76cff8c15e838151723e6fc37e5f8b12afd23be",
+      "disk_free_after": 4229799936
+    },
+    {
+      "label": "synthesis-prefix-reservation-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:57:13.431540+00:00",
+      "stdout": "synthesis-prefix-reservation-test.stdout",
+      "stderr": "synthesis-prefix-reservation-test.stderr",
+      "disk_free_before": 4229799936,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:58:08.590486+00:00",
+      "elapsed_seconds": 55.158976369013544,
+      "stdout_sha256": "53c98b48ede8667a68b1518dc5651f62940cb81d9a0efadf227588e4a9d00d45",
+      "stderr_sha256": "5e00b934d1538d1b60c7901386f61ab0c2c31472819d435aef258b181fa399ac",
+      "disk_free_after": 4229586944
+    },
+    {
+      "label": "clean-restored-synthesis-prefix-reservation",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:58:08.662950+00:00",
+      "stdout": "clean-restored-synthesis-prefix-reservation.stdout",
+      "stderr": "clean-restored-synthesis-prefix-reservation.stderr",
+      "disk_free_before": 4229586944,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:58:08.833544+00:00",
+      "elapsed_seconds": 0.1706336850184016,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2cb65cc6f6c475dfd99a89b52bbd14143c2e69195012f282af0169836d238cbf",
+      "disk_free_after": 4347424768
+    }
+  ],
+  "cases": [
+    {
+      "build": {
+        "label": "synthesis-prefix-reservation-build",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 600,
+        "started_at": "2026-11-05T09:55:59.239067+00:00",
+        "stdout": "synthesis-prefix-reservation-build.stdout",
+        "stderr": "synthesis-prefix-reservation-build.stderr",
+        "disk_free_before": 4347760640,
+        "exit_code": 0,
+        "timed_out": false,
+        "ended_at": "2026-11-05T09:57:13.430829+00:00",
+        "elapsed_seconds": 74.19178923498839,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "028ff577af3458e035719701e76cff8c15e838151723e6fc37e5f8b12afd23be",
+        "disk_free_after": 4229799936
+      },
+      "test": {
+        "label": "synthesis-prefix-reservation-test",
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 360,
+        "started_at": "2026-11-05T09:57:13.431540+00:00",
+        "stdout": "synthesis-prefix-reservation-test.stdout",
+        "stderr": "synthesis-prefix-reservation-test.stderr",
+        "disk_free_before": 4229799936,
+        "exit_code": 101,
+        "timed_out": false,
+        "ended_at": "2026-11-05T09:58:08.590486+00:00",
+        "elapsed_seconds": 55.158976369013544,
+        "stdout_sha256": "53c98b48ede8667a68b1518dc5651f62940cb81d9a0efadf227588e4a9d00d45",
+        "stderr_sha256": "5e00b934d1538d1b60c7901386f61ab0c2c31472819d435aef258b181fa399ac",
+        "disk_free_after": 4229586944
+      },
+      "failed_tests": [
+        "synthesis_budget_exhaustion_returns_a_candidate_without_claiming_success",
+        "synthesis_enumerates_ordered_shapes_and_counts_invalid_numerical_candidates",
+        "synthesis_exhausts_exact_small_grammar_sizes_and_keeps_the_first_tie",
+        "synthesis_finds_small_pure_trees_in_both_bases_and_explicit_complex_branch",
+        "synthesis_preserves_one_first_dfs_ranks_at_candidate_budget_edges"
+      ],
+      "compile_error": false,
+      "caught_current_workspace": true,
+      "label": "synthesis-prefix-reservation",
+      "candidate": "crates/domain/src/symbolic/synthesis.rs:189:65: replace + with * in synthesize",
+      "source_before_sha256": "f9350911dffe414773cbfe80653018814149a427adaa8b6792aa550bd6b86cc6",
+      "source_mutated_sha256": "7130c8bd660111cd5d3a1414317eefddc40291568e7f2a4a904b84a2827ff1ee",
+      "producer_diff_sha256": "86d408a13d54f1ac07b87d6e3600d31a11f152622a277891cd4652bd574abf91"
+    }
+  ],
+  "active": null,
+  "prepared_source_sha256": "4070a16e56e5851b7a7b5f489b7cdf9515e359f60483cf706ebc418a3b041ceb",
+  "prepare_report_sha256": "a9c4548c34d06d5fd67aaddf74308ce3e55096836debe95922f660d5c00a7e9a",
+  "identity": "CURRENT 8c86 tracked worktree plus wave12, synthesis14 and counted-progress precontrol; not historical9a",
+  "environment": {
+    "PATH": "/tmp/bml-cargo/bin:/home/dev/.local/bin:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/home/dev/.opencode/bin:/home/dev/.local/share/mise/installs/node/24.22.2/bin:/home/dev/.local/share/mise/installs/uv/0.13.6/.mise-bins:/home/dev/.local/share/mise/shims:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.cargo/bin:/home/dev/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/games:/home/dev/.codex/tmp/arg0-linux/codex-arg0q6I2SF:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin",
+    "CARGO_HOME": "/tmp/bml-cargo",
+    "RUSTUP_HOME": "/tmp/bml-rustup",
+    "TMPDIR": "/home/dev/Work/bml/target/quality/wave-fourteen-current-20261105T095217Z/tmp",
+    "CARGO_TARGET_DIR": "/home/dev/Work/bml/target/wave-twelve-current-build-20261105T092132Z",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "PROPTEST_RNG_SEED": "20260923",
+    "CARGO_TERM_COLOR": "never"
+  },
+  "cache_receipt": {
+    "previous_output": "/home/dev/Work/bml/target/quality/wave-twelve-current-20261105T092802Z",
+    "previous_source_sha256": "b82529d071bd971d66dc04d1293d113e90aca25771b6f0c1cfbc4468e0e37ee4",
+    "previous_report_sha256": "60376f9297a3678c4c9cc7b7c7b7c51fffe01f61d2b73da81e71be8922693f2e",
+    "changed_source_paths": [
+      "crates/domain/src/symbolic/synthesis.rs",
+      "crates/domain/tests/symbolic_synthesis_contracts.rs"
+    ],
+    "policy": "Reuse only owned restored completed wave12 target for new CURRENT synthesis14; clean domain/runtime before workspace baseline. Previous source/worktree/receipts remain immutable."
+  },
+  "updated_at": "2026-11-05T09:58:08.884549+00:00",
+  "baseline": {
+    "build": {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:53:10.025814+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 4361146368,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:54:21.930945+00:00",
+      "elapsed_seconds": 71.90515993203735,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "a1ff38f33515faeb7cdaf78b81ad1cd0cae00144683dbbfe844d006b47d3d2eb",
+      "disk_free_after": 4242964480
+    },
+    "test": {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:54:21.931594+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 4242960384,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:55:58.559957+00:00",
+      "elapsed_seconds": 96.62840988498647,
+      "stdout_sha256": "d9ea65419baebd0acc02d6f78690301cb39530decf2bd272e505762083423f6f",
+      "stderr_sha256": "0da17116d99fe1d425b93da201e9c943da3b4125e2bc0996afe9bd3518712932",
+      "disk_free_after": 4229931008
+    },
+    "failed_tests": [],
+    "compile_error": false,
+    "caught_current_workspace": false
+  },
+  "restores": [
+    {
+      "label": "synthesis-prefix-reservation",
+      "source_sha256": "f9350911dffe414773cbfe80653018814149a427adaa8b6792aa550bd6b86cc6",
+      "all_tracked_inputs_restored": true
+    }
+  ],
+  "status": "passed_current_workspace_replays",
+  "all_tracked_inputs_restored": true,
+  "ended_at": "2026-11-05T09:58:08.884524+00:00"
+}

@@ -67,6 +67,14 @@ fn synthesis_finds_small_pure_trees_in_both_bases_and_explicit_complex_branch() 
 #[test]
 fn synthesis_budget_exhaustion_returns_a_candidate_without_claiming_success() {
     let real = Interpretation::Real(Basis::Bml);
+    // Establish counted grammar progress before amplifying the node ceiling.
+    // The wide case below retains its original 255-node/candidate-budget test.
+    let progress = synthesize(Complex64::real(3.0), real, 0.0, budget(3, 2)).unwrap();
+    assert_eq!(progress.stop, StopReason::NodeBudget);
+    assert_eq!(progress.attempted, 2);
+    let best = progress.best.unwrap();
+    assert_eq!(best.value, Complex64::real(2.0));
+    assert_eq!(best.nodes, 3);
     let bounded = synthesize(Complex64::real(3.0), real, 0.0, budget(255, 2)).unwrap();
     assert_eq!(bounded.stop, StopReason::CandidateBudget);
     assert_eq!(bounded.attempted, 2);
@@ -117,6 +125,83 @@ fn synthesis_enumerates_ordered_shapes_and_counts_invalid_numerical_candidates()
     );
     let result = synthesize(Complex64::real(1.125), policy, 0.125, budget(1, 1)).unwrap();
     assert_eq!(result.stop, StopReason::ToleranceMet); // Inclusive tolerance edge.
+}
+
+#[test]
+fn synthesis_exhausts_exact_small_grammar_sizes_and_keeps_the_first_tie() {
+    let policy = Interpretation::Real(Basis::Bml);
+    // Full binary trees have Catalan counts 1, 1, 2, 5, 14 at sizes 1..=9.
+    // Even budgets add no shape. No such small BML tree can reach f64::MAX.
+    for (nodes, count) in [
+        (0, 0),
+        (1, 1),
+        (2, 1),
+        (3, 2),
+        (4, 2),
+        (5, 4),
+        (6, 4),
+        (7, 9),
+        (8, 9),
+        (9, 23),
+        (10, 23),
+    ] {
+        let result =
+            synthesize(Complex64::real(f64::MAX), policy, 0.0, budget(nodes, 100)).unwrap();
+        assert_eq!(result.stop, StopReason::NodeBudget, "node budget {nodes}");
+        assert_eq!(result.attempted, count, "node budget {nodes}");
+        assert_eq!(result.best.is_none(), count == 0);
+    }
+    // One=1 and Op(One,One)=2 are equally close; all nine trees still count.
+    let tie = synthesize(Complex64::real(1.5), policy, 0.0, budget(8, 9)).unwrap();
+    assert_eq!(tie.stop, StopReason::NodeBudget);
+    assert_eq!(tie.attempted, 9);
+    let first = tie.best.unwrap();
+    assert_eq!(first.term, ClosedTerm::One);
+    assert_eq!(first.nodes, 1);
+    assert_eq!(first.error, 0.5);
+}
+
+#[test]
+fn synthesis_preserves_one_first_dfs_ranks_at_candidate_budget_edges() {
+    let one = ClosedTerm::One;
+    let pair = ClosedTerm::op(one.clone(), one.clone());
+    let four = ClosedTerm::op(pair.clone(), one.clone());
+    let zero = ClosedTerm::op(one.clone(), four.clone());
+    let three = ClosedTerm::op(pair.clone(), pair);
+    let sixteen = ClosedTerm::op(four.clone(), one);
+    // BML is exp2(left)-log2(right). These exact values first occur at
+    // positions 4, 6, 7 and 9 in the nine ordered trees through seven nodes.
+    for (target, rank, nodes, term) in [
+        (4.0, 4, 5, four),
+        (0.0, 6, 7, zero),
+        (3.0, 7, 7, three),
+        (16.0, 9, 7, sixteen),
+    ] {
+        let before = synthesize(
+            Complex64::real(target),
+            Interpretation::Real(Basis::Bml),
+            0.0,
+            budget(7, rank - 1),
+        )
+        .unwrap();
+        assert_eq!(before.stop, StopReason::CandidateBudget);
+        assert_eq!(before.attempted, rank - 1);
+        assert!(before.best.unwrap().error > 0.0);
+        let found = synthesize(
+            Complex64::real(target),
+            Interpretation::Real(Basis::Bml),
+            0.0,
+            budget(7, rank),
+        )
+        .unwrap();
+        assert_eq!(found.stop, StopReason::ToleranceMet);
+        assert_eq!(found.attempted, rank);
+        let candidate = found.best.unwrap();
+        assert_eq!(candidate.term, term);
+        assert_eq!(candidate.nodes, nodes);
+        assert_eq!(candidate.value, Complex64::real(target));
+        assert_eq!(candidate.error, 0.0);
+    }
 }
 
 #[test]
