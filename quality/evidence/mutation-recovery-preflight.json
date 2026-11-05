@@ -1,0 +1,103 @@
+{
+  "kind": "read_only_recovery_preflight",
+  "status": "ready_for_review_not_dispatched",
+  "measured_at_utc": "2026-11-05T04:10:25.023557+00:00",
+  "controller_checkout_base": "26a4a16971a6f8ec4c927653c9438696f2f17ee6",
+  "files_sha256": {
+    ".github/workflows/mutation-recovery.yml": "daa593b7cf5f8fe77a0ddb2433eea67b72c5638e0e3b3dc39fe857df6cc25d6f",
+    ".github/workflows/mutation-campaign.yml": "4eee52912f0704d45f06418959fb093d0ac27ab32984a3e9d148ea2df80b02c5",
+    "tools/mutation_recovery.py": "a252989b52717ae449a7c583cecee6699c847ff02273669dff8102d1aa967d57",
+    "tools/test_mutation_recovery.py": "33c80f9effa956aec112ad72eb208b2b51d0d484f8efb9874487e06d22e209d6",
+    "tools/merge_mutation_shards.py": "8eb192be3a90d111570b7f3d2ad9fa7ceb62754205e056c4661d8db6bc5d5c62",
+    "tools/test_merge_mutation_shards.py": "d3cc61744579ddb4a003582bb99da5b4e79f3cb7972db43fbfa7ce2e2797a805"
+  },
+  "checks": [
+    {
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools",
+        "-p",
+        "test_mutation_recovery.py"
+      ],
+      "exit_code": 0,
+      "unit_count": 17,
+      "output": ".................\n----------------------------------------------------------------------\nRan 17 tests in 0.176s\n\nOK\n",
+      "output_sha256": "ecc2234155b0f106d2de00bf4d959adf1558e2cf2d3b4b5aa2a9c91caf672f86"
+    },
+    {
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools",
+        "-p",
+        "test_merge_mutation_shards.py"
+      ],
+      "exit_code": 0,
+      "unit_count": 26,
+      "output": "..........................\n----------------------------------------------------------------------\nRan 26 tests in 0.522s\n\nOK\n",
+      "output_sha256": "ddd9017116d125751479194a967538d119213fdfe789720738eb32965c57b762"
+    },
+    {
+      "command": [
+        "/home/dev/Work/bml/target/actionlint-1.7.12/actionlint",
+        ".github/workflows/mutation-recovery.yml",
+        ".github/workflows/mutation-campaign.yml"
+      ],
+      "exit_code": 0,
+      "unit_count": null,
+      "output": "",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "unit_count": null,
+      "output": "",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "targeted_python_units": 43,
+  "live_origin": {
+    "repository": "SugarFreeDoNoSo/bml",
+    "origin_run_id": 41950170549,
+    "origin_attempt": 1,
+    "job_id": 126992338567,
+    "job_status": "completed",
+    "job_conclusion": "failure",
+    "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+    "artifact_id": 13379899471,
+    "artifact_name": "mutation-plan-41950170549-1",
+    "artifact_expired": false,
+    "artifact_expires_at": "2026-11-08T01:42:02Z",
+    "validated_shutdown_exit_code": 143,
+    "api_bundle_canonical_sha256": "4097870fc76af7defb2d25dbd5cc609e229ac54d289ee0bc16a3fa75d63a80cc",
+    "decoded_origin_log_sha256": "b7125d8ec1d8666ef76cc22378bb45b28febd1680b96a7db1b9820a5a4b7415d",
+    "access": "successful read-only GETs using the current gh session; workflow token is not issued until dispatch"
+  },
+  "original_plan": {
+    "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+    "manifest_identity": "cfee7050785ae54c46f84826c3c9e155540d4b22a4dab4793adfb14471d9322e",
+    "diff_sha256": "ed5a4fe4236c18b9577e3939e9efbb974ecd3b2151fb031a58498050344ac26b",
+    "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+    "shard": "20/64",
+    "candidate_count": 81
+  },
+  "limits": [
+    "No live recovery run, authorization record or seal was fabricated by this preflight.",
+    "No Cargo build, mutation replay, dispatch, rerun, commit or push was executed.",
+    "The original aggregate remains incomplete without original artifact20; external 63+recovery collection must validate actual recovery metadata/API before the unchanged merge and quality gate.",
+    "The original raw shard21 remains unattested; this does not retroactively seal it.",
+    "Controller exit1 attestation requires the exact final guard message, complete raw outcomes and a live source/seed verification; its seal is identified separately from the frozen9a sealer."
+  ]
+}

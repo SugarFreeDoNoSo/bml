@@ -1,0 +1,164 @@
+name: Recover an interrupted 9a mutation shard
+
+# This separate run cannot satisfy the original attempt's artifact pattern.
+# A later explicit collection must validate recovery metadata and exactly 63
+# original seals plus this one before the unchanged union/quality gate.
+
+on:
+  workflow_dispatch:
+    inputs:
+      original_job:
+        description: Terminal runner-shutdown job from the original campaign
+        required: true
+        default: '126992338567'
+      shard_index:
+        description: Its zero-based shard index (0 through 63)
+        required: true
+        default: '20'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mutation-recovery-41950170549-${{ inputs.shard_index }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: never
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_PROFILE_TEST_DEBUG: '0'
+  CARGO_BUILD_JOBS: '2'
+  PROPTEST_RNG_SEED: '20260923'
+  FROZEN_SOURCE: 9a6bc9680d5915576ca92528f60956efe9796cef
+
+jobs:
+  recover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - name: Authorize the original source, artifact and interrupted job via API
+        id: authorize
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          JOB: ${{ inputs.original_job }}
+          INDEX: ${{ inputs.shard_index }}
+          RECOVERY_RUN: ${{ github.run_id }}
+          RECOVERY_ATTEMPT: ${{ github.run_attempt }}
+          CONTROLLER: ${{ github.sha }}
+        run: |
+          python3 control/tools/mutation_recovery.py authorize \
+            --repository "$REPOSITORY" --job "$JOB" --index "$INDEX" \
+            --run "$RECOVERY_RUN" --attempt "$RECOVERY_ATTEMPT" \
+            --controller "$CONTROLLER" --evidence control/target/quality/recovery
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: 9a6bc9680d5915576ca92528f60956efe9796cef
+          fetch-depth: 0
+          path: source
+          persist-credentials: false
+      - name: Download only the immutable original plan artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: 41950170549
+          artifact-ids: 13379899471
+          merge-multiple: true
+          path: source/target/quality/original-plan
+      - name: Verify independent manifest SHA and original partition
+        run: |
+          python3 control/tools/mutation_recovery.py verify \
+            --evidence control/target/quality/recovery \
+            --manifest source/target/quality/original-plan/campaign.json \
+            --diff source/target/quality/original-plan/final.diff
+      - name: Install the original pinned Rust toolchain
+        working-directory: source
+        run: rustup show active-toolchain
+      - uses: taiki-e/install-action@7623a79cdfecb99d681017af368ca353d9f49bb5 # v2
+        with:
+          tool: cargo-mutants@27.1.0
+      - name: Run only the original frozen shard and its baseline
+        working-directory: source
+        env:
+          INDEX: ${{ inputs.shard_index }}
+        run: |
+          evidence="target/quality/shard-$INDEX"
+          mkdir -p "$evidence"
+          {
+            printf 'snapshot=%s\nimage_os=%s\nimage_version=%s\n' \
+              "$FROZEN_SOURCE" "${ImageOS:-unknown}" "${ImageVersion:-unknown}"
+            uname -a
+            rustc --version --verbose
+            cargo --version
+            cargo mutants --version
+          } > "$evidence/toolchain.txt"
+          df -h . > "$evidence/disk-before.txt"
+          # Execute the helper from 9a, including its full source verification,
+          # exclusive target directory, original candidate scope and sealer.
+          python3 tools/merge_mutation_shards.py commands \
+            --manifest target/quality/original-plan/campaign.json \
+            --diff target/quality/original-plan/final.diff --shard "$INDEX/64" \
+            --timeout 360 --build-timeout 600 > "$evidence/run-shard.sh"
+          if timeout --signal=TERM --kill-after=60s 300m bash "$evidence/run-shard.sh" \
+              > "$evidence/runner.log" 2>&1; then
+            shard_exit=0
+          else
+            shard_exit=$?
+          fi
+          printf '%s\n' "$shard_exit" > "$evidence/exit-code.txt"
+          df -h . > "$evidence/disk-after.txt"
+          case "$shard_exit" in
+            0|2|3) test -f "target/quality/shard-result-$INDEX.json" ;;
+            # The following controller step alone may attest the narrowly
+            # identified final untracked-seed guard failure, on this live source.
+            1) : ;;
+            *) echo "Incomplete recovery: $shard_exit" >&2; exit 1 ;;
+          esac
+          # Recheck restoration with the frozen sealer (including permitted
+          # generated proptest regressions), then compare both sealed results.
+          if [[ "$shard_exit" != 1 ]]; then
+            python3 tools/merge_mutation_shards.py seal \
+              --manifest target/quality/original-plan/campaign.json \
+              --diff target/quality/original-plan/final.diff --shard "$INDEX/64" \
+              --mutants-out "target/final-mutation-shard-$INDEX/mutants.out" \
+              --output "$evidence/final-source-seal.json"
+            cmp "target/quality/shard-result-$INDEX.json" "$evidence/final-source-seal.json"
+          fi
+      - name: Attest the live source and identify the actual sealer
+        if: ${{ always() && steps.authorize.outcome == 'success' }}
+        run: |
+          python3 control/tools/mutation_recovery.py attest \
+            --evidence control/target/quality/recovery \
+            --manifest source/target/quality/original-plan/campaign.json \
+            --diff source/target/quality/original-plan/final.diff --source source
+      - name: Record recovery provenance and verify raw reports against the seal
+        if: ${{ always() && steps.authorize.outcome == 'success' }}
+        run: |
+          python3 control/tools/mutation_recovery.py finish \
+            --evidence control/target/quality/recovery \
+            --manifest source/target/quality/original-plan/campaign.json \
+            --diff source/target/quality/original-plan/final.diff --source source
+      - name: Preserve recovery evidence without build outputs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mutation-recovery-41950170549-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.shard_index }}
+          path: |
+            control/target/quality/recovery/
+            source/target/quality/original-plan/
+            source/target/quality/shard-${{ inputs.shard_index }}/
+            source/target/quality/shard-result-${{ inputs.shard_index }}.json
+            source/target/quality/controller-shard-result-${{ inputs.shard_index }}.json
+            source/target/final-mutation-shard-${{ inputs.shard_index }}/mutants.out/
+            source/**/proptest-regressions/**/*.txt
+            source/**/*.proptest-regressions
+          if-no-files-found: error
+          retention-days: 3

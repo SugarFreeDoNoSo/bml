@@ -152,6 +152,7 @@ jobs:
             target/quality/shard-result-${{ matrix.index }}.json
             target/final-mutation-shard-${{ matrix.index }}/mutants.out/
             **/proptest-regressions/**/*.txt
+            **/*.proptest-regressions
           if-no-files-found: error
           retention-days: 3
 

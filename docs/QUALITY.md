@@ -81,6 +81,30 @@ workflow completo cuando sea necesario; reintentar jobs individuales no mezcla
 evidencia de intentos anteriores. La configuración y el inicio de la campaña
 no acreditan su finalización ni un resultado aprobado.
 
+El recolector reconoce las dos rutas de persistencia `SourceParallel` de
+proptest 1.11: el árbol `proptest-regressions/*.txt` y el sufijo
+`.proptest-regressions` junto a un test sin ancestro `lib.rs`/`main.rs`.
+Ambas deben corresponder exactamente a una fuente Rust versionada, ser archivos
+regulares acotados y contener semillas válidas. Durante la preparación no se
+admiten archivos nuevos; al sellar se conservan sus hashes y sus contenidos en
+el artefacto. Cualquier otro archivo fuente o entrada nueva sigue rechazándose.
+
+Para el apagado del runner del shard20 del run `41950170549`,
+`mutation-recovery.yml` permite ejecutar únicamente su partición original con
+el checkout `9a6bc968` y el plan de preparación fijado por ID y SHA256.
+La API debe acreditar la interrupción terminal por shutdown143 y la ausencia de
+artefacto original. Se vuelve a comprobar la restauración de las fuentes.
+Si el recolector congelado rechaza únicamente un sufijo proptest legítimo,
+el controlador revisado puede emitir un sello propio sobre el checkout aún
+vivo, con comprobación completa de fuentes, candidatos, baseline y resultados;
+la procedencia distingue ambos selladores. Esto no revalida artefactos antiguos
+que perdieron sus entradas ni altera sus resultados brutos. El agregado
+original sigue exigiendo su intento completo. Una colección externa debe
+verificar contra API la procedencia y el artefacto de cada recuperación,
+seleccionar exactamente un sello por índice y aplicar después la misma unión
+completa y el gate de mutaciones original. Preparar o iniciar la recuperación
+no acredita que haya terminado ni que el gate esté aprobado.
+
 ## Instrumentación optativa
 
 ```sh

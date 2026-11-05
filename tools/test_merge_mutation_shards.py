@@ -16,6 +16,7 @@ from merge_mutation_shards import (
     BASE_REVISION, TOOL_VERSION, digest, make_manifest, merge_shards, seal_shard,
     validate_manifest, source_snapshot, verify_worktree, file_digest, write_new,
     workspace_packages,
+    proptest_sourceparallel, proptest_seed_file,
     listing_argv,
     main as shard_main,
 )
@@ -447,6 +448,74 @@ class MutationShardContracts(unittest.TestCase):
                 (root / "code.rs").write_text("different source")
                 with self.assertRaisesRegex(ValueError, "sources differ"):
                     verify_worktree(manifest, root, diff)
+
+    def test_proptest_sourceparallel_paths_require_a_matching_tracked_rust_source(self):
+        tracked = {"crates/example/src/lib.rs", "crates/example/src/nested/unit.rs",
+                   "crates/example/tests/contracts.rs"}
+        for path in ["crates/example/proptest-regressions/nested/unit.txt",
+                     "crates/example/tests/contracts.proptest-regressions"]:
+            self.assertTrue(proptest_sourceparallel(path, tracked), path)
+        for path in ["inputs.bin", "new.rs", "notes.txt", "/tmp/contracts.proptest-regressions",
+                     "../crates/example/tests/contracts.proptest-regressions",
+                     "crates/example/tests/unknown.proptest-regressions",
+                     "crates/example/proptest-regressions/contracts.txt",
+                     "crates/example/src/nested/unit.proptest-regressions",
+                     "crates/example/proptest-regressions/nested/unit.rs"]:
+            self.assertFalse(proptest_sourceparallel(path, tracked), path)
+
+    def test_source_snapshot_allows_only_real_generated_proptest_files_when_sealing(self):
+        revision, tree = "1" * 40, "2" * 40
+        tracked = ["crates/example/src/lib.rs", "crates/example/src/nested/unit.rs",
+                   "crates/example/tests/contracts.rs"]
+        untracked = []
+        def git_answer(root, *args):
+            return {("rev-parse", "HEAD"): revision, ("rev-parse", BASE_REVISION): BASE_REVISION,
+                    ("rev-parse", "HEAD^{tree}"): tree, ("diff", "--name-only", "HEAD"): "",
+                    ("ls-files", "--others", "--exclude-standard"): "\n".join(untracked)}[args]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in tracked:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("// frozen Rust source\n")
+            with patch("merge_mutation_shards.git", side_effect=git_answer), \
+                    patch("merge_mutation_shards.workspace_packages",
+                          return_value={"example": "0.1.0"}), \
+                    patch("merge_mutation_shards.subprocess.check_output",
+                          return_value=("\0".join(tracked) + "\0").encode()):
+                original = source_snapshot(root, revision, BASE_REVISION)
+                for name in ["crates/example/proptest-regressions/nested/unit.txt",
+                             "crates/example/tests/contracts.proptest-regressions"]:
+                    path = root / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text("# proptest failure persistence\ncc " + "0" * 64 + " # shrinks to 0\n")
+                    untracked.append(name)
+                with self.assertRaisesRegex(ValueError, "untracked source/input"):
+                    source_snapshot(root, revision, BASE_REVISION)
+                self.assertEqual(source_snapshot(root, revision, BASE_REVISION,
+                                                 allow_regressions=True), original)
+                untracked.append("crates/example/tests/new.rs")
+                with self.assertRaisesRegex(ValueError, "untracked source/input"):
+                    source_snapshot(root, revision, BASE_REVISION, allow_regressions=True)
+                untracked.pop()
+                (root / untracked[0]).write_text("arbitrary input data\n")
+                with self.assertRaisesRegex(ValueError, "untracked source/input"):
+                    source_snapshot(root, revision, BASE_REVISION, allow_regressions=True)
+
+    def test_proptest_seed_file_rejects_symlinks_unbounded_or_invalid_contents(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "case.proptest-regressions"
+            for seed in ["cc " + "f" * 64, "rc " + "0" * 64, "xs 0 1 2 4294967295", "pt 00ab"]:
+                path.write_text("# saved failures\n" + seed + " # shrinks to a value\n")
+                self.assertTrue(proptest_seed_file(path), seed)
+            for seed in ["", "# only comments", "input model.gguf", "cc deadbeef", "xs 0 1 2 4294967296"]:
+                path.write_text(seed)
+                self.assertFalse(proptest_seed_file(path), seed)
+            path.write_bytes(b"#" * (1024 * 1024 + 1))
+            self.assertFalse(proptest_seed_file(path))
+            link = path.with_name("link.proptest-regressions")
+            link.symlink_to(path)
+            self.assertFalse(proptest_seed_file(link))
 
 
 if __name__ == "__main__":

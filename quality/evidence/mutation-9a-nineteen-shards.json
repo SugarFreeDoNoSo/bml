@@ -1,0 +1,261 @@
+{
+  "observed_at_utc": "2026-11-05T03:56:25.079492+00:00",
+  "status": "incomplete_frozen_campaign_partial_results",
+  "run_id": 41950170549,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "scope": "Exactly 19 independently verified original shards; neither a complete campaign nor an approved mutation score. Focused repairs on later sources never relabel these original results.",
+  "manifest_file_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "counts": {
+    "CaughtMutant": 1221,
+    "MissedMutant": 185,
+    "Unviable": 121,
+    "Timeout": 12
+  },
+  "shards": [
+    {
+      "shard": "0/64",
+      "counts": {
+        "CaughtMutant": 61,
+        "MissedMutant": 11,
+        "Unviable": 7,
+        "Timeout": 2
+      },
+      "seal_sha256": "044ed4f0b73c75ed82ed1478e305f07f064322f02d01654ce0e40141b8d1b0b5",
+      "raw_candidates_sha256": "c0b355d2ec2462f64d43970825d0f6b2c38c533864dd05e38c7f486613507a47",
+      "raw_outcomes_sha256": "1d78cb932584bf815a31b0b4c1e9756c0e981605643817828df2023f23d1edb5"
+    },
+    {
+      "shard": "1/64",
+      "counts": {
+        "CaughtMutant": 66,
+        "Unviable": 5,
+        "MissedMutant": 8,
+        "Timeout": 2
+      },
+      "seal_sha256": "393ddc58abbc39c7ec00875089e9615b2cb6af488f7ea17811a6cdca3b04bbab",
+      "raw_candidates_sha256": "dc8cc0c9c11652770cbbd6842b3d0812463d89ccc241be1f53c21cb024794fe3",
+      "raw_outcomes_sha256": "6ffa8e46919d07d9ea15a9493d82cb78362dc2fc835be0acc6362b9ce1072162"
+    },
+    {
+      "shard": "10/64",
+      "counts": {
+        "CaughtMutant": 64,
+        "MissedMutant": 11,
+        "Unviable": 4,
+        "Timeout": 2
+      },
+      "seal_sha256": "a7467d45e6afb6195cd19048224e2a1f4326e6faf36c2dcc7577b903b1e8ac2b",
+      "raw_candidates_sha256": "578854fcfe971e12b7a720abf89385e9af15b7c8974ef6e3e240a93b477ea0e2",
+      "raw_outcomes_sha256": "b8e67361774da0e21c28ce975bf909ec354fa95ce46b2a8d27bfbaf400430f34"
+    },
+    {
+      "shard": "11/64",
+      "counts": {
+        "CaughtMutant": 59,
+        "Unviable": 9,
+        "MissedMutant": 12,
+        "Timeout": 1
+      },
+      "seal_sha256": "e4fc04a729ce097caf5b1197e22c7fd2c7dada3481a1da39151aa43a8c1bf014",
+      "raw_candidates_sha256": "e2240cd8e81dffd974bb7967be98ee2b42d6b8353eb564f39b84a5df2e67dc18",
+      "raw_outcomes_sha256": "c9025f19ef352c33a94c8d4779d9af6ada68f22e04c803d1bfe914a2fc4e65ea"
+    },
+    {
+      "shard": "12/64",
+      "counts": {
+        "CaughtMutant": 62,
+        "Unviable": 8,
+        "MissedMutant": 10,
+        "Timeout": 1
+      },
+      "seal_sha256": "aa3922b90c1fdf4256fedef174bee4211a7a7edbe3c4137ac662e21a0fee44c6",
+      "raw_candidates_sha256": "5c28c1d701b206ff4f605e461de202d187f6752b1c2604ec1a172a1b20e763d0",
+      "raw_outcomes_sha256": "2b81ae83b8693cb492aa25c38e9ce4f4dd3341a4ba18ea42d62298f6304ac2a3"
+    },
+    {
+      "shard": "13/64",
+      "counts": {
+        "CaughtMutant": 57,
+        "Unviable": 10,
+        "MissedMutant": 14
+      },
+      "seal_sha256": "b0fc156e1c3c4640aafa09095fa3aaf2c5483b7d9308d2feea7e290396cbe7b8",
+      "raw_candidates_sha256": "6aa38a1818b0a15558e9464565d20409b2ed1315ab0fb07dc541f57ad489da59",
+      "raw_outcomes_sha256": "0cacb81259c1e119524538aedd24762939693b49066b25ea5d30e1344f345793"
+    },
+    {
+      "shard": "14/64",
+      "counts": {
+        "CaughtMutant": 61,
+        "Unviable": 10,
+        "MissedMutant": 10
+      },
+      "seal_sha256": "8d80a18a9beb861840ec6491d2c20eb2f828c5b8c7246968ecb620ae9ff29f4c",
+      "raw_candidates_sha256": "9889761be6106b812382259a20557596435d233fe5bbc3d4eaa77f4d0c92a123",
+      "raw_outcomes_sha256": "5dea5fc553463e95b9676b5c7b2af81c4f055410dda19195e46e4d76a4eaaf62"
+    },
+    {
+      "shard": "15/64",
+      "counts": {
+        "CaughtMutant": 66,
+        "Unviable": 6,
+        "MissedMutant": 8,
+        "Timeout": 1
+      },
+      "seal_sha256": "1fa20844c27150193db41e59bd29903f197d848265fa6082a811a1c10eac252e",
+      "raw_candidates_sha256": "523cab506ec245e272253ffc6ec331aa4b08a2a2af020a07abe913acef7f8f4a",
+      "raw_outcomes_sha256": "119a5f2cd414f7b540f38f2feaf340dbfd7a467b52e681979b6871106c0b475a"
+    },
+    {
+      "shard": "16/64",
+      "counts": {
+        "CaughtMutant": 68,
+        "Unviable": 5,
+        "MissedMutant": 8
+      },
+      "seal_sha256": "fe308db34f31d512bf74a2385ad03612977a50dc3b03482f5808ebcae6011877",
+      "raw_candidates_sha256": "0bf883c032ab754a8dbff0fbe15714c668cd861b94dcf7bf8712c9cbb18c3e0f",
+      "raw_outcomes_sha256": "069dbbc0f29c878a40e06fef258764dd54a483c4e3e8e34296182b14109c484e"
+    },
+    {
+      "shard": "17/64",
+      "counts": {
+        "CaughtMutant": 67,
+        "Unviable": 6,
+        "MissedMutant": 8
+      },
+      "seal_sha256": "a05e855ec2b89937fb50cacd0a822d5d553f54196dacb7907969ea9be559c642",
+      "raw_candidates_sha256": "3ad71a08f79e2b3319389a2e31f2b14d94d928464da338baeed2a93384db73e3",
+      "raw_outcomes_sha256": "c1d6d48835f494e34340e6f0ac8325e402bc8ced7a201c5ff84287da976c0f31"
+    },
+    {
+      "shard": "18/64",
+      "counts": {
+        "CaughtMutant": 63,
+        "Unviable": 5,
+        "MissedMutant": 13
+      },
+      "seal_sha256": "0287e6ae3efc7b5bc633e71df601ad559567d1705e5f754b0c2d890cb24e3559",
+      "raw_candidates_sha256": "d5da72b30b351f7a9737884c996488f5bacd5273f4d4027ef34c8b2fcafa1aeb",
+      "raw_outcomes_sha256": "1d037d2194798bca308c0e519a28894a760559ba86165a236cd4fcd14d267d4f"
+    },
+    {
+      "shard": "2/64",
+      "counts": {
+        "CaughtMutant": 68,
+        "Unviable": 5,
+        "MissedMutant": 8
+      },
+      "seal_sha256": "4cf4e4f1d6db858d5a1c6054482e3a9cdde5b0236262cf6f937550784c213bfe",
+      "raw_candidates_sha256": "b0b9db57cd4212e82532a5daec052bbf6bf0059d37fe9888cbaaedb8fef5c4a7",
+      "raw_outcomes_sha256": "cc8df9c899b8072c9bc059b17da520dfd71f85691ad5378238fb77de2a689686"
+    },
+    {
+      "shard": "3/64",
+      "counts": {
+        "CaughtMutant": 65,
+        "Unviable": 7,
+        "MissedMutant": 9
+      },
+      "seal_sha256": "73f08073432b4069eb89ece06f83dc1f30239937cb9e63837ccf54a79d3f973c",
+      "raw_candidates_sha256": "b6a19890d1f40452ddfe50df3d3a7d4eda8fdfe409bedb1f86e91dc85f23bbc7",
+      "raw_outcomes_sha256": "891e80a2df8e66cb06416d06f4ff344ef7e01b4f8d7ab2bf7d0133ccaa334a92"
+    },
+    {
+      "shard": "4/64",
+      "counts": {
+        "CaughtMutant": 67,
+        "MissedMutant": 8,
+        "Unviable": 4,
+        "Timeout": 2
+      },
+      "seal_sha256": "55edcffbe7a3b24bc1f5eb6264fde14cfc251e42b252d3247755f1224a8b22a2",
+      "raw_candidates_sha256": "e8888051891b68b5fa15dd90f78f51c7306a358be086ef2fca65dc320664f0b5",
+      "raw_outcomes_sha256": "69f4a1da0a93ee3242387ca79240197af2b37f3b9fcad0c9ec55b266a44ad224"
+    },
+    {
+      "shard": "5/64",
+      "counts": {
+        "CaughtMutant": 65,
+        "MissedMutant": 10,
+        "Unviable": 6
+      },
+      "seal_sha256": "4c6b809abd74d1043909e6f9a2dbebf33322f0cd5678d17293de065594aed9de",
+      "raw_candidates_sha256": "8cc034f84a221648bc7ccdbf495a2575035b2ddf08c03857ed6b5b5ee3a0526d",
+      "raw_outcomes_sha256": "42cd3a5f5fa662c5c610760bb728be4a4367b41d8f1e65eea72faec47f1c28a8"
+    },
+    {
+      "shard": "6/64",
+      "counts": {
+        "CaughtMutant": 65,
+        "MissedMutant": 11,
+        "Unviable": 5
+      },
+      "seal_sha256": "b942dada0811d0287c0efa47cac1ac41010756f19a24fbf6a9f55a9528d7b0ce",
+      "raw_candidates_sha256": "d07385ce03396b59fb13c7c23ab0ac1ad53205b63308e42e1ff635e8baf8aa7f",
+      "raw_outcomes_sha256": "ae04cfe95a45da8d0e20262c210b2f74dd3ffa0c2de8788321015da6cda9bbf3"
+    },
+    {
+      "shard": "7/64",
+      "counts": {
+        "CaughtMutant": 71,
+        "MissedMutant": 6,
+        "Unviable": 4
+      },
+      "seal_sha256": "1a05af85f2aa4bb986a17bbbc7f91ac520af029037077f2174b4af72cf101979",
+      "raw_candidates_sha256": "276fc0c8468fc1582e60196163d2338ec5aa5b34246caf8fbcc7a5c860d4fee0",
+      "raw_outcomes_sha256": "4e864e0efcb675cef6691d67d0829e8a8ceafc4a0257969522f692e3a7705e98"
+    },
+    {
+      "shard": "8/64",
+      "counts": {
+        "CaughtMutant": 61,
+        "Unviable": 7,
+        "MissedMutant": 12,
+        "Timeout": 1
+      },
+      "seal_sha256": "2a8e9bd2d22d48181eb7b4259949e8fcb1729db1b22eab47e8635159ba1fd0e3",
+      "raw_candidates_sha256": "71c46fa06ef66cff6f500ede8652b2770566cb26653c533b36b038e9e02990ac",
+      "raw_outcomes_sha256": "0daa07d1fe6e1486de4afe071d0cbe2caa62583e8f565bcf72037d25f5ed04bd"
+    },
+    {
+      "shard": "9/64",
+      "counts": {
+        "CaughtMutant": 65,
+        "MissedMutant": 8,
+        "Unviable": 8
+      },
+      "seal_sha256": "144315e05d8cbce4f8de14890862cda156349b5db2e7fd743a9ecae364cd972f",
+      "raw_candidates_sha256": "5a65182efcb2b3dbd3bec4c920aa5715973fbe6625d3eba9aa480e2d0b5a82c0",
+      "raw_outcomes_sha256": "039870ed92a24d6d3d276ca26397c01d9360bcaf329a6d1c4145966dd2b9e5d6"
+    }
+  ],
+  "verification": "seal_shard independently rebuilt each seal from downloaded mutants.json/outcomes.json and the pinned prepare manifest; candidate and outcome raw file hashes match each seal.",
+  "interrupted_shard": {
+    "shard": "20/64",
+    "job_id": 126992338567,
+    "conclusion": "failure",
+    "exit_code": 143,
+    "reason": "GitHub runner shutdown signal; incomplete, no artifact or seal",
+    "log_sha256": "b7125d8ec1d8666ef76cc22378bb45b28febd1680b96a7db1b9820a5a4b7415d",
+    "recovery_status": "separate frozen-source recovery being implemented; not yet run"
+  },
+  "unsealed_collection_failure": {
+    "shard": "21/64",
+    "job_id": 126992338544,
+    "artifact_id": 13386138847,
+    "status": "invalid_for_verified_union_missing_source_input_attestation",
+    "raw_counts": {
+      "caught": 67,
+      "missed": 6,
+      "unviable": 7,
+      "timeout": 1
+    },
+    "raw_end_time": "2026-11-05T03:51:55.395451202Z",
+    "raw_outcomes_sha256": "dd64e61398ba2daf00db0b9c0b757bc7598b865446a9a0d526dbceff2dc6c248",
+    "runner_log_sha256": "6090b784dd6e53ec5d00a3d191be738bb3b3039d5e443625c61f3d2421c689b7",
+    "artifact_zip_sha256": "0ecabdc7b8758dcf7b8686f0e145de9c4e9f5cdfad54b085fc77ed6af52f5b50",
+    "reason": "Original sealer rejected untracked source/input files. A test log reports operation_schedule_contracts.proptest-regressions, a SourceParallel suffix missed by both the original whitelist and upload glob. Original worker no longer exists; complete untracked inventory/content is unavailable, so raw outcomes are preserved but no seal is fabricated.",
+    "included_in_verified_counts": false
+  }
+}

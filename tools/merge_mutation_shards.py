@@ -316,6 +316,63 @@ def workspace_packages(root):
     return packages
 
 
+def proptest_sourceparallel(path, tracked):
+    """Match proptest 1.11 SourceParallel's path or its WithSource fallback.
+
+    A regression must map to a tracked Rust source, not merely have a familiar
+    suffix. SourceParallel searches ancestors for lib.rs/main.rs, writes in a
+    sibling proptest-regressions tree, or replaces the extension if none exists.
+    """
+    target = Path(path)
+    if target.is_absolute() or ".." in target.parts:
+        return False
+    tracked = set(tracked)
+    for name in tracked:
+        source = Path(name)
+        if source.suffix != ".rs":
+            continue
+        parent = source.parent
+        while True:
+            if str(parent / "lib.rs") in tracked or str(parent / "main.rs") in tracked:
+                expected = (parent.parent / "proptest-regressions"
+                            / source.relative_to(parent)).with_suffix(".txt")
+                break
+            if parent == parent.parent:
+                expected = source.with_suffix(".proptest-regressions")
+                break
+            parent = parent.parent
+        if target == expected:
+            return True
+    return False
+
+
+def proptest_seed_file(path):
+    """Admit only bounded regular files containing proptest persistence seeds."""
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > 1024 * 1024:
+        return False
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
+        return False
+    found = False
+    for line in lines:
+        seed = line.split("#", 1)[0].strip()
+        if not seed:
+            continue
+        parts = seed.split()
+        valid = ((parts[0] in {"cc", "rc"} and len(parts) == 2
+                  and re.fullmatch(r"[0-9a-fA-F]{64}", parts[1]))
+                 or (parts[0] == "xs" and len(parts) == 5
+                     and all(re.fullmatch(r"[0-9]{1,10}", p) and int(p) <= 0xffffffff
+                             for p in parts[1:]))
+                 or (parts[0] == "pt" and (len(parts) == 1 or
+                     (len(parts) == 2 and re.fullmatch(r"(?:[0-9a-fA-F]{2})*", parts[1])))))
+        if not valid:
+            return False
+        found = True
+    return found
+
+
 def source_snapshot(root, revision, base, allow_regressions=False):
     sha(revision, "revision", 40)
     require(base == BASE_REVISION, "unexpected development base")
@@ -323,10 +380,10 @@ def source_snapshot(root, revision, base, allow_regressions=False):
     require(git(root, "rev-parse", base) == base, "development base unavailable")
     require(not git(root, "diff", "--name-only", "HEAD"), "tracked source files changed")
     untracked = git(root, "ls-files", "--others", "--exclude-standard").splitlines()
-    require(not untracked or (allow_regressions and all(
-        "proptest-regressions" in Path(path).parts and path.endswith(".txt")
-        for path in untracked)), "untracked source/input files present")
     paths = subprocess.check_output(["git", "ls-files", "-z"], cwd=root).decode().split("\0")
+    require(not untracked or (allow_regressions and all(
+        proptest_sourceparallel(path, filter(None, paths)) and proptest_seed_file(root / path)
+        for path in untracked)), "untracked source/input files present")
     files = {}
     for name in filter(None, paths):
         path = root / name

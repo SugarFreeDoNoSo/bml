@@ -1,0 +1,67 @@
+{
+  "status": "passed",
+  "observed_at_utc": "2026-11-05T04:18:59.962597+00:00",
+  "base_revision": "26a4a16971a6f8ec4c927653c9438696f2f17ee6",
+  "command": "./scripts/check.sh 26a4a16",
+  "exit_code": 0,
+  "scope": "Integrated test-only Rust regressions plus reviewed mutation evidence collection/recovery tooling. Frozen campaign, real-model diagnostic, PMU and equivalence policy remain separate; no complete mutation pass is claimed.",
+  "rust_tests_passed": 973,
+  "rust_suites": 144,
+  "python_tooling_tests": 170,
+  "historical_contract_discrepancies": 0,
+  "traceability": "112/112",
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "focused_candidates_detected": 61,
+  "unique_positive_control_commands": 22,
+  "targeted_recovery_collector_units": 43,
+  "actionlint": {
+    "version": "1.7.12",
+    "exit_code": 0,
+    "log": "target/quality/wave-six-actionlint.log",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "log": "target/quality/wave-six-gate.log",
+  "log_sha256": "786fbda0198f31a25ae2ff49111fb6da05438914a283f33db0b560ddd454767b",
+  "initial_attempt": {
+    "exit_code": 1,
+    "reason": "Traceability assembly incorrectly extracted -- as three mapped test names; corrected argument parsing, then reran the complete canonical script successfully. Rust973/Python170 and the historical audit had passed before that metadata failure.",
+    "log": "target/quality/wave-six-gate-trace-failed.log",
+    "log_sha256": "84defb871a1ee11da8a73e62bb9f67483a1da3c1e56f937aef0d5b9f562e7796"
+  },
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/wave-six-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_rust_test_hashes": {
+    "crates/compiler/tests/full_bounded_contracts.rs": "2960732333f67e7cdb277f68e66e4b5fbcaf2ab04f1c240860e8621df38e1f19",
+    "crates/compiler/tests/indexed_context_codec_contracts.rs": "da1469545b5d4aa999590d96fac430fc7ec69dfcfbfcd5c645aefb99910a5a6f",
+    "crates/domain/tests/bml_matrix.rs": "4bd113496cad48fa05b3b80ad22562dbbfd2ded2f71d6182511e3866da5bdfab",
+    "crates/domain/tests/bml_search.rs": "00e7d73103f896eeac1245d951e3d2a42b890a07f29144e298742c0468dfafb8",
+    "crates/inference/tests/worker_cli_contracts.rs": "7c1a0e402f1e1a3da5e45302da26fd2dd496d2d5765c7c21c293fdfa6af9c248",
+    "crates/runtime/tests/operation_attention_contracts.rs": "e375359f78b82cb1459b1b5a85cf0141c7075b1ab84fd707736d7636137b0bb8",
+    "crates/runtime/tests/operation_mlp_contracts.rs": "467b81b66a1a1a16a005b9660cafbb39a53428929dcdb1ab797a9037dd99e951",
+    "crates/runtime/tests/symbolic_transport_contracts.rs": "61e01f2fda9cb25119f46680f44fa151041cddb74c127b963ef425af2de07bc0",
+    "crates/worker/tests/timeout_cli_contracts.rs": "38c0d8f1b1b129b04323f0ef8f8989a8a54ea383bf0229c9a6a7435c7e75ffde"
+  },
+  "tool_and_workflow_hashes": {
+    "tools/merge_mutation_shards.py": "8eb192be3a90d111570b7f3d2ad9fa7ceb62754205e056c4661d8db6bc5d5c62",
+    "tools/test_merge_mutation_shards.py": "d3cc61744579ddb4a003582bb99da5b4e79f3cb7972db43fbfa7ce2e2797a805",
+    "tools/mutation_recovery.py": "a252989b52717ae449a7c583cecee6699c847ff02273669dff8102d1aa967d57",
+    "tools/test_mutation_recovery.py": "33c80f9effa956aec112ad72eb208b2b51d0d484f8efb9874487e06d22e209d6",
+    ".github/workflows/mutation-campaign.yml": "4eee52912f0704d45f06418959fb093d0ac27ab32984a3e9d148ea2df80b02c5",
+    ".github/workflows/mutation-recovery.yml": "daa593b7cf5f8fe77a0ddb2433eea67b72c5638e0e3b3dc39fe857df6cc25d6f"
+  },
+  "traceability_hashes": {
+    "quality/contracts.feature": "4b1c22d09bffb44b597604fd98817df6bc5ecd4ea9a0bc9b677970614b4f25f5",
+    "quality/traceability.json": "03544be35a91a15bc8796067c4530acd1799768e74661c52400f283c49f3b9d6"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  }
+}
