@@ -128,6 +128,64 @@ fn cache_allocation_budget_and_size_arithmetic_are_checked_before_allocating() {
 }
 
 #[test]
+fn range_cache_dot_qk_uses_global_layers_positions_and_heads() {
+    let mut cache = HashConsedKV::try_new_layer_range(3..5, 2, 3, 2, 192).unwrap();
+    assert_eq!(cache.byte_size(), 192);
+    let query = [0.5f32, -1.0, 2.0];
+    // Literal results distinguish both global layers, positions and heads.
+    // All products and sums are exactly representable in F32.
+    let cases = [
+        (3, 0, 0, [1.0, 2.0, -1.0], -3.5),
+        (3, 0, 1, [2.0, 4.0, -2.0], -7.0),
+        (3, 1, 0, [3.0, 6.0, -3.0], -10.5),
+        (3, 1, 1, [4.0, 8.0, -4.0], -14.0),
+        (4, 0, 0, [5.0, 10.0, -5.0], -17.5),
+        (4, 0, 1, [6.0, 12.0, -6.0], -21.0),
+        (4, 1, 0, [7.0, 14.0, -7.0], -24.5),
+        (4, 1, 1, [8.0, 16.0, -8.0], -28.0),
+    ];
+    for &(layer, position, head, key, _) in &cases {
+        cache.store_k(layer, position, head, &key);
+    }
+    for &(layer, position, head, key, expected) in &cases {
+        assert_eq!(
+            cache.dot_qk(&query, layer, position, head),
+            expected,
+            "layer={layer}, position={position}, head={head}"
+        );
+        assert_eq!(cache.load_k(layer, position, head), key);
+    }
+    assert_eq!(cache.current_pos(), 0);
+}
+
+#[test]
+fn range_cache_coverage_checks_nonempty_ranges_and_head_layout() {
+    let cache = HashConsedKV::try_new_layer_range(3..5, 2, 3, 2, 192).unwrap();
+    for range in [3..5, 3..4, 4..5] {
+        assert!(cache.covers_layers(range.clone(), 2, 3), "{range:?}");
+    }
+    for range in [0..1, 2..4, 3..6, 5..6, 3..3, 4..4, 5..5] {
+        assert!(!cache.covers_layers(range.clone(), 2, 3), "{range:?}");
+    }
+    assert!(!cache.covers_layers(std::ops::Range { start: 4, end: 3 }, 2, 3));
+    // Equal stride does not make a different per-head dimension compatible.
+    for (heads, dimension) in [(3, 2), (1, 3), (2, 2), (0, 3), (2, 0), (u32::MAX, u32::MAX)] {
+        assert!(
+            !cache.covers_layers(3..5, heads, dimension),
+            "heads={heads}, dimension={dimension}"
+        );
+    }
+
+    let end = u32::MAX;
+    let last = HashConsedKV::try_new_layer_range(end - 2..end, 2, 3, 2, 192).unwrap();
+    assert!(last.covers_layers(end - 2..end, 2, 3));
+    assert!(last.covers_layers(end - 1..end, 2, 3));
+    assert!(!last.covers_layers(end - 3..end, 2, 3));
+    assert!(!last.covers_layers(end..end, 2, 3));
+    assert!(!last.covers_layers(0..end, 2, 3));
+}
+
+#[test]
 fn default_cache_budget_accepts_a_mib_and_rejects_payloads_above_512_mib() {
     use bml_compiler::kv_cache::DEFAULT_MAX_KV_BYTES;
     assert_eq!(DEFAULT_MAX_KV_BYTES, 536_870_912);

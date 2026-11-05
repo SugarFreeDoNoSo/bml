@@ -1,0 +1,60 @@
+{
+  "base_commit": "9aa114a9d74e72e8f09d45e367df5caaa936b375",
+  "scope": "Focused isolated mutation replays for global KV layer indices, range endpoints and head layout; not a full campaign.",
+  "baseline": {
+    "command": "cargo test -p bml-compiler --test causal_contracts --locked",
+    "passed": 14,
+    "failed": 0
+  },
+  "tests_sha256": "09a6a9eefb5d429bee3968dfd354244c2b740e75879498aa02794b7f8b8b35c2",
+  "replays": [
+    {
+      "name": "dot_global_layer",
+      "replacement": "let k = &self.k_buffers[(layer + self.layer_start) as usize]",
+      "exit_code": 101,
+      "detected": true,
+      "log": "target/quality/wave-kv-mutant-dot_global_layer.log",
+      "log_sha256": "251e29acb42e5d90312d200863df8de3067272faf6f4369484e85c3cff4f51a8"
+    },
+    {
+      "name": "empty_range",
+      "replacement": "layers.start <= layers.end",
+      "exit_code": 101,
+      "detected": true,
+      "log": "target/quality/wave-kv-mutant-empty_range.log",
+      "log_sha256": "230070d5994e0a4b76e9dac40b37ba12e2a7387af09f3138f22de6b5ef92f31b"
+    },
+    {
+      "name": "first_layer",
+      "replacement": "layers.start > self.layer_start",
+      "exit_code": 101,
+      "detected": true,
+      "log": "target/quality/wave-kv-mutant-first_layer.log",
+      "log_sha256": "f0933d2d5effabbd3f7d5beabd8b17c16881f58395972a6e566c6ba013807831"
+    },
+    {
+      "name": "last_layer",
+      "replacement": "layers.end < end",
+      "exit_code": 101,
+      "detected": true,
+      "log": "target/quality/wave-kv-mutant-last_layer.log",
+      "log_sha256": "858ab8a97871e517d84a05a14ff4b8163bec35b9bfceb6df4607babf4a5eeba8"
+    },
+    {
+      "name": "head_dim",
+      "replacement": "&& self.head_dim != dimension",
+      "exit_code": 101,
+      "detected": true,
+      "log": "target/quality/wave-kv-mutant-head_dim.log",
+      "log_sha256": "05323867ecb3bbc7a217a67e3e98b607a9c7078f3fbc0f1c55a2025f653922b1"
+    },
+    {
+      "name": "stride",
+      "replacement": "(heads as usize).checked_add(dimension as usize)",
+      "exit_code": 101,
+      "detected": true,
+      "log": "target/quality/wave-kv-mutant-stride.log",
+      "log_sha256": "47b8c76b5f3e95fc3efe861bcce2784a91e698ab9208c3d56a480bb87893f8d4"
+    }
+  ]
+}
