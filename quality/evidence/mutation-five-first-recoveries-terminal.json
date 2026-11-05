@@ -1,0 +1,528 @@
+{
+  "format_version": 1,
+  "observed_at": "2026-11-05T11:07:33.215898+00:00",
+  "status": "five_fresh_recoveries_terminal_runner_shutdown; incomplete source9a campaign",
+  "records": [
+    {
+      "index": 29,
+      "run_id": 42013172752,
+      "job_id": 127197030664,
+      "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "run_status": "completed",
+      "job_conclusion": "failure",
+      "failure_step": "Run only the original frozen shard and its baseline",
+      "failure_exit_code_observed": 143,
+      "execution_started_at": "2026-11-05T10:44:37Z",
+      "execution_completed_at": "2026-11-05T10:52:26Z",
+      "actual_runtime_inputs_verified": {
+        "JOB": "126992340392",
+        "INDEX": "29",
+        "RECOVERY_RUN": "42013172752",
+        "CONTROLLER": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+        "FROZEN_SOURCE": "9a6bc9680d5915576ca92528f60956efe9796cef"
+      },
+      "final_error_records": [
+        "2026-11-05T10:52:26.5937619Z ##[error]Process completed with exit code 143.",
+        "2026-11-05T10:52:26.5941438Z ##[error]The runner has received a shutdown signal. This can happen when the runner service is stopped, or a manually started runner is canceled."
+      ],
+      "traceback_observed": false,
+      "original_failure_cause": "unknown",
+      "fresh_failure_cause": "unknown; runner shutdown143 observed, no OOM/cgroup/process telemetry",
+      "step_states": [
+        {
+          "name": "Authorize original source and failure eligibility; inspect original evidence only",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify independent manifest SHA and original partition",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run only the original frozen shard and its baseline",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Attest the live source and identify the actual sealer",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Record recovery provenance and verify raw reports against the seal",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Preserve recovery evidence without build outputs",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "artifact_count": 0,
+      "artifact_ids": [],
+      "raw_outcomes_available": null,
+      "fresh_baseline_success_observable": false,
+      "fresh_seal_available": false,
+      "planned_candidate_count": 81,
+      "planned_candidates_sha256": "1cfc1daa77b95144188061fe4636d31184efd70d2367291a88adab30c81d2d57",
+      "planned_candidates_file_sha256": "65ff0ed09efb884a117ac0d3c76d2d347a00e01287d8ee3fbceea871688766d2",
+      "planned_candidates_scope": "frozen manifest assignment only; not an observation of executed mutants/progress",
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/SugarFreeDoNoSo/bml/blob/6910c359d39243b03d60e9d7c302e34f896cf6a7/.github",
+          "start_line": 2,
+          "start_column": null,
+          "end_line": 2,
+          "end_column": null,
+          "annotation_level": "warning",
+          "title": "",
+          "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/SugarFreeDoNoSo/bml/blob/6910c359d39243b03d60e9d7c302e34f896cf6a7/.github",
+          "start_line": 55,
+          "start_column": null,
+          "end_line": 55,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "Process completed with exit code 143.",
+          "raw_details": ""
+        }
+      ],
+      "new_raw_results_counted": 0,
+      "original_raw_reused": false
+    },
+    {
+      "index": 31,
+      "run_id": 42013186671,
+      "job_id": 127197074226,
+      "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "run_status": "completed",
+      "job_conclusion": "failure",
+      "failure_step": "Run only the original frozen shard and its baseline",
+      "failure_exit_code_observed": 143,
+      "execution_started_at": "2026-11-05T10:44:42Z",
+      "execution_completed_at": "2026-11-05T11:00:17Z",
+      "actual_runtime_inputs_verified": {
+        "JOB": "126992340694",
+        "INDEX": "31",
+        "RECOVERY_RUN": "42013186671",
+        "CONTROLLER": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+        "FROZEN_SOURCE": "9a6bc9680d5915576ca92528f60956efe9796cef"
+      },
+      "final_error_records": [
+        "2026-11-05T11:00:17.8130734Z ##[error]Process completed with exit code 143.",
+        "2026-11-05T11:00:17.8152287Z ##[error]The runner has received a shutdown signal. This can happen when the runner service is stopped, or a manually started runner is canceled."
+      ],
+      "traceback_observed": false,
+      "original_failure_cause": "unknown",
+      "fresh_failure_cause": "unknown; runner shutdown143 observed, no OOM/cgroup/process telemetry",
+      "step_states": [
+        {
+          "name": "Authorize original source and failure eligibility; inspect original evidence only",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify independent manifest SHA and original partition",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run only the original frozen shard and its baseline",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Attest the live source and identify the actual sealer",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Record recovery provenance and verify raw reports against the seal",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Preserve recovery evidence without build outputs",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "artifact_count": 0,
+      "artifact_ids": [],
+      "raw_outcomes_available": null,
+      "fresh_baseline_success_observable": false,
+      "fresh_seal_available": false,
+      "planned_candidate_count": 81,
+      "planned_candidates_sha256": "ee23b1da8d5cd4aebcddd5a6829aa6a8ec17073cce68ff448fe175c166a7f121",
+      "planned_candidates_file_sha256": "ffda118212aec336cedb53d8bfc3492871e9981a4f46dab56cb4ce800d661598",
+      "planned_candidates_scope": "frozen manifest assignment only; not an observation of executed mutants/progress",
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/SugarFreeDoNoSo/bml/blob/6910c359d39243b03d60e9d7c302e34f896cf6a7/.github",
+          "start_line": 2,
+          "start_column": null,
+          "end_line": 2,
+          "end_column": null,
+          "annotation_level": "warning",
+          "title": "",
+          "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/SugarFreeDoNoSo/bml/blob/6910c359d39243b03d60e9d7c302e34f896cf6a7/.github",
+          "start_line": 55,
+          "start_column": null,
+          "end_line": 55,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "Process completed with exit code 143.",
+          "raw_details": ""
+        }
+      ],
+      "new_raw_results_counted": 0,
+      "original_raw_reused": false
+    },
+    {
+      "index": 39,
+      "run_id": 42013203450,
+      "job_id": 127197138140,
+      "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "run_status": "completed",
+      "job_conclusion": "failure",
+      "failure_step": "Run only the original frozen shard and its baseline",
+      "failure_exit_code_observed": 143,
+      "execution_started_at": "2026-11-05T10:44:52Z",
+      "execution_completed_at": "2026-11-05T10:55:29Z",
+      "actual_runtime_inputs_verified": {
+        "JOB": "126992342461",
+        "INDEX": "39",
+        "RECOVERY_RUN": "42013203450",
+        "CONTROLLER": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+        "FROZEN_SOURCE": "9a6bc9680d5915576ca92528f60956efe9796cef"
+      },
+      "final_error_records": [
+        "2026-11-05T10:55:29.5305520Z ##[error]Process completed with exit code 143.",
+        "2026-11-05T10:55:29.5309593Z ##[error]The runner has received a shutdown signal. This can happen when the runner service is stopped, or a manually started runner is canceled."
+      ],
+      "traceback_observed": false,
+      "original_failure_cause": "unknown",
+      "fresh_failure_cause": "unknown; runner shutdown143 observed, no OOM/cgroup/process telemetry",
+      "step_states": [
+        {
+          "name": "Authorize original source and failure eligibility; inspect original evidence only",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify independent manifest SHA and original partition",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run only the original frozen shard and its baseline",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Attest the live source and identify the actual sealer",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Record recovery provenance and verify raw reports against the seal",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Preserve recovery evidence without build outputs",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "artifact_count": 0,
+      "artifact_ids": [],
+      "raw_outcomes_available": null,
+      "fresh_baseline_success_observable": false,
+      "fresh_seal_available": false,
+      "planned_candidate_count": 81,
+      "planned_candidates_sha256": "b1e47167ae11ecf8c933b359c11f620525f2cc71184ba3eae4b6685f6cca35c4",
+      "planned_candidates_file_sha256": "648e7409be44822c6510a88100ef8fd2df9014d9308356bc6c7083aa23d2bbba",
+      "planned_candidates_scope": "frozen manifest assignment only; not an observation of executed mutants/progress",
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/SugarFreeDoNoSo/bml/blob/6910c359d39243b03d60e9d7c302e34f896cf6a7/.github",
+          "start_line": 2,
+          "start_column": null,
+          "end_line": 2,
+          "end_column": null,
+          "annotation_level": "warning",
+          "title": "",
+          "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/SugarFreeDoNoSo/bml/blob/6910c359d39243b03d60e9d7c302e34f896cf6a7/.github",
+          "start_line": 55,
+          "start_column": null,
+          "end_line": 55,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "Process completed with exit code 143.",
+          "raw_details": ""
+        }
+      ],
+      "new_raw_results_counted": 0,
+      "original_raw_reused": false
+    },
+    {
+      "index": 40,
+      "run_id": 42013216016,
+      "job_id": 127197176538,
+      "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "run_status": "completed",
+      "job_conclusion": "failure",
+      "failure_step": "Run only the original frozen shard and its baseline",
+      "failure_exit_code_observed": 143,
+      "execution_started_at": "2026-11-05T10:44:55Z",
+      "execution_completed_at": "2026-11-05T10:51:29Z",
+      "actual_runtime_inputs_verified": {
+        "JOB": "126992342513",
+        "INDEX": "40",
+        "RECOVERY_RUN": "42013216016",
+        "CONTROLLER": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+        "FROZEN_SOURCE": "9a6bc9680d5915576ca92528f60956efe9796cef"
+      },
+      "final_error_records": [
+        "2026-11-05T10:51:29.4989453Z ##[error]Process completed with exit code 143.",
+        "2026-11-05T10:51:29.5026207Z ##[error]The runner has received a shutdown signal. This can happen when the runner service is stopped, or a manually started runner is canceled."
+      ],
+      "traceback_observed": false,
+      "original_failure_cause": "unknown",
+      "fresh_failure_cause": "unknown; runner shutdown143 observed, no OOM/cgroup/process telemetry",
+      "step_states": [
+        {
+          "name": "Authorize original source and failure eligibility; inspect original evidence only",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify independent manifest SHA and original partition",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run only the original frozen shard and its baseline",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Attest the live source and identify the actual sealer",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Record recovery provenance and verify raw reports against the seal",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Preserve recovery evidence without build outputs",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "artifact_count": 0,
+      "artifact_ids": [],
+      "raw_outcomes_available": null,
+      "fresh_baseline_success_observable": false,
+      "fresh_seal_available": false,
+      "planned_candidate_count": 81,
+      "planned_candidates_sha256": "9edb9da3df6c90a61649f2fa8ee61575240939972e52baa59070a93a579b4a29",
+      "planned_candidates_file_sha256": "f0eb610f5dc2c8b4b2339fd4ec859daeb0df13efa762fc9d9fd9e2004ee21c2a",
+      "planned_candidates_scope": "frozen manifest assignment only; not an observation of executed mutants/progress",
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/SugarFreeDoNoSo/bml/blob/6910c359d39243b03d60e9d7c302e34f896cf6a7/.github",
+          "start_line": 2,
+          "start_column": null,
+          "end_line": 2,
+          "end_column": null,
+          "annotation_level": "warning",
+          "title": "",
+          "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/SugarFreeDoNoSo/bml/blob/6910c359d39243b03d60e9d7c302e34f896cf6a7/.github",
+          "start_line": 55,
+          "start_column": null,
+          "end_line": 55,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "Process completed with exit code 143.",
+          "raw_details": ""
+        }
+      ],
+      "new_raw_results_counted": 0,
+      "original_raw_reused": false
+    },
+    {
+      "index": 43,
+      "run_id": 42013228131,
+      "job_id": 127197218499,
+      "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "run_status": "completed",
+      "job_conclusion": "failure",
+      "failure_step": "Run only the original frozen shard and its baseline",
+      "failure_exit_code_observed": 143,
+      "execution_started_at": "2026-11-05T10:45:02Z",
+      "execution_completed_at": "2026-11-05T10:53:37Z",
+      "actual_runtime_inputs_verified": {
+        "JOB": "126992342771",
+        "INDEX": "43",
+        "RECOVERY_RUN": "42013228131",
+        "CONTROLLER": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+        "FROZEN_SOURCE": "9a6bc9680d5915576ca92528f60956efe9796cef"
+      },
+      "final_error_records": [
+        "2026-11-05T10:53:37.0959232Z ##[error]The runner has received a shutdown signal. This can happen when the runner service is stopped, or a manually started runner is canceled.",
+        "2026-11-05T10:53:37.0962053Z ##[error]Process completed with exit code 143."
+      ],
+      "traceback_observed": false,
+      "original_failure_cause": "unknown",
+      "fresh_failure_cause": "unknown; runner shutdown143 observed, no OOM/cgroup/process telemetry",
+      "step_states": [
+        {
+          "name": "Authorize original source and failure eligibility; inspect original evidence only",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify independent manifest SHA and original partition",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run only the original frozen shard and its baseline",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Attest the live source and identify the actual sealer",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Record recovery provenance and verify raw reports against the seal",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Preserve recovery evidence without build outputs",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "artifact_count": 0,
+      "artifact_ids": [],
+      "raw_outcomes_available": null,
+      "fresh_baseline_success_observable": false,
+      "fresh_seal_available": false,
+      "planned_candidate_count": 81,
+      "planned_candidates_sha256": "85f651a8a91fda0a25cf46dbde0c9315fcc1666f782034b1b2d4233782596ad0",
+      "planned_candidates_file_sha256": "d375bfe9e4c77efbac54f883b6e9cbd802a75eb3a59461cb362da36d1c0e003c",
+      "planned_candidates_scope": "frozen manifest assignment only; not an observation of executed mutants/progress",
+      "annotations": [
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/SugarFreeDoNoSo/bml/blob/6910c359d39243b03d60e9d7c302e34f896cf6a7/.github",
+          "start_line": 2,
+          "start_column": null,
+          "end_line": 2,
+          "end_column": null,
+          "annotation_level": "warning",
+          "title": "",
+          "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+          "raw_details": ""
+        },
+        {
+          "path": ".github",
+          "blob_href": "https://github.com/SugarFreeDoNoSo/bml/blob/6910c359d39243b03d60e9d7c302e34f896cf6a7/.github",
+          "start_line": 55,
+          "start_column": null,
+          "end_line": 55,
+          "end_column": null,
+          "annotation_level": "failure",
+          "title": "",
+          "message": "Process completed with exit code 143.",
+          "raw_details": ""
+        }
+      ],
+      "new_raw_results_counted": 0,
+      "original_raw_reused": false
+    }
+  ],
+  "global_union_complete_indices": 58,
+  "global_union_changed": false,
+  "parent20_excluded": true,
+  "no_schema_or_cli_failure_evidence": true,
+  "causal_limit": "No runner resource telemetry, complete raw reports or source seal can be inferred from143 alone.",
+  "plan_note": "No retry or dispatch; no controller fix indicated by the observed frontier. Preserve UNKNOWN and plan a separate frozen CURRENT campaign.",
+  "files_sha256": {
+    "29-annotations.json": "1755103774ca0e9403296ce63218e528bd749a77053610257269c11aad7aca0a",
+    "29-artifacts.json": "f7417e1fb877d3f5934f143cc38ad9e2905476e8f5ac6776507d09441efcd6f6",
+    "29-check-run.json": "4712c42296bdf24abfb3fc842171f67c03b5d5d145dad9d1bd0ae114504aa271",
+    "29-job.log": "e36073237aceca4da9941221cfaf7eee531b84037921ba2390e1e841ab9966cf",
+    "29-jobs.json": "c34f67f49dd0b3cb00082f7ea349f88d3b57d316282558c8930de25ef63d22b1",
+    "29-planned-candidates.json": "65ff0ed09efb884a117ac0d3c76d2d347a00e01287d8ee3fbceea871688766d2",
+    "31-annotations.json": "1755103774ca0e9403296ce63218e528bd749a77053610257269c11aad7aca0a",
+    "31-artifacts.json": "f7417e1fb877d3f5934f143cc38ad9e2905476e8f5ac6776507d09441efcd6f6",
+    "31-check-run.json": "aa2115b09b36ab3d9919649c26c31d3d3683b847ea6f0204a7c4e057d019ba3d",
+    "31-job.log": "7964c73b0feb5bc1e0aca06ddad40dab4d59945f6a9366047edb008365413a36",
+    "31-jobs.json": "3d6dc44b64fac9257af4ed8e9fbc387acb337bfe78b686ef9855ffebc63e2d1a",
+    "31-planned-candidates.json": "ffda118212aec336cedb53d8bfc3492871e9981a4f46dab56cb4ce800d661598",
+    "39-annotations.json": "1755103774ca0e9403296ce63218e528bd749a77053610257269c11aad7aca0a",
+    "39-artifacts.json": "f7417e1fb877d3f5934f143cc38ad9e2905476e8f5ac6776507d09441efcd6f6",
+    "39-check-run.json": "f1378c0fc6553e545a6fd5a733db9084225f6d4419cb56fcdb7bc9c6adbf9576",
+    "39-job.log": "ec0ea3a00591b8e949a46a10e27044e1571e4ddcc3a092d472727a384f455a8b",
+    "39-jobs.json": "594ecd5d4f5d5796f07f602c2c5d555f1c7eee8a16f08ab767873d7bda4c2d77",
+    "39-planned-candidates.json": "648e7409be44822c6510a88100ef8fd2df9014d9308356bc6c7083aa23d2bbba",
+    "40-annotations.json": "1755103774ca0e9403296ce63218e528bd749a77053610257269c11aad7aca0a",
+    "40-artifacts.json": "f7417e1fb877d3f5934f143cc38ad9e2905476e8f5ac6776507d09441efcd6f6",
+    "40-check-run.json": "37a9406c666d8e29d03cdf27ad4b1e549343d590e876c28225dddbd04ebc5c42",
+    "40-job.log": "4c9027e2827ddccf3d9aabf7c5477d225e8a6ebecffd7a7a25108d3eef8923ff",
+    "40-jobs.json": "a9ee360f3bc49d720e9da4311db457e3711a86ff0f5b1164a62dbf4be33b5df4",
+    "40-planned-candidates.json": "f0eb610f5dc2c8b4b2339fd4ec859daeb0df13efa762fc9d9fd9e2004ee21c2a",
+    "43-annotations.json": "1755103774ca0e9403296ce63218e528bd749a77053610257269c11aad7aca0a",
+    "43-artifacts.json": "f7417e1fb877d3f5934f143cc38ad9e2905476e8f5ac6776507d09441efcd6f6",
+    "43-check-run.json": "979afe56088f1a4a65b3e1839b424e5d87309183ec4ee2e2555306590099a52d",
+    "43-job.log": "3e5354430c1a6964916ce8a6998a9d33ce3968c6c27281b27784d9d134cf1da3",
+    "43-jobs.json": "7ba28fd502ba709152a6f2f4878324bd6d269435ae154cca6c2e3ae25602cbfc",
+    "43-planned-candidates.json": "d375bfe9e4c77efbac54f883b6e9cbd802a75eb3a59461cb362da36d1c0e003c",
+    "original-plan-campaign.json": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+    "original-plan-final.diff": "ed5a4fe4236c18b9577e3939e9efbb974ecd3b2151fb031a58498050344ac26b"
+  },
+  "actions": "read-only APIs/logs/offline manifest assignment; no Cargo/dispatch/source edits/other projects"
+}

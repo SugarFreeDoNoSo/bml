@@ -1,0 +1,161 @@
+{
+  "status": "five_terminal_failures_no_new_outcomes",
+  "archive": "quality/evidence/mutation-five-first-recoveries-terminal-capture.tar.gz",
+  "archive_sha256": "2253362e68de935bec545007e569821be5de8ac78cc264a09436e555261723f8",
+  "archive_bytes": 3040762,
+  "members": {
+    "29-annotations.json": {
+      "sha256": "1755103774ca0e9403296ce63218e528bd749a77053610257269c11aad7aca0a",
+      "bytes": 991
+    },
+    "29-artifacts.json": {
+      "sha256": "f7417e1fb877d3f5934f143cc38ad9e2905476e8f5ac6776507d09441efcd6f6",
+      "bytes": 42
+    },
+    "29-check-run.json": {
+      "sha256": "4712c42296bdf24abfb3fc842171f67c03b5d5d145dad9d1bd0ae114504aa271",
+      "bytes": 3803
+    },
+    "29-job.log": {
+      "sha256": "e36073237aceca4da9941221cfaf7eee531b84037921ba2390e1e841ab9966cf",
+      "bytes": 44888
+    },
+    "29-jobs.json": {
+      "sha256": "c34f67f49dd0b3cb00082f7ea349f88d3b57d316282558c8930de25ef63d22b1",
+      "bytes": 5444
+    },
+    "29-planned-candidates.json": {
+      "sha256": "65ff0ed09efb884a117ac0d3c76d2d347a00e01287d8ee3fbceea871688766d2",
+      "bytes": 161093
+    },
+    "31-annotations.json": {
+      "sha256": "1755103774ca0e9403296ce63218e528bd749a77053610257269c11aad7aca0a",
+      "bytes": 991
+    },
+    "31-artifacts.json": {
+      "sha256": "f7417e1fb877d3f5934f143cc38ad9e2905476e8f5ac6776507d09441efcd6f6",
+      "bytes": 42
+    },
+    "31-check-run.json": {
+      "sha256": "aa2115b09b36ab3d9919649c26c31d3d3683b847ea6f0204a7c4e057d019ba3d",
+      "bytes": 3803
+    },
+    "31-job.log": {
+      "sha256": "7964c73b0feb5bc1e0aca06ddad40dab4d59945f6a9366047edb008365413a36",
+      "bytes": 44883
+    },
+    "31-jobs.json": {
+      "sha256": "3d6dc44b64fac9257af4ed8e9fbc387acb337bfe78b686ef9855ffebc63e2d1a",
+      "bytes": 5444
+    },
+    "31-planned-candidates.json": {
+      "sha256": "ffda118212aec336cedb53d8bfc3492871e9981a4f46dab56cb4ce800d661598",
+      "bytes": 137051
+    },
+    "39-annotations.json": {
+      "sha256": "1755103774ca0e9403296ce63218e528bd749a77053610257269c11aad7aca0a",
+      "bytes": 991
+    },
+    "39-artifacts.json": {
+      "sha256": "f7417e1fb877d3f5934f143cc38ad9e2905476e8f5ac6776507d09441efcd6f6",
+      "bytes": 42
+    },
+    "39-check-run.json": {
+      "sha256": "f1378c0fc6553e545a6fd5a733db9084225f6d4419cb56fcdb7bc9c6adbf9576",
+      "bytes": 3803
+    },
+    "39-job.log": {
+      "sha256": "ec0ea3a00591b8e949a46a10e27044e1571e4ddcc3a092d472727a384f455a8b",
+      "bytes": 44883
+    },
+    "39-jobs.json": {
+      "sha256": "594ecd5d4f5d5796f07f602c2c5d555f1c7eee8a16f08ab767873d7bda4c2d77",
+      "bytes": 5444
+    },
+    "39-planned-candidates.json": {
+      "sha256": "648e7409be44822c6510a88100ef8fd2df9014d9308356bc6c7083aa23d2bbba",
+      "bytes": 143463
+    },
+    "40-annotations.json": {
+      "sha256": "1755103774ca0e9403296ce63218e528bd749a77053610257269c11aad7aca0a",
+      "bytes": 991
+    },
+    "40-artifacts.json": {
+      "sha256": "f7417e1fb877d3f5934f143cc38ad9e2905476e8f5ac6776507d09441efcd6f6",
+      "bytes": 42
+    },
+    "40-check-run.json": {
+      "sha256": "37a9406c666d8e29d03cdf27ad4b1e549343d590e876c28225dddbd04ebc5c42",
+      "bytes": 3803
+    },
+    "40-job.log": {
+      "sha256": "4c9027e2827ddccf3d9aabf7c5477d225e8a6ebecffd7a7a25108d3eef8923ff",
+      "bytes": 44883
+    },
+    "40-jobs.json": {
+      "sha256": "a9ee360f3bc49d720e9da4311db457e3711a86ff0f5b1164a62dbf4be33b5df4",
+      "bytes": 5444
+    },
+    "40-planned-candidates.json": {
+      "sha256": "f0eb610f5dc2c8b4b2339fd4ec859daeb0df13efa762fc9d9fd9e2004ee21c2a",
+      "bytes": 138586
+    },
+    "43-annotations.json": {
+      "sha256": "1755103774ca0e9403296ce63218e528bd749a77053610257269c11aad7aca0a",
+      "bytes": 991
+    },
+    "43-artifacts.json": {
+      "sha256": "f7417e1fb877d3f5934f143cc38ad9e2905476e8f5ac6776507d09441efcd6f6",
+      "bytes": 42
+    },
+    "43-check-run.json": {
+      "sha256": "979afe56088f1a4a65b3e1839b424e5d87309183ec4ee2e2555306590099a52d",
+      "bytes": 3803
+    },
+    "43-job.log": {
+      "sha256": "3e5354430c1a6964916ce8a6998a9d33ce3968c6c27281b27784d9d134cf1da3",
+      "bytes": 44880
+    },
+    "43-jobs.json": {
+      "sha256": "7ba28fd502ba709152a6f2f4878324bd6d269435ae154cca6c2e3ae25602cbfc",
+      "bytes": 5444
+    },
+    "43-planned-candidates.json": {
+      "sha256": "d375bfe9e4c77efbac54f883b6e9cbd802a75eb3a59461cb362da36d1c0e003c",
+      "bytes": 139057
+    },
+    "five-terminal-failure-report.json": {
+      "sha256": "050497a262cd850b01ebdf205e34734deff12a32a14815c6bc3155557b9ef868",
+      "bytes": 24338
+    },
+    "original-plan-campaign.json": {
+      "sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+      "bytes": 20174573
+    },
+    "original-plan-final.diff": {
+      "sha256": "ed5a4fe4236c18b9577e3939e9efbb974ecd3b2151fb031a58498050344ac26b",
+      "bytes": 2244732
+    },
+    "restart-plan/restart-plan.md": {
+      "sha256": "febd4d50609e2255cfe4df09e8db6f394a6a06e8bd6c3697f08b8e3e62f7bb92",
+      "bytes": 11573
+    },
+    "restart-plan/restart-plan.json": {
+      "sha256": "8f9d7f308adcfd8526f8ded0f7bbd415065de4e767b7e3b6b98fe1ae670f40bd",
+      "bytes": 10083
+    },
+    "restart-plan/references.json": {
+      "sha256": "6d549502ddd6b64c47376ae3906de1614c14d17d74d241a6894843210cfc8182",
+      "bytes": 11576
+    },
+    "restart-plan/commands-planned.json": {
+      "sha256": "aed7c2b7a6db722fb9da1cf71b1bbf26f906171b740b670ab76c71823af51551",
+      "bytes": 1986
+    },
+    "restart-plan/index.json": {
+      "sha256": "685d02b10c713f2a692a8ac12ac8eeebd0ab8c85b83828231b3be10c1c9060ca",
+      "bytes": 733
+    }
+  },
+  "scope": "Five first fresh29/31/39/40/43 attempts oncontroller6910. Auth/plan successful, mutation step ended143 with runner shutdown; attest/finish/upload skipped and0artifacts in each API inventory. Runtimeinputs verified from logs; causeUNKNOWN. Candidate sets are405planned assignments, not completed outcomes. Union58unchanged, parent20excluded. Restartplan is read-onlyproposal for a separate current-code freeze with bounded stdout telemetry; no new campaign or scoring policy change."
+}
