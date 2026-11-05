@@ -1,0 +1,22 @@
+{
+  "source_revision": "9aa114a9d74e72e8f09d45e367df5caaa936b375",
+  "scope": "Functional emulated x86_64 Nehalem CPU without AVX2, not native hardware or performance evidence. Auto remains scalar and forced AVX2 unavailable is rejected by preflight tests.",
+  "command": [
+    "/home/dev/Work/bml/target/arm-qemu/runtime/usr/bin/qemu-x86_64",
+    "-cpu",
+    "Nehalem",
+    "/home/dev/Work/bml/target/entrypoint-repair-build/debug/deps/code_comparison-2aefe5af6e54face",
+    "--nocapture"
+  ],
+  "exit_code": 0,
+  "emulator_sha256": "36d35ffe5363bd49bfa9c2b6a048e9fb2e798fea38285a5a45f52d34f9869089",
+  "binary_sha256": "72711529d357e6c3ec92ab42291da74b4479bec499226360dfde9152a5530644",
+  "log": "target/quality/wave-x86-no-avx2.log",
+  "log_sha256": "becd85d7353237068eadc2a5e40e175a400fa41a0defc29f9ff4f900e7cf8313",
+  "tests_passed": 4,
+  "source_hashes": {
+    "crates/kernels/src/lib.rs": "82c4511a44cf04c338e823dde904133b1f200f278e12efea66a66617319e23a4",
+    "crates/kernels/tests/code_comparison.rs": "7f3e33cedc7057ad6305c16686cf7cfd14be4930d5f6790a36d17f5ef677e4ac",
+    "crates/kernels/Cargo.toml": "ef943b48a6ffbf7755ae2d775e0f36f60e27ceeb08f43f1e1b0aeee11183ea65"
+  }
+}

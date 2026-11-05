@@ -145,8 +145,10 @@ a potencias, con memoización de enteros. Para `n > 1` que no sea potencia de
 dos, toma `k=ceil(log2(n))`, `r=2^k-n` y construye `B(k,B(r,1))`. Como
 `0 < r < n` y `k < n`, la descomposición disminuye; las cotas de pasos y
 recursión la limitan además explícitamente. Un racional positivo `n/d` usa la
-regla de cociente y un negativo usa negación. No se promete tamaño mínimo ni
-se ha completado aún la comparación de estrategias de la spec.
+regla de cociente y un negativo usa negación. No se promete tamaño mínimo.
+La comparación acotada de estrategias se ofrece por separado mediante
+`ExactSearcher`, con candidatos, presupuestos y terminación registrados;
+la sección de búsqueda describe su contrato.
 
 Los presupuestos predeterminados son 4096 pasos, 128 niveles de descomposición,
 1.048.576 bits por árbol y 16.777.216 bits de árboles retenidos durante la
@@ -405,11 +407,15 @@ Referencias oficiales: [AVX2](https://doc.rust-lang.org/core/arch/x86_64/fn._mm2
 
 `Auto` permanece en escalar. La campaña inicial en x86-64 encontró ventaja de
 AVX2 para códigos largos y regresión para códigos cortos; no se promueve una
-regla automática universal. NEON compiló para `aarch64-unknown-linux-gnu` pero
-no se ejecutó ni midió en ARM. Las cifras y muestras originales, CPU, flags,
-revisión y hashes del código están en
-`quality/evidence/bml-code-simd.json`. La comparación con la referencia se hizo
-antes de medir cada backend disponible.
+regla automática universal. En esa campaña inicial NEON solo compiló para
+`aarch64-unknown-linux-gnu`; las muestras, CPU, flags, revisión y hashes
+históricos se conservan en `quality/evidence/bml-code-simd.json`.
+La campaña posterior de GitHub Actions `41853147652` ejecutó Scalar/NEON en
+una VM ARM64 nativa y Scalar/AVX2 en una VM x86-64 nativa: ocho contratos por
+host y tres cargas con siete repeticiones por backend, tras comprobar la
+corrección. `quality/evidence/native-kernels-41853147652.json` conserva fuentes,
+ELF, CPU, muestras y hashes verificados. Acredita comparación estructural de
+códigos; no mide evaluación BML numérica, inferencia ni comportamiento PMU/L1.
 
 Reproducción: `cargo test -p bml-kernels --locked`,
 `cargo run -p bml-kernels --example code_compare_bench --release --locked -- 100`
