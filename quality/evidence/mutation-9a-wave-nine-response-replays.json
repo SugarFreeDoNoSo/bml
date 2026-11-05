@@ -1,0 +1,149 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "ab04db2884da3f69e3b1f794f1185e964f7ecf2f",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "remote_handshake_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "forward_rejects_remote_metadata_after_a_valid_local_request"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-remote-forward-response-metadata.log",
+      "log_sha256": "1679518511011cbdd7979730e0202291e739daa332b6cb46b794dcd46ee7fab8",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "forward_rejects_remote_metadata_after_a_valid_local_request",
+          "ok"
+        ]
+      ]
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "remote_handshake_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "forward_rejects_remote_metadata_after_a_valid_local_request"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-remote-forward-response-metadata.log",
+      "log_sha256": "29ab57284c940417c3278538da66c4ce33a6656cf2a6a8d09b09a7d5ddc6eecc",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "forward_rejects_remote_metadata_after_a_valid_local_request",
+          "FAILED"
+        ]
+      ],
+      "label": "remote-forward-response-metadata",
+      "candidate": "crates/inference/src/remote.rs:242:18: replace match guard returned == position && hidden.len() == self.width && hidden.iter().all(|x| x.is_finite()) with true in LayerClient::forward",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "a39e405a419110c6c84c224f20911ef8d9e95748a1c4b1ed033c32fe9b5d6671",
+      "original_diff_sha256": "6e49f5aa1035e07c63f085fda91693f3eb8f276d417d3967b46e9daa264ed06c",
+      "original_span": {
+        "end": {
+          "column": 56,
+          "line": 244
+        },
+        "start": {
+          "column": 18,
+          "line": 242
+        }
+      },
+      "detected": true
+    }
+  ],
+  "build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "cleaned_packages": [
+    "bml-compiler",
+    "bml-domain",
+    "bml-inference",
+    "bml-runtime"
+  ],
+  "cleanup": [
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-inference",
+        "-p",
+        "bml-runtime"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-nine-contract-replays-before-baselines.log",
+      "log_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-inference",
+        "-p",
+        "bml-runtime"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-nine-contract-replays-restored-remote-forward-response-metadata.log",
+      "log_sha256": "a3396425bdf2e89d25b09cf5204a9b235c7a1624acff815e6914bb762d539d62",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    }
+  ],
+  "observed_at_utc": "2026-11-05T06:20:21.357850+00:00",
+  "status": "passed_focused_replays",
+  "source_override": {
+    "file": "crates/domain/src/transformer/bounded.rs",
+    "reason": "Frozen getter source reconstruction in an isolated worktree only; current builder guard cleanup is outside the byte-identical configuration prefix.",
+    "current_source_sha256": "6d57cd1c4d00e9e275328667ad01c9b0624f74dee738cc24231dfb42a16c0727",
+    "frozen_source_sha256": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+    "unchanged_configuration_prefix_sha256": "f364a7e8047f97e8bd911530897244725da5d9c65af80a9643ddc04752198604",
+    "backup": "target/quality/wave-nine-bounded-current-source.bin"
+  },
+  "current_source_restored_after_replays": true,
+  "patched_test_hashes": {
+    "crates/inference/tests/remote_handshake_contracts.rs": "0af081ead5dce536bef0a3556014e440cac1f15273323143fbdf103fcb82984e"
+  },
+  "unchanged_test_inputs": {
+    "crates/domain/tests/bounded_transformer_contracts.rs": "e00c7a73b1495f103f17d4cf4bf06f81f6bcd000263b77b8b9a9836edf8ab943"
+  },
+  "runner_sha256": "a233b5fbe35ea0395d4d095c0b02c1aa1d1488dc41ebbceaeb96acddc14726a6",
+  "full_execution_report": {
+    "path": "target/quality/wave-nine-contract-replays.json",
+    "sha256": "2eec05b3a9385b3a400e0d15e50591452f24cc44ac99fac2f7288263eecabdc3"
+  }
+}
