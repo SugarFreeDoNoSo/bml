@@ -77,7 +77,7 @@ def validate_origin(repository, job_id, index, bundle, log):
             and any(s.get("name") == "Check independent prepare digest and frozen revision"
                     and s.get("conclusion") == "success" for s in steps),
             "original job did not fail after admission and before evidence upload")
-    require(re.search(r"Z ##\[error\]Process completed with exit code 143\.$", log, re.M)
+    require(re.search(r"Z ##\[error\]Process completed with exit code 143\.\r?$", log, re.M)
             and re.search(r"Z ##\[error\]The runner has received a shutdown signal\.", log),
             "original job does not prove a runner shutdown with exit 143")
     rows = artifacts.get("artifacts", [])
@@ -90,8 +90,16 @@ def validate_origin(repository, job_id, index, bundle, log):
 
 
 def api(path, raw=False):
-    data = subprocess.check_output(["gh", "api", path], text=True)
-    return data if raw else json.loads(data)
+    command = ["gh", "api"]
+    if raw:
+        # Current gh requires this opt-in even for piped logs. Older installed
+        # versions lack the flag. Capture the response as data, never render it
+        # on a terminal, and preserve its original escape/CRLF bytes in the log.
+        help_text = subprocess.check_output(["gh", "api", "--help"], text=True)
+        if "--allow-escape-sequences" in help_text:
+            command.append("--allow-escape-sequences")
+        return subprocess.check_output([*command, path]).decode("utf-8")
+    return json.loads(subprocess.check_output([*command, path], text=True))
 
 
 def authorize(repository, job_id, index, run_id, attempt, controller, output):

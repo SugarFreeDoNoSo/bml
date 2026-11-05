@@ -1,0 +1,56 @@
+{
+  "status": "compatibility_fix_verified_pending_hosted_retry",
+  "observed_at_utc": "2026-11-05T04:27:06.272324+00:00",
+  "origin_run": 41950170549,
+  "origin_shard": "20/64",
+  "origin_job": 126992338567,
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "failed_attempt": {
+    "recovery_run": 41967289781,
+    "recovery_job": 127047120926,
+    "controller_revision": "ee7558243c4bb5b3fb738176e15d9e98b1c39fca",
+    "status": "failed_before_frozen_source_checkout_or_mutations",
+    "failure": "Hosted gh refuses raw logs containing ANSI unless explicitly permitted. Authorization stopped; baseline and mutation steps were skipped.",
+    "baseline_or_mutation_run": false,
+    "log": "target/quality/mutation-recovery-41967289781-failure.log",
+    "log_sha256": "5f234e55feb89bd69a1a4c18ea56d3147d04b30353e0c36f729c43284338637c"
+  },
+  "fix": "Detect gh api flag support. Permit escape sequences only for captured raw log data; retain older gh compatibility. Preserve UTF8/ANSI/CRLF bytes and stored digest, with CRLF-aware validation. JSON and API/permission errors retain their existing behavior.",
+  "official_manual": "https://cli.github.com/manual/gh_api",
+  "verification": {
+    "python_tooling_tests": 174,
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools",
+      "-p",
+      "test_*.py"
+    ],
+    "exit_code": 0,
+    "log": "target/quality/recovery-gh-compatibility-tests.log",
+    "log_sha256": "3684f76aa3ae74e2a4f904ac3e1bc6db00b3d964f44de758020c2c2d964bcd08",
+    "new_compatibility_contracts": 4,
+    "live_readonly_preflight": {
+      "status": "passed_live_readonly_preflight",
+      "gh_version": "gh version 2.46.0 (2025-01-13 Debian 2.46.0-3)",
+      "source": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "manifest_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+      "log_utf8_sha256": "b7125d8ec1d8666ef76cc22378bb45b28febd1680b96a7db1b9820a5a4b7415d",
+      "candidate_count": 81,
+      "authorization_or_dispatch_created": false
+    }
+  },
+  "changed_tool_hashes": {
+    "tools/mutation_recovery.py": "d3ddeedae79884106efc56906b58314096d80fae9768f4aee2d5201e9adcc968",
+    "tools/test_mutation_recovery.py": "a6804854d74eb7e32655260ce482c0e50ff7197b05946ec2c6f2fd769413cd7d"
+  },
+  "limits": [
+    "This preserves the failed attempt rather than replacing its conclusion.",
+    "No original mutation outcomes are changed and no global mutation pass is claimed.",
+    "The retry must pass hosted admission and eventually finish/seal before it is accepted."
+  ],
+  "unchanged_rust_and_traceability_proof": "wave-six-gate.json still matches every Rust test and traceability hash; the compatibility patch changes only two Python files."
+}

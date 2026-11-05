@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -75,6 +76,32 @@ class InterruptedShardOrigin(unittest.TestCase):
                 recovery.validate_origin(recovery.REPOSITORY, JOB, 20, bundle, LOG)
 
 
+class ActionApiLogCompatibility(unittest.TestCase):
+    def test_recent_gh_opts_in_only_for_captured_raw_logs_and_preserves_bytes(self):
+        payload = b"\x1b[36mlog\x1b[0m\r\n"
+        with patch.object(recovery.subprocess, "check_output", side_effect=[
+            "--allow-escape-sequences Allow terminal escape sequences", payload
+        ]) as check:
+            actual = recovery.api("repos/owner/repo/actions/jobs/1/logs", raw=True)
+        self.assertEqual(actual.encode("utf-8"), payload)
+        self.assertEqual(check.call_args_list[0].args[0], ["gh", "api", "--help"])
+        self.assertEqual(check.call_args_list[1].args[0], [
+            "gh", "api", "--allow-escape-sequences", "repos/owner/repo/actions/jobs/1/logs"])
+        self.assertNotIn("text", check.call_args_list[1].kwargs)
+
+    def test_older_gh_reads_captured_logs_without_an_unsupported_flag(self):
+        with patch.object(recovery.subprocess, "check_output", side_effect=[
+            "gh api <endpoint> [flags]", b"original log\n"
+        ]) as check:
+            self.assertEqual(recovery.api("logs", raw=True), "original log\n")
+        self.assertEqual(check.call_args_list[1].args[0], ["gh", "api", "logs"])
+
+    def test_json_api_does_not_relax_escape_handling_or_probe_help(self):
+        with patch.object(recovery.subprocess, "check_output", return_value='{"id": 1}') as check:
+            self.assertEqual(recovery.api("metadata"), {"id": 1})
+        check.assert_called_once_with(["gh", "api", "metadata"], text=True)
+
+
 class RecoveredShardEvidence(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -110,6 +137,19 @@ class RecoveredShardEvidence(unittest.TestCase):
 
         with patch.object(recovery, "api", side_effect=api):
             recovery.authorize(recovery.REPOSITORY, JOB, 20, 999, 1, "a" * 40, self.evidence)
+
+    def test_crlf_origin_log_keeps_exact_saved_bytes_and_digest(self):
+        bundle = origin()
+        output = self.root / "crlf-evidence"
+        text = LOG.replace("\n", "\r\n")
+        payload = text.encode("utf-8")
+        with patch.object(recovery, "api", side_effect=[
+            bundle["run"], bundle["artifact"], bundle["job"], bundle["artifacts"], text
+        ]):
+            recovery.authorize(recovery.REPOSITORY, JOB, 20, 1000, 1, "a" * 40, output)
+        self.assertEqual((output / "origin-job.log").read_bytes(), payload)
+        record = recovery.authorization(output)
+        self.assertEqual(record["origin_log_sha256"], hashlib.sha256(payload).hexdigest())
 
     def sealed(self, summary="CaughtMutant", code=0):
         values = self.manifest["shards"][20]["candidates"]
