@@ -1,0 +1,74 @@
+{
+  "status": "archived",
+  "observed_at_utc": "2026-11-05T00:57:51.196207+00:00",
+  "pre_archive_revision": "5f638e2950cf0bf5c393896b80d453a3b7f6fca1",
+  "archive_directory": "openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices",
+  "command": "openspec archive bml-exact-numbers-and-matrices --yes",
+  "scope": "Closure of the exact-number change only; inference, PMU and final release gates remain separate.",
+  "requirements": 29,
+  "scenarios": 64,
+  "canonical_capabilities_total": 12,
+  "specs": [
+    {
+      "capability": "bml-code-storage",
+      "requirements": 6,
+      "scenarios": 17,
+      "archived_spec": "openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-code-storage/spec.md",
+      "canonical_spec": "openspec/specs/bml-code-storage/spec.md",
+      "archived_sha256": "552eaec121ac8155084ec7b31ac0fedaf881539c9bf8936c2de872bdd412f304",
+      "canonical_sha256": "5056ef6a9fc6fe248967fb45f78656fdbee07915a44d634c44a58ce1e212cece",
+      "normative_body_identical": true
+    },
+    {
+      "capability": "bml-exact-synthesis",
+      "requirements": 7,
+      "scenarios": 15,
+      "archived_spec": "openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-exact-synthesis/spec.md",
+      "canonical_spec": "openspec/specs/bml-exact-synthesis/spec.md",
+      "archived_sha256": "19398242360019e3192ca43ad30a00b647d46610376734c61f6781e4f78aeee2",
+      "canonical_sha256": "1fd226e08ee0c6ef927f96db477a4463a91ff97796b837e957e2f74678831a33",
+      "normative_body_identical": true
+    },
+    {
+      "capability": "bml-performance",
+      "requirements": 3,
+      "scenarios": 6,
+      "archived_spec": "openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-performance/spec.md",
+      "canonical_spec": "openspec/specs/bml-performance/spec.md",
+      "archived_sha256": "5d17716a8571e1436f94892eed968b8a16f989b5459f332fa42291249ddea2ac",
+      "canonical_sha256": "ffef9e385664f9d91814fa50f1dd14328ef7d562c35116341285fca9ad624f5b",
+      "normative_body_identical": true
+    },
+    {
+      "capability": "bml-rust-operators",
+      "requirements": 4,
+      "scenarios": 8,
+      "archived_spec": "openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-rust-operators/spec.md",
+      "canonical_spec": "openspec/specs/bml-rust-operators/spec.md",
+      "archived_sha256": "304d5c0195f124a9d38ef81d627296feeac6906df079a9967134d9595197d893",
+      "canonical_sha256": "c3605da5dd667aea47dccb08a3d429e04efe50af9078c20bf01a31d5b2352156",
+      "normative_body_identical": true
+    },
+    {
+      "capability": "bml-simd-backends",
+      "requirements": 4,
+      "scenarios": 6,
+      "archived_spec": "openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-simd-backends/spec.md",
+      "canonical_spec": "openspec/specs/bml-simd-backends/spec.md",
+      "archived_sha256": "fb897443036162922754d41692010199634b3eab272bdd69f6009348c11ee30b",
+      "canonical_sha256": "bcf6b03ae83807c4d7a26cedee90690623a548345f010f5c1b41db0fb4aea425",
+      "normative_body_identical": true
+    },
+    {
+      "capability": "bml-symbolic-matrices",
+      "requirements": 5,
+      "scenarios": 12,
+      "archived_spec": "openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-symbolic-matrices/spec.md",
+      "canonical_spec": "openspec/specs/bml-symbolic-matrices/spec.md",
+      "archived_sha256": "6ad8a9329b81a369a64f5c3ab2b688f20caf6d74b96e22bc021e3e65228107ee",
+      "canonical_sha256": "220d955fd7e0edc904e6ff3ff98f20e56f5263eaa791c7437ca9718747cd3cdb",
+      "normative_body_identical": true
+    }
+  ],
+  "gate_evidence": "quality/evidence/wave-one-gate.json"
+}

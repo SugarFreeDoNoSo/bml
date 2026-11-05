@@ -4,7 +4,7 @@ Fecha: 2026-11-05 UTC. Revisión base auditada: `9aa114a9d74e72e8f09d45e367df5ca
 
 Esta revisión cubre **29 requisitos y 64 escenarios** mediante lectura de implementación, aserciones de las pruebas, documentación y evidencias registradas. No se ejecutó Cargo en este worktree: la integración centraliza builds y pruebas. **S** significa que el comportamiento aplicable está sustentado por las fuentes y pruebas concretas descritas; no significa una ejecución nueva de la prueba por esta auditoría. **C** significa condición no activada por la API o campaña elegida, con justificación explícita. **G** identifica una brecha de evidencia de ejecución específica; se conserva la obligación y no se da por cerrada. No se atribuye cumplimiento por un nombre de test o un checkbox.
 
-El gate del snapshot integrado pasó con cero discrepancias, traza 105/105 y cero diagnósticos nuevos; sus hashes de código se conservan en [wave-one-gate.json](wave-one-gate.json). El archivo de 9.3 sigue pendiente. La auditoría no cambia los contratos de inferencia, PMU, otras posiciones de TinyLlama ni el gate global de mutaciones de la entrega.
+El gate del snapshot integrado pasó con cero discrepancias, traza 105/105 y cero diagnósticos nuevos; sus hashes de código se conservan en [wave-one-gate.json](wave-one-gate.json). El cambio se archivó tras la validación; véase [exact-number-archive.json](exact-number-archive.json). La auditoría no cambia los contratos de inferencia, PMU, otras posiciones de TinyLlama ni el gate global de mutaciones de la entrega.
 
 ## Fuentes y ejecución acreditada
 
@@ -50,7 +50,7 @@ El gate del snapshot integrado pasó con cero discrepancias, traza 105/105 y cer
 
 ### bml-code-storage
 
-Norma: [bml-code-storage/spec.md](../../openspec/changes/bml-exact-numbers-and-matrices/specs/bml-code-storage/spec.md).
+Norma: [bml-code-storage/spec.md](../../openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-code-storage/spec.md).
 
 | ID | Requisito | Obligaciones auditadas | Fuente y contraste |
 |---|---|---|---|
@@ -83,7 +83,7 @@ Norma: [bml-code-storage/spec.md](../../openspec/changes/bml-exact-numbers-and-m
 
 ### bml-exact-synthesis
 
-Norma: [bml-exact-synthesis/spec.md](../../openspec/changes/bml-exact-numbers-and-matrices/specs/bml-exact-synthesis/spec.md).
+Norma: [bml-exact-synthesis/spec.md](../../openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-exact-synthesis/spec.md).
 
 | ID | Requisito | Obligaciones auditadas | Fuente y contraste |
 |---|---|---|---|
@@ -115,7 +115,7 @@ Norma: [bml-exact-synthesis/spec.md](../../openspec/changes/bml-exact-numbers-an
 
 ### bml-rust-operators
 
-Norma: [bml-rust-operators/spec.md](../../openspec/changes/bml-exact-numbers-and-matrices/specs/bml-rust-operators/spec.md).
+Norma: [bml-rust-operators/spec.md](../../openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-rust-operators/spec.md).
 
 | ID | Requisito | Obligaciones auditadas | Fuente y contraste |
 |---|---|---|---|
@@ -137,7 +137,7 @@ Norma: [bml-rust-operators/spec.md](../../openspec/changes/bml-exact-numbers-and
 
 ### bml-symbolic-matrices
 
-Norma: [bml-symbolic-matrices/spec.md](../../openspec/changes/bml-exact-numbers-and-matrices/specs/bml-symbolic-matrices/spec.md).
+Norma: [bml-symbolic-matrices/spec.md](../../openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-symbolic-matrices/spec.md).
 
 | ID | Requisito | Obligaciones auditadas | Fuente y contraste |
 |---|---|---|---|
@@ -164,7 +164,7 @@ Norma: [bml-symbolic-matrices/spec.md](../../openspec/changes/bml-exact-numbers-
 
 ### bml-simd-backends
 
-Norma: [bml-simd-backends/spec.md](../../openspec/changes/bml-exact-numbers-and-matrices/specs/bml-simd-backends/spec.md).
+Norma: [bml-simd-backends/spec.md](../../openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-simd-backends/spec.md).
 
 | ID | Requisito | Obligaciones auditadas | Fuente y contraste |
 |---|---|---|---|
@@ -184,7 +184,7 @@ Norma: [bml-simd-backends/spec.md](../../openspec/changes/bml-exact-numbers-and-
 
 ### bml-performance
 
-Norma: [bml-performance/spec.md](../../openspec/changes/bml-exact-numbers-and-matrices/specs/bml-performance/spec.md).
+Norma: [bml-performance/spec.md](../../openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-performance/spec.md).
 
 | ID | Requisito | Obligaciones auditadas | Fuente y contraste |
 |---|---|---|---|
@@ -251,9 +251,9 @@ Los hashes siguientes fijan specs, implementación numérica, pruebas contrastad
 | `crates/kernels/examples/symbolic_phases.rs` | `b9bb1f03ffcf623168462f86ad969ce8aeab784593c57a439eecb79cbdc53176` |
 | `crates/kernels/src/lib.rs` | `82c4511a44cf04c338e823dde904133b1f200f278e12efea66a66617319e23a4` |
 | `crates/kernels/tests/code_comparison.rs` | `7f3e33cedc7057ad6305c16686cf7cfd14be4930d5f6790a36d17f5ef677e4ac` |
-| `openspec/changes/bml-exact-numbers-and-matrices/specs/bml-code-storage/spec.md` | `552eaec121ac8155084ec7b31ac0fedaf881539c9bf8936c2de872bdd412f304` |
-| `openspec/changes/bml-exact-numbers-and-matrices/specs/bml-exact-synthesis/spec.md` | `19398242360019e3192ca43ad30a00b647d46610376734c61f6781e4f78aeee2` |
-| `openspec/changes/bml-exact-numbers-and-matrices/specs/bml-performance/spec.md` | `5d17716a8571e1436f94892eed968b8a16f989b5459f332fa42291249ddea2ac` |
-| `openspec/changes/bml-exact-numbers-and-matrices/specs/bml-rust-operators/spec.md` | `304d5c0195f124a9d38ef81d627296feeac6906df079a9967134d9595197d893` |
-| `openspec/changes/bml-exact-numbers-and-matrices/specs/bml-simd-backends/spec.md` | `fb897443036162922754d41692010199634b3eab272bdd69f6009348c11ee30b` |
-| `openspec/changes/bml-exact-numbers-and-matrices/specs/bml-symbolic-matrices/spec.md` | `6ad8a9329b81a369a64f5c3ab2b688f20caf6d74b96e22bc021e3e65228107ee` |
+| `openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-code-storage/spec.md` | `552eaec121ac8155084ec7b31ac0fedaf881539c9bf8936c2de872bdd412f304` |
+| `openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-exact-synthesis/spec.md` | `19398242360019e3192ca43ad30a00b647d46610376734c61f6781e4f78aeee2` |
+| `openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-performance/spec.md` | `5d17716a8571e1436f94892eed968b8a16f989b5459f332fa42291249ddea2ac` |
+| `openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-rust-operators/spec.md` | `304d5c0195f124a9d38ef81d627296feeac6906df079a9967134d9595197d893` |
+| `openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-simd-backends/spec.md` | `fb897443036162922754d41692010199634b3eab272bdd69f6009348c11ee30b` |
+| `openspec/changes/archive/2026-11-05-bml-exact-numbers-and-matrices/specs/bml-symbolic-matrices/spec.md` | `6ad8a9329b81a369a64f5c3ab2b688f20caf6d74b96e22bc021e3e65228107ee` |
