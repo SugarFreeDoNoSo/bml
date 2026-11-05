@@ -1,0 +1,24 @@
+{
+  "status": "hosted_admission_passed_fresh_execution_in_progress",
+  "observed_at_utc": "2026-11-05T05:16:34.619284+00:00",
+  "origin_run": 41950170549,
+  "origin_job": 126992338544,
+  "origin_artifact": 13386138847,
+  "origin_zip_sha256": "0ecabdc7b8758dcf7b8686f0e145de9c4e9f5cdfad54b085fc77ed6af52f5b50",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "original_manifest_sha256": "719be79f7dfba0746291522fa312b395a9caf857abf16e71f61af70b8a5e7c63",
+  "shard": "21/64",
+  "recovery_run": 41972807181,
+  "recovery_job": 127064705318,
+  "controller_revision": "bbc2d52d85c822af23f13065f06d9bba8fad681e",
+  "url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/41972807181",
+  "admission_steps_passed": [
+    "Authorize original source and failure eligibility; inspect original evidence only",
+    "Download only the immutable original plan artifact",
+    "Verify independent manifest SHA and original partition"
+  ],
+  "execution_step_status": "in_progress",
+  "jobs_api_sha256": "9f77b96d2e6a340714edb0a6ca9ba726c95818a3b8a2dd055bb82c8aa1d2fde1",
+  "run_api_sha256": "fc4609df496393ebc42a776d92c77c97439d5a617520dc2b91baee2cd823d6ff",
+  "limits": "Fresh baseline and all81 mutants are being executed. Original raw21 remains unattested, unused as current outcomes and excluded from verified counts. Final completion/source seal and global mutation gate remain pending."
+}
