@@ -1,0 +1,134 @@
+{
+  "scope": "Four CURRENT source replays with exact whole-workspace commands; not historical9a or a complete mutation campaign.",
+  "runner_pid": 4133472,
+  "started_at": "2026-11-05T09:22:13.401181+00:00",
+  "commands": [
+    {
+      "label": "clean-before-baseline",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:22:13.411987+00:00",
+      "stdout": "clean-before-baseline.stdout",
+      "stderr": "clean-before-baseline.stderr",
+      "disk_free_before": 5082877952,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:22:13.580340+00:00",
+      "elapsed_seconds": 0.16839529597200453,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "disk_free_after": 5082869760
+    },
+    {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:22:13.581189+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 5082869760,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:24:46.833235+00:00",
+      "elapsed_seconds": 153.2520913379849,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "12cf44432c1c0e6647e2f39400471d641290e8afaca7ef71c4fcd3d6ac18684b",
+      "disk_free_after": 4280504320
+    },
+    {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:24:46.834323+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 4280504320,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:25:02.923700+00:00",
+      "elapsed_seconds": 16.089413162961137,
+      "stdout_sha256": "e31c5266f7241d03462144093bf1e0ad9764805c31d4b17eb78121bc80e1100d",
+      "stderr_sha256": "1275b9f32faf54b3cd3005a5fd2759d2b76b7ce99b5fb1d59cbb44cbdc1a0ab7",
+      "disk_free_after": 4280340480
+    }
+  ],
+  "cases": [],
+  "active": null,
+  "prepared_source_sha256": "714efc77675055e03b5b2af2c2a62bb5994ffb3c089a292724b44ed122fe8443",
+  "prepare_report_sha256": "8eed74d479a920fe9334de894d29073d59a4e6581a2c34c16258b6c9aced6d92",
+  "identity": "CURRENT 8c86 tracked worktree plus exact reviewed wave12 patch; not historical9a",
+  "updated_at": "2026-11-05T09:25:03.084528+00:00",
+  "baseline": {
+    "build": {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:22:13.581189+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 5082869760,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:24:46.833235+00:00",
+      "elapsed_seconds": 153.2520913379849,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "12cf44432c1c0e6647e2f39400471d641290e8afaca7ef71c4fcd3d6ac18684b",
+      "disk_free_after": 4280504320
+    },
+    "test": {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:24:46.834323+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 4280504320,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:25:02.923700+00:00",
+      "elapsed_seconds": 16.089413162961137,
+      "stdout_sha256": "e31c5266f7241d03462144093bf1e0ad9764805c31d4b17eb78121bc80e1100d",
+      "stderr_sha256": "1275b9f32faf54b3cd3005a5fd2759d2b76b7ce99b5fb1d59cbb44cbdc1a0ab7",
+      "disk_free_after": 4280340480
+    },
+    "failed_tests": [
+      "symbolic_loader_accumulates_file_bytes_and_accepts_the_exact_total_budget"
+    ],
+    "compile_error": false,
+    "caught_current_workspace": true
+  },
+  "status": "interrupted_or_failed",
+  "error": "RuntimeError('identical whole-workspace baseline failed')",
+  "all_tracked_inputs_restored": true,
+  "ended_at": "2026-11-05T09:25:03.084506+00:00"
+}

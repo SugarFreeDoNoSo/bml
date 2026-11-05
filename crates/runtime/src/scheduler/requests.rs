@@ -208,8 +208,15 @@ mod tests {
 
     #[test]
     fn collection_window_expires_with_live_producer() {
-        let (tx, mut batches) = RequestBatcher::new(RequestBatchConfig::default()).unwrap();
+        let (tx, mut batches) = RequestBatcher::new(RequestBatchConfig {
+            queue_capacity: 1,
+            ..Default::default()
+        })
+        .unwrap();
         tx.try_submit(7).unwrap();
+        // Establish that accepted work is queued before the intentionally
+        // blocking first receive, while retaining a live producer handle.
+        assert_eq!(tx.try_submit(8), Err(AdmissionError::Full(8)));
         let start = Instant::now();
         let batch = batches.next_batch().unwrap();
         assert!(start.elapsed() >= Duration::from_millis(10));

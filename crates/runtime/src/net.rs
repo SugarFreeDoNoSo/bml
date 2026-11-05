@@ -339,17 +339,26 @@ mod tests {
 
         let server_thread = thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
-            let msg = recv_msg(&mut stream).unwrap();
-            assert_eq!(msg.msg_type, MsgType::HealthCheck);
-            let response = Message::new(MsgType::HealthCheck, vec![1]); // alive
-            send_msg(&mut stream, &response).unwrap();
+            let request = recv_msg(&mut stream);
+            if request.is_ok() {
+                let response = Message::new(MsgType::HealthCheck, vec![1]); // alive
+                send_msg(&mut stream, &response).unwrap();
+            }
+            request
         });
 
         let mut node = NodeHandle::connect(&addr_str).unwrap();
-        let alive = node.health_check().unwrap();
-        assert!(alive);
-
-        server_thread.join().unwrap();
+        let health = node.health_check();
+        // A missing request must become observable EOF at the peer, rather
+        // than joining a reader while the client still owns the open socket.
+        drop(node);
+        let request = server_thread
+            .join()
+            .unwrap()
+            .expect("health_check must transmit a request before EOF");
+        assert_eq!(request.msg_type, MsgType::HealthCheck);
+        assert!(request.payload.is_empty());
+        assert!(health.unwrap());
     }
 
     #[test]

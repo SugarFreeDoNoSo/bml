@@ -160,12 +160,17 @@ impl Bml {
         for _ in 0..count {
             let start = cursor;
             let mut slots = 1usize;
-            while slots != 0 {
+            // The first pass proved this tree closes within the remaining
+            // bits. Walk that finite range independently of the output cursor.
+            for index in start..bits {
                 slots -= 1;
-                if bit(cursor) {
+                if bit(index) {
                     slots += 2;
                 }
-                cursor += 1;
+                cursor = index + 1;
+                if slots == 0 {
+                    break;
+                }
             }
             let length = cursor - start;
             let word_count = length.div_ceil(64);

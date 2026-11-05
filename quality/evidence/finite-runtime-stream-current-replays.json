@@ -1,0 +1,767 @@
+{
+  "scope": "Four CURRENT source replays with exact whole-workspace commands; not historical9a or a complete mutation campaign.",
+  "runner_pid": 4138887,
+  "started_at": "2026-11-05T09:28:20.264532+00:00",
+  "commands": [
+    {
+      "label": "clean-before-baseline",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:28:20.280967+00:00",
+      "stdout": "clean-before-baseline.stdout",
+      "stderr": "clean-before-baseline.stderr",
+      "disk_free_before": 4278112256,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:28:20.449504+00:00",
+      "elapsed_seconds": 0.16857031197287142,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2c483e013deaa4a03fcafe4abc2b0f8fb01ac41aae1fae5709af227c5babff6e",
+      "disk_free_after": 4395921408
+    },
+    {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:28:20.450123+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 4395921408,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:29:34.658416+00:00",
+      "elapsed_seconds": 74.20832574600354,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "6328b22322cd9e436e920ef362945c33998ef7b3b6b6e44caee92c2faae5949b",
+      "disk_free_after": 4277968896
+    },
+    {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:29:34.659075+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 4277968896,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:31:12.730068+00:00",
+      "elapsed_seconds": 98.07102364196908,
+      "stdout_sha256": "23940d1b20c9a99173d2f6deeb5685a2e6da33b6315c67639a58522124daef56",
+      "stderr_sha256": "0da17116d99fe1d425b93da201e9c943da3b4125e2bc0996afe9bd3518712932",
+      "disk_free_after": 4277018624
+    },
+    {
+      "label": "clean-before-queue-payload",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:31:12.856345+00:00",
+      "stdout": "clean-before-queue-payload.stdout",
+      "stderr": "clean-before-queue-payload.stderr",
+      "disk_free_before": 4277014528,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:31:13.274815+00:00",
+      "elapsed_seconds": 0.41851192503236234,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2c483e013deaa4a03fcafe4abc2b0f8fb01ac41aae1fae5709af227c5babff6e",
+      "disk_free_after": 4394831872
+    },
+    {
+      "label": "queue-payload-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:31:13.276946+00:00",
+      "stdout": "queue-payload-build.stdout",
+      "stderr": "queue-payload-build.stderr",
+      "disk_free_before": 4394831872,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:33:03.457883+00:00",
+      "elapsed_seconds": 110.18324366898742,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "6a56376697bfb8e2b0189ff662b02ee05003028ffde7c929db822fc7adf2eca0",
+      "disk_free_after": 4266012672
+    },
+    {
+      "label": "queue-payload-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:33:03.520122+00:00",
+      "stdout": "queue-payload-test.stdout",
+      "stderr": "queue-payload-test.stderr",
+      "disk_free_before": 4266012672,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:34:15.413254+00:00",
+      "elapsed_seconds": 71.89354846300557,
+      "stdout_sha256": "81abd278eb5a4c0b72f8e0e92a07d420a487559a5facbfbaa94dc04573adeac7",
+      "stderr_sha256": "d2ff8ef46e5769716333cd386d164910ede0b93698b90463990dd950b1c25546",
+      "disk_free_after": 4265508864
+    },
+    {
+      "label": "clean-restored-queue-payload",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:34:15.666819+00:00",
+      "stdout": "clean-restored-queue-payload.stdout",
+      "stderr": "clean-restored-queue-payload.stderr",
+      "disk_free_before": 4265504768,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:34:15.833743+00:00",
+      "elapsed_seconds": 0.1669565899646841,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2c483e013deaa4a03fcafe4abc2b0f8fb01ac41aae1fae5709af227c5babff6e",
+      "disk_free_after": 4383313920
+    },
+    {
+      "label": "clean-before-request-admission",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:34:15.891917+00:00",
+      "stdout": "clean-before-request-admission.stdout",
+      "stderr": "clean-before-request-admission.stderr",
+      "disk_free_before": 4383313920,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:34:16.057557+00:00",
+      "elapsed_seconds": 0.1656777669559233,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "disk_free_after": 4383309824
+    },
+    {
+      "label": "request-admission-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:34:16.059714+00:00",
+      "stdout": "request-admission-build.stdout",
+      "stderr": "request-admission-build.stderr",
+      "disk_free_before": 4383305728,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:35:30.037308+00:00",
+      "elapsed_seconds": 73.97763300099177,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "096d0a246ae9e978d3033a6ebcbb8ecad2a555989acec6b879d3e69153dda3f7",
+      "disk_free_after": 4253208576
+    },
+    {
+      "label": "request-admission-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:35:30.038255+00:00",
+      "stdout": "request-admission-test.stdout",
+      "stderr": "request-admission-test.stderr",
+      "disk_free_before": 4253208576,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:36:30.348965+00:00",
+      "elapsed_seconds": 60.310750956006814,
+      "stdout_sha256": "a16a8ca4a57761463788e46ce7d4c22c3d0695ffff47906df04fc42d16afded3",
+      "stderr_sha256": "17b93b38fce28ee8140705bb92d3da375b01d30beffcf90af199219c9baaa1e3",
+      "disk_free_after": 4252614656
+    },
+    {
+      "label": "clean-restored-request-admission",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:36:30.535582+00:00",
+      "stdout": "clean-restored-request-admission.stdout",
+      "stderr": "clean-restored-request-admission.stderr",
+      "disk_free_before": 4252610560,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:36:30.702156+00:00",
+      "elapsed_seconds": 0.1666048290207982,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2c483e013deaa4a03fcafe4abc2b0f8fb01ac41aae1fae5709af227c5babff6e",
+      "disk_free_after": 4370378752
+    },
+    {
+      "label": "clean-before-health-request",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:36:30.754948+00:00",
+      "stdout": "clean-before-health-request.stdout",
+      "stderr": "clean-before-health-request.stderr",
+      "disk_free_before": 4370378752,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:36:30.922617+00:00",
+      "elapsed_seconds": 0.16769723204197362,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "disk_free_after": 4370374656
+    },
+    {
+      "label": "health-request-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:36:30.924752+00:00",
+      "stdout": "health-request-build.stdout",
+      "stderr": "health-request-build.stderr",
+      "disk_free_before": 4370374656,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:37:50.526962+00:00",
+      "elapsed_seconds": 79.6022502220003,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "4cac8d876edcb4d7492dc5768adead0f785b0d84d6a2bde4a3487a29302df5a5",
+      "disk_free_after": 4252258304
+    },
+    {
+      "label": "health-request-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:37:50.527737+00:00",
+      "stdout": "health-request-test.stdout",
+      "stderr": "health-request-test.stderr",
+      "disk_free_before": 4252258304,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:38:49.968285+00:00",
+      "elapsed_seconds": 59.440580741968006,
+      "stdout_sha256": "948fb9a7fb4c43b5072927ad15f08cba704e1332efae5e3a83f464e9196340fa",
+      "stderr_sha256": "e24fffebdaf3afa53fc82957015a4d380a0e3dfbac6e5397c689b0f3cb8cb09f",
+      "disk_free_after": 4251889664
+    },
+    {
+      "label": "clean-restored-health-request",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:38:50.077145+00:00",
+      "stdout": "clean-restored-health-request.stdout",
+      "stderr": "clean-restored-health-request.stderr",
+      "disk_free_before": 4251885568,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:38:50.244045+00:00",
+      "elapsed_seconds": 0.16693088202737272,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2c483e013deaa4a03fcafe4abc2b0f8fb01ac41aae1fae5709af227c5babff6e",
+      "disk_free_after": 4369686528
+    },
+    {
+      "label": "clean-before-stream-finite-index",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:38:50.293584+00:00",
+      "stdout": "clean-before-stream-finite-index.stdout",
+      "stderr": "clean-before-stream-finite-index.stderr",
+      "disk_free_before": 4369686528,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:38:50.413509+00:00",
+      "elapsed_seconds": 0.1199545250274241,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "disk_free_after": 4369682432
+    },
+    {
+      "label": "stream-finite-index-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:38:50.415947+00:00",
+      "stdout": "stream-finite-index-build.stdout",
+      "stderr": "stream-finite-index-build.stderr",
+      "disk_free_before": 4369682432,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:40:01.582165+00:00",
+      "elapsed_seconds": 71.16624992201105,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "1bafc023593d4a0417ddb97c6df75eba5d91b1cf70f6ecef3208eb065f4f5639",
+      "disk_free_after": 4251734016
+    },
+    {
+      "label": "stream-finite-index-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:40:01.583112+00:00",
+      "stdout": "stream-finite-index-test.stdout",
+      "stderr": "stream-finite-index-test.stderr",
+      "disk_free_before": 4251729920,
+      "exit_code": 101,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:40:02.609292+00:00",
+      "elapsed_seconds": 1.0262139909900725,
+      "stdout_sha256": "835002eef66c4ef49bbbfd0cc9371bfadb08b75bb2a4264452ad34f109760262",
+      "stderr_sha256": "0f28e2d8c76d886d65d33db246dfecbed798a4ff39931aca32ed96fca83797b9",
+      "disk_free_after": 4251717632
+    },
+    {
+      "label": "clean-restored-stream-finite-index",
+      "argv": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-runtime"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:40:02.668816+00:00",
+      "stdout": "clean-restored-stream-finite-index.stdout",
+      "stderr": "clean-restored-stream-finite-index.stderr",
+      "disk_free_before": 4251717632,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:40:02.836313+00:00",
+      "elapsed_seconds": 0.16752855997765437,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "2c483e013deaa4a03fcafe4abc2b0f8fb01ac41aae1fae5709af227c5babff6e",
+      "disk_free_after": 4369481728
+    }
+  ],
+  "cases": [
+    {
+      "build": {
+        "label": "queue-payload-build",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 600,
+        "started_at": "2026-11-05T09:31:13.276946+00:00",
+        "stdout": "queue-payload-build.stdout",
+        "stderr": "queue-payload-build.stderr",
+        "disk_free_before": 4394831872,
+        "exit_code": 0,
+        "timed_out": false,
+        "ended_at": "2026-11-05T09:33:03.457883+00:00",
+        "elapsed_seconds": 110.18324366898742,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "6a56376697bfb8e2b0189ff662b02ee05003028ffde7c929db822fc7adf2eca0",
+        "disk_free_after": 4266012672
+      },
+      "test": {
+        "label": "queue-payload-test",
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 360,
+        "started_at": "2026-11-05T09:33:03.520122+00:00",
+        "stdout": "queue-payload-test.stdout",
+        "stderr": "queue-payload-test.stderr",
+        "disk_free_before": 4266012672,
+        "exit_code": 101,
+        "timed_out": false,
+        "ended_at": "2026-11-05T09:34:15.413254+00:00",
+        "elapsed_seconds": 71.89354846300557,
+        "stdout_sha256": "81abd278eb5a4c0b72f8e0e92a07d420a487559a5facbfbaa94dc04573adeac7",
+        "stderr_sha256": "d2ff8ef46e5769716333cd386d164910ede0b93698b90463990dd950b1c25546",
+        "disk_free_after": 4265508864
+      },
+      "failed_tests": [
+        "queue::tests::push_pop_single_queue",
+        "queue::tests::queue_set_distribute_and_steal",
+        "queue::tests::segmented_work_ownership_is_unique_across_turnover_and_owner_drop",
+        "queue::tests::steal_from_other_queue",
+        "queue::tests::concurrent_push_pop"
+      ],
+      "compile_error": false,
+      "caught_current_workspace": true,
+      "label": "queue-payload",
+      "candidate": "crates/runtime/src/queue.rs:90:9: replace WorkQueue::pop -> Option<Fragment> with Some(Default::default())",
+      "source_before_sha256": "f61f309fad4ce4291b9c121704f6b2113aa0f56697608bcc7a835f6d06e0cb94",
+      "source_mutated_sha256": "e78e64408233b823b29fcdd9697425e468c364239b97bcafab4edd9a6bfd2dd3",
+      "producer_diff_sha256": "5410b8b4848c345e59634894da250b9cb2e4c9a8d9cadf86aa04fb490d766c0b"
+    },
+    {
+      "build": {
+        "label": "request-admission-build",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 600,
+        "started_at": "2026-11-05T09:34:16.059714+00:00",
+        "stdout": "request-admission-build.stdout",
+        "stderr": "request-admission-build.stderr",
+        "disk_free_before": 4383305728,
+        "exit_code": 0,
+        "timed_out": false,
+        "ended_at": "2026-11-05T09:35:30.037308+00:00",
+        "elapsed_seconds": 73.97763300099177,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "096d0a246ae9e978d3033a6ebcbb8ecad2a555989acec6b879d3e69153dda3f7",
+        "disk_free_after": 4253208576
+      },
+      "test": {
+        "label": "request-admission-test",
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 360,
+        "started_at": "2026-11-05T09:35:30.038255+00:00",
+        "stdout": "request-admission-test.stdout",
+        "stderr": "request-admission-test.stderr",
+        "disk_free_before": 4253208576,
+        "exit_code": 101,
+        "timed_out": false,
+        "ended_at": "2026-11-05T09:36:30.348965+00:00",
+        "elapsed_seconds": 60.310750956006814,
+        "stdout_sha256": "a16a8ca4a57761463788e46ce7d4c22c3d0695ffff47906df04fc42d16afded3",
+        "stderr_sha256": "17b93b38fce28ee8140705bb92d3da375b01d30beffcf90af199219c9baaa1e3",
+        "disk_free_after": 4252614656
+      },
+      "failed_tests": [
+        "scheduler::requests::tests::bounded_admission_preserves_rejected_request_and_closes",
+        "scheduler::requests::tests::collection_window_expires_with_live_producer",
+        "scheduler::requests::tests::invalid_limits_and_zero_window_are_explicit",
+        "scheduler::requests::tests::round_robin_wraps_and_preserves_fifo",
+        "scheduler::requests::tests::ten_concurrent_requests_are_batched_without_loss"
+      ],
+      "compile_error": false,
+      "caught_current_workspace": true,
+      "label": "request-admission",
+      "candidate": "crates/runtime/src/scheduler/requests.rs:68:9: replace RequestSubmitter<T>::try_submit -> Result<(), AdmissionError<T>> with Ok(())",
+      "source_before_sha256": "ebd7885bc5bf98ba46dc09c49205f5e7231073f2e4aa562e2db9a18c78b65073",
+      "source_mutated_sha256": "b16c4a115dab437ff49b93f5da91275749da9dfcb00272bd69c493f0e75cef28",
+      "producer_diff_sha256": "275ca8f72d7b85d4db5197c61c4a98d4f60d2b2ddd50692a957f2150d7e92b02"
+    },
+    {
+      "build": {
+        "label": "health-request-build",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 600,
+        "started_at": "2026-11-05T09:36:30.924752+00:00",
+        "stdout": "health-request-build.stdout",
+        "stderr": "health-request-build.stderr",
+        "disk_free_before": 4370374656,
+        "exit_code": 0,
+        "timed_out": false,
+        "ended_at": "2026-11-05T09:37:50.526962+00:00",
+        "elapsed_seconds": 79.6022502220003,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "4cac8d876edcb4d7492dc5768adead0f785b0d84d6a2bde4a3487a29302df5a5",
+        "disk_free_after": 4252258304
+      },
+      "test": {
+        "label": "health-request-test",
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 360,
+        "started_at": "2026-11-05T09:37:50.527737+00:00",
+        "stdout": "health-request-test.stdout",
+        "stderr": "health-request-test.stderr",
+        "disk_free_before": 4252258304,
+        "exit_code": 101,
+        "timed_out": false,
+        "ended_at": "2026-11-05T09:38:49.968285+00:00",
+        "elapsed_seconds": 59.440580741968006,
+        "stdout_sha256": "948fb9a7fb4c43b5072927ad15f08cba704e1332efae5e3a83f464e9196340fa",
+        "stderr_sha256": "e24fffebdaf3afa53fc82957015a4d380a0e3dfbac6e5397c689b0f3cb8cb09f",
+        "disk_free_after": 4251889664
+      },
+      "failed_tests": [
+        "net::tests::node_handle_connect_and_health",
+        "net::tests::node_rejects_wrong_response_types"
+      ],
+      "compile_error": false,
+      "caught_current_workspace": true,
+      "label": "health-request",
+      "candidate": "crates/runtime/src/net.rs:266:9: replace NodeHandle::health_check -> io::Result<bool> with Ok(true)",
+      "source_before_sha256": "6e1b90936352167434e1aea9b803b79d4414b9c40751e65d7658fad2a23122a7",
+      "source_mutated_sha256": "aabc7bfb87c2e82846d0755ffeeb0195b7bc95e194db8dddf6148a82cb85ea1c",
+      "producer_diff_sha256": "655556c5a531005047ab838740c4da94a8f6ab91a4364bb968c83be23bf498dd"
+    },
+    {
+      "build": {
+        "label": "stream-finite-index-build",
+        "argv": [
+          "cargo",
+          "test",
+          "--no-run",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 600,
+        "started_at": "2026-11-05T09:38:50.415947+00:00",
+        "stdout": "stream-finite-index-build.stdout",
+        "stderr": "stream-finite-index-build.stderr",
+        "disk_free_before": 4369682432,
+        "exit_code": 0,
+        "timed_out": false,
+        "ended_at": "2026-11-05T09:40:01.582165+00:00",
+        "elapsed_seconds": 71.16624992201105,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "1bafc023593d4a0417ddb97c6df75eba5d91b1cf70f6ecef3208eb065f4f5639",
+        "disk_free_after": 4251734016
+      },
+      "test": {
+        "label": "stream-finite-index-test",
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "timeout_seconds": 360,
+        "started_at": "2026-11-05T09:40:01.583112+00:00",
+        "stdout": "stream-finite-index-test.stdout",
+        "stderr": "stream-finite-index-test.stderr",
+        "disk_free_before": 4251729920,
+        "exit_code": 101,
+        "timed_out": false,
+        "ended_at": "2026-11-05T09:40:02.609292+00:00",
+        "elapsed_seconds": 1.0262139909900725,
+        "stdout_sha256": "835002eef66c4ef49bbbfd0cc9371bfadb08b75bb2a4264452ad34f109760262",
+        "stderr_sha256": "0f28e2d8c76d886d65d33db246dfecbed798a4ff39931aca32ed96fca83797b9",
+        "disk_free_after": 4251717632
+      },
+      "failed_tests": [
+        "explicit_prepared_run_rejects_corruption_without_generation",
+        "run_generates_from_converted_container_without_source_gguf"
+      ],
+      "compile_error": false,
+      "caught_current_workspace": true,
+      "label": "stream-finite-index",
+      "candidate": "crates/domain/src/number/stream.rs:170:32: replace + with * in Bml::decode_stream",
+      "source_before_sha256": "5bc21bc6f8c9f8ff6e3f3afc28239939a183ae4cd7adfaa7e2a440e0da7a4401",
+      "source_mutated_sha256": "2cfca6e1a6209b49c1883ec0f3f1eab24fda2f218fe754ed7d3c72324dabed34",
+      "producer_diff_sha256": "e804433c72cf58db90274547e40a389ff7ac4989e8cf30beb8395de63b05668b"
+    }
+  ],
+  "active": null,
+  "prepared_source_sha256": "b82529d071bd971d66dc04d1293d113e90aca25771b6f0c1cfbc4468e0e37ee4",
+  "prepare_report_sha256": "7f58ba1da14704c87fed188b66bc2af83ea874e52c9539fb77bd42741b45ddc3",
+  "identity": "CURRENT 8c86 tracked worktree plus exact reviewed wave12 patch; not historical9a",
+  "environment": {
+    "PATH": "/tmp/bml-cargo/bin:/home/dev/.local/bin:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/home/dev/.opencode/bin:/home/dev/.local/share/mise/installs/node/24.22.2/bin:/home/dev/.local/share/mise/installs/uv/0.13.6/.mise-bins:/home/dev/.local/share/mise/shims:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.local/bin:/home/dev/.cargo/bin:/home/dev/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/games:/home/dev/.codex/tmp/arg0-linux/codex-arg0q6I2SF:/home/dev/.codex/packages/standalone/releases/0.166.0-x86_64-unknown-linux-musl/codex-path:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin:/home/dev/.opencode/bin",
+    "CARGO_HOME": "/tmp/bml-cargo",
+    "RUSTUP_HOME": "/tmp/bml-rustup",
+    "TMPDIR": "/home/dev/Work/bml/target/quality/wave-twelve-current-20261105T092802Z/tmp",
+    "CARGO_TARGET_DIR": "/home/dev/Work/bml/target/wave-twelve-current-build-20261105T092132Z",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "PROPTEST_RNG_SEED": "20260923",
+    "CARGO_TERM_COLOR": "never"
+  },
+  "cache_receipt": {
+    "previous_output": "/home/dev/Work/bml/target/quality/wave-twelve-current-20261105T092132Z",
+    "previous_source_sha256": "714efc77675055e03b5b2af2c2a62bb5994ffb3c089a292724b44ed122fe8443",
+    "previous_report_sha256": "93b6f118af30156f904908d98d8edcf311ad51aa695094b430e4444ea07aeccb",
+    "policy": "Reuse only this owned pre-mutation target; clean domain/runtime before new baseline. Preserve all previous failed-baseline evidence."
+  },
+  "updated_at": "2026-11-05T09:40:02.901613+00:00",
+  "baseline": {
+    "build": {
+      "label": "baseline-build",
+      "argv": [
+        "cargo",
+        "test",
+        "--no-run",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 600,
+      "started_at": "2026-11-05T09:28:20.450123+00:00",
+      "stdout": "baseline-build.stdout",
+      "stderr": "baseline-build.stderr",
+      "disk_free_before": 4395921408,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:29:34.658416+00:00",
+      "elapsed_seconds": 74.20832574600354,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "6328b22322cd9e436e920ef362945c33998ef7b3b6b6e44caee92c2faae5949b",
+      "disk_free_after": 4277968896
+    },
+    "test": {
+      "label": "baseline-test",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "timeout_seconds": 360,
+      "started_at": "2026-11-05T09:29:34.659075+00:00",
+      "stdout": "baseline-test.stdout",
+      "stderr": "baseline-test.stderr",
+      "disk_free_before": 4277968896,
+      "exit_code": 0,
+      "timed_out": false,
+      "ended_at": "2026-11-05T09:31:12.730068+00:00",
+      "elapsed_seconds": 98.07102364196908,
+      "stdout_sha256": "23940d1b20c9a99173d2f6deeb5685a2e6da33b6315c67639a58522124daef56",
+      "stderr_sha256": "0da17116d99fe1d425b93da201e9c943da3b4125e2bc0996afe9bd3518712932",
+      "disk_free_after": 4277018624
+    },
+    "failed_tests": [],
+    "compile_error": false,
+    "caught_current_workspace": false
+  },
+  "restores": [
+    {
+      "label": "queue-payload",
+      "source_sha256": "f61f309fad4ce4291b9c121704f6b2113aa0f56697608bcc7a835f6d06e0cb94",
+      "all_tracked_inputs_restored": true
+    },
+    {
+      "label": "request-admission",
+      "source_sha256": "ebd7885bc5bf98ba46dc09c49205f5e7231073f2e4aa562e2db9a18c78b65073",
+      "all_tracked_inputs_restored": true
+    },
+    {
+      "label": "health-request",
+      "source_sha256": "6e1b90936352167434e1aea9b803b79d4414b9c40751e65d7658fad2a23122a7",
+      "all_tracked_inputs_restored": true
+    },
+    {
+      "label": "stream-finite-index",
+      "source_sha256": "5bc21bc6f8c9f8ff6e3f3afc28239939a183ae4cd7adfaa7e2a440e0da7a4401",
+      "all_tracked_inputs_restored": true
+    }
+  ],
+  "status": "passed_current_workspace_replays",
+  "all_tracked_inputs_restored": true,
+  "ended_at": "2026-11-05T09:40:02.901592+00:00"
+}

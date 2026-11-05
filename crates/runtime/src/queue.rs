@@ -284,7 +284,8 @@ mod tests {
                 thread::spawn(move || {
                     let mut count = 0;
                     loop {
-                        if worker.pop().is_some() {
+                        if let Some(fragment) = worker.pop() {
+                            assert!(matches!(fragment.ops.as_slice(), [RpnOp::One]));
                             count += 1;
                         } else {
                             // Intentar robar de otros
@@ -293,7 +294,11 @@ mod tests {
                                 let target = (idx + i) % 4;
                                 loop {
                                     match stealers[target].steal() {
-                                        Steal::Success(_) => {
+                                        Steal::Success(fragment) => {
+                                            assert!(matches!(
+                                                fragment.ops.as_slice(),
+                                                [RpnOp::One]
+                                            ));
                                             count += 1;
                                             stolen = true;
                                             break;

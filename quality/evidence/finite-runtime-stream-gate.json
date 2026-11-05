@@ -1,0 +1,46 @@
+{
+  "status": "canonical_gate_passed",
+  "observed_at_utc": "2026-11-05T09:16:47.155900+00:00",
+  "base_revision": "8c86f28dab7c6bba03353d9aeb548a530aff1cd8",
+  "command": [
+    "./scripts/check.sh",
+    "8c86f28dab7c6bba03353d9aeb548a530aff1cd8"
+  ],
+  "exit_code": 0,
+  "source_overlay_sha256": "9aecaca13c5c811dcf31a3d451380b0bd2e64c1d82cdfa4183b3e2fcbe16cb67",
+  "tested_file_sha256": {
+    "crates/domain/src/number/stream.rs": "5bc21bc6f8c9f8ff6e3f3afc28239939a183ae4cd7adfaa7e2a440e0da7a4401",
+    "crates/runtime/src/net.rs": "6e1b90936352167434e1aea9b803b79d4414b9c40751e65d7658fad2a23122a7",
+    "crates/runtime/src/queue.rs": "f61f309fad4ce4291b9c121704f6b2113aa0f56697608bcc7a835f6d06e0cb94",
+    "crates/runtime/src/scheduler/requests.rs": "ebd7885bc5bf98ba46dc09c49205f5e7231073f2e4aa562e2db9a18c78b65073"
+  },
+  "scope": "Finite second decode traversal preserving validated stream bytes; three runtime tests establish payload/admission/request before potentially blocking work. Current producer-selected whole-workspace negative replays are recorded separately; old 9a outcomes remain unchanged. No real-model results inferred.",
+  "rust_tests_passed": 998,
+  "rust_suites": 145,
+  "python_tooling_tests": 223,
+  "historical_contract_discrepancies": 0,
+  "traceability": "115/115",
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "log": "target/quality/wave-twelve-termination-gate.log",
+  "log_sha256": "23bcaa53feb9fe19a6097cf333c53b4b22ec444147faaace65c8ba4c12ea6668",
+  "openspec": {
+    "command": [
+      "openspec",
+      "validate",
+      "--all",
+      "--strict"
+    ],
+    "version": "1.13.0",
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/wave-twelve-termination-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  }
+}
