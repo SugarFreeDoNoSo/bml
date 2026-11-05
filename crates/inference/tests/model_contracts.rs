@@ -923,6 +923,140 @@ fn remote_coordinator_validates_prompt_and_runs_full_layer_pipeline() {
 }
 
 #[test]
+fn remote_pipeline_context_admission_precedes_a_permissive_peer() {
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    assert_eq!(model.config().context_length, 8);
+    for context in [8, 9] {
+        let (result, received) = permissive_pipeline_admission(&model, context, (0, 2, 4));
+        if context == 8 {
+            result.unwrap();
+            assert_eq!(received.unwrap()["Open"]["context"], 8);
+        } else {
+            assert_eq!(
+                result.unwrap_err(),
+                "invalid remote pipeline endpoints/context"
+            );
+            assert!(received.is_none(), "invalid context must not reach a peer");
+        }
+    }
+}
+
+#[test]
+fn remote_pipeline_requires_a_complete_prefix_and_the_model_hidden_width() {
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    assert_eq!(model.config().block_count, 2);
+    assert_eq!(model.config().embedding_length, 4);
+    for (name, ready, admitted) in [
+        ("complete", (0, 2, 4), true),
+        ("missing-prefix", (1, 2, 4), false),
+        ("wrong-width", (0, 2, 3), false),
+    ] {
+        let (result, received) = permissive_pipeline_admission(&model, 4, ready);
+        assert_eq!(received.unwrap()["Open"]["context"], 4, "{name}");
+        if admitted {
+            result.unwrap();
+        } else {
+            assert_eq!(
+                result.unwrap_err(),
+                "remote layers must cover the model once in order",
+                "{name}"
+            );
+        }
+    }
+}
+
+/// Return exactly the supplied Ready metadata, independently of model policy.
+/// Both a rejected connection and an accepted-then-dropped pipeline are bounded
+/// and joined before the caller asserts its admission result.
+fn permissive_pipeline_admission<'a>(
+    model: &'a Model<'a>,
+    context: usize,
+    (start, end, width): (usize, usize, usize),
+) -> (std::result::Result<(), String>, Option<serde_json::Value>) {
+    use bml_inference::remote::{RemoteLimits, RemotePipeline};
+    use std::{
+        io::{Read, Write},
+        net::TcpListener,
+        sync::{
+            atomic::{AtomicBool, Ordering},
+            Arc,
+        },
+        time::{Duration, Instant},
+    };
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let finished = Arc::new(AtomicBool::new(false));
+    let observed_finished = Arc::clone(&finished);
+    let fingerprint = model.fingerprint();
+    let server = std::thread::spawn(move || {
+        let deadline = Instant::now() + Duration::from_secs(3);
+        let mut stream = loop {
+            match listener.accept() {
+                Ok((stream, _)) => break stream,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    if observed_finished.load(Ordering::Acquire) {
+                        return None;
+                    }
+                    assert!(Instant::now() < deadline, "peer accept deadline");
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+                Err(error) => panic!("peer accept: {error}"),
+            }
+        };
+        stream.set_nonblocking(false).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        stream
+            .set_write_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        let mut prefix = [0_u8; 4];
+        stream.read_exact(&mut prefix).unwrap();
+        let length = u32::from_le_bytes(prefix) as usize;
+        assert!((1..=4096).contains(&length));
+        let mut bytes = vec![0; length];
+        stream.read_exact(&mut bytes).unwrap();
+        let request: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(request["Open"]["version"], 2);
+        assert_eq!(
+            request["Open"]["fingerprint"],
+            serde_json::json!(fingerprint)
+        );
+        // Deliberately do not validate the requested context or the advertised
+        // coverage/width: those are the coordinator's admission contract.
+        let response = serde_json::to_vec(&serde_json::json!({
+            "Ready": {"start": start, "end": end, "width": width}
+        }))
+        .unwrap();
+        stream
+            .write_all(&(response.len() as u32).to_le_bytes())
+            .unwrap();
+        stream.write_all(&response).unwrap();
+        let mut byte = [0_u8; 1];
+        assert_eq!(stream.read(&mut byte).unwrap(), 0, "pipeline must close");
+        Some(request)
+    });
+    let result = RemotePipeline::connect(
+        model,
+        &[address],
+        context,
+        RemoteLimits {
+            frame_bytes: 4096,
+            timeout: Duration::from_secs(3),
+            ..RemoteLimits::default()
+        },
+    )
+    .map(drop)
+    .map_err(|error| error.to_string());
+    finished.store(true, Ordering::Release);
+    let received = server.join().unwrap();
+    (result, received)
+}
+
+#[test]
 fn remote_coordinator_rejects_an_incomplete_layer_plan() {
     use bml_inference::remote::{serve_layer_connection, RemoteLimits, RemotePipeline};
     use std::net::TcpListener;

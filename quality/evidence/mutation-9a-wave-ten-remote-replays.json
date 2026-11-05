@@ -1,0 +1,327 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "e8c9338d601d776f0b856c1c5eaf5e319ae175ae",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "remote_pipeline_context_admission_precedes_a_permissive_peer"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-pipeline-context-disjunction.log",
+      "log_sha256": "4210aca1e4154bd4335f9bc0a9f5749cfb8cedd30cfd3ee746b53960f3a350a1",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "remote_pipeline_context_admission_precedes_a_permissive_peer",
+          "ok"
+        ]
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "remote_pipeline_requires_a_complete_prefix_and_the_model_hidden_width"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-pipeline-initial-layer-prefix.log",
+      "log_sha256": "bf476daab298ba88e2d5e88393f6e638947fe1e8ddca99400d58701f6b7581af",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "remote_pipeline_requires_a_complete_prefix_and_the_model_hidden_width",
+          "ok"
+        ]
+      ]
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "remote_pipeline_context_admission_precedes_a_permissive_peer"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-pipeline-context-disjunction.log",
+      "log_sha256": "3bd42281d9adbdc7d548ba6f69730d07adf673f01babd5e99ce09d5d5088de0d",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "remote_pipeline_context_admission_precedes_a_permissive_peer",
+          "FAILED"
+        ]
+      ],
+      "label": "pipeline-context-disjunction",
+      "candidate": "crates/inference/src/remote.rs:288:49: replace || with && in RemotePipeline<'a>::connect",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "4937d3dc30deff98822a3302424f343b730be298ca29c4d7fec4d1f7af64bbd9",
+      "original_diff_sha256": "48730a02b3379bdba9014b26b05268b7c9e2b1b77ecb95e41914cc3395300c2f",
+      "original_span": {
+        "end": {
+          "column": 51,
+          "line": 288
+        },
+        "start": {
+          "column": 49,
+          "line": 288
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "remote_pipeline_context_admission_precedes_a_permissive_peer"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-pipeline-context-upper-bound.log",
+      "log_sha256": "cc22cbaa6d374334ab97a64711bfcea0ebc7fbf3fbe2f18ceee2c8a6e12aee02",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "remote_pipeline_context_admission_precedes_a_permissive_peer",
+          "FAILED"
+        ]
+      ],
+      "label": "pipeline-context-upper-bound",
+      "candidate": "crates/inference/src/remote.rs:288:60: replace > with == in RemotePipeline<'a>::connect",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "57e5ae5f4fcc02e142b2afa05c012f0afaddf9bddb1fc0828093e1023fe9e185",
+      "original_diff_sha256": "5891c4ee605ba2334cdb26de9049d80920374bbe85dccdc7767959f1e3317c10",
+      "original_span": {
+        "end": {
+          "column": 61,
+          "line": 288
+        },
+        "start": {
+          "column": 60,
+          "line": 288
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "remote_pipeline_requires_a_complete_prefix_and_the_model_hidden_width"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-pipeline-initial-layer-prefix.log",
+      "log_sha256": "de0da7ae4313aa401ca7002fb1899c0842cd2c4efd77813f08628d1e694de8a0",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "remote_pipeline_requires_a_complete_prefix_and_the_model_hidden_width",
+          "FAILED"
+        ]
+      ],
+      "label": "pipeline-initial-layer-prefix",
+      "candidate": "crates/inference/src/remote.rs:296:17: replace || with && in RemotePipeline<'a>::connect",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "4811e0485f68c7b51b8330f51aa61b9e9363fbb5ee3a41fd27ec67c8a1adb1c8",
+      "original_diff_sha256": "904cd563242bef8549283b96b82dde25579e6dd40b1bf050ef57acbbc4c3a6b7",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 296
+        },
+        "start": {
+          "column": 17,
+          "line": 296
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "remote_pipeline_requires_a_complete_prefix_and_the_model_hidden_width"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-pipeline-model-hidden-width.log",
+      "log_sha256": "3429c5a0c83fc100c7d80904a5406571dbf757a66e1473f3bd7091891d46fae1",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "remote_pipeline_requires_a_complete_prefix_and_the_model_hidden_width",
+          "FAILED"
+        ]
+      ],
+      "label": "pipeline-model-hidden-width",
+      "candidate": "crates/inference/src/remote.rs:297:17: replace || with && in RemotePipeline<'a>::connect",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "318613dab2139283088413c8cbaf6f5474420e697a9ed64a29f1542f4ea30554",
+      "original_diff_sha256": "b65428439538977ae091a2786e71155a84de64e94ec0d5daed102c519418bfb1",
+      "original_span": {
+        "end": {
+          "column": 19,
+          "line": 297
+        },
+        "start": {
+          "column": 17,
+          "line": 297
+        }
+      },
+      "detected": true
+    }
+  ],
+  "build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "cleaned_packages": [
+    "bml-compiler",
+    "bml-inference"
+  ],
+  "cleanup": [
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-inference"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-ten-contract-replays-before-baselines.log",
+      "log_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-inference"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-ten-contract-replays-restored-pipeline-context-disjunction.log",
+      "log_sha256": "45eda4c889a949a193fd7dfc18e1fb88f42fc7b04d550bcbe97c54b9a9116d7b",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-inference"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-ten-contract-replays-restored-pipeline-context-upper-bound.log",
+      "log_sha256": "4f40383e23f8090818927e236a4ac7d90dc3e316c02a05ef8a091f66d3fd6b28",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-inference"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-ten-contract-replays-restored-pipeline-initial-layer-prefix.log",
+      "log_sha256": "4f40383e23f8090818927e236a4ac7d90dc3e316c02a05ef8a091f66d3fd6b28",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-inference"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-ten-contract-replays-restored-pipeline-model-hidden-width.log",
+      "log_sha256": "4f40383e23f8090818927e236a4ac7d90dc3e316c02a05ef8a091f66d3fd6b28",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    }
+  ],
+  "observed_at_utc": "2026-11-05T06:48:42.915505+00:00",
+  "status": "passed_focused_replays",
+  "current_source_restored_after_replays": true,
+  "patched_test_hashes": {
+    "crates/inference/tests/model_contracts.rs": "1ec1843dd3e2f584498908a626c5cd008cbcf56fa6511c6443901d7a8842b857"
+  },
+  "runner_sha256": "a233b5fbe35ea0395d4d095c0b02c1aa1d1488dc41ebbceaeb96acddc14726a6",
+  "full_execution_report": {
+    "path": "target/quality/wave-ten-contract-replays.json",
+    "sha256": "537d0743b88d681d66acbab97b9bf9e3e66d5980ff480049777d633db5089a6c"
+  }
+}
