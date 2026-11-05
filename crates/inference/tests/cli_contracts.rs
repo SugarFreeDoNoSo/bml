@@ -623,6 +623,9 @@ fn layer_worker_process_serves_real_causal_logits_and_exits_cleanly() {
     let path = files.source();
     let reader = GgufReader::open(&path).unwrap();
     let model = Model::from_gguf(&reader).unwrap();
+    // The framing quota is inclusive. This configures the largest permitted
+    // limit while the actual handshake and hidden states remain tiny.
+    let maximum_frame_bytes = u32::MAX.to_string();
     let mut worker = Worker(
         Command::new(env!("CARGO_BIN_EXE_bml-layer-worker"))
             .args([
@@ -637,6 +640,8 @@ fn layer_worker_process_serves_real_causal_logits_and_exits_cleanly() {
                 "1",
                 "--context",
                 "4",
+                "--frame-bytes",
+                maximum_frame_bytes.as_str(),
             ])
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

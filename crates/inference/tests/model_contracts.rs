@@ -900,9 +900,9 @@ fn remote_coordinator_validates_prompt_and_runs_full_layer_pipeline() {
             "overflow must not consume the last slot"
         );
         // A rejected prompt leaves both remote KV sessions and the coordinator
-        // healthy: the remaining slot can still commit the expected next token.
+        // healthy: prefill can still fill the exact remaining capacity.
         assert_eq!(
-            pipeline.decode(TOKENS[0]).unwrap(),
+            pipeline.prefill(&[TOKENS[0]]).unwrap(),
             model
                 .session(4)
                 .unwrap()

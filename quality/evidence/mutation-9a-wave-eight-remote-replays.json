@@ -1,0 +1,249 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "cb290927d2727aa4fad699547df884e7fa8bdcc3",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "remote_handshake_contracts",
+        "--locked",
+        "forward_rejects_shape_and_nonfinite_values_locally_without_poisoning_the_session",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-eight-remote-0.log",
+      "log_sha256": "8085f0ce05f0c1777bf73869e9259b0885e4aba5d79f2c74cde06b09acd15abf",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "remote_coordinator_validates_prompt_and_runs_full_layer_pipeline",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-eight-remote-1.log",
+      "log_sha256": "d458f01bfcc2b1860740b73467015df6aadc46c34d084947594a7f73591d4fc1",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "cli_contracts",
+        "--locked",
+        "layer_worker_process_serves_real_causal_logits_and_exits_cleanly",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-wave-eight-remote-3.log",
+      "log_sha256": "2737e0553900291c4f97a7d2cd7f9f02acaa2d726af3af319fcd8255cf5c8d44",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "remote_handshake_contracts",
+        "--locked",
+        "forward_rejects_shape_and_nonfinite_values_locally_without_poisoning_the_session",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-eight-remote-0.log",
+      "log_sha256": "ab32d425c1988dca7215b8b517a00ec6e1940b0cdd88b32eff49eb55bfdf32cb",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-eight-remote-0",
+      "candidate": "crates/inference/src/remote.rs:232:39: replace || with && in LayerClient::forward",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "ebda9dd60a84de0ed764a5cfbd858f03733dbd8f652d85bc8ce2b309a55d548e",
+      "original_diff_sha256": "b1b6f5bad03036accc4c07b9faf86c1980323d9a0fd3e1db8d2e0fb04da969ee",
+      "original_span": {
+        "end": {
+          "column": 41,
+          "line": 232
+        },
+        "start": {
+          "column": 39,
+          "line": 232
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "remote_coordinator_validates_prompt_and_runs_full_layer_pipeline",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-eight-remote-1.log",
+      "log_sha256": "1df11b55d1760b00350d52b26161ea6d2a6199bb2e6cef588e2aa6c08e2a7632",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-eight-remote-1",
+      "candidate": "crates/inference/src/remote.rs:369:29: replace > with >= in RemotePipeline<'a>::prefill",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "40344a72e4b0b5cdbaf59f7dcf96d9c0991ced692bb4d065c064f25239ac32a6",
+      "original_diff_sha256": "c0f60bb9687c587051cbb82940511e5ed16ff3ca505ec1d297c840a222bcdf81",
+      "original_span": {
+        "end": {
+          "column": 30,
+          "line": 369
+        },
+        "start": {
+          "column": 29,
+          "line": 369
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "model_contracts",
+        "--locked",
+        "remote_coordinator_validates_prompt_and_runs_full_layer_pipeline",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-eight-remote-2.log",
+      "log_sha256": "45f72d7fa9ca27a6b4f13bb61e22a72722cd8435cefd774ca13558f4617b223f",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-eight-remote-2",
+      "candidate": "crates/inference/src/remote.rs:369:29: replace > with == in RemotePipeline<'a>::prefill",
+      "original_source_sha256": "d1ce04c07b4a379b58f89cdc01125fb4f3f7601eec96883b340d181179b2c137",
+      "mutated_source_sha256": "e2be0afb4fda1a62159130b4d37fa9adf04f11ff4e7547a1024690248fac4347",
+      "original_diff_sha256": "e089a84e155f0268211fa742daa985374217c0bbc951bbff316bf975bd2957c4",
+      "original_span": {
+        "end": {
+          "column": 30,
+          "line": 369
+        },
+        "start": {
+          "column": 29,
+          "line": 369
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "cli_contracts",
+        "--locked",
+        "layer_worker_process_serves_real_causal_logits_and_exits_cleanly",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-eight-remote-3.log",
+      "log_sha256": "151b965e9490b4293094d82db61851aa9615d34f50da2f50317fbfa6af03ad3b",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-eight-remote-3",
+      "candidate": "crates/inference/src/bin/bml-layer-worker.rs:48:31: replace > with >= in run",
+      "original_source_sha256": "d37625eecf0eebea7d5187835b7da533c28ba1d4d5290fd6b9f62cfc62c2e17f",
+      "mutated_source_sha256": "82c8d890554f4ffe9c9eb8c8f4f3a287c7c3641b2c2b370a697ea0ba44d6d896",
+      "original_diff_sha256": "970eb197c16a339a95fb5454682f14c9207588537217b4166bb3098b7ada14b5",
+      "original_span": {
+        "end": {
+          "column": 32,
+          "line": 48
+        },
+        "start": {
+          "column": 31,
+          "line": 48
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-inference",
+        "--test",
+        "cli_contracts",
+        "--locked",
+        "layer_worker_process_serves_real_causal_logits_and_exits_cleanly",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-wave-eight-remote-4.log",
+      "log_sha256": "db8714669101d5a327426fc2e59ac9507e4a6b493054131859513d4f99164e9a",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "wave-eight-remote-4",
+      "candidate": "crates/inference/src/bin/bml-layer-worker.rs:48:31: replace > with == in run",
+      "original_source_sha256": "d37625eecf0eebea7d5187835b7da533c28ba1d4d5290fd6b9f62cfc62c2e17f",
+      "mutated_source_sha256": "6afd49d9d6dd3031f6fc277dd3c4757dc67a84fe438557c60ced5f5464264159",
+      "original_diff_sha256": "094d1a80ff0903c0ead3b38a0d5359fb11e64089dc289a6283f01548ea8cd996",
+      "original_span": {
+        "end": {
+          "column": 32,
+          "line": 48
+        },
+        "start": {
+          "column": 31,
+          "line": 48
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T05:39:24.832419+00:00",
+  "status": "passed_focused_replays",
+  "patched_test_hashes": {
+    "crates/inference/tests/remote_handshake_contracts.rs": "b76525011eae5fc0846eb77ade7f1feb6b4e7bc056b50bacbd23384ad0093c73",
+    "crates/inference/tests/model_contracts.rs": "124cc210258ad7a625440b77833fffe7b9ef81d3f5ba5d3793ce9d0ac4497505",
+    "crates/inference/tests/cli_contracts.rs": "b9c811d1b35122674689bcf91a77ce6f3ad3763783c092dfced6fd40364df2f4"
+  }
+}
