@@ -1,0 +1,209 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "ab04db2884da3f69e3b1f794f1185e964f7ecf2f",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bounded_transformer_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "rms_bound_getters_reconstruct_the_same_admitted_domain"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-rms-reconstructed-weight-bound-zero.log",
+      "log_sha256": "c7911351ab3c01c6afd6f59ad4ba094c22d1f34bb4c27e515b2c8e8701111499",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "rms_bound_getters_reconstruct_the_same_admitted_domain",
+          "ok"
+        ]
+      ]
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bounded_transformer_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "rms_bound_getters_reconstruct_the_same_admitted_domain"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-rms-reconstructed-weight-bound-zero.log",
+      "log_sha256": "0586ff107e5a5a2678ea07676dc89e9e18b76b05ca7190b4c29ae097e51ffc7f",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "rms_bound_getters_reconstruct_the_same_admitted_domain",
+          "FAILED"
+        ]
+      ],
+      "label": "rms-reconstructed-weight-bound-zero",
+      "candidate": "crates/domain/src/transformer/bounded.rs:122:9: replace BoundedRmsConfig::weight_bound -> f64 with 0.0",
+      "original_source_sha256": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+      "mutated_source_sha256": "88b033694fea0601212b340f08d3ce73812860449523591d3417dd26a6ea0c70",
+      "original_diff_sha256": "a05ec69c1705d4f9db08bd188f79f3c29815bdea433df7b94ab7454f2b166b8b",
+      "original_span": {
+        "end": {
+          "column": 26,
+          "line": 122
+        },
+        "start": {
+          "column": 9,
+          "line": 122
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bounded_transformer_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "rms_bound_getters_reconstruct_the_same_admitted_domain"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-rms-reconstructed-weight-bound-negative.log",
+      "log_sha256": "a976fe3e34b56718d0c95f9d95ddf61360a0fd68d1be939d3d9601b4a3fb2485",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "rms_bound_getters_reconstruct_the_same_admitted_domain",
+          "FAILED"
+        ]
+      ],
+      "label": "rms-reconstructed-weight-bound-negative",
+      "candidate": "crates/domain/src/transformer/bounded.rs:122:9: replace BoundedRmsConfig::weight_bound -> f64 with -1.0",
+      "original_source_sha256": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+      "mutated_source_sha256": "3d4cd60ee0431b59e4c9a4d45e1250842d879f528a881b6160f30f3c83feba43",
+      "original_diff_sha256": "f7fa97be7b843e1f3c44984aad0a35e2aec9738defc86e98563859a689c1a5ba",
+      "original_span": {
+        "end": {
+          "column": 26,
+          "line": 122
+        },
+        "start": {
+          "column": 9,
+          "line": 122
+        }
+      },
+      "detected": true
+    }
+  ],
+  "build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "cleaned_packages": [
+    "bml-compiler",
+    "bml-domain",
+    "bml-inference",
+    "bml-runtime"
+  ],
+  "cleanup": [
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-inference",
+        "-p",
+        "bml-runtime"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-nine-contract-replays-before-baselines.log",
+      "log_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-inference",
+        "-p",
+        "bml-runtime"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-nine-contract-replays-restored-rms-reconstructed-weight-bound-zero.log",
+      "log_sha256": "3280f1b232acb6cef820cbe62f60275a44bb6b68659300066b356a10b1f10cd8",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-compiler",
+        "-p",
+        "bml-domain",
+        "-p",
+        "bml-inference",
+        "-p",
+        "bml-runtime"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-wave-nine-contract-replays-restored-rms-reconstructed-weight-bound-negative.log",
+      "log_sha256": "3280f1b232acb6cef820cbe62f60275a44bb6b68659300066b356a10b1f10cd8",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    }
+  ],
+  "observed_at_utc": "2026-11-05T06:20:21.357850+00:00",
+  "status": "passed_focused_replays",
+  "source_override": {
+    "file": "crates/domain/src/transformer/bounded.rs",
+    "reason": "Frozen getter source reconstruction in an isolated worktree only; current builder guard cleanup is outside the byte-identical configuration prefix.",
+    "current_source_sha256": "6d57cd1c4d00e9e275328667ad01c9b0624f74dee738cc24231dfb42a16c0727",
+    "frozen_source_sha256": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+    "unchanged_configuration_prefix_sha256": "f364a7e8047f97e8bd911530897244725da5d9c65af80a9643ddc04752198604",
+    "backup": "target/quality/wave-nine-bounded-current-source.bin"
+  },
+  "current_source_restored_after_replays": true,
+  "patched_test_hashes": {},
+  "unchanged_test_inputs": {
+    "crates/domain/tests/bounded_transformer_contracts.rs": "e00c7a73b1495f103f17d4cf4bf06f81f6bcd000263b77b8b9a9836edf8ab943"
+  },
+  "runner_sha256": "a233b5fbe35ea0395d4d095c0b02c1aa1d1488dc41ebbceaeb96acddc14726a6",
+  "full_execution_report": {
+    "path": "target/quality/wave-nine-contract-replays.json",
+    "sha256": "2eec05b3a9385b3a400e0d15e50591452f24cc44ac99fac2f7288263eecabdc3"
+  }
+}
