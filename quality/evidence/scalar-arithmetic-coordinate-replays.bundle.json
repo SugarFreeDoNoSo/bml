@@ -1,0 +1,73 @@
+{
+  "status": "verified_two_focused_semantic_replays",
+  "archive": "quality/evidence/scalar-arithmetic-coordinate-replays.tar.gz",
+  "archive_sha256": "77a77ce7816b93b543e959e657f3b30a4ffde812ebd90e63708a2151656bc2a7",
+  "archive_bytes": 37327,
+  "members": {
+    "preparation/audit.md": {
+      "sha256": "0df98a32b3a0b1717e173ac337fa19fa8d7877da0d34258ec182c6f43e34c77f",
+      "bytes": 6236
+    },
+    "preparation/implementation-notes.md": {
+      "sha256": "f382a0f1bfe9576ab94f0291d9da1cdf4fb6d16471010425331010c0a3318df2",
+      "bytes": 2154
+    },
+    "preparation/implementation.json": {
+      "sha256": "a1d1290e264e34759b4fa5e23e6137924338af660cbcc1c9a15c733faf454a38",
+      "bytes": 3424
+    },
+    "preparation/implementation.patch": {
+      "sha256": "bbb8e02ef541c8799d5388aaa1b572ce2fd78323b48ae71ab3debbd92708f582",
+      "bytes": 2739
+    },
+    "preparation/manifest.json": {
+      "sha256": "311716008cf9fd83224939665aceb1601ce770ae94fa0e15ac871b3a587a61fc",
+      "bytes": 3118
+    },
+    "preparation/replay-plan.json": {
+      "sha256": "401c20d6718d369974b83dbf3c4455a63f2ea29eb6ed9cee9672c14a52f6650f",
+      "bytes": 833
+    },
+    "preparation/replay-results.json": {
+      "sha256": "c49892f523f0f336aa7d96b612ce1e377666036071ff6aea08d2d46b7a5992d4",
+      "bytes": 5336
+    },
+    "preparation/replay-runner.log": {
+      "sha256": "161fae29a7ed62da37089741af7ef750ad812f8a1afa20e8e3d4eb3e02ecfc5e",
+      "bytes": 101
+    },
+    "execution/survivor-replay-baseline-scalar-map-failing-row-remainder.log": {
+      "sha256": "93cb99d3f541156b0b517d68e6b7e8f1589ec40134936630aacc4d3dd08b3b2a",
+      "bytes": 494
+    },
+    "execution/survivor-replay-scalar-map-failing-row-remainder.log": {
+      "sha256": "f5368e2304ccc4d7621a8a043af5efa7a407749fc3019c18329cd4d7281c2f99",
+      "bytes": 1191
+    },
+    "execution/survivor-replay-scalar-map-failing-row-product.log": {
+      "sha256": "3766d4bdef96039395f33f6a911a48ba77c8b4b8588fe4a11321b07915177d71",
+      "bytes": 1192
+    },
+    "execution/survivor-replay-clean-replay-results-before-baselines.log": {
+      "sha256": "37d1312e25238c995d34d2f1548036095f8cbab2b730b690e2bcdbc422a3b5eb",
+      "bytes": 35
+    },
+    "execution/survivor-replay-clean-replay-results-restored-scalar-map-failing-row-remainder.log": {
+      "sha256": "7d8693b89ab92833905f4555c51ee656be9a4b0f6d5a50ac927816287033bb35",
+      "bytes": 36
+    },
+    "execution/survivor-replay-clean-replay-results-restored-scalar-map-failing-row-product.log": {
+      "sha256": "7d8693b89ab92833905f4555c51ee656be9a4b0f6d5a50ac927816287033bb35",
+      "bytes": 36
+    },
+    "execution/strict-runner.py": {
+      "sha256": "a233b5fbe35ea0395d4d095c0b02c1aa1d1488dc41ebbceaeb96acddc14726a6",
+      "bytes": 6071
+    },
+    "execution/canonical.log": {
+      "sha256": "858e1258d96dba278fe5f96b44ca16ce851200408ff5dcbc36d1db10222df7d7",
+      "bytes": 116388
+    }
+  },
+  "scope": "Full matrix.rs source matches frozen9a hash. New public error-coordinate test on6910worktree detects two historical division mutations to remainder/product, baseline exactly1selectedpass and eachnegativeexactly1FAILED/101. Source restored and domain package cleaned before/after in exclusive replay target. Original raw Missed classes unchanged; no full campaign/model/performance pass."
+}

@@ -348,6 +348,7 @@
       "failures_are_localized_and_do_not_mutate_inputs",
       "numeric_scalar_is_prepared_once_before_the_kernel",
       "shapes_access_and_transactional_replacement",
+      "scalar_arithmetic_failure_reports_the_last_row_major_position_transactionally",
       "scalar_output_budget_reports_the_last_row_major_position_transactionally",
       "scalar_work_budget_reports_the_last_row_major_position_transactionally"
     ]

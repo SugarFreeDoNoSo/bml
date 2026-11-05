@@ -1,6 +1,6 @@
 use bml_domain::number::{
-    Bml, BmlMatrix, CertifiedBml, ExactError, ExactOperand, ExactRational, ExactSynthesisOptions,
-    MatrixError, MatrixLimits, ReductionInit,
+    Bml, BmlMatrix, CertifiedBml, ExactError, ExactInputError, ExactInputLimits, ExactOperand,
+    ExactRational, ExactSynthesisOptions, MatrixError, MatrixLimits, ReductionInit,
 };
 fn term(n: i64) -> Bml {
     Bml::from_decimal_str_exact(&n.to_string())
@@ -256,6 +256,46 @@ fn numeric_scalar_is_prepared_once_before_the_kernel() {
             .map(ExactRational::from_i64)
             .collect::<Vec<_>>()
     );
+}
+
+#[test]
+fn scalar_arithmetic_failure_reports_the_last_row_major_position_transactionally() {
+    let input = matrix(2, 3, &[0, 0, 0, 0, 0, 1]);
+    let before = input.clone();
+    let mut limits = MatrixLimits {
+        scalar: ExactSynthesisOptions {
+            rational: ExactInputLimits {
+                max_bits: 1,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    // The first five sums are 0+1=1. Only the last sum, 1+1=2, needs
+    // two numerator bits; tree, proof and matrix budgets remain at defaults.
+    assert_eq!(
+        input.add_scalar(1i32, limits),
+        Err(MatrixError::Scalar {
+            row: 1,
+            column: 2,
+            inner: None,
+            source: ExactError::Rational(ExactInputError::Limit),
+        })
+    );
+    assert_eq!(input, before);
+
+    limits.scalar.rational.max_bits = 2;
+    let output = input.add_scalar(1i32, limits).unwrap();
+    assert_eq!(output.shape(), (2, 3));
+    assert_eq!(
+        targets(&output),
+        [1, 1, 1, 1, 1, 2]
+            .into_iter()
+            .map(ExactRational::from_i64)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(input, before);
 }
 
 #[test]

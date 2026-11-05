@@ -1,0 +1,170 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_matrix",
+        "--locked",
+        "--",
+        "--exact",
+        "scalar_arithmetic_failure_reports_the_last_row_major_position_transactionally"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-scalar-map-failing-row-remainder.log",
+      "log_sha256": "93cb99d3f541156b0b517d68e6b7e8f1589ec40134936630aacc4d3dd08b3b2a",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "scalar_arithmetic_failure_reports_the_last_row_major_position_transactionally",
+          "ok"
+        ]
+      ]
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_matrix",
+        "--locked",
+        "--",
+        "--exact",
+        "scalar_arithmetic_failure_reports_the_last_row_major_position_transactionally"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-scalar-map-failing-row-remainder.log",
+      "log_sha256": "f5368e2304ccc4d7621a8a043af5efa7a407749fc3019c18329cd4d7281c2f99",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "scalar_arithmetic_failure_reports_the_last_row_major_position_transactionally",
+          "FAILED"
+        ]
+      ],
+      "label": "scalar-map-failing-row-remainder",
+      "candidate": "crates/domain/src/number/matrix.rs:349:45: replace / with % in BmlMatrix::scalar_map",
+      "original_source_sha256": "f742872b25fb7929e289741248d572e108f7aadbea8497c193bccbba02499d77",
+      "mutated_source_sha256": "0de3d06661ccb5aa3220763e62cb5b7c33064f74082b00bd4300fbabd79e6096",
+      "original_diff_sha256": "12bacb0eb3315951d7a839b96988bcfed8dba4128c5db4addffbd5b8ae4fc092",
+      "original_span": {
+        "end": {
+          "column": 46,
+          "line": 349
+        },
+        "start": {
+          "column": 45,
+          "line": 349
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bml_matrix",
+        "--locked",
+        "--",
+        "--exact",
+        "scalar_arithmetic_failure_reports_the_last_row_major_position_transactionally"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-scalar-map-failing-row-product.log",
+      "log_sha256": "3766d4bdef96039395f33f6a911a48ba77c8b4b8588fe4a11321b07915177d71",
+      "test_failed": true,
+      "compile_error": false,
+      "selected_tests": [
+        [
+          "scalar_arithmetic_failure_reports_the_last_row_major_position_transactionally",
+          "FAILED"
+        ]
+      ],
+      "label": "scalar-map-failing-row-product",
+      "candidate": "crates/domain/src/number/matrix.rs:349:45: replace / with * in BmlMatrix::scalar_map",
+      "original_source_sha256": "f742872b25fb7929e289741248d572e108f7aadbea8497c193bccbba02499d77",
+      "mutated_source_sha256": "7b3c6664e7969a49d4cef3613204e7d2b5470aee3beed602aad3dfbdacda2d34",
+      "original_diff_sha256": "8afd8e519cf0ee4b751a44180fa5a56d653c60b9bfb9dc5fd4ae9466b47d8aae",
+      "original_span": {
+        "end": {
+          "column": 46,
+          "line": 349
+        },
+        "start": {
+          "column": 45,
+          "line": 349
+        }
+      },
+      "detected": true
+    }
+  ],
+  "build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "cleaned_packages": [
+    "bml-domain"
+  ],
+  "cleanup": [
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-replay-results-before-baselines.log",
+      "log_sha256": "37d1312e25238c995d34d2f1548036095f8cbab2b730b690e2bcdbc422a3b5eb",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-replay-results-restored-scalar-map-failing-row-remainder.log",
+      "log_sha256": "7d8693b89ab92833905f4555c51ee656be9a4b0f6d5a50ac927816287033bb35",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "-p",
+        "bml-domain"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-clean-replay-results-restored-scalar-map-failing-row-product.log",
+      "log_sha256": "7d8693b89ab92833905f4555c51ee656be9a4b0f6d5a50ac927816287033bb35",
+      "test_failed": false,
+      "compile_error": false,
+      "selected_tests": []
+    }
+  ],
+  "observed_at_utc": "2026-11-05T10:48:22.424427+00:00",
+  "status": "passed_focused_replays"
+}
