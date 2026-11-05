@@ -1,0 +1,338 @@
+{
+  "format_version": 1,
+  "observed_at": "2026-11-05T10:49:22.480665+00:00",
+  "scope": "first fresh executions of original29/31/39/40/43; parent20 explicitly excluded",
+  "repository": "SugarFreeDoNoSo/bml",
+  "repository_id": 1291412160,
+  "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "workflow_path": ".github/workflows/mutation-recovery.yml",
+  "workflow_sha256": "e32d4e1bb4abd3c6f9eb8605acb8f07eec3d4e4a3c05996578b5a38a2ed3791b",
+  "records": [
+    {
+      "index": 29,
+      "shard": "29/64",
+      "original_job_id": 126992340392,
+      "run_id": 42013172752,
+      "run_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/42013172752",
+      "created_at": "2026-11-05T10:44:12Z",
+      "run_attempt": 1,
+      "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "run_status": "in_progress",
+      "run_conclusion": null,
+      "job_id": 127197030664,
+      "job_status": "in_progress",
+      "job_conclusion": null,
+      "dispatch_exit_code": 0,
+      "only_new_id_for_corresponding_request": 42013172752,
+      "created_strictly_after_request": true,
+      "request_sha256": "60db379280385d289883779c3ede23673191ebbbf51ee0895f35e719914eeb99",
+      "submitted_inputs": {
+        "original_job": "126992340392",
+        "shard_index": "29"
+      },
+      "runtime_inputs_observed": false,
+      "authorization_step": {
+        "number": 3,
+        "name": "Authorize original source and failure eligibility; inspect original evidence only",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:20Z",
+        "completed_at": "2026-11-05T10:44:22Z"
+      },
+      "plan_verification_step": {
+        "number": 6,
+        "name": "Verify independent manifest SHA and original partition",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:25Z",
+        "completed_at": "2026-11-05T10:44:25Z"
+      },
+      "execution_step": {
+        "number": 9,
+        "name": "Run only the original frozen shard and its baseline",
+        "status": "in_progress",
+        "conclusion": null,
+        "started_at": "2026-11-05T10:44:37Z",
+        "completed_at": null
+      },
+      "source_checkout_step": {
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:22Z",
+        "completed_at": "2026-11-05T10:44:23Z"
+      },
+      "cached_original_api_identity_and_no_artifact_revalidated": true,
+      "underlying_original_failure_cause": "unknown; missing logs or a shutdown signal do not establish a cause",
+      "fresh_baseline_success_asserted": false,
+      "fresh_source_seal_status": "pending",
+      "original_raw_reused": false,
+      "global_union_contribution": 0
+    },
+    {
+      "index": 31,
+      "shard": "31/64",
+      "original_job_id": 126992340694,
+      "run_id": 42013186671,
+      "run_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/42013186671",
+      "created_at": "2026-11-05T10:44:18Z",
+      "run_attempt": 1,
+      "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "run_status": "in_progress",
+      "run_conclusion": null,
+      "job_id": 127197074226,
+      "job_status": "in_progress",
+      "job_conclusion": null,
+      "dispatch_exit_code": 0,
+      "only_new_id_for_corresponding_request": 42013186671,
+      "created_strictly_after_request": true,
+      "request_sha256": "749174f4d64bc537d4553b7bfe46f994fe956b51c383aaaed29af5f3ea7d13ce",
+      "submitted_inputs": {
+        "original_job": "126992340694",
+        "shard_index": "31"
+      },
+      "runtime_inputs_observed": false,
+      "authorization_step": {
+        "number": 3,
+        "name": "Authorize original source and failure eligibility; inspect original evidence only",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:25Z",
+        "completed_at": "2026-11-05T10:44:27Z"
+      },
+      "plan_verification_step": {
+        "number": 6,
+        "name": "Verify independent manifest SHA and original partition",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:29Z",
+        "completed_at": "2026-11-05T10:44:30Z"
+      },
+      "execution_step": {
+        "number": 9,
+        "name": "Run only the original frozen shard and its baseline",
+        "status": "in_progress",
+        "conclusion": null,
+        "started_at": "2026-11-05T10:44:42Z",
+        "completed_at": null
+      },
+      "source_checkout_step": {
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:27Z",
+        "completed_at": "2026-11-05T10:44:28Z"
+      },
+      "cached_original_api_identity_and_no_artifact_revalidated": true,
+      "underlying_original_failure_cause": "unknown; missing logs or a shutdown signal do not establish a cause",
+      "fresh_baseline_success_asserted": false,
+      "fresh_source_seal_status": "pending",
+      "original_raw_reused": false,
+      "global_union_contribution": 0
+    },
+    {
+      "index": 39,
+      "shard": "39/64",
+      "original_job_id": 126992342461,
+      "run_id": 42013203450,
+      "run_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/42013203450",
+      "created_at": "2026-11-05T10:44:26Z",
+      "run_attempt": 1,
+      "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "run_status": "in_progress",
+      "run_conclusion": null,
+      "job_id": 127197138140,
+      "job_status": "in_progress",
+      "job_conclusion": null,
+      "dispatch_exit_code": 0,
+      "only_new_id_for_corresponding_request": 42013203450,
+      "created_strictly_after_request": true,
+      "request_sha256": "27857019cacb11ed53f8966614c3de129858bbc7d56e8bf7117e7f919fc190c6",
+      "submitted_inputs": {
+        "original_job": "126992342461",
+        "shard_index": "39"
+      },
+      "runtime_inputs_observed": false,
+      "authorization_step": {
+        "number": 3,
+        "name": "Authorize original source and failure eligibility; inspect original evidence only",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:34Z",
+        "completed_at": "2026-11-05T10:44:36Z"
+      },
+      "plan_verification_step": {
+        "number": 6,
+        "name": "Verify independent manifest SHA and original partition",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:39Z",
+        "completed_at": "2026-11-05T10:44:39Z"
+      },
+      "execution_step": {
+        "number": 9,
+        "name": "Run only the original frozen shard and its baseline",
+        "status": "in_progress",
+        "conclusion": null,
+        "started_at": "2026-11-05T10:44:52Z",
+        "completed_at": null
+      },
+      "source_checkout_step": {
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:36Z",
+        "completed_at": "2026-11-05T10:44:38Z"
+      },
+      "cached_original_api_identity_and_no_artifact_revalidated": true,
+      "underlying_original_failure_cause": "unknown; missing logs or a shutdown signal do not establish a cause",
+      "fresh_baseline_success_asserted": false,
+      "fresh_source_seal_status": "pending",
+      "original_raw_reused": false,
+      "global_union_contribution": 0
+    },
+    {
+      "index": 40,
+      "shard": "40/64",
+      "original_job_id": 126992342513,
+      "run_id": 42013216016,
+      "run_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/42013216016",
+      "created_at": "2026-11-05T10:44:31Z",
+      "run_attempt": 1,
+      "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "run_status": "in_progress",
+      "run_conclusion": null,
+      "job_id": 127197176538,
+      "job_status": "in_progress",
+      "job_conclusion": null,
+      "dispatch_exit_code": 0,
+      "only_new_id_for_corresponding_request": 42013216016,
+      "created_strictly_after_request": true,
+      "request_sha256": "5f2b64221ab2edc582af9bac33983c77f9bc8d1e42e64f63753473e5444eda18",
+      "submitted_inputs": {
+        "original_job": "126992342513",
+        "shard_index": "40"
+      },
+      "runtime_inputs_observed": false,
+      "authorization_step": {
+        "number": 3,
+        "name": "Authorize original source and failure eligibility; inspect original evidence only",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:39Z",
+        "completed_at": "2026-11-05T10:44:40Z"
+      },
+      "plan_verification_step": {
+        "number": 6,
+        "name": "Verify independent manifest SHA and original partition",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:43Z",
+        "completed_at": "2026-11-05T10:44:44Z"
+      },
+      "execution_step": {
+        "number": 9,
+        "name": "Run only the original frozen shard and its baseline",
+        "status": "in_progress",
+        "conclusion": null,
+        "started_at": "2026-11-05T10:44:55Z",
+        "completed_at": null
+      },
+      "source_checkout_step": {
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:40Z",
+        "completed_at": "2026-11-05T10:44:42Z"
+      },
+      "cached_original_api_identity_and_no_artifact_revalidated": true,
+      "underlying_original_failure_cause": "unknown; missing logs or a shutdown signal do not establish a cause",
+      "fresh_baseline_success_asserted": false,
+      "fresh_source_seal_status": "pending",
+      "original_raw_reused": false,
+      "global_union_contribution": 0
+    },
+    {
+      "index": 43,
+      "shard": "43/64",
+      "original_job_id": 126992342771,
+      "run_id": 42013228131,
+      "run_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/42013228131",
+      "created_at": "2026-11-05T10:44:37Z",
+      "run_attempt": 1,
+      "controller_revision": "6910c359d39243b03d60e9d7c302e34f896cf6a7",
+      "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+      "run_status": "in_progress",
+      "run_conclusion": null,
+      "job_id": 127197218499,
+      "job_status": "in_progress",
+      "job_conclusion": null,
+      "dispatch_exit_code": 0,
+      "only_new_id_for_corresponding_request": 42013228131,
+      "created_strictly_after_request": true,
+      "request_sha256": "4539904e8bd42e2c5170c5d19bee0a7efe140d1b118689789be3f4b92908b40f",
+      "submitted_inputs": {
+        "original_job": "126992342771",
+        "shard_index": "43"
+      },
+      "runtime_inputs_observed": false,
+      "authorization_step": {
+        "number": 3,
+        "name": "Authorize original source and failure eligibility; inspect original evidence only",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:45Z",
+        "completed_at": "2026-11-05T10:44:47Z"
+      },
+      "plan_verification_step": {
+        "number": 6,
+        "name": "Verify independent manifest SHA and original partition",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:50Z",
+        "completed_at": "2026-11-05T10:44:51Z"
+      },
+      "execution_step": {
+        "number": 9,
+        "name": "Run only the original frozen shard and its baseline",
+        "status": "in_progress",
+        "conclusion": null,
+        "started_at": "2026-11-05T10:45:02Z",
+        "completed_at": null
+      },
+      "source_checkout_step": {
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-11-05T10:44:47Z",
+        "completed_at": "2026-11-05T10:44:49Z"
+      },
+      "cached_original_api_identity_and_no_artifact_revalidated": true,
+      "underlying_original_failure_cause": "unknown; missing logs or a shutdown signal do not establish a cause",
+      "fresh_baseline_success_asserted": false,
+      "fresh_source_seal_status": "pending",
+      "original_raw_reused": false,
+      "global_union_contribution": 0
+    }
+  ],
+  "runtime_inputs_status": "pending actual API job logs or authorization artifacts; submitted inputs/request-to-run binding verified",
+  "raw_global_union_count": 58,
+  "new_global_union_applied": false,
+  "quality_gate": "not evaluated; no new candidate/shard counted",
+  "actions": "read-only API/local evidence validation; no dispatch/Cargo/commit/main edits/other projects",
+  "snapshot_files_sha256": {
+    "29-jobs.json": "eccbc1626d2c649eb99d7a8f3c23c2a9e2c14a9e7a83b4cf33b7e6f9d2d188ef",
+    "29-run.json": "97832d1b52727d42d9c693111b54a229d377296444b9a2aff47fb939c386b3a0",
+    "31-jobs.json": "226c1033003559bc51a425a2e7053f690db1792b5b1ea21cf4ae691786ae4251",
+    "31-run.json": "48d73cfacf37af49d559d794fb3674848d8e00b252351cd76f2050322ff812a0",
+    "39-jobs.json": "ac9096eee3a06b42d5d1b712d867b55311ead01e871c22f2cf3071b973da52bf",
+    "39-run.json": "94c46ea74f6a7d30f3322cb44265e0a041d8304f1b7bcc5f957fe22698852c0d",
+    "40-jobs.json": "879dc4dac3c8a3c8a94860285b7a52e3deaaa7e45e310c15293f08541b126e90",
+    "40-run.json": "b1a997b50e384dd1603d8d19fb9c96bddd1b21fdb46a4d47718e3ab8fd4029ed",
+    "43-jobs.json": "c5d53ebe0b779dc0dba4dbfdb9523de26dff641a430324bc7cee991b7f869d1f",
+    "43-run.json": "d31010a0e569237d0bc99651d671ee620f2f75a7d5cb279a35848346c810988b",
+    "controller-workflow-api.json": "dcc19ec505b04656c733a2b53dd2ae86472c4e70df5db2c01312431fff0233f6",
+    "controller-workflow.yml": "e32d4e1bb4abd3c6f9eb8605acb8f07eec3d4e4a3c05996578b5a38a2ed3791b"
+  },
+  "verification_script_sha256": "44fc52f1db5c8fae8b6dba5cdef74104876f78c5c690657d98b841681119b5b0"
+}
