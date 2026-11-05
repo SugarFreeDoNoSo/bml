@@ -2,10 +2,17 @@ name: Fresh nested recovery of immutable mutation shard 20
 
 # Manual only. Four complete v1 leaves replace exactly 20/64 in an explicit v2
 # envelope. Neither this artifact nor a successful job approves mutation quality.
+# Diagnostic84 schedules only that leaf and cannot produce a parent envelope.
 # Partial job reruns fail identity checks; rerun all jobs to create a new plan
 # and matching attempt. Every source checkout remains the immutable 9a snapshot.
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Full four-leaf recovery, or diagnostic leaf84 without a parent envelope
+        type: choice
+        options: ['full', 'diagnostic84']
+        default: 'full'
 
 permissions:
   contents: read
@@ -31,6 +38,8 @@ jobs:
       plan_sha: ${{ steps.hashes.outputs.plan_sha }}
       manifest_sha: ${{ steps.hashes.outputs.manifest_sha }}
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      matrix: ${{ steps.hashes.outputs.matrix }}
+      emit_envelope: ${{ steps.hashes.outputs.emit_envelope }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -63,20 +72,28 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           ATTEMPT: ${{ github.run_attempt }}
           CONTROLLER: ${{ github.sha }}
+          MODE: ${{ inputs.mode || 'full' }}
         run: |
           python3 control/tools/mutation_subshards.py prepare --source source \
             --plan control/target/nested-plan --run "$RUN_ID" \
-            --attempt "$ATTEMPT" --controller "$CONTROLLER"
+            --attempt "$ATTEMPT" --controller "$CONTROLLER" --mode "$MODE"
       - name: Transmit independent plan and manifest file digests
         id: hashes
         run: |
           python3 - <<'PY'
-          import hashlib, os
+          import hashlib, json, os, sys
           from pathlib import Path
+          sys.path.insert(0, 'control/tools')
+          from mutation_subshards import LEAVES, scheduled_leaves
+          directory = Path('control/target/nested-plan')
+          scheduled = scheduled_leaves(json.loads((directory / 'nested-plan.json').read_text()))
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               for name, file in [('plan_sha', 'nested-plan.json'), ('manifest_sha', 'nested-campaign.json')]:
-                  checksum = hashlib.sha256((Path('control/target/nested-plan') / file).read_bytes()).hexdigest()
+                  checksum = hashlib.sha256((directory / file).read_bytes()).hexdigest()
                   output.write(f'{name}={checksum}\n')
+              matrix = json.dumps({'index': [int(shard.split('/')[0]) for shard in scheduled]}, separators=(',', ':'))
+              output.write(f'matrix={matrix}\n')
+              output.write('emit_envelope=' + ('true' if scheduled == LEAVES else 'false') + '\n')
           PY
       - name: Upload immutable nested plan and real workspace baseline
         if: always()
@@ -95,8 +112,7 @@ jobs:
     strategy:
       fail-fast: false
       max-parallel: 4
-      matrix:
-        index: [20, 84, 148, 212]
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -190,7 +206,7 @@ jobs:
           retention-days: 3
 
   envelope:
-    if: always()
+    if: ${{ always() && needs.prepare.outputs.emit_envelope == 'true' }}
     needs: [prepare, leaf]
     runs-on: ubuntu-24.04
     timeout-minutes: 10

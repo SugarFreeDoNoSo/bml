@@ -146,6 +146,15 @@ o sin fuente atestada impide el envelope completo. No se infiere cero de una
 métrica no disponible ni se aceptan prefijos parciales. Preparar o iniciar este
 workflow no aprueba la campaña completa ni recupera el raw antiguo20/27.
 
+El input manual `mode=diagnostic84` del workflow de subshards conserva prepare y
+el baseline real, pero programa sólo84. El helper rechaza cualquier envelope
+padre para ese modo. `full` sigue predeterminado, con cuatro hojas y las reglas
+legacy intactas. La telemetría se publica cada30s como JSON limitado a32KiB
+en archivo y stdout, fuera del pipe de `runner.log`: métricas ausentes son
+`null`, no se registran argv/env/contenidos de logs, y el log más reciente no
+se presenta como prueba del mutante activo ni de OOM. Una captura diagnóstica
+o un job exitoso no aprueba la campaña.
+
 ## Instrumentación optativa
 
 Los casos TinyLlama `Hello`/`Hi`, su preflight nativo por roles y el diagnóstico

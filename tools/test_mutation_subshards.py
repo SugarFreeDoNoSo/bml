@@ -4,6 +4,7 @@ import copy
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import sys
@@ -487,6 +488,209 @@ class ArtifactByteBoundary(unittest.TestCase):
                     sub.main()
                 self.assertEqual(stopped.exception.code, 2)
                 self.assertIn(missing, stderr.getvalue())
+
+
+class DiagnosticModes(unittest.TestCase):
+    def setUp(self):
+        self.parent, self.nested, self.plan, self.leaves, self.api = fixture()
+        for name, value in [("ORIGINAL_MANIFEST_ID", self.parent["manifest_sha256"]), ("PARENT_COUNT", 4)]:
+            context = patch.object(sub, name, value)
+            context.start()
+            self.addCleanup(context.stop)
+
+    def diagnostic_plan(self):
+        self.plan.update(mode="diagnostic84", scheduled_shards=["84/256"])
+        return self.plan
+
+    def test_legacy_none_and_explicit_full_preserve_all_four_leaves(self):
+        for extra in [{}, {"mode": None}, {"mode": "full", "scheduled_shards": list(sub.LEAVES)}]:
+            record = {**self.plan, **extra}
+            before = sub.json_file_sha(record)
+            sub.check_plan_record(record, self.parent, self.nested)
+            self.assertEqual(sub.scheduled_leaves(record), sub.LEAVES)
+            self.assertEqual(sub.json_file_sha(record), before)
+
+    def test_invalid_or_partial_schedules_cannot_claim_full_or_legacy_mode(self):
+        for extra in [
+            {"mode": "unknown", "scheduled_shards": list(sub.LEAVES)},
+            {"scheduled_shards": ["84/256"]},
+            {"mode": "full", "scheduled_shards": ["84/256"]},
+            {"mode": "diagnostic84", "scheduled_shards": list(sub.LEAVES)},
+            {"mode": "diagnostic84", "scheduled_shards": ["84/256", "84/256"]},
+            {"mode": "diagnostic84", "scheduled_shards": ["148/256"]},
+        ]:
+            with self.subTest(extra=extra), self.assertRaises(ValueError):
+                sub.check_plan_record({**self.plan, **extra}, self.parent, self.nested)
+
+    def test_diagnostic_leaf_may_be_attested_but_other_leaves_are_rejected(self):
+        self.diagnostic_plan()
+        sub.check_plan_record(self.plan, self.parent, self.nested)
+        self.assertEqual(sub.scheduled_leaves(self.plan), ("84/256",))
+        sub.validate_leaf(self.plan, self.nested, self.leaves[1])
+        for leaf in [self.leaves[0], self.leaves[2], self.leaves[3]]:
+            with self.subTest(shard=leaf["seal"]["shard"]), self.assertRaisesRegex(ValueError, "not scheduled"):
+                sub.validate_leaf(self.plan, self.nested, leaf)
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(sub, "checked_inputs", return_value=(self.parent, self.nested, self.plan)), \
+                patch.object(sub, "verify_worktree") as source_check:
+            path = Path(temporary)
+            with self.assertRaisesRegex(ValueError, "not scheduled"):
+                sub.attest_leaf(path, path, "20/256", path / "leaf.json", "plan", "manifest")
+            source_check.assert_not_called()
+            self.assertFalse((path / "leaf.json").exists())
+
+    def test_diagnostic_mode_never_assembles_or_validates_a_parent_envelope(self):
+        self.diagnostic_plan()
+        with self.assertRaisesRegex(ValueError, "diagnostic plan"):
+            sub.make_envelope(self.parent, self.nested, self.plan, self.leaves, self.api,
+                              sub.json_file_sha(self.plan))
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(sub, "checked_inputs", return_value=(self.parent, self.nested, self.plan)), \
+                patch.object(sub.recovery, "api") as api:
+            path = Path(temporary)
+            with self.assertRaisesRegex(ValueError, "diagnostic plan"):
+                sub.assemble(path, path, path / "parent.json", "plan", "manifest")
+            api.assert_not_called()
+            self.assertFalse((path / "parent.json").exists())
+
+    def test_prepare_cli_defaults_full_and_forwards_only_the_selected_mode(self):
+        arguments = ["prepare", "--source", "source", "--plan", "target/plan", "--run", "999999",
+                     "--attempt", "1", "--controller", "6" * 40]
+        for flags, expected in [([], "full"), (["--mode", "full"], "full"),
+                                (["--mode", "diagnostic84"], "diagnostic84")]:
+            with self.subTest(mode=expected), patch.object(sys, "argv", ["mutation_subshards.py", *arguments, *flags]), \
+                    patch.object(sub, "prepare") as prepare:
+                sub.main()
+                self.assertEqual(prepare.call_args.args[-1], expected)
+
+    def test_prepare_persists_mode_without_skipping_workspace_or_changing_frozen_argv(self):
+        for mode, expected in [("full", list(sub.LEAVES)), ("diagnostic84", ["84/256"])]:
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source, directory = root / "source", root / "plan"
+                source.mkdir()
+                directory.mkdir()
+                frozen = source / "tools/merge_mutation_shards.py"
+                real_digest = sub.file_digest
+
+                def checksum(path):
+                    return self.parent["source"]["files"]["tools/merge_mutation_shards.py"] \
+                        if Path(path) == frozen else real_digest(path)
+
+                def listing(argv, **kwargs):
+                    self.assertIn("256", argv)
+                    self.assertNotIn("--mode", argv)
+                    write_new(directory / "nested-campaign.json", self.nested)
+                    kwargs["stdout"].write(b"frozen listing fixture\n")
+
+                with patch.object(sub.recovery, "checked_plan", return_value=self.parent), \
+                        patch.object(sub, "git", return_value=self.plan["identity"]["controller_revision"]), \
+                        patch.object(sub, "file_digest", side_effect=checksum), \
+                        patch.object(sub, "verify_worktree"), \
+                        patch.object(sub, "collect_origins", return_value=origins()), \
+                        patch.object(sub.subprocess, "run", side_effect=listing), \
+                        patch.object(sub, "preflight", return_value=self.plan["workspace_preflight"]) as baseline, \
+                        patch.object(sub, "utc", side_effect=["2026-11-05T06:00:00Z", "2026-11-05T06:06:00Z"]):
+                    result = sub.prepare(source, directory, self.plan["identity"], mode)
+                self.assertEqual(result["mode"], mode)
+                self.assertEqual(result["scheduled_shards"], expected)
+                self.assertEqual(json.loads((directory / "nested-plan.json").read_bytes()), result)
+                baseline.assert_called_once()
+
+
+class DiagnosticTelemetry(unittest.TestCase):
+    def test_stdout_and_file_receive_the_same_flushed_diagnostic_json(self):
+        class Output(io.StringIO):
+            flushes = 0
+
+            def flush(self):
+                self.flushes += 1
+                super().flush()
+
+        output = Output()
+        sample = {"at": "2026-11-05T07:00:00Z", "root_pid": 123, "processes": [],
+                  "cgroup": {}, "disk_available_bytes": 10, "mutation_progress": None,
+                  "diagnostic_only": True, "environ": "SECRET_DO_NOT_PRINT"}
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(Path, "exists", side_effect=[True, False]), \
+                patch.object(sub, "diagnostic_sample", return_value=sample), \
+                patch.object(sub.time, "sleep") as sleep, contextlib.redirect_stdout(output):
+            path = Path(temporary) / "telemetry.jsonl"
+            sub.telemetry(123, Path(temporary), path)
+            self.assertEqual(path.read_text(), output.getvalue())
+            self.assertTrue(json.loads(path.read_text())["diagnostic_only"])
+            self.assertNotIn("SECRET", path.read_text())
+            self.assertGreater(output.flushes, 0)
+            sleep.assert_called_once_with(30)
+
+    def test_subtree_includes_nonleader_thread_children_and_missing_metrics_are_null(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            proc, cgroup, source = root / "proc", root / "cgroup", root / "source"
+            source.mkdir()
+            for pid in [123, 200]:
+                (proc / str(pid)).mkdir(parents=True)
+                (proc / str(pid) / "status").write_text("Name:\tSECRET_ARG\nState:\tS (sleeping)\nVmRSS:\t12 kB\n")
+                (proc / str(pid) / "environ").write_text("SECRET_ENV")
+                (proc / str(pid) / "cmdline").write_text("SECRET_CMD")
+            for tid, children in [(123, ""), (124, "200")]:
+                task = proc / "123/task" / str(tid)
+                task.mkdir(parents=True)
+                (task / "children").write_text(children)
+            (proc / "123/cgroup").write_text("0::/job\n")
+            (cgroup / "job").mkdir(parents=True)
+            (cgroup / "job/memory.current").write_text("12345\n")
+            sample = sub.diagnostic_sample(123, source, proc, cgroup)
+            self.assertEqual({row["pid"] for row in sample["processes"]}, {123, 200})
+            self.assertTrue(all(row["VmHWM"] is None for row in sample["processes"]))
+            self.assertEqual(sample["cgroup"]["memory.current"], "12345")
+            self.assertIsNone(sample["cgroup"]["memory.peak"])
+            self.assertNotIn("SECRET", sub.diagnostic_json(sample))
+            with patch.object(sub.os, "statvfs", side_effect=OSError("unavailable")):
+                missing = sub.diagnostic_sample(999, source, proc, cgroup)
+            self.assertIsNone(missing["disk_available_bytes"])
+            self.assertTrue(all(value is None for value in missing["cgroup"].values()))
+
+    def test_progress_is_observed_without_claiming_newest_log_is_active(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            raw = root / "target/final-mutation-shard-84/mutants.out"
+            logs = raw / "log"
+            logs.mkdir(parents=True)
+            for name, data, timestamp in [("old.log", b"a", 1), ("new.log", b"abc", 2)]:
+                path = logs / name
+                path.write_bytes(data)
+                os.utime(path, ns=(timestamp, timestamp))
+            outcomes = raw / "outcomes.json"
+            outcomes.write_text(json.dumps({"total_mutants": 1, "caught": 1, "missed": 0,
+                                            "timeout": 0, "unviable": 0, "outcomes": [{}],
+                                            "end_time": None, "env": "SECRET"}))
+            progress = sub.mutation_progress(root)
+            self.assertIsNone(progress["active_mutant"])
+            self.assertTrue(progress["newest_log"]["path"].endswith("/new.log"))
+            self.assertEqual(progress["newest_log"]["bytes"], 3)
+            self.assertEqual(progress["raw_progress"]["caught"], 1)
+            self.assertFalse(progress["raw_progress"]["raw_end_time_present"])
+            self.assertNotIn("SECRET", json.dumps(progress))
+            outcomes.write_text("partial JSON {")
+            self.assertIsNone(sub.mutation_progress(root)["raw_progress"])
+            outcomes.unlink()
+            outside = root / "outside.json"
+            outside.write_text('{"caught":999}')
+            outcomes.symlink_to(outside)
+            self.assertIsNone(sub.mutation_progress(root)["raw_progress"])
+            (root / "target/final-mutation-shard-20/mutants.out").mkdir(parents=True)
+            self.assertIsNone(sub.mutation_progress(root))
+
+    def test_stdout_sample_is_bounded_and_unavailable_source_is_null(self):
+        sample = {"at": "2026-11-05T07:00:00Z", "root_pid": 123, "cgroup": {},
+                  "processes": [{"pid": index, "VmRSS": "x" * 1000} for index in range(256)]}
+        line = sub.diagnostic_json(sample)
+        self.assertLessEqual(len(line.encode()), 32768)
+        self.assertGreater(json.loads(line)["processes_truncated"], 0)
+        self.assertEqual(len(sample["processes"]), 256)
+        with tempfile.TemporaryDirectory() as temporary, patch.object(Path, "glob", side_effect=OSError("lost")):
+            self.assertIsNone(sub.mutation_progress(Path(temporary)))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,54 @@
+{
+  "status": "passed_preparation_only",
+  "observed_at_utc": "2026-11-05T08:43:16.423185+00:00",
+  "base_revision": "bbb89735100e2e4ec6486f3b7029e48977944f3c",
+  "command": "./scripts/check.sh bbb89735100e2e4ec6486f3b7029e48977944f3c",
+  "exit_code": 0,
+  "scope": "Bounded stdout/file diagnostics and one-leaf84 scheduling only. Full remains default; a diagnostic plan cannot produce a parent envelope. No shutdown cause, recovered result or mutation quality pass established.",
+  "rust_tests_passed": 998,
+  "rust_suites": 145,
+  "python_tooling_tests": 223,
+  "traceability": "115/115",
+  "historical_contract_discrepancies": 0,
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "log": "target/quality/leaf84-diagnostics-gate.log",
+  "log_sha256": "1032158018714d16c06d756ab18aadbbd13ff7ae0bbef507cd2d9d79e33f9c47",
+  "actionlint": {
+    "version": "1.7.12",
+    "exit_code": 0,
+    "log": "target/quality/leaf84-diagnostics-actionlint.log",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/leaf84-diagnostics-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_tool_workflow_hashes": {
+    ".github/workflows/mutation-subshards.yml": "1e38e6e4ec51d55f9630a5f0903d10fff34a044d519417b3efc3ed78c47971bd",
+    "tools/mutation_subshards.py": "43cfa1012bce155b22c7dcdc70abbc17b7cc17ee06051ba45917d866cac27c25",
+    "tools/test_mutation_subshards.py": "ceca2fb12e96f5413e8ca77b027a66823ab40e5834f4f41627653b1166a240ef"
+  },
+  "unchanged_rust_input_hashes": {
+    "crates/runtime/tests/real_model_two_position_diagnostic.rs": "6bf11e8236051014fbc5ea36f070784da721de2060eff36bc1ef4fbf9752c1fe",
+    "crates/runtime/tests/support/prompt_diagnostic.rs": "882999022dea8ca1adbb2388d081324bd3476cd040841f679bb290804fe9f54b",
+    "crates/runtime/tests/support/prompt_profile.rs": "2aa184015d6d192f4b56c3714407f366de4b4d58d144911885a6b05d6ed4fa93",
+    "crates/runtime/tests/support/symbolic_fixture.rs": "628c316441a5f0baf1c18bdb75ec43a3a44b1c688b42eb7d18631f7316c7162a"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  },
+  "review": {
+    "reviewers": [
+      "root",
+      "audit_specs_waves"
+    ],
+    "diagnostic_boundary": "Exact84 only; other leaves cannot be attested against this plan and parent validation/assembly rejects it. Legacy None keeps full scheduling.",
+    "telemetry": "JSON max32KiB every30s, flush to stdout/file outside runner.log; no environment, argv or log contents, active_mutant null and missing metrics null."
+  }
+}

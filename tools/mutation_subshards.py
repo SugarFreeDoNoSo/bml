@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """Fresh nested recovery of original 20/64; complete evidence is not quality approval.
 
-The frozen 9a helper prepares all 256 independently listed assignments. Four
-unmodified format-1 leaves execute 20,84,148,212/256. Their package baselines
+The frozen 9a helper prepares all 256 independently listed assignments. Full
+plans execute four format-1 leaves:20,84,148,212/256. Diagnostic84 plans execute
+only84 with the same listing/workspace preflight and cannot emit a parent envelope.
+The leaf package baselines
 remain literal cargo-mutants records. A separate controller-emitted, successful
 unmutated WORKSPACE Build/Test preflight is mandatory: it is not an original
 9-package cargo-mutants baseline. Format 2 preserves those five real baselines.
 
 No raw prefix from either interrupted run is reused. Telemetry is diagnostic,
-never a source attestation or a replacement for a complete raw report. The
+flushed as bounded JSON to stdout and file, never a source attestation or a
+replacement for a complete raw report. Missing resource metrics stay null; a
+newest log is not asserted to identify the active mutant or prove OOM. The
 unchanged quality.py gate still rejects missed/timeouts after the full union.
 Collection must retain the plan's independently transmitted file SHA and verify
 the actual run/controller/artifact provenance; an envelope is not a signature.
@@ -64,6 +68,21 @@ ENVIRONMENT = {"CARGO_INCREMENTAL": "0", "CARGO_PROFILE_DEV_DEBUG": "0",
 CONTROLLER_TOOLS = ("mutation_subshards.py", "mutation_recovery.py", "merge_mutation_shards.py")
 LEAF_FILES = ("runner.log", "exit-code.txt", "tee-exit-code.txt", "run-leaf.sh",
               "toolchain.txt", "telemetry.jsonl")
+MODES = ("full", "diagnostic84")
+
+
+def scheduled_leaves(record):
+    """Old plans remain full; diagnostic plans can schedule only leaf84."""
+    mode = record.get("mode")
+    if mode is None:
+        require(record.get("scheduled_shards") is None,
+                "legacy plan cannot override scheduled shards")
+        return LEAVES
+    require(mode in MODES, "unknown nested execution mode")
+    expected = LEAVES if mode == "full" else ("84/256",)
+    require(record.get("scheduled_shards") == list(expected),
+            "scheduled shards differ from execution mode")
+    return expected
 
 
 def utc():
@@ -216,6 +235,7 @@ def validate_preflight(record, manifest, identity):
 
 
 def check_plan_record(record, original, nested):
+    scheduled_leaves(record)
     check_plans(original, nested)
     identity = record.get("identity")
     validate_identity(identity)
@@ -319,8 +339,9 @@ def checked_inputs(directory, expected_plan_sha=None, expected_manifest_sha=None
     return original, nested, record
 
 
-def prepare(source, directory, identity):
+def prepare(source, directory, identity, mode="full"):
     validate_identity(identity)
+    require(mode in MODES, "unknown nested execution mode")
     require(git(Path(__file__).resolve().parent.parent, "rev-parse", "HEAD") == identity["controller_revision"],
             "controller checkout differs from current workflow SHA")
     original = recovery.checked_plan(directory / "campaign.json", directory / "final.diff", PARENT)
@@ -340,6 +361,7 @@ def prepare(source, directory, identity):
     listed_at = utc()
     baseline = preflight(source, original, directory / "final.diff", identity, directory)
     record = {"format_version": 1, "identity": identity, "source": original["source"],
+              "mode": mode, "scheduled_shards": list(LEAVES if mode == "full" else ("84/256",)),
               "original_manifest_file_sha256": recovery.MANIFEST_SHA256,
               "original_manifest_sha256": original["manifest_sha256"],
               "nested_manifest_sha256": nested["manifest_sha256"],
@@ -357,7 +379,7 @@ def prepare(source, directory, identity):
 
 def attest_leaf(source, directory, shard, output, expected_plan_sha, expected_manifest_sha):
     original, nested, plan = checked_inputs(directory, expected_plan_sha, expected_manifest_sha)
-    require(shard in LEAVES, "unexpected nested leaf")
+    require(shard in scheduled_leaves(plan), "nested leaf is not scheduled by this plan")
     index = shard.split("/")[0]
     evidence = source / f"target/quality/shard-{index}"
     code = int((evidence / "exit-code.txt").read_text())
@@ -402,6 +424,7 @@ def validate_leaf(plan, nested, leaf):
             "invalid leaf evidence wrapper")
     seal, info = leaf["seal"], leaf["attestation"]
     baseline, mutations = validate_v1_result(nested, seal)
+    require(seal["shard"] in scheduled_leaves(plan), "nested leaf is not scheduled by this plan")
     require(seal["shard"] in LEAVES and info.get("method") == LEAF_METHOD
             and info.get("identity") == plan["identity"] and info.get("shard") == seal["shard"]
             and info.get("parent_shard") == PARENT and info.get("source_revision") == recovery.SOURCE
@@ -442,6 +465,7 @@ def within_api_completion(precise, completed_at):
 
 
 def validate_execution(api, plan, leaves, plan_sha):
+    require(scheduled_leaves(plan) == LEAVES, "diagnostic plan cannot produce a parent envelope")
     identity = plan["identity"]
     require(isinstance(api, dict) and set(api) == {"run", "jobs", "artifacts"}, "missing execution API")
     run, jobs, inventory = api["run"], api["jobs"], api["artifacts"]
@@ -552,6 +576,7 @@ def validate_envelope(original, result):
             "nested envelope checksum differs")
     nested, plan = result.get("nested_manifest"), result.get("plan")
     check_plan_record(plan, original, nested)
+    require(scheduled_leaves(plan) == LEAVES, "diagnostic plan cannot produce a parent envelope")
     sha(result.get("plan_file_sha256"), "plan file hash", 64)
     require(result["plan_file_sha256"] == json_file_sha(plan), "plan file digest differs from contents")
     require(result.get("execution_api_sha256") == digest(result.get("execution_api")),
@@ -642,6 +667,7 @@ def verify_downloaded_leaf(path, leaf):
 
 def assemble(directory, leaf_root, output, expected_plan_sha, expected_manifest_sha):
     original, nested, plan = checked_inputs(directory, expected_plan_sha, expected_manifest_sha)
+    require(scheduled_leaves(plan) == LEAVES, "diagnostic plan cannot produce a parent envelope")
     identity = plan["identity"]
     require(git(Path(__file__).resolve().parent.parent, "rev-parse", "HEAD") == identity["controller_revision"],
             "aggregation controller differs from prepare")
@@ -690,7 +716,66 @@ def assemble(directory, leaf_root, output, expected_plan_sha, expected_manifest_
     write_new(output, result)
 
 
-def diagnostic_sample(pid, root):
+def optional_text(path, limit=16384):
+    """Read bounded diagnostic metadata; absence and races remain null."""
+    try:
+        with path.open("rb") as stream:
+            data = stream.read(limit + 1)
+        return data.decode("utf-8") if len(data) <= limit else None
+    except (OSError, UnicodeError):
+        return None
+
+
+def mutation_progress(root):
+    """Newest log is an observation, never a claim about the active mutant."""
+    candidates = []
+    try:
+        for path in root.glob("target/final-mutation-shard-*/mutants.out"):
+            try:
+                if not path.is_symlink() and path.resolve().is_relative_to(root.resolve()):
+                    candidates.append(path)
+            except OSError:
+                pass
+            if len(candidates) > 1:
+                return None
+    except OSError:
+        return None
+    if len(candidates) != 1:
+        return None
+    raw = candidates[0]
+    newest = None
+    try:
+        logs = raw / "log"
+        if not logs.is_symlink():
+            for index, path in enumerate(logs.iterdir()):
+                if index >= 1024:
+                    break
+                if path.is_symlink() or not path.is_file() or path.suffix != ".log":
+                    continue
+                stat = path.stat()
+                relative = str(path.relative_to(root))
+                if len(relative) <= 512 and (newest is None or stat.st_mtime_ns > newest["mtime_ns"]):
+                    newest = {"path": relative, "bytes": stat.st_size, "mtime_ns": stat.st_mtime_ns}
+    except OSError:
+        pass
+    progress = None
+    outcomes_path = raw / "outcomes.json"
+    text = None if outcomes_path.is_symlink() else optional_text(outcomes_path, 4 * 1024 * 1024)
+    if text is not None:
+        try:
+            data = json.loads(text)
+            if isinstance(data, dict):
+                progress = {key: value if type(value := data.get(key)) is int
+                            and 0 <= value <= 1_000_000 else None
+                            for key in ("total_mutants", "caught", "missed", "timeout", "unviable")}
+                progress["outcome_rows"] = len(data["outcomes"]) if isinstance(data.get("outcomes"), list) else None
+                progress["raw_end_time_present"] = isinstance(data.get("end_time"), str)
+        except ValueError:
+            pass
+    return {"active_mutant": None, "newest_log": newest, "raw_progress": progress}
+
+
+def diagnostic_sample(pid, root, proc_root=Path("/proc"), cgroup_root=Path("/sys/fs/cgroup")):
     """Only this PID subtree, cgroup counters and disk; never argv/env/secrets."""
     processes, pending, seen = [], [pid], set()
     while pending and len(seen) < 256:
@@ -698,38 +783,81 @@ def diagnostic_sample(pid, root):
         if current in seen:
             continue
         seen.add(current)
+        status = optional_text(proc_root / str(current) / "status")
+        fields = dict(line.split(":", 1) for line in (status or "").splitlines() if ":" in line)
+        values = {key: value.strip() if (value := fields.get(key)) is not None
+                  and len(value) <= 64 else None for key in ("State", "VmRSS", "VmHWM", "Threads")}
+        processes.append({"pid": current, **values})
         try:
-            status = Path(f"/proc/{current}/status").read_text()
-            values = {key: value.strip() for key, value in (line.split(":", 1)
-                      for line in status.splitlines() if ":" in line)
-                      if key in {"State", "VmRSS", "VmHWM", "Threads"}}
-            processes.append({"pid": current, **values})
-            for children in Path(f"/proc/{current}/task").glob("*/children"):
-                pending.extend(int(x) for x in children.read_text().split())
-        except (OSError, ValueError):
+            # A cargo-mutants worker thread can own the running cargo child.
+            for index, children in enumerate((proc_root / str(current) / "task").glob("*/children")):
+                available = 256 - len(seen) - len(pending)
+                if index >= 1024 or available <= 0:
+                    break
+                text = optional_text(children)
+                found = (int(x) for x in (text or "").split() if x.isdecimal() and len(x) <= 10)
+                for child in found:
+                    pending.append(child)
+                    available -= 1
+                    if available <= 0:
+                        break
+        except OSError:
             pass
     cgroup = {}
     for name in ("memory.current", "memory.peak", "memory.max", "memory.events", "pids.current"):
         try:
             # Resolve the runner's actual unified cgroup; never traverse outside it.
-            line = next(line for line in Path(f"/proc/{pid}/cgroup").read_text().splitlines()
+            line = next(line for line in (optional_text(proc_root / str(pid) / "cgroup") or "").splitlines()
                         if line.startswith("0::"))
             relative = Path(line[3:].lstrip("/"))
             require(".." not in relative.parts, "invalid cgroup path")
-            cgroup[name] = (Path("/sys/fs/cgroup") / relative / name).read_text().strip()
+            value = optional_text(cgroup_root / relative / name, 4096)
+            cgroup[name] = value.strip() if value is not None else None
         except (OSError, StopIteration, ValueError):
-            cgroup[name] = "unavailable"
-    disk = os.statvfs(root)
+            cgroup[name] = None
+    try:
+        disk = os.statvfs(root)
+        available = disk.f_bavail * disk.f_frsize
+    except OSError:
+        available = None
     return {"at": utc(), "root_pid": pid, "processes": processes, "cgroup": cgroup,
-            "disk_available_bytes": disk.f_bavail * disk.f_frsize,
+            "disk_available_bytes": available, "mutation_progress": mutation_progress(root),
             "diagnostic_only": True}
+
+
+def diagnostic_json(sample):
+    """Cap a diagnostic sample at32KiB; never emit undeclared top-level data."""
+    value = copy.deepcopy({key: sample.get(key) for key in (
+        "at", "root_pid", "processes", "cgroup", "disk_available_bytes", "mutation_progress")})
+    value["diagnostic_only"] = True
+    if not isinstance(value["processes"], list):
+        value["processes"] = []
+    value["processes_truncated"] = 0
+    while True:
+        line = json.dumps(value, separators=(",", ":"))
+        if len(line.encode("utf-8")) <= 32768:
+            return line
+        if value["processes"]:
+            value["processes"].pop()
+            value["processes_truncated"] += 1
+        else:
+            # Retain identity/timestamp and an explicit diagnostic truncation.
+            at, pid = sample.get("at"), sample.get("root_pid")
+            return json.dumps({"at": at if isinstance(at, str) and len(at) <= 64 else None,
+                               "root_pid": pid if type(pid) is int and 0 < pid <= 10_000_000_000 else None,
+                               "diagnostic_only": True, "sample_truncated": True}, separators=(",", ":"))
 
 
 def telemetry(pid, root, output):
     with output.open("x") as log:
         while Path(f"/proc/{pid}").exists():
-            log.write(json.dumps(diagnostic_sample(pid, root)) + "\n")
+            line = diagnostic_json(diagnostic_sample(pid, root))
+            log.write(line + "\n")
             log.flush()
+            try:
+                print(line, flush=True)
+            except OSError:
+                pass  # Preserve the file if the runner's stdout has disappeared.
             time.sleep(30)
 
 
@@ -742,6 +870,7 @@ def main():
     p.add_argument("--run", type=int, required=True)
     p.add_argument("--attempt", type=int, required=True)
     p.add_argument("--controller", required=True)
+    p.add_argument("--mode", choices=MODES, default="full")
     p = commands.add_parser("verify")
     p.add_argument("--plan", type=Path, required=True)
     p.add_argument("--plan-sha", required=True)
@@ -768,7 +897,7 @@ def main():
         if args.command == "prepare":
             identity = {"repository": recovery.REPOSITORY, "run_id": args.run,
                         "attempt": args.attempt, "controller_revision": args.controller}
-            prepare(args.source.resolve(), args.plan.resolve(), identity)
+            prepare(args.source.resolve(), args.plan.resolve(), identity, args.mode)
         elif args.command == "verify":
             checked_inputs(args.plan.resolve(), args.plan_sha, args.manifest_sha)
         elif args.command == "attest":

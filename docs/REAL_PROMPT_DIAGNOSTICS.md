@@ -24,6 +24,12 @@ JSONCargo/stderr/status originales, exigir compiler-artifact no fresco para el
 driver y los paquetes numéricos, y copiar el ejecutable anunciado a una ruta
 nueva inmutable con hashes antes/después. No reutilizar el target de replays.
 
+La captura before/after debe incluir explícitamente el driver
+`crates/runtime/tests/real_model_two_position_diagnostic.rs` y sus tres módulos
+de soporte: `support/prompt_diagnostic.rs`, `support/prompt_profile.rs` y
+`support/symbolic_fixture.rs`, todos bajo `crates/runtime/tests/`. Los hashes de
+producción y los manifiestos por sí solos no cubren estos inputs compilados.
+
 ```sh
 cargo test --release -p bml-runtime --test real_model_two_position_diagnostic \
   --locked --no-run --message-format=json
