@@ -66,6 +66,7 @@
 - [ ] 5.11 Validar hito completo: ejecución `.bmlgraph`, tamaño real del hot loop, RPC y pruebas cloud. Las pruebas actuales no acreditan todos estos contratos.
 
 - [x] 5.12 Eliminar asignaciones durante `Runtime::execute_sub_fragments` con pila y buffers preasignados. La ruta usa un slice prestado compartido con `HotLoop::execute_fragment_full`; el contrato público comprueba cuatro subfragmentos, bucles anidados, pila, resultados y entradas vacías. Registra cero asignaciones; restaurar `ops.clone()` en una copia aislada provoca 128 asignaciones y hace fallar la prueba. Evidencia: `quality/evidence/subfragment-allocation-contract.json`. Esto no acredita residencia L1i ni throughput.
+- [x] 5.13 Definir el protocolo experimental L1i aceptado antes de medir: código máquina menor de 32 KiB, siete repeticiones con afinidad/carga/calentamiento constantes y máximo un miss por mil instrucciones en cada repetición. `tools/validate_l1i_campaign.py` valida los datos y rechaza contadores ausentes, no soportados, no contados o parcialmente multiplexados; sus pruebas no sustituyen una campaña PMU. El driver de la ruta real y su procedencia siguen pendientes en 5.3 y 5.10, reservados a la nueva VM.
 
 ## 6. Cierre del Change
 
