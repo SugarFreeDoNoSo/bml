@@ -1,7 +1,7 @@
 {
-  "status": "running",
-  "observed_at_utc": "2026-11-04T03:05:36.114320+00:00",
-  "scope": "Changed Rust lines against formatted base; no gate result until the complete campaign terminates successfully.",
+  "status": "stopped_incomplete",
+  "observed_at_utc": "2026-11-05T00:44:38.005673+00:00",
+  "scope": "Interrupted historical snapshot; partial outcomes only. Does not satisfy the final mutation gate or validate current HEAD.",
   "source_commit": "5e7d0716a97f53886e499dbb7af2daa940999926",
   "base_commit": "40b3f1be2d3f97028b741750ed61ab72f501a555",
   "candidate_count": 5176,
@@ -38,5 +38,27 @@
     "build_seconds": 72,
     "test_seconds": 96,
     "note": "The baseline tests selected mutation-bearing packages; subsequent mutants invoke cargo test --workspace."
-  }
+  },
+  "initial_running_observed_at_utc": "2026-11-04T03:05:36.114320+00:00",
+  "processed_mutants": 870,
+  "remaining_mutants": 4306,
+  "outcome_counts": {
+    "CaughtMutant": 708,
+    "Unviable": 54,
+    "Timeout": 35,
+    "MissedMutant": 73
+  },
+  "campaign_end_time": null,
+  "exit_file_present": false,
+  "process_present": false,
+  "termination_reason": "not recorded; process and execution handle absent",
+  "outcomes_sha256": "bc16557a5f55ae1033d65f748eaa0b42d73a699d2cfa94eee4c0853b037780aa",
+  "candidate_list": "target/spec-mutations-isolated-5e7d071/mutants.out/mutants.json",
+  "candidate_list_sha256": "856fe2068013cade40869a60cde427033144899f3b326ed1f380251cb3d9cd6f",
+  "log_sha256": "b306d350e9a100e4c0a12140a14d88c7a25367794862d396ab64a89e468dec96",
+  "residual_worktree_diff": {
+    "path": "target/quality/mutation-isolated-interruption.diff",
+    "sha256": "24d10986966a9b539e6383537987507f3ba6323638f05d2a4d4923c67acad1f3"
+  },
+  "final_gate_passed": false
 }
