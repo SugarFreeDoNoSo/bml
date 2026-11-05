@@ -116,6 +116,12 @@ con la fuente9a intacta y el mismo sellado posterior. La autorización antigua
 del shard20 sigue siendo compatible con el verificador. Sus fallos de runner
 se registran aparte y no aportan resultados sellados.
 
+`mutation-recovery.yml` admite también el job original27 (`126992339813`),
+con artefacto `13389245750` y ZIP fijado por SHA. La inspección comprueba los
+81 candidatos y el fallo final de colección; sólo autoriza una repetición fresca.
+Ese raw antiguo sigue sin atestación y no entra en la unión. Se conservan los
+defaults21, la procedencia20/21 y el sellado posterior con fuente viva y semillas.
+
 `mutation-subshards.yml` prepara una recuperación separada del shard20 tras
 los dos apagados observados, cuya causa sigue sin determinarse. El helper
 original de la fuente9a lista independientemente los 256 shards del mismo

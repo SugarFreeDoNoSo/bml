@@ -1,0 +1,59 @@
+{
+  "status": "passed",
+  "observed_at_utc": "2026-11-05T06:25:57.090832+00:00",
+  "base_revision": "eb65aebd369d96ea6797ee7d4aba8ed69a6cebb8",
+  "command": "./scripts/check.sh eb65aebd369d96ea6797ee7d4aba8ed69a6cebb8",
+  "exit_code": 0,
+  "scope": "Authenticated tensor layout, native response metadata, cumulative lazy kernel budgets and narrow fresh27-recovery eligibility. TinyLlama historical-binary results are separate evidence. No complete mutation, current-main real-model parity or PMU pass.",
+  "rust_tests_passed": 990,
+  "rust_suites": 144,
+  "python_tooling_tests": 213,
+  "traceability": "113/113",
+  "historical_contract_discrepancies": 0,
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "focused_replay_executions": 5,
+  "focused_unique_candidates_detected": 5,
+  "unique_positive_control_commands": 4,
+  "replay_build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "replay_cleanups": 6,
+  "replay_selection": "Each positive and negative log contains exactly one selected test, verified by the runner. Package outputs were cleaned before baselines and after every restoration.",
+  "replay_report": {
+    "path": "target/quality/wave-nine-contract-replays.json",
+    "sha256": "2eec05b3a9385b3a400e0d15e50591452f24cc44ac99fac2f7288263eecabdc3"
+  },
+  "log": "target/quality/wave-nine-gate.log",
+  "log_sha256": "8ba65c15da9160f43681fce59fbd3f7a5421f81cdc4b826d22f0f81cd94caf3b",
+  "actionlint": {
+    "version": "1.7.12",
+    "exit_code": 0,
+    "log": "target/quality/wave-nine-actionlint.log",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/wave-nine-final-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_rust_test_hashes": {
+    "crates/compiler/tests/symbolic_weight_shard_contracts.rs": "fb17081624b3ced76fddb9fb930cb49782dc543a5236f4c89d9123760ef814d5",
+    "crates/inference/tests/remote_handshake_contracts.rs": "0af081ead5dce536bef0a3556014e440cac1f15273323143fbdf103fcb82984e",
+    "crates/runtime/tests/symbolic_causal_contracts.rs": "d9cf256c3add4d3fb4976f808386f17e6b412829990d69e846ce8edf86b7ad51"
+  },
+  "tested_tool_workflow_hashes": {
+    "tools/mutation_recovery.py": "dfea908c3cfa544236e2b79b518765725b54d4ce8e5e3de76b1c7cada37ce5c9",
+    "tools/test_mutation_recovery.py": "b84c5993c42de0cc489779ebb754eb388828d8278207a7a67b3c71f7e5ef594c",
+    ".github/workflows/mutation-recovery.yml": "193a2ebca2a23997a8f6387b5709bcfcd54860ce0c39d451a29d8ba9f530a6f1"
+  },
+  "traceability_hashes": {
+    "quality/traceability.json": "f556a35ba49eea6530315f3ebed56f636968a3e35b977248e970e9cb5291ee1f",
+    "quality/contracts.feature": "6e3addbf5d9d249baba72d6543916016c54046f246d5b6bf0f437ee5f2d710aa"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  }
+}

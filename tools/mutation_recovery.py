@@ -8,15 +8,15 @@ If only the frozen sealer's final untracked-file guard fails on a real generated
 proptest seed, the versioned controller can attest the still-live source and
 complete raw reports itself. That distinct seal never claims to come from 9a.
 
-The pinned original shard21 ZIP may establish retry eligibility only. Its
-complete raw reports lack an attested source/seed inventory, so they are never
+The pinned original shard21 and shard27 ZIPs may establish retry eligibility only.
+Their complete raw reports lack an attested source/seed inventory, so they are never
 copied into the fresh source checkout or converted into a source seal. Archives
 are checksum-verified and inspected in memory, then retained under control's
 target directory solely as provenance. A fresh baseline and all assigned
 mutants must execute before the existing live-source attestation can succeed.
 
 The original aggregate cannot use the missing shard20 seal or unattested
-shard21 reports, and does not discover these separate recovery runs. Collection
+shard21/shard27 reports, and does not discover these separate recovery runs. Collection
 is an explicit later operation: retain exactly one attested seal for each of
 the 64 indices, replacing only reviewed failures with fresh recoveries. Before selecting one,
 validate its recovery metadata against the API's actual recovery run/attempt,
@@ -55,11 +55,26 @@ COLLECTION_INDEX = 21
 COLLECTION_JOB = 126992338544
 COLLECTION_ARTIFACT = 13386138847
 COLLECTION_ZIP_SHA256 = "0ecabdc7b8758dcf7b8686f0e145de9c4e9f5cdfad54b085fc77ed6af52f5b50"
+COLLECTION_27_JOB = 126992339813
+COLLECTION_27_ARTIFACT = 13389245750
+COLLECTION_27_ZIP_SHA256 = "faa89ea81b3b6624da0563d752b46ea0cda78d712b4edb5413c8df97dbb1009f"
 MAX_INSPECTION_ZIP = 32 * 1024 * 1024
 
 
+def collection_failure(index):
+    """Return only the two independently reviewed collection-failure identities."""
+    if type(index) is not int:
+        return None
+    if index == COLLECTION_INDEX:
+        return COLLECTION_JOB, COLLECTION_ARTIFACT, COLLECTION_ZIP_SHA256
+    if index == 27:
+        return COLLECTION_27_JOB, COLLECTION_27_ARTIFACT, COLLECTION_27_ZIP_SHA256
+    return None
+
+
 def collection_requested(job_id, index):
-    return job_id == COLLECTION_JOB and index == COLLECTION_INDEX
+    pinned = collection_failure(index)
+    return pinned is not None and job_id == pinned[0]
 
 
 def zip_members(blob, required):
@@ -90,35 +105,39 @@ def zip_members(blob, required):
         raise ValueError(f"invalid inspection ZIP: {error}") from error
 
 
-def inspection_plan(blob):
+def inspection_plan(blob, index=COLLECTION_INDEX):
+    require(collection_failure(index) is not None, "collection shard is not independently reviewed")
     values, _ = zip_members(blob, {"campaign.json", "final.diff"})
-    manifest = checked_plan_bytes(values["campaign.json"], values["final.diff"], "21/64")
+    manifest = checked_plan_bytes(values["campaign.json"], values["final.diff"], f"{index}/{SHARDS}")
     return manifest
 
 
-def inspect_collection_zip(blob, manifest):
-    require(hashlib.sha256(blob).hexdigest() == COLLECTION_ZIP_SHA256,
+def inspect_collection_zip(blob, manifest, index=COLLECTION_INDEX):
+    pinned = collection_failure(index)
+    require(pinned is not None, "collection shard is not independently reviewed")
+    _, artifact_id, zip_sha256 = pinned
+    require(hashlib.sha256(blob).hexdigest() == zip_sha256,
             "original collection ZIP digest differs")
-    base = "target/final-mutation-shard-21/mutants.out/"
-    evidence = "target/quality/shard-21/"
+    base = f"target/final-mutation-shard-{index}/mutants.out/"
+    evidence = f"target/quality/shard-{index}/"
     required = {base + "mutants.json", base + "outcomes.json",
                 evidence + "runner.log", evidence + "exit-code.txt"}
     values, names = zip_members(blob, required)
-    require(not any(name.endswith(("/shard-result-21.json", "/controller-shard-result-21.json"))
+    require(not any(name.endswith((f"/shard-result-{index}.json", f"/controller-shard-result-{index}.json"))
                     for name in names), "collection failure unexpectedly contains a source seal")
     lines = values[evidence + "runner.log"].decode("utf-8").rstrip().splitlines()
     require(lines and lines[-1] == UNTRACKED_ERROR
             and values[evidence + "exit-code.txt"].decode("ascii").strip() == "1",
             "original collection did not end at the untracked-file guard with exit 1")
     candidates = json.loads(values[base + "mutants.json"])
-    assigned = manifest["shards"][COLLECTION_INDEX]["candidates"]
+    assigned = manifest["shards"][index]["candidates"]
     require(manifest["source"]["revision"] == SOURCE
-            and manifest["shards"][COLLECTION_INDEX]["shard"] == "21/64"
+            and manifest["shards"][index]["shard"] == f"{index}/{SHARDS}"
             and candidates == assigned, "original collection candidates differ from pinned manifest")
     outcomes = json.loads(values[base + "outcomes.json"])
     validate_outcomes(outcomes, assigned, manifest["source"]["workspace_packages"])
     return {"state": "retry_eligible_from_collection_failure",
-            "artifact_id": COLLECTION_ARTIFACT, "zip_sha256": COLLECTION_ZIP_SHA256,
+            "artifact_id": artifact_id, "zip_sha256": zip_sha256,
             "candidate_count": len(candidates),
             "raw_counts": {key: outcomes[key] for key in ["caught", "missed", "unviable", "timeout"]},
             "members_sha256": {name: hashlib.sha256(value).hexdigest() for name, value in values.items()},
@@ -166,22 +185,24 @@ def validate_origin(repository, job_id, index, bundle, log, collection=None):
     require(any(a.get("id") == ARTIFACT_ID for a in rows), "original plan is not in run inventory")
     name = f"mutation-shard-{ORIGIN_RUN}-{ORIGIN_ATTEMPT}-{index}"
     if collection_requested(job_id, index):
+        _, collection_artifact, collection_sha256 = collection_failure(index)
         original = bundle.get("collection_artifact", {})
         require(uploads[0].get("conclusion") == "success"
                 and re.search(r"Z ##\[error\]Process completed with exit code 1\.\r?$", log, re.M)
-                and original.get("id") == COLLECTION_ARTIFACT and original.get("name") == name
+                and original.get("id") == collection_artifact and original.get("name") == name
                 and original.get("expired") is False
-                and original.get("digest") == "sha256:" + COLLECTION_ZIP_SHA256
+                and original.get("digest") == "sha256:" + collection_sha256
                 and 0 < original.get("size_in_bytes", 0) <= MAX_INSPECTION_ZIP
                 and original.get("workflow_run", {}).get("id") == ORIGIN_RUN
                 and original["workflow_run"].get("head_sha") == SOURCE
                 and original["workflow_run"].get("repository_id") == REPOSITORY_ID
                 and original["workflow_run"].get("head_repository_id") == REPOSITORY_ID
                 and len([a for a in rows if a.get("name") == name]) == 1
-                and any(a.get("name") == name and a.get("id") == COLLECTION_ARTIFACT for a in rows),
+                and any(a.get("name") == name and a.get("id") == collection_artifact for a in rows),
                 "original collection artifact, exit or upload does not match the pinned failure")
         require(collection and collection.get("state") == "retry_eligible_from_collection_failure"
-                and collection.get("zip_sha256") == COLLECTION_ZIP_SHA256
+                and collection.get("artifact_id") == collection_artifact
+                and collection.get("zip_sha256") == collection_sha256
                 and collection.get("fresh_execution_required") is True,
                 "original collection inspection is missing or invalid")
         return {"state": "retry_eligible_from_collection_failure", "exit_code": 1}
@@ -223,11 +244,12 @@ def authorize(repository, job_id, index, run_id, attempt, controller, output):
     log = api(f"{prefix}/jobs/{job_id}/logs", raw=True)
     collection, collection_zip, plan_zip = None, None, None
     if collection_requested(job_id, index):
-        bundle["collection_artifact"] = api(f"{prefix}/artifacts/{COLLECTION_ARTIFACT}")
+        _, collection_artifact, _ = collection_failure(index)
+        bundle["collection_artifact"] = api(f"{prefix}/artifacts/{collection_artifact}")
         plan_zip = api_bytes(f"{prefix}/artifacts/{ARTIFACT_ID}/zip")
-        manifest = inspection_plan(plan_zip)
-        collection_zip = api_bytes(f"{prefix}/artifacts/{COLLECTION_ARTIFACT}/zip")
-        collection = inspect_collection_zip(collection_zip, manifest)
+        manifest = inspection_plan(plan_zip, index)
+        collection_zip = api_bytes(f"{prefix}/artifacts/{collection_artifact}/zip")
+        collection = inspect_collection_zip(collection_zip, manifest, index)
     eligibility = validate_origin(repository, job_id, index, bundle, log, collection)
     output.mkdir(parents=True, exist_ok=True)
     write_new(output / "origin-api.json", bundle)
@@ -274,12 +296,14 @@ def authorization(directory):
             "original API or log evidence changed")
     collection = None
     if collection_requested(record["origin_job_id"], record["index"]):
+        _, _, collection_sha256 = collection_failure(record["index"])
         require(file_digest(directory / "inspection-plan.zip") == record.get("inspection_plan_zip_sha256")
                 and file_digest(directory / "original-collection.zip") ==
-                record.get("original_collection_zip_sha256") == COLLECTION_ZIP_SHA256,
+                record.get("original_collection_zip_sha256") == collection_sha256,
                 "original inspection archives changed")
-        manifest = inspection_plan((directory / "inspection-plan.zip").read_bytes())
-        collection = inspect_collection_zip((directory / "original-collection.zip").read_bytes(), manifest)
+        manifest = inspection_plan((directory / "inspection-plan.zip").read_bytes(), record["index"])
+        collection = inspect_collection_zip((directory / "original-collection.zip").read_bytes(),
+                                            manifest, record["index"])
         require(collection == record.get("collection_inspection"), "collection inspection record changed")
     eligibility = validate_origin(record["repository"], record["origin_job_id"], record["index"],
                     read_json(directory / "origin-api.json"),

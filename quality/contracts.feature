@@ -408,6 +408,7 @@ Then it rejects the request before expensive generation
     And dot products, RMSNorm, RoPE, softmax, SwiGLU, attention scaling and residuals all execute
     And budget or numerical failures preserve committed KV positions and allow retry
     And the profile reports numerical failures instead of silently using native arithmetic
+    And lazy kernels accept their exact aggregate operation count and reject a smaller cap even when every individual kernel fits
 
   @C65
   Scenario: Symbolic AOT artifacts execute a complete stored operation plan
@@ -811,12 +812,13 @@ Then it rejects the request before expensive generation
 
 
   @C107
-  Scenario: Native layer sessions validate peer metadata and local forward admission
+  Scenario: Native layer sessions validate peer metadata, local requests and forward responses
     Given a framed layer protocol peer and an authenticated opening request
     When the peer reports an empty or inverted layer range or zero hidden width
     Then the client rejects admission before returning a usable session
     And a valid peer can exchange a forward result and close normally
     And invalid hidden shapes or nonfinite values send no Forward RPC and a later valid transaction remains usable
+    And a complete response with an incorrect position or hidden width is rejected after a valid request
 
 
   @C108
@@ -827,10 +829,11 @@ Then it rejects the request before expensive generation
     And positive timeout values preserve successful help output
 
   @C109
-  Scenario: Authenticated layer weight descriptors must match their requested range
+  Scenario: Authenticated layer weight descriptors must match their requested range and tensor layout
     Given a valid descriptor digest, payload digest and artifact identity
     When one declared range endpoint differs or an authenticated range is empty
     Then the provider rejects it independently of authentication and payload-size errors
+    And independently reauthenticated tensor names and offsets must match the canonical layout
 
   @C110
   Scenario: Symbolic RMS signatures reject invalid epsilon metadata

@@ -625,7 +625,8 @@
     "tests": [
       "full_symbolic_causal_model_matches_independent_gqa_rope_and_nonzero_mlp_oracle",
       "symbolic_failures_preserve_committed_positions_and_allow_retry",
-      "symbolic_numerical_and_construction_limits_are_explicit"
+      "symbolic_numerical_and_construction_limits_are_explicit",
+      "lazy_kernel_cache_enforces_the_sum_of_distinct_program_sizes"
     ]
   },
   "C65": {
@@ -1106,7 +1107,8 @@
     "target": "remote_handshake_contracts",
     "tests": [
       "opening_requires_a_nonempty_ordered_range_and_positive_hidden_width",
-      "forward_rejects_shape_and_nonfinite_values_locally_without_poisoning_the_session"
+      "forward_rejects_shape_and_nonfinite_values_locally_without_poisoning_the_session",
+      "forward_rejects_remote_metadata_after_a_valid_local_request"
     ]
   },
   "C108": {
@@ -1121,7 +1123,8 @@
     "package": "bml-compiler",
     "target": "symbolic_weight_shard_contracts",
     "tests": [
-      "authenticated_layer_shards_reject_independent_range_mismatches_and_empty_ranges"
+      "authenticated_layer_shards_reject_independent_range_mismatches_and_empty_ranges",
+      "authenticated_tensor_layout_rejects_independent_names_and_offsets"
     ]
   },
   "C110": {

@@ -122,6 +122,8 @@ def inspection_zip(entries):
 
 
 class CollectionFailureEligibility(unittest.TestCase):
+    index = 21
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -134,9 +136,11 @@ class CollectionFailureEligibility(unittest.TestCase):
                                       [[value] for value in candidates])
         self.plan = json.dumps(self.manifest).encode()
         self.plan_zip = inspection_zip({"campaign.json": self.plan, "final.diff": self.diff})
-        self.base = "target/final-mutation-shard-21/mutants.out/"
-        self.evidence = "target/quality/shard-21/"
-        values = self.manifest["shards"][21]["candidates"]
+        self.job_id, self.artifact_id, _ = recovery.collection_failure(self.index)
+        self.zip_constant = "COLLECTION_ZIP_SHA256" if self.index == 21 else "COLLECTION_27_ZIP_SHA256"
+        self.base = f"target/final-mutation-shard-{self.index}/mutants.out/"
+        self.evidence = f"target/quality/shard-{self.index}/"
+        values = self.manifest["shards"][self.index]["candidates"]
         self.outcomes = report(values, ["MissedMutant"])
         self.entries = {
             self.base + "mutants.json": json.dumps(values),
@@ -145,18 +149,18 @@ class CollectionFailureEligibility(unittest.TestCase):
             self.evidence + "exit-code.txt": "1\n"}
         self.archive = inspection_zip(self.entries)
         for name, value in [("MANIFEST_SHA256", hashlib.sha256(self.plan).hexdigest()),
-                            ("COLLECTION_ZIP_SHA256", hashlib.sha256(self.archive).hexdigest())]:
+                            (self.zip_constant, hashlib.sha256(self.archive).hexdigest())]:
             patcher = patch.object(recovery, name, value)
             patcher.start()
             self.addCleanup(patcher.stop)
 
     def bundle(self):
         bundle = origin()
-        bundle["job"].update(id=recovery.COLLECTION_JOB, name="shard (21, 21/64)")
+        bundle["job"].update(id=self.job_id, name=f"shard ({self.index}, {self.index}/64)")
         bundle["job"]["steps"][-1]["conclusion"] = "success"
         bundle["collection_artifact"] = {
-            "id": recovery.COLLECTION_ARTIFACT, "name": f"mutation-shard-{recovery.ORIGIN_RUN}-1-21",
-            "expired": False, "digest": "sha256:" + recovery.COLLECTION_ZIP_SHA256,
+            "id": self.artifact_id, "name": f"mutation-shard-{recovery.ORIGIN_RUN}-1-{self.index}",
+            "expired": False, "digest": "sha256:" + recovery.collection_failure(self.index)[2],
             "size_in_bytes": len(self.archive),
             "workflow_run": copy.deepcopy(bundle["artifact"]["workflow_run"])}
         bundle["artifacts"]["artifacts"].append(copy.deepcopy(bundle["collection_artifact"]))
@@ -164,9 +168,9 @@ class CollectionFailureEligibility(unittest.TestCase):
         return bundle
 
     def test_complete_original_collection_is_only_retry_eligibility(self):
-        manifest = recovery.inspection_plan(self.plan_zip)
-        inspected = recovery.inspect_collection_zip(self.archive, manifest)
-        eligibility = recovery.validate_origin(recovery.REPOSITORY, recovery.COLLECTION_JOB, 21,
+        manifest = recovery.inspection_plan(self.plan_zip, self.index)
+        inspected = recovery.inspect_collection_zip(self.archive, manifest, self.index)
+        eligibility = recovery.validate_origin(recovery.REPOSITORY, self.job_id, self.index,
             self.bundle(), "2026-11-05T03:51:55Z ##[error]Process completed with exit code 1.\n",
             inspected)
         self.assertEqual(eligibility["state"], "retry_eligible_from_collection_failure")
@@ -176,13 +180,13 @@ class CollectionFailureEligibility(unittest.TestCase):
 
     def test_zip_and_plan_digest_must_match_before_inspection(self):
         with self.assertRaisesRegex(ValueError, "ZIP digest"):
-            recovery.inspect_collection_zip(self.archive + b"tampered", self.manifest)
+            recovery.inspect_collection_zip(self.archive + b"tampered", self.manifest, self.index)
         changed_plan = inspection_zip({"campaign.json": self.plan + b" ", "final.diff": self.diff})
         with self.assertRaisesRegex(ValueError, "manifest file digest"):
-            recovery.inspection_plan(changed_plan)
+            recovery.inspection_plan(changed_plan, self.index)
 
     def test_reauthenticated_wrong_guard_incomplete_raw_wrong_candidates_or_seal_fail(self):
-        for name in ["guard", "incomplete", "candidate", "seal", "baseline"]:
+        for name in ["guard", "incomplete", "candidate", "seal", "controller-seal", "baseline"]:
             entries = dict(self.entries)
             if name == "guard":
                 entries[self.evidence + "runner.log"] = "another failure\n"
@@ -195,34 +199,67 @@ class CollectionFailureEligibility(unittest.TestCase):
                 entries[self.base + "outcomes.json"] = json.dumps(outcomes)
             elif name == "candidate":
                 entries[self.base + "mutants.json"] = json.dumps([candidate(22)])
+            elif name == "controller-seal":
+                entries[f"target/quality/controller-shard-result-{self.index}.json"] = "{}"
             else:
-                entries["target/quality/shard-result-21.json"] = "{}"
+                entries[f"target/quality/shard-result-{self.index}.json"] = "{}"
             blob = inspection_zip(entries)
-            with self.subTest(name=name), patch.object(recovery, "COLLECTION_ZIP_SHA256",
+            with self.subTest(name=name), patch.object(recovery, self.zip_constant,
                     hashlib.sha256(blob).hexdigest()), self.assertRaises(ValueError):
-                recovery.inspect_collection_zip(blob, self.manifest)
+                recovery.inspect_collection_zip(blob, self.manifest, self.index)
 
     def test_collection_metadata_cannot_select_another_source_or_artifact(self):
-        inspection = recovery.inspect_collection_zip(self.archive, self.manifest)
+        inspection = recovery.inspect_collection_zip(self.archive, self.manifest, self.index)
         for key, value in [("id", 1), ("digest", "sha256:" + "0" * 64),
                            ("expired", True), ("name", "other")]:
             bundle = self.bundle()
             bundle["collection_artifact"][key] = value
             with self.subTest(key=key), self.assertRaises(ValueError):
-                recovery.validate_origin(recovery.REPOSITORY, recovery.COLLECTION_JOB, 21, bundle,
+                recovery.validate_origin(recovery.REPOSITORY, self.job_id, self.index, bundle,
                     "2026-11-05T03:51:55Z ##[error]Process completed with exit code 1.\n", inspection)
         bundle = self.bundle()
         bundle["collection_artifact"]["workflow_run"]["head_sha"] = "f" * 40
         with self.assertRaises(ValueError):
-            recovery.validate_origin(recovery.REPOSITORY, recovery.COLLECTION_JOB, 21, bundle,
+            recovery.validate_origin(recovery.REPOSITORY, self.job_id, self.index, bundle,
                 "2026-11-05T03:51:55Z ##[error]Process completed with exit code 1.\n", inspection)
+
+    def test_reviewed_collection_pairs_and_inspections_cannot_be_interchanged(self):
+        self.assertTrue(recovery.collection_requested(self.job_id, self.index))
+        other = 27 if self.index == 21 else 21
+        other_job, other_artifact, other_sha = recovery.collection_failure(other)
+        for job, index in [(self.job_id, other), (other_job, self.index),
+                           (self.job_id, 26), (self.job_id, float(self.index))]:
+            with self.subTest(job=job, index=index):
+                self.assertFalse(recovery.collection_requested(job, index))
+        inspected = recovery.inspect_collection_zip(self.archive, self.manifest, self.index)
+        for key, value in [("artifact_id", other_artifact), ("zip_sha256", other_sha)]:
+            wrong = {**inspected, key: value}
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "inspection"):
+                recovery.validate_origin(recovery.REPOSITORY, self.job_id, self.index,
+                    self.bundle(), "2026-11-05T03:51:55Z ##[error]Process completed with exit code 1.\n",
+                    wrong)
+        other_constant = "COLLECTION_ZIP_SHA256" if other == 21 else "COLLECTION_27_ZIP_SHA256"
+        with patch.object(recovery, other_constant, hashlib.sha256(self.archive).hexdigest()), \
+                self.assertRaisesRegex(ValueError, "lacks required evidence"):
+            recovery.inspect_collection_zip(self.archive, self.manifest, other)
+        with self.assertRaisesRegex(ValueError, "not independently reviewed"):
+            recovery.inspection_plan(self.plan_zip, 26)
+
+    def test_default_inspection_api_remains_shard21_only(self):
+        self.assertEqual(recovery.inspection_plan(self.plan_zip), self.manifest)
+        if self.index == 21:
+            self.assertEqual(recovery.inspect_collection_zip(self.archive, self.manifest),
+                             recovery.inspect_collection_zip(self.archive, self.manifest, 21))
+        else:
+            with self.assertRaisesRegex(ValueError, "ZIP digest"):
+                recovery.inspect_collection_zip(self.archive, self.manifest)
 
     def test_authorization_keeps_archives_in_control_without_extracting_or_sealing(self):
         bundle = self.bundle()
         def api(path, raw=False):
             if raw:
                 return "2026-11-05T03:51:55Z ##[error]Process completed with exit code 1.\n"
-            if path.endswith(f"artifacts/{recovery.COLLECTION_ARTIFACT}"):
+            if path.endswith(f"artifacts/{self.artifact_id}"):
                 return bundle["collection_artifact"]
             if "/jobs/" in path:
                 return bundle["job"]
@@ -234,11 +271,13 @@ class CollectionFailureEligibility(unittest.TestCase):
         output = self.root / "control/target/recovery"
         with patch.object(recovery, "api", side_effect=api), \
                 patch.object(recovery, "api_bytes", side_effect=[self.plan_zip, self.archive]):
-            recovery.authorize(recovery.REPOSITORY, recovery.COLLECTION_JOB, 21, 1234, 1,
+            recovery.authorize(recovery.REPOSITORY, self.job_id, self.index, 1234, 1,
                                "a" * 40, output)
         record = recovery.authorization(output)
         self.assertEqual(record["eligibility_state"], "retry_eligible_from_collection_failure")
         self.assertEqual(record["origin_exit_code"], 1)
+        self.assertEqual(record["index"], self.index)
+        self.assertEqual(record["collection_inspection"]["artifact_id"], self.artifact_id)
         self.assertEqual((output / "original-collection.zip").read_bytes(), self.archive)
         self.assertFalse((self.root / "source").exists())
         self.assertEqual(list(self.root.rglob("*shard-result*.json")), [])
@@ -258,6 +297,10 @@ class CollectionFailureEligibility(unittest.TestCase):
             archive.writestr(link, "../../outside")
         with self.assertRaisesRegex(ValueError, "unsafe"):
             recovery.zip_members(data.getvalue(), set())
+
+
+class CollectionFailure27Eligibility(CollectionFailureEligibility):
+    index = 27
 
 
 class RecoveredShardEvidence(unittest.TestCase):

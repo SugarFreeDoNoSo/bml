@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       original_job:
-        description: Original terminal shutdown job, or reviewed collection-failure job 126992338544
+        description: Original shutdown job, or reviewed collection failure 126992338544 (21) / 126992339813 (27)
         required: true
         default: '126992338544'
       shard_index:

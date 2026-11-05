@@ -1,0 +1,48 @@
+{
+  "verified_at": "2026-11-05T06:17:03.613109+00:00",
+  "scope": "Inspection and fresh-retry eligibility only; no recovery dispatched or source seal created.",
+  "base_revision": "ab04db2884da3f69e3b1f794f1185e964f7ecf2f",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "job_id": 126992339813,
+  "shard": "27/64",
+  "artifact_id": 13389245750,
+  "artifact_zip_sha256": "faa89ea81b3b6624da0563d752b46ea0cda78d712b4edb5413c8df97dbb1009f",
+  "eligibility": {
+    "state": "retry_eligible_from_collection_failure",
+    "exit_code": 1
+  },
+  "inspection": {
+    "state": "retry_eligible_from_collection_failure",
+    "artifact_id": 13389245750,
+    "zip_sha256": "faa89ea81b3b6624da0563d752b46ea0cda78d712b4edb5413c8df97dbb1009f",
+    "candidate_count": 81,
+    "raw_counts": {
+      "caught": 61,
+      "missed": 11,
+      "unviable": 8,
+      "timeout": 1
+    },
+    "members_sha256": {
+      "target/final-mutation-shard-27/mutants.out/outcomes.json": "e58ade65d136c4e4993710f111f504cf18182e355a8acbc587f35476dbcc9fd9",
+      "target/quality/shard-27/runner.log": "90427c72be765e951420a8aec93f40ed45f1ddda0830973fa1ac7dd429a8281b",
+      "target/final-mutation-shard-27/mutants.out/mutants.json": "4380177128bfcce942990d5a2a34666ccb645cffc379337ff348bc4750819438",
+      "target/quality/shard-27/exit-code.txt": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    "source_state": "unattested; original live source and seed inventory are unavailable",
+    "fresh_execution_required": true
+  },
+  "original_source_state": "unattested; no old raw may enter a candidate union",
+  "existing_recovery21_authorization_still_valid": true,
+  "controller_tools_sha256": {
+    "mutation_recovery.py": "dfea908c3cfa544236e2b79b518765725b54d4ce8e5e3de76b1c7cada37ce5c9",
+    "test_mutation_recovery.py": "b84c5993c42de0cc489779ebb754eb388828d8278207a7a67b3c71f7e5ef594c"
+  },
+  "api_files_sha256": {
+    "run.json": "6c3d8d0d28ad3fa29691c6d72b3b027433f061d6b657fe7b24d737f296c946d8",
+    "job.json": "c8d0b95dfa5e3b8b1aa26369403f7fb17cb367f846c82812005477129aed582e",
+    "plan-artifact.json": "feef0c609707b39f4300eaf5cb1d600c9cba59043cd14fb6f5958b13367173c4",
+    "collection-artifact.json": "1fd632295aa2ac74fb0f352cf2cb2149bebad6eaccb434b8f0fec20ee740dbec",
+    "artifacts.json": "f93001f5597895f5277391a7fbac91206c1f9231a0a18be587bd571ff2325e48",
+    "origin-job.log": "d1922b624353184e11da27b1fc43147b372f042ec1d253329a57c0aa1f0891de"
+  }
+}
