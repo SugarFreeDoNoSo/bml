@@ -1,0 +1,98 @@
+{
+  "format_version": 1,
+  "receipt_scope": "unique real dispatch identification; downstream input/baseline/seal observation pending",
+  "observed_at": "2026-11-05T09:30:04.207419+00:00",
+  "repository": "SugarFreeDoNoSo/bml",
+  "repository_id": 1291412160,
+  "run_id": 42002319364,
+  "run_url": "https://github.com/SugarFreeDoNoSo/bml/actions/runs/42002319364",
+  "run_attempt": 1,
+  "event": "workflow_dispatch",
+  "workflow_path": ".github/workflows/mutation-recovery.yml",
+  "controller_revision": "9c3e5f36d6721a0733b97e97db50f9a094f5508e",
+  "controller_workflow_sha256": "e32d4e1bb4abd3c6f9eb8605acb8f07eec3d4e4a3c05996578b5a38a2ed3791b",
+  "source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "source_provenance": {
+    "source_commit_api_sha_verified": true,
+    "workflow_checkout_ref": "9a6bc9680d5915576ca92528f60956efe9796cef",
+    "checkout_steps_success": true,
+    "live_source_seal": "pending; not asserted"
+  },
+  "dispatch_provenance": {
+    "request_file_sha256": "f8ef2deb517cd1fee829d4184aff1e22679c87290d28922bfbe769d5ad266503",
+    "created_at": "2026-11-05T09:25:56Z",
+    "request_created_at": "2026-11-05T09:25:54.887854+00:00",
+    "created_strictly_after_request": true,
+    "dispatch_exit_code": 0,
+    "before_run_ids": [
+      41967289781,
+      41967922830,
+      41972807181,
+      41981023084
+    ],
+    "only_new_run_id": 42002319364,
+    "duplicate_dispatch_performed": false
+  },
+  "submitted_inputs": {
+    "original_job": "126992343007",
+    "shard_index": "46"
+  },
+  "input_provenance": {
+    "dispatcher_request_argv_verified": true,
+    "unique_id_correlation_verified": true,
+    "runtime_log_or_authorization_artifact_verified": false,
+    "limitation": "REST run/job metadata does not expose workflow_dispatch inputs. In-progress job log currently returns HTTP404. Exact downstream values remain pending actual log/artifact."
+  },
+  "job_id": 127160327341,
+  "run_status": "in_progress",
+  "run_conclusion": null,
+  "authorization_step": {
+    "number": 3,
+    "name": "Authorize original source and failure eligibility; inspect original evidence only",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2026-11-05T09:26:05Z",
+    "completed_at": "2026-11-05T09:26:11Z"
+  },
+  "original_plan_verification_step": {
+    "number": 6,
+    "name": "Verify independent manifest SHA and original partition",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2026-11-05T09:26:15Z",
+    "completed_at": "2026-11-05T09:26:17Z"
+  },
+  "execution_step": {
+    "number": 9,
+    "name": "Run only the original frozen shard and its baseline",
+    "status": "in_progress",
+    "conclusion": null,
+    "started_at": "2026-11-05T09:26:28Z",
+    "completed_at": null
+  },
+  "fresh_baseline": {
+    "status": "not yet observable separately from active execution step",
+    "success_asserted": false
+  },
+  "quality_gate": "not evaluated; no new seal or raw outcomes counted",
+  "scope": "Only46 dispatched by root. No29/31/39/40/43 retry; no local Cargo or remote mutations by observer.",
+  "snapshot_files_sha256": {
+    "controller-workflow.yml": "e32d4e1bb4abd3c6f9eb8605acb8f07eec3d4e4a3c05996578b5a38a2ed3791b",
+    "dispatch.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dispatch.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "identification-20261105T092810Z.json": "331b45b933572b767b1aa9b4ef6c101926e05901dc7ca60283ceaac0cd3d898c",
+    "job-127160327341-log-fetch-20261105T092852Z.stderr": "6c5ec582d3b25e97273d17fd4088d0e13837c8384ee94aba555afc35856ec3ae",
+    "job-127160327341-log-fetch-20261105T092852Z.stdout": "e2b6c623383bebd52e1059941a219ff7a41ac376beb18cb908a3dd7b4ab5a657",
+    "job-127160327341-log-proof-20261105T092852Z.json": "f6d195bd64ffa0b90d800a78e81d263f9fff8cdfe8fc08ed99387391e4c1c094",
+    "jobs-42002319364-20261105T092810Z.json": "9eafbe16c543f0a33762de4ca2250ca9f4406dc04e9a0c5a4f153b5c0c65e395",
+    "jobs-42002319364-20261105T093004Z.json": "9eafbe16c543f0a33762de4ca2250ca9f4406dc04e9a0c5a4f153b5c0c65e395",
+    "request.json": "f8ef2deb517cd1fee829d4184aff1e22679c87290d28922bfbe769d5ad266503",
+    "run-42002319364-20261105T092810Z.json": "37f57bf54eefe3aa28740fdf80cd46ac11d3759a3f0b353d26208361fa03b3d1",
+    "run-42002319364-20261105T093004Z.json": "37f57bf54eefe3aa28740fdf80cd46ac11d3759a3f0b353d26208361fa03b3d1",
+    "runs-after.json": "e76624bc780e6d4b267edcbc64fc44ee624448c8e0e6e41e0e4c231f10dcaae1",
+    "runs-before.json": "e76624bc780e6d4b267edcbc64fc44ee624448c8e0e6e41e0e4c231f10dcaae1",
+    "runs-observed-20261105T092810Z.json": "e9f2a0128e1498e8537f0fb9ba243db52287df4fb0c8f378ad2c26e427a32314",
+    "source-commit-api-20261105T093004Z.json": "df04bd1ec182153278e92f267ab57ba364278f741dcae240534ed39ad6719cb2",
+    "workflow-api-20261105T093004Z.json": "fa4bc99c1ff264ccdc6dbc62974497877adadbc95c3485ad6ab630105da31ac2"
+  }
+}
