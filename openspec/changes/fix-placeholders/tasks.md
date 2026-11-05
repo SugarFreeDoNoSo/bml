@@ -80,6 +80,7 @@ mantiene el cambio abierto aunque 1.1 y 6.2 vuelvan a estar acreditadas.
 - [ ] 8.5.9 Auditar de nuevo cada placeholder del objetivo G1 y su API consumidora antes de archivar, con resultados numéricos y evidencia actuales; no usar la ausencia de callers productivos como prueba de corrección.
 
 - [x] 8.5.10 Verificar índices globales y cobertura de rangos de la caché KV usada por los workers. `range_cache_dot_qk_uses_global_layers_positions_and_heads` comprueba ocho productos F32 exactos con capas 3..5, dos posiciones y dos cabezas, sin avanzar la sesión. `range_cache_coverage_checks_nonempty_ranges_and_head_layout` cubre extremos inclusivos, rangos vacíos/invertidos, layouts incompatibles y u32::MAX. Pasan los 14 contratos causales y se detectan seis mutaciones aisladas de índices, fronteras y layout; evidencia `quality/evidence/kv-range-contract-replays.json`. No acredita por sí sola ejecución entre hosts.
+- [x] 8.5.11 Reconstruir el inventario G1 y sus consumidores para guiar la auditoría final. `quality/evidence/placeholder-contract-audit.md` registra catorce unidades reconstruidas desde `3817562` y seis superficies adicionales, distingue APIs retiradas de funcionales y conserva los pendientes de inferencia/hosts. La propuesta histórica no enumeraba catorce sitios: el informe no inventa una enumeración original. La auditoría final 8.5.9 sigue abierta.
 
 ## 9. Cierre
 
