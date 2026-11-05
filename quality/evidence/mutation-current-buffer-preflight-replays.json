@@ -1,0 +1,523 @@
+{
+  "scope": "Current-source buffer-preflight mutation replays. This is not a frozen9a replay or a complete mutation campaign; no historical raw classification changes.",
+  "source_kind": "working_tree_overlay",
+  "worktree_base_revision": "8a36c797a7e589116b7161be539f6175a919192c",
+  "overlay_patch": "target/wave-eleven-buffer-preflight/target/buffer-preflight-handoff/buffer-preflight.patch",
+  "overlay_patch_sha256": "0b4e17790688f25bf119bf6d180d66c340fb8f387d09bd4ae9d418fb23489f3c",
+  "source_file": "crates/compiler/src/symbolic_kernels.rs",
+  "source_sha256": "45f4cd5d965ec6b5a87e5482c370f297e11156d4b245bca29f34594f849d53af",
+  "test_file": "crates/compiler/tests/signature_preflight_contracts.rs",
+  "test_sha256": "81ac07c3fdb0efd1d67b29d3d96947a9290c8accd826521544ef9cbef4d07dab",
+  "producer": {
+    "version": "27.1.0",
+    "command": [
+      "cargo",
+      "mutants",
+      "--list",
+      "--json",
+      "--diff",
+      "--file",
+      "crates/compiler/src/symbolic_kernels.rs",
+      "--re",
+      "buffer_literal_count"
+    ],
+    "listing": "target/wave-eleven-buffer-preflight/target/buffer-preflight-handoff/current-mutants.json",
+    "listing_sha256": "73b512bf7d4efceff631bac9e4b6e17ad3f0f6a79e36e86ba21b670b0c7f43ce",
+    "candidates": [
+      {
+        "diff": "--- crates/compiler/src/symbolic_kernels.rs\n+++ replace KernelSignature::buffer_literal_count -> Result<usize, &'static str> with Ok(0)\n@@ -200,25 +200,17 @@\n     ///\n     /// Call this on a base signature from [`Operation::signature`] or\n     /// [`Operation::signature_with_rms_bounds`], before appending output offsets.\n     /// The count includes the existing fixed prefix and one offset per output;\n     /// external weights are excluded. Checking arithmetic and the u32 count\n     /// range allocates no storage. Success does not guarantee allocation,\n     /// construction budgets, or that an operation supports this output layout.\n     pub fn buffer_literal_count(&self) -> Result<usize, &'static str> {\n-        let count = self\n-            .fixed\n-            .len()\n-            .checked_add(self.outputs)\n-            .ok_or(\"symbolic output constant size overflow\")?;\n-        if count > u32::MAX as usize {\n-            return Err(\"symbolic output constant index overflow\");\n-        }\n-        Ok(count)\n+        Ok(0) /* ~ changed by cargo-mutants ~ */\n     }\n }\n /// Construction and storage budgets, independent of runtime execution budgets.\n #[derive(Clone, Copy, Debug)]\n pub struct KernelLimits {\n     /// Maximum nodes in one operation DAG.\n     pub max_nodes: usize,\n     /// Maximum stored opcodes across the output programs.\n",
+        "file": "crates/compiler/src/symbolic_kernels.rs",
+        "function": {
+          "function_name": "KernelSignature::buffer_literal_count",
+          "return_type": "-> Result<usize, &'static str>",
+          "span": {
+            "end": {
+              "column": 6,
+              "line": 217
+            },
+            "start": {
+              "column": 5,
+              "line": 199
+            }
+          }
+        },
+        "genre": "FnValue",
+        "name": "crates/compiler/src/symbolic_kernels.rs:208:9: replace KernelSignature::buffer_literal_count -> Result<usize, &'static str> with Ok(0)",
+        "package": "bml-compiler",
+        "replacement": "Ok(0)",
+        "span": {
+          "end": {
+            "column": 18,
+            "line": 216
+          },
+          "start": {
+            "column": 9,
+            "line": 208
+          }
+        }
+      },
+      {
+        "diff": "--- crates/compiler/src/symbolic_kernels.rs\n+++ replace KernelSignature::buffer_literal_count -> Result<usize, &'static str> with Ok(1)\n@@ -200,25 +200,17 @@\n     ///\n     /// Call this on a base signature from [`Operation::signature`] or\n     /// [`Operation::signature_with_rms_bounds`], before appending output offsets.\n     /// The count includes the existing fixed prefix and one offset per output;\n     /// external weights are excluded. Checking arithmetic and the u32 count\n     /// range allocates no storage. Success does not guarantee allocation,\n     /// construction budgets, or that an operation supports this output layout.\n     pub fn buffer_literal_count(&self) -> Result<usize, &'static str> {\n-        let count = self\n-            .fixed\n-            .len()\n-            .checked_add(self.outputs)\n-            .ok_or(\"symbolic output constant size overflow\")?;\n-        if count > u32::MAX as usize {\n-            return Err(\"symbolic output constant index overflow\");\n-        }\n-        Ok(count)\n+        Ok(1) /* ~ changed by cargo-mutants ~ */\n     }\n }\n /// Construction and storage budgets, independent of runtime execution budgets.\n #[derive(Clone, Copy, Debug)]\n pub struct KernelLimits {\n     /// Maximum nodes in one operation DAG.\n     pub max_nodes: usize,\n     /// Maximum stored opcodes across the output programs.\n",
+        "file": "crates/compiler/src/symbolic_kernels.rs",
+        "function": {
+          "function_name": "KernelSignature::buffer_literal_count",
+          "return_type": "-> Result<usize, &'static str>",
+          "span": {
+            "end": {
+              "column": 6,
+              "line": 217
+            },
+            "start": {
+              "column": 5,
+              "line": 199
+            }
+          }
+        },
+        "genre": "FnValue",
+        "name": "crates/compiler/src/symbolic_kernels.rs:208:9: replace KernelSignature::buffer_literal_count -> Result<usize, &'static str> with Ok(1)",
+        "package": "bml-compiler",
+        "replacement": "Ok(1)",
+        "span": {
+          "end": {
+            "column": 18,
+            "line": 216
+          },
+          "start": {
+            "column": 9,
+            "line": 208
+          }
+        }
+      },
+      {
+        "diff": "--- crates/compiler/src/symbolic_kernels.rs\n+++ replace > with == in KernelSignature::buffer_literal_count\n@@ -205,17 +205,17 @@\n     /// range allocates no storage. Success does not guarantee allocation,\n     /// construction budgets, or that an operation supports this output layout.\n     pub fn buffer_literal_count(&self) -> Result<usize, &'static str> {\n         let count = self\n             .fixed\n             .len()\n             .checked_add(self.outputs)\n             .ok_or(\"symbolic output constant size overflow\")?;\n-        if count > u32::MAX as usize {\n+        if count == /* ~ changed by cargo-mutants ~ */ u32::MAX as usize {\n             return Err(\"symbolic output constant index overflow\");\n         }\n         Ok(count)\n     }\n }\n /// Construction and storage budgets, independent of runtime execution budgets.\n #[derive(Clone, Copy, Debug)]\n pub struct KernelLimits {\n",
+        "file": "crates/compiler/src/symbolic_kernels.rs",
+        "function": {
+          "function_name": "KernelSignature::buffer_literal_count",
+          "return_type": "-> Result<usize, &'static str>",
+          "span": {
+            "end": {
+              "column": 6,
+              "line": 217
+            },
+            "start": {
+              "column": 5,
+              "line": 199
+            }
+          }
+        },
+        "genre": "BinaryOperator",
+        "name": "crates/compiler/src/symbolic_kernels.rs:213:18: replace > with == in KernelSignature::buffer_literal_count",
+        "package": "bml-compiler",
+        "replacement": "==",
+        "span": {
+          "end": {
+            "column": 19,
+            "line": 213
+          },
+          "start": {
+            "column": 18,
+            "line": 213
+          }
+        }
+      },
+      {
+        "diff": "--- crates/compiler/src/symbolic_kernels.rs\n+++ replace > with < in KernelSignature::buffer_literal_count\n@@ -205,17 +205,17 @@\n     /// range allocates no storage. Success does not guarantee allocation,\n     /// construction budgets, or that an operation supports this output layout.\n     pub fn buffer_literal_count(&self) -> Result<usize, &'static str> {\n         let count = self\n             .fixed\n             .len()\n             .checked_add(self.outputs)\n             .ok_or(\"symbolic output constant size overflow\")?;\n-        if count > u32::MAX as usize {\n+        if count < /* ~ changed by cargo-mutants ~ */ u32::MAX as usize {\n             return Err(\"symbolic output constant index overflow\");\n         }\n         Ok(count)\n     }\n }\n /// Construction and storage budgets, independent of runtime execution budgets.\n #[derive(Clone, Copy, Debug)]\n pub struct KernelLimits {\n",
+        "file": "crates/compiler/src/symbolic_kernels.rs",
+        "function": {
+          "function_name": "KernelSignature::buffer_literal_count",
+          "return_type": "-> Result<usize, &'static str>",
+          "span": {
+            "end": {
+              "column": 6,
+              "line": 217
+            },
+            "start": {
+              "column": 5,
+              "line": 199
+            }
+          }
+        },
+        "genre": "BinaryOperator",
+        "name": "crates/compiler/src/symbolic_kernels.rs:213:18: replace > with < in KernelSignature::buffer_literal_count",
+        "package": "bml-compiler",
+        "replacement": "<",
+        "span": {
+          "end": {
+            "column": 19,
+            "line": 213
+          },
+          "start": {
+            "column": 18,
+            "line": 213
+          }
+        }
+      },
+      {
+        "diff": "--- crates/compiler/src/symbolic_kernels.rs\n+++ replace > with >= in KernelSignature::buffer_literal_count\n@@ -205,17 +205,17 @@\n     /// range allocates no storage. Success does not guarantee allocation,\n     /// construction budgets, or that an operation supports this output layout.\n     pub fn buffer_literal_count(&self) -> Result<usize, &'static str> {\n         let count = self\n             .fixed\n             .len()\n             .checked_add(self.outputs)\n             .ok_or(\"symbolic output constant size overflow\")?;\n-        if count > u32::MAX as usize {\n+        if count >= /* ~ changed by cargo-mutants ~ */ u32::MAX as usize {\n             return Err(\"symbolic output constant index overflow\");\n         }\n         Ok(count)\n     }\n }\n /// Construction and storage budgets, independent of runtime execution budgets.\n #[derive(Clone, Copy, Debug)]\n pub struct KernelLimits {\n",
+        "file": "crates/compiler/src/symbolic_kernels.rs",
+        "function": {
+          "function_name": "KernelSignature::buffer_literal_count",
+          "return_type": "-> Result<usize, &'static str>",
+          "span": {
+            "end": {
+              "column": 6,
+              "line": 217
+            },
+            "start": {
+              "column": 5,
+              "line": 199
+            }
+          }
+        },
+        "genre": "BinaryOperator",
+        "name": "crates/compiler/src/symbolic_kernels.rs:213:18: replace > with >= in KernelSignature::buffer_literal_count",
+        "package": "bml-compiler",
+        "replacement": ">=",
+        "span": {
+          "end": {
+            "column": 19,
+            "line": 213
+          },
+          "start": {
+            "column": 18,
+            "line": 213
+          }
+        }
+      }
+    ]
+  },
+  "build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "signature_preflight_contracts",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/current-buffer-preflight-baseline.log",
+      "log_sha256": "876354cf1abfac486cd77eba626f317d0d84bfa8841f7a681f71b59ca07572af",
+      "compile_error": false,
+      "test_failed": false,
+      "selected_tests": [
+        [
+          "buffer_literal_preflight_accepts_u32_max_count_without_allocating",
+          "ok"
+        ],
+        [
+          "small_buffer_factories_preserve_prefix_offsets_and_admission_errors",
+          "ok"
+        ]
+      ]
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "signature_preflight_contracts",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/current-buffer-preflight-mutant-0.log",
+      "log_sha256": "0cd5442beab7a0dfa6f157935f9f2f90da6eb535b54701ca5bf79d2c28d7acd1",
+      "compile_error": false,
+      "test_failed": true,
+      "selected_tests": [
+        [
+          "small_buffer_factories_preserve_prefix_offsets_and_admission_errors",
+          "FAILED"
+        ],
+        [
+          "buffer_literal_preflight_accepts_u32_max_count_without_allocating",
+          "FAILED"
+        ]
+      ],
+      "candidate": "crates/compiler/src/symbolic_kernels.rs:208:9: replace KernelSignature::buffer_literal_count -> Result<usize, &'static str> with Ok(0)",
+      "span": {
+        "end": {
+          "column": 18,
+          "line": 216
+        },
+        "start": {
+          "column": 9,
+          "line": 208
+        }
+      },
+      "replacement": "Ok(0)",
+      "original_diff_sha256": "0803d9a04e3e89e3e742c9436a24bc241beaf4486defb8fa3d507807a45fd009",
+      "mutated_source_sha256": "cbf1fa13f2ecd6cf73b1f2059b949b884f65538d69b16b0f82502bfb69989252",
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "signature_preflight_contracts",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/current-buffer-preflight-mutant-1.log",
+      "log_sha256": "822f63e20d8957f7981abefd5222a185960e9b37f4da504cade3d7c54030664a",
+      "compile_error": false,
+      "test_failed": true,
+      "selected_tests": [
+        [
+          "buffer_literal_preflight_accepts_u32_max_count_without_allocating",
+          "FAILED"
+        ],
+        [
+          "small_buffer_factories_preserve_prefix_offsets_and_admission_errors",
+          "FAILED"
+        ]
+      ],
+      "candidate": "crates/compiler/src/symbolic_kernels.rs:208:9: replace KernelSignature::buffer_literal_count -> Result<usize, &'static str> with Ok(1)",
+      "span": {
+        "end": {
+          "column": 18,
+          "line": 216
+        },
+        "start": {
+          "column": 9,
+          "line": 208
+        }
+      },
+      "replacement": "Ok(1)",
+      "original_diff_sha256": "c67d161657deecb1664e333bee91aa534f77ed2060162ef0cd5e4c3be4764f63",
+      "mutated_source_sha256": "b135f1db1f495b7b0cdb26fbce12ae3a6545c442a797ab81b388af77177fc1fc",
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "signature_preflight_contracts",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/current-buffer-preflight-mutant-2.log",
+      "log_sha256": "023b66bdcd19146bb83365f590d6e4c56660db919aa7f938cb2a6d95f9e1b963",
+      "compile_error": false,
+      "test_failed": true,
+      "selected_tests": [
+        [
+          "small_buffer_factories_preserve_prefix_offsets_and_admission_errors",
+          "ok"
+        ],
+        [
+          "buffer_literal_preflight_accepts_u32_max_count_without_allocating",
+          "FAILED"
+        ]
+      ],
+      "candidate": "crates/compiler/src/symbolic_kernels.rs:213:18: replace > with == in KernelSignature::buffer_literal_count",
+      "span": {
+        "end": {
+          "column": 19,
+          "line": 213
+        },
+        "start": {
+          "column": 18,
+          "line": 213
+        }
+      },
+      "replacement": "==",
+      "original_diff_sha256": "befce98c17b83ed921fceb2dc9d8195c70f786db9fd742c2da2ccb8c82ae0254",
+      "mutated_source_sha256": "e6340d0ffd0339513465d6f96461ee6bc6424a737c99e50cea2b7007c090f9ae",
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "signature_preflight_contracts",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/current-buffer-preflight-mutant-3.log",
+      "log_sha256": "e0e07920cb79208e45cb1bc79db323e47786e2211c35f39cea8e1d098ef4dbd3",
+      "compile_error": false,
+      "test_failed": true,
+      "selected_tests": [
+        [
+          "small_buffer_factories_preserve_prefix_offsets_and_admission_errors",
+          "FAILED"
+        ],
+        [
+          "buffer_literal_preflight_accepts_u32_max_count_without_allocating",
+          "FAILED"
+        ]
+      ],
+      "candidate": "crates/compiler/src/symbolic_kernels.rs:213:18: replace > with < in KernelSignature::buffer_literal_count",
+      "span": {
+        "end": {
+          "column": 19,
+          "line": 213
+        },
+        "start": {
+          "column": 18,
+          "line": 213
+        }
+      },
+      "replacement": "<",
+      "original_diff_sha256": "e8f277d573db1b7e34263bbfd512c2816623d1e56c4f2ca15bb96cccc609cd4e",
+      "mutated_source_sha256": "1967f0150cd2bac2a8178a24d57b8052cca9c417792e18ff3cac47a3863ea80b",
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "signature_preflight_contracts",
+        "--locked"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/current-buffer-preflight-mutant-4.log",
+      "log_sha256": "2aa8de237994d390720d6f878db05f93ba5d36dfc12ac74c1d22af74997175da",
+      "compile_error": false,
+      "test_failed": true,
+      "selected_tests": [
+        [
+          "small_buffer_factories_preserve_prefix_offsets_and_admission_errors",
+          "ok"
+        ],
+        [
+          "buffer_literal_preflight_accepts_u32_max_count_without_allocating",
+          "FAILED"
+        ]
+      ],
+      "candidate": "crates/compiler/src/symbolic_kernels.rs:213:18: replace > with >= in KernelSignature::buffer_literal_count",
+      "span": {
+        "end": {
+          "column": 19,
+          "line": 213
+        },
+        "start": {
+          "column": 18,
+          "line": 213
+        }
+      },
+      "replacement": ">=",
+      "original_diff_sha256": "d38b26e1b11ec7a4de007864a3af2c2b63709d98d4e821e5ff6d9c1b975ed15b",
+      "mutated_source_sha256": "a58d0c4b2a63e1e8f5144a471661060b5befb6f6f89235d6fad9a1499e377834",
+      "detected": true
+    }
+  ],
+  "cleanup": [
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "-p",
+        "bml-compiler",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/current-buffer-preflight-clean-initial.log",
+      "log_sha256": "0bdaeb2aa6a92a0fdfec2d2cc4d0ab71946de5d0654e08c526e4629130ae0f28",
+      "compile_error": false,
+      "test_failed": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "-p",
+        "bml-compiler",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/current-buffer-preflight-clean-restored-0.log",
+      "log_sha256": "fcf7a8b97b5d2edcd26a124321f59bbfbcd9cc03e4a83db8e5ab06d8742fa5d9",
+      "compile_error": false,
+      "test_failed": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "-p",
+        "bml-compiler",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/current-buffer-preflight-clean-restored-1.log",
+      "log_sha256": "fcf7a8b97b5d2edcd26a124321f59bbfbcd9cc03e4a83db8e5ab06d8742fa5d9",
+      "compile_error": false,
+      "test_failed": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "-p",
+        "bml-compiler",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/current-buffer-preflight-clean-restored-2.log",
+      "log_sha256": "f875ed5e14f022fab9fd1fe2cfb53bd27f59399d9b56a440eedf7f068a74dd5a",
+      "compile_error": false,
+      "test_failed": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "-p",
+        "bml-compiler",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/current-buffer-preflight-clean-restored-3.log",
+      "log_sha256": "f875ed5e14f022fab9fd1fe2cfb53bd27f59399d9b56a440eedf7f068a74dd5a",
+      "compile_error": false,
+      "test_failed": false,
+      "selected_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "clean",
+        "-p",
+        "bml-compiler",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/current-buffer-preflight-clean-restored-4.log",
+      "log_sha256": "f875ed5e14f022fab9fd1fe2cfb53bd27f59399d9b56a440eedf7f068a74dd5a",
+      "compile_error": false,
+      "test_failed": false,
+      "selected_tests": []
+    }
+  ],
+  "observed_at_utc": "2026-11-05T07:19:15.648169+00:00",
+  "source_restored": true,
+  "status": "passed_current_source_focused_replays",
+  "runner_sha256": "6842d628d7d4bf19e8b156a31d5c795721e7c7bcd916f6db1edb90059757ee0f",
+  "integration_base_revision": "390329cdc006d3185882aa4081c72a22a0d7bb21",
+  "historical_classification": "The original frozen9a >= mutant remains Missed in its raw report; these five candidates were independently generated from the new current helper."
+}

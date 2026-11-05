@@ -866,3 +866,10 @@ Then it rejects the request before expensive generation
     When the materialization cap equals the independently counted tensor shapes
     Then the model loads without its source GGUF and causal logits match the independent oracle
     And zero or one fewer scalar rejects while one extra scalar remains admissible
+
+  @C114
+  Scenario: Buffer literal counts can be preflighted without materializing output offsets
+    Given public base signatures with fixed literal prefixes and declared output counts
+    When callers check the buffer literal count before allocation
+    Then exactly u32::MAX literals are admitted while one more and usize overflow are rejected without allocation
+    And small buffer factories preserve their prefixes, offsets and admission errors

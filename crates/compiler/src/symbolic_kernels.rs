@@ -143,14 +143,7 @@ impl Operation {
             if OutputLayout::for_operation(self) != OutputLayout::Buffer {
                 return Err("buffer output is unsupported for this symbolic operation".into());
             }
-            let count = signature
-                .fixed
-                .len()
-                .checked_add(signature.outputs)
-                .ok_or("symbolic output constant size overflow")?;
-            if count > u32::MAX as usize {
-                return Err("symbolic output constant index overflow".into());
-            }
+            signature.buffer_literal_count()?;
             signature
                 .fixed
                 .try_reserve_exact(signature.outputs)
@@ -201,6 +194,27 @@ pub struct KernelSignature {
     pub outputs: usize,
     /// Canonical fixed literals, never model matrix weights.
     pub fixed: Vec<f64>,
+}
+impl KernelSignature {
+    /// Preflight the fixed literal count for materialized [`OutputLayout::Buffer`].
+    ///
+    /// Call this on a base signature from [`Operation::signature`] or
+    /// [`Operation::signature_with_rms_bounds`], before appending output offsets.
+    /// The count includes the existing fixed prefix and one offset per output;
+    /// external weights are excluded. Checking arithmetic and the u32 count
+    /// range allocates no storage. Success does not guarantee allocation,
+    /// construction budgets, or that an operation supports this output layout.
+    pub fn buffer_literal_count(&self) -> Result<usize, &'static str> {
+        let count = self
+            .fixed
+            .len()
+            .checked_add(self.outputs)
+            .ok_or("symbolic output constant size overflow")?;
+        if count > u32::MAX as usize {
+            return Err("symbolic output constant index overflow");
+        }
+        Ok(count)
+    }
 }
 /// Construction and storage budgets, independent of runtime execution budgets.
 #[derive(Clone, Copy, Debug)]

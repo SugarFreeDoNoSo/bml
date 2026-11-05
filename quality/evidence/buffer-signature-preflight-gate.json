@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "observed_at_utc": "2026-11-05T07:31:17.751340+00:00",
+  "base_revision": "390329cdc006d3185882aa4081c72a22a0d7bb21",
+  "command": "./scripts/check.sh 390329cdc006d3185882aa4081c72a22a0d7bb21",
+  "exit_code": 0,
+  "scope": "Allocation-free public buffer-literal preflight and unchanged factory admission. Current-helper focused mutations are independent of frozen9a raw outcomes. No complete mutation, model parity or PMU pass.",
+  "rust_tests_passed": 995,
+  "rust_suites": 145,
+  "python_tooling_tests": 213,
+  "traceability": "114/114",
+  "historical_contract_discrepancies": 0,
+  "static_diagnostics": 54,
+  "static_baseline": 192,
+  "new_static_diagnostics": 0,
+  "current_source_focused_candidates_detected": 5,
+  "current_source_positive_tests_passed": 2,
+  "replay_build_target": "/home/dev/Work/bml/target/mutation-replay-build",
+  "replay_cleanups": 6,
+  "log": "target/quality/wave-eleven-preflight-gate.log",
+  "log_sha256": "eac75760450b3d287961455bfcf7a8dfdf0281436a6856e40ed5cef64d473d6b",
+  "openspec": {
+    "passed": 16,
+    "failed": 0,
+    "log": "target/quality/buffer-signature-preflight-openspec.log",
+    "log_sha256": "1379fdd7adf46031af70ee3b44f36ca99f871e40fc36bcd4f6bf67f4e993f598"
+  },
+  "tested_rust_source_hashes": {
+    "crates/compiler/src/symbolic_kernels.rs": "45f4cd5d965ec6b5a87e5482c370f297e11156d4b245bca29f34594f849d53af"
+  },
+  "tested_rust_test_hashes": {
+    "crates/compiler/tests/signature_preflight_contracts.rs": "81ac07c3fdb0efd1d67b29d3d96947a9290c8accd826521544ef9cbef4d07dab"
+  },
+  "traceability_hashes": {
+    "quality/traceability.json": "67a5a4658f7ba49594d63784738afe519b66ba4a6dc08008ab87a1fdf5418b8c",
+    "quality/contracts.feature": "f751cefa1b76b854a2dce7e9a28df1e1066aa264bf0fe55adba3b31cebd4823d"
+  },
+  "unchanged_policy_hashes": {
+    "tools/quality.py": "be09596985108dec00cbdfed71cfeec18bab4d0e38149db8513f2a2de1215851",
+    "quality/clippy-baseline.json": "9a6308cc711a5d8a9fd2d44d2593135ffb85eba1120e1a7764de8ff1bfb66e87",
+    "quality/coverage-baseline.json": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5"
+  },
+  "review": {
+    "reviewers": [
+      "root",
+      "audit_specs_waves"
+    ],
+    "allocator_positive_control": true,
+    "compatibility": "The same checked-add and u32 range check precede reserve/extend in the same order; existing factory errors and admitted counts remain unchanged.",
+    "historical_results": "Original9a Missed remains unchanged; five new helper candidates were independently produced by cargo-mutants27.1.0."
+  }
+}

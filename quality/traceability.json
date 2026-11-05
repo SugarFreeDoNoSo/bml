@@ -1158,5 +1158,13 @@
     "tests": [
       "converted_autonomous_model_tokenizer_logits_and_generation_match_independent_oracle"
     ]
+  },
+  "C114": {
+    "package": "bml-compiler",
+    "target": "signature_preflight_contracts",
+    "tests": [
+      "buffer_literal_preflight_accepts_u32_max_count_without_allocating",
+      "small_buffer_factories_preserve_prefix_offsets_and_admission_errors"
+    ]
   }
 }
