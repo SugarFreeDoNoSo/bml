@@ -1,6 +1,10 @@
 use bml_compiler::{
-    symbolic_artifact::{compile_directory, load_directory, Manifest, MANIFEST},
-    symbolic_kernels::{compile_operation_with_layout, KernelLimits, Operation, OutputLayout},
+    symbolic_artifact::{
+        compile_directory, compile_directory_with_rms_bounds, load_directory, Manifest, MANIFEST,
+    },
+    symbolic_kernels::{
+        compile_operation_with_layout, KernelLimits, Operation, OutputLayout, RmsBounds,
+    },
     BmlGraph, Fragment, HashConsedKV, RpnOp,
 };
 use bml_runtime::symbolic_causal::{SymbolicCausalModel, SymbolicLimits};
@@ -60,6 +64,150 @@ fn artifact(source: &symbolic_fixture::Fixture) -> Directory {
     )
     .unwrap();
     dir
+}
+
+#[test]
+fn aot_runtime_program_and_opcode_budgets_accept_exact_totals() {
+    let source = symbolic_fixture::fixture(0.25);
+    let dir = artifact(&source);
+    let loaded = load_directory(&dir.0, None).unwrap();
+    let programs: usize = loaded
+        .kernels
+        .iter()
+        .map(|kernel| kernel.graphs.len())
+        .sum();
+    let ops: usize = loaded
+        .kernels
+        .iter()
+        .flat_map(|kernel| &kernel.graphs)
+        .flat_map(|graph| &graph.fragments)
+        .map(|fragment| fragment.ops.len())
+        .sum();
+    assert!(programs > 1 && ops > 1);
+    drop(loaded);
+    let limits = SymbolicLimits {
+        max_nodes: 0,
+        max_cached_ops: ops,
+        max_programs: programs,
+        ..SymbolicLimits::default()
+    };
+    let mut exact = SymbolicCausalModel::open_artifact(&dir.0, None, limits).unwrap();
+    let logits = exact.forward(&[69]).unwrap();
+    assert_eq!(logits.len(), 260);
+    assert!(logits.iter().all(|value| value.is_finite()));
+    for insufficient in [
+        SymbolicLimits {
+            max_programs: programs - 1,
+            ..limits
+        },
+        SymbolicLimits {
+            max_cached_ops: ops - 1,
+            ..limits
+        },
+    ] {
+        let error = SymbolicCausalModel::open_artifact(&dir.0, None, insufficient)
+            .err()
+            .unwrap();
+        assert_eq!(error, "symbolic artifact runtime budget exceeded");
+    }
+}
+
+fn prepend_discarded_overflow(dir: &Directory, operation: Operation) {
+    let mut manifest = dir.manifest();
+    let index = manifest
+        .kernels
+        .iter()
+        .position(|kernel| kernel.operation == operation)
+        .unwrap();
+    let path = dir.0.join(format!("kernel_{index}_0.bmlgraph"));
+    let mut graph =
+        BmlGraph::deserialize(&std::fs::read(&path).unwrap(), manifest.fragment_bytes).unwrap();
+    // Pure BML basis: B(1,B(B(1,1),1)) = 0, then B(1,0) = +inf.
+    // Drop discards that IEEE intermediate without changing any stored output.
+    let prefix = [
+        RpnOp::One,
+        RpnOp::One,
+        RpnOp::One,
+        RpnOp::One,
+        RpnOp::Bml,
+        RpnOp::One,
+        RpnOp::Bml,
+        RpnOp::Bml,
+        RpnOp::Bml,
+        RpnOp::Drop,
+    ];
+    let capacity = manifest.fragment_bytes / std::mem::size_of::<RpnOp>();
+    assert!(capacity > 0);
+    graph.fragments.splice(
+        0..0,
+        prefix
+            .chunks(capacity)
+            .map(|ops| Fragment { ops: ops.to_vec() }),
+    );
+    let bytes = graph.serialize();
+    manifest.kernels[index].programs[0] = format!("{:x}", Sha256::digest(&bytes));
+    std::fs::write(path, bytes).unwrap();
+    dir.save(&manifest);
+}
+
+#[test]
+fn persisted_v2_and_v3_keep_per_family_intermediate_checks() {
+    let source = symbolic_fixture::fixture(0.25);
+    for (bounded_rms, operation, rejects) in [
+        (false, Operation::Norm, false),
+        (true, Operation::Dot, false),
+        (true, Operation::Norm, true),
+    ] {
+        let dir = Directory::new();
+        let kernel_limits = KernelLimits {
+            fragment_bytes: 256,
+            ..KernelLimits::default()
+        };
+        if bounded_rms {
+            compile_directory_with_rms_bounds(
+                &source.0,
+                &dir.0,
+                3,
+                RmsBounds {
+                    input: 16.0,
+                    weight: 16.0,
+                },
+                kernel_limits,
+            )
+            .unwrap();
+        } else {
+            compile_directory(&source.0, &dir.0, 3, kernel_limits).unwrap();
+        }
+        let limits = SymbolicLimits {
+            max_nodes: 0,
+            ..SymbolicLimits::default()
+        };
+        let mut baseline = SymbolicCausalModel::open_artifact(&dir.0, None, limits).unwrap();
+        let expected: Vec<_> = baseline
+            .forward(&[69])
+            .unwrap()
+            .into_iter()
+            .map(f64::to_bits)
+            .collect();
+        drop(baseline);
+        prepend_discarded_overflow(&dir, operation);
+        let mut modified = SymbolicCausalModel::open_artifact(&dir.0, None, limits).unwrap();
+        let result = modified.forward(&[69]);
+        if rejects {
+            assert!(
+                result.is_err(),
+                "v3 RMS must check the discarded invalid intermediate"
+            );
+        } else {
+            let actual: Vec<_> = result.unwrap().into_iter().map(f64::to_bits).collect();
+            assert_eq!(
+                actual,
+                expected,
+                "profile v{} {operation:?}",
+                if bounded_rms { 3 } else { 2 }
+            );
+        }
+    }
 }
 
 #[test]

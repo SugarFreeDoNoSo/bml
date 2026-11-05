@@ -343,6 +343,15 @@ fn mlp_fold_preserves_unfolded_bits_for_custom_configuration() {
     for scratch in [false, true] {
         let layout = Layout::new(2, 3);
         let checked = layout.compile(2, 3, scratch, bounds);
+        // Public numerical declarations must describe values this very
+        // operation admits, so a caller can construct inputs from the getter.
+        let declared = checked.bounds();
+        checked
+            .validate_values(&[declared.input; 2], &[0.0; 6], &[0.0; 6], &[0.0; 6])
+            .unwrap();
+        assert!(checked
+            .validate_values(&[declared.input + 1.0; 2], &[0.0; 6], &[0.0; 6], &[0.0; 6])
+            .is_err());
         checked.validate_values(&inputs, &gate, &up, &down).unwrap();
         let actual = run(
             checked.operation(),

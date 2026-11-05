@@ -1,0 +1,535 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "22c443649d9d5ba52c929dc707553cf0f7e23fa8",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "quantized_symbolic_causal_contracts",
+        "--locked",
+        "persisted_q4_causal_model_matches_literal_f32_representation_across_gqa_positions",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-symbolic-rope-mod.log",
+      "log_sha256": "52f5ca2c191b3828b88ba60abad07e8867a5d500e2d1e938dcf4088c1f02bc7b",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_artifact_contracts",
+        "--locked",
+        "aot_runtime_program_and_opcode_budgets_accept_exact_totals",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-symbolic-inclusive-programs.log",
+      "log_sha256": "d8bbbf7392040521c27ef24d22ce36c04b475b04c1637b9f5c72276c1476aef1",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_artifact_contracts",
+        "--locked",
+        "persisted_v2_and_v3_keep_per_family_intermediate_checks",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-symbolic-legacy-real-checks.log",
+      "log_sha256": "aaba894bfab184d9f3e2dac12bf24168b5339620c6079bf7835068941e3c8901",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_weight_shard_contracts",
+        "--locked",
+        "authenticated_layer_shards_reject_independent_range_mismatches_and_empty_ranges",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-symbolic-shard-range.log",
+      "log_sha256": "3c04d404e0bd9ac2cea2ef716dbe852e0843b681df4321a5ddae873cec6dda83",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_kernel_boundaries",
+        "--locked",
+        "rms_signature_rejects_invalid_epsilon_before_exposing_configuration",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-symbolic-epsilon.log",
+      "log_sha256": "f053f93335a270e8c0019e2ed7faa8053bb9a8adcb641c615434dbe91a348642",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "complete_attention_matches_nonuniform_signed_oracle_with_and_without_scratch",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-symbolic-attention-scratch.log",
+      "log_sha256": "4ce50289073cf111a4b67cb7ae4062dbb137b20687569f236190e6da5b739407",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "attention_rejects_read_capacity_even_when_addresses_fit_u32",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-symbolic-attention-capacity.log",
+      "log_sha256": "3857a1e2564625e7ad10b979e3513c7b0a154ff8064b13589e187b9bc797f9d3",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_mlp_contracts",
+        "--locked",
+        "mlp_fold_preserves_unfolded_bits_for_custom_configuration",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-symbolic-mlp-bounds.log",
+      "log_sha256": "a997c6696b3a1f609cbe5c139f03552e70b849e03a6666717ae8033cd0934daa",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "quantized_symbolic_causal_contracts",
+        "--locked",
+        "persisted_q4_causal_model_matches_literal_f32_representation_across_gqa_positions",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-symbolic-rope-mod.log",
+      "log_sha256": "c00dec9cfe5820db01884bb3c5d5320cc358b013a63234b4df8250a15fef25f1",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "symbolic-rope-mod",
+      "candidate": "crates/runtime/src/symbolic_causal.rs:648:67: replace / with % in SymbolicCausalModel::rotate",
+      "original_source_sha256": "fbf8f7c6644b34ed60f44f97706bfc3d471a35a83d7ce176aef4c3f816c75d08",
+      "mutated_source_sha256": "0ada006b8faee357069dae730142d1765a5d82ea1664feacce4711fb59f422f5",
+      "original_diff_sha256": "e4673e3f0067a93c0ca8d8d96daca99a784aa053cc521210dccff16d3a6b9b44",
+      "original_span": {
+        "end": {
+          "column": 68,
+          "line": 648
+        },
+        "start": {
+          "column": 67,
+          "line": 648
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "quantized_symbolic_causal_contracts",
+        "--locked",
+        "persisted_q4_causal_model_matches_literal_f32_representation_across_gqa_positions",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-symbolic-rope-mul.log",
+      "log_sha256": "71a789c22fd5c1c57f01eb8e3917ec69cede481c8c1b874ddd998356a138e827",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "symbolic-rope-mul",
+      "candidate": "crates/runtime/src/symbolic_causal.rs:648:67: replace / with * in SymbolicCausalModel::rotate",
+      "original_source_sha256": "fbf8f7c6644b34ed60f44f97706bfc3d471a35a83d7ce176aef4c3f816c75d08",
+      "mutated_source_sha256": "40fffaf53ac5badfc5fc1b13112f6827ac4fb362ba8a0bdaf37eab68b29d6e78",
+      "original_diff_sha256": "58da206c5de696b8cfbf7d441a92a374f7b5cbd2358eb580488c9354a247e332",
+      "original_span": {
+        "end": {
+          "column": 68,
+          "line": 648
+        },
+        "start": {
+          "column": 67,
+          "line": 648
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_artifact_contracts",
+        "--locked",
+        "aot_runtime_program_and_opcode_budgets_accept_exact_totals",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-symbolic-inclusive-programs.log",
+      "log_sha256": "2d778522f497866985109172504ef2910035ac7609d170e28d04567a8a53775e",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "symbolic-inclusive-programs",
+      "candidate": "crates/runtime/src/symbolic_causal.rs:366:70: replace > with >= in SymbolicCausalModel::from_loaded_artifact",
+      "original_source_sha256": "fbf8f7c6644b34ed60f44f97706bfc3d471a35a83d7ce176aef4c3f816c75d08",
+      "mutated_source_sha256": "86779680c5546b41c94832f3464f33d101fa75bc71bb34d60194a7b0d9116faa",
+      "original_diff_sha256": "19f5847ac0dd19f8f47b3c00f376975aa34a685e6986007e7f6ad3b7660a6100",
+      "original_span": {
+        "end": {
+          "column": 71,
+          "line": 366
+        },
+        "start": {
+          "column": 70,
+          "line": 366
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_artifact_contracts",
+        "--locked",
+        "persisted_v2_and_v3_keep_per_family_intermediate_checks",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-symbolic-legacy-real-checks.log",
+      "log_sha256": "8b21c82a5a2567ab3331ca037c4dfb1bb9dbe6a84ecd6a800e243395d384eda9",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "symbolic-legacy-real-checks",
+      "candidate": "crates/runtime/src/symbolic_causal.rs:369:71: replace && with || in SymbolicCausalModel::from_loaded_artifact",
+      "original_source_sha256": "fbf8f7c6644b34ed60f44f97706bfc3d471a35a83d7ce176aef4c3f816c75d08",
+      "mutated_source_sha256": "55c10bd2a5048b7adec06fa3e2833456aad80a4192522695966339d8a517082c",
+      "original_diff_sha256": "76cb634026b7f9737d986fa3814ee85beb98a669e74ef5da5063fba9081afb0d",
+      "original_span": {
+        "end": {
+          "column": 73,
+          "line": 369
+        },
+        "start": {
+          "column": 71,
+          "line": 369
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_weight_shard_contracts",
+        "--locked",
+        "authenticated_layer_shards_reject_independent_range_mismatches_and_empty_ranges",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-symbolic-shard-range.log",
+      "log_sha256": "16dae26dd22d9d3a14ea6bc6c890df0d8e697d07dc2cd31b7f313a0f4a76dd28",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "symbolic-shard-range",
+      "candidate": "crates/compiler/src/symbolic_weight_shard.rs:190:13: replace || with && in VerifiedLayerWeights::open",
+      "original_source_sha256": "6838e39baf20f26f360343fba1d4c200d946e8a65a981299c5b6bd68958c01b9",
+      "mutated_source_sha256": "422c97dccc62c9631f3ef077bdad293c59bf472bb189846bbd04ba4ec56f1de4",
+      "original_diff_sha256": "50313527f9ba91a48f1f09f3fb365b973681d9052f02974c14788eca0b674bba",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 190
+        },
+        "start": {
+          "column": 13,
+          "line": 190
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_weight_shard_contracts",
+        "--locked",
+        "authenticated_layer_shards_reject_independent_range_mismatches_and_empty_ranges",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-symbolic-shard-empty.log",
+      "log_sha256": "bcd1fd0d0b3eef8fc7f8403578f5b8baccedc88e4570494f4affb4ed36f81093",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "symbolic-shard-empty",
+      "candidate": "crates/compiler/src/symbolic_weight_shard.rs:192:13: replace || with && in VerifiedLayerWeights::open",
+      "original_source_sha256": "6838e39baf20f26f360343fba1d4c200d946e8a65a981299c5b6bd68958c01b9",
+      "mutated_source_sha256": "ba29fe1cf49792fb8469f50524b9112e08c8633fcf42127bea7b14ae6bca14c0",
+      "original_diff_sha256": "c007d5a66cb6ff884cc60bfd5ed8df3f3734ab6ecbaa91b46dd3c4e82378e251",
+      "original_span": {
+        "end": {
+          "column": 15,
+          "line": 192
+        },
+        "start": {
+          "column": 13,
+          "line": 192
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "symbolic_kernel_boundaries",
+        "--locked",
+        "rms_signature_rejects_invalid_epsilon_before_exposing_configuration",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-symbolic-epsilon.log",
+      "log_sha256": "32f8c3a23991de934f5de2c014cc55aa721d4664a497e9f688bbe296ecec4d82",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "symbolic-epsilon",
+      "candidate": "crates/compiler/src/symbolic_kernels.rs:81:41: replace || with && in Operation::signature",
+      "original_source_sha256": "d3ad3aa5a5cb4011f02d497fc595aaeb329281406687bf70e69847611999966d",
+      "mutated_source_sha256": "ed604f7e7bd075976925d196896ef01ce6c1d47af54f2c7ae3b2649102626218",
+      "original_diff_sha256": "0bead355a1f2eeeff5223b9dc808d20e8af41c05a83941dec053728353dfb285",
+      "original_span": {
+        "end": {
+          "column": 43,
+          "line": 81
+        },
+        "start": {
+          "column": 41,
+          "line": 81
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "complete_attention_matches_nonuniform_signed_oracle_with_and_without_scratch",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-symbolic-attention-scratch.log",
+      "log_sha256": "6c7a9faa3bdacab831da7f4b3829fe1e9a69fc7cec0071bc6209ff70fe45e512",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "symbolic-attention-scratch",
+      "candidate": "crates/compiler/src/operation_attention.rs:263:9: replace CheckedAttentionFragment::scratch -> Option<AttentionScratch> with None",
+      "original_source_sha256": "9cfd830108355de7b9d1926fca7806c124082bed050df9c0512c4ff9e4c7e279",
+      "mutated_source_sha256": "fbe44492830904e059750656127cb761493b5ed959ed637526e8bdcac9346fe3",
+      "original_diff_sha256": "308b44ea616081d3ddc45cbc82777d02697b738ee0c83f7ab41d6df496475c97",
+      "original_span": {
+        "end": {
+          "column": 21,
+          "line": 263
+        },
+        "start": {
+          "column": 9,
+          "line": 263
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_attention_contracts",
+        "--locked",
+        "attention_rejects_read_capacity_even_when_addresses_fit_u32",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-symbolic-attention-capacity.log",
+      "log_sha256": "41507e72d1fca7ad609448ce6650a38486a946a782b1fbe6345e4962be0ddcdf",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "symbolic-attention-capacity",
+      "candidate": "crates/compiler/src/operation_attention.rs:279:28: replace || with && in CheckedAttentionFragment::validate_layout",
+      "original_source_sha256": "9cfd830108355de7b9d1926fca7806c124082bed050df9c0512c4ff9e4c7e279",
+      "mutated_source_sha256": "b2c6f43181213debb29db660259726e4a78786fab8d6735d061d83d2d1d9bf57",
+      "original_diff_sha256": "65801212618254586c6655871daf957ac783bc2be7e759b2faf2e28dd2a09dc1",
+      "original_span": {
+        "end": {
+          "column": 30,
+          "line": 279
+        },
+        "start": {
+          "column": 28,
+          "line": 279
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-runtime",
+        "--test",
+        "operation_mlp_contracts",
+        "--locked",
+        "mlp_fold_preserves_unfolded_bits_for_custom_configuration",
+        "--",
+        "--exact"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-symbolic-mlp-bounds.log",
+      "log_sha256": "6aed517e1f21e6320ed4ad3a9dd529438065cc89bdc89908d5bc1ff4086ed3d8",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "symbolic-mlp-bounds",
+      "candidate": "crates/compiler/src/operation_mlp.rs:246:9: replace CheckedMlpFragment::bounds -> MlpBounds with Default::default()",
+      "original_source_sha256": "ca92db81a12fd2be41b874088780d9fa48d192721544c76e0401b9701db5957b",
+      "mutated_source_sha256": "17933e9fd405c49a1ec05382a917211344c4b95f76669a3704510ded689c1f12",
+      "original_diff_sha256": "867b564c898ee610d6883fbb0586facc53a50b67be992cfe05bc60db2eaddd8e",
+      "original_span": {
+        "end": {
+          "column": 20,
+          "line": 246
+        },
+        "start": {
+          "column": 9,
+          "line": 246
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T03:10:10.891174+00:00",
+  "status": "passed_focused_replays",
+  "patched_input_hashes": {
+    "crates/compiler/tests/symbolic_artifact_contracts.rs": "ff50ca24a3fd9202375abf5b7c436c434df0b4e3cd180f64ac8a8cee567bd239",
+    "crates/compiler/tests/symbolic_kernel_boundaries.rs": "73c4ec65164bd5b996e7272a33660e55079e3af2a1e55bc4f1a6f4aa4a90e600",
+    "crates/compiler/tests/symbolic_weight_shard_contracts.rs": "bfcd97a2a9ab28adeeacc0951198a371f7073c8422b867f14f14b8cd82248226",
+    "crates/domain/src/transformer/bounded.rs": "6d57cd1c4d00e9e275328667ad01c9b0624f74dee738cc24231dfb42a16c0727",
+    "crates/domain/tests/bml_matrix.rs": "cbaae6467f8dc8b50e8aacdb448d393dded85fd80c32566be44fa9ae3536207e",
+    "crates/domain/tests/bml_recognition.rs": "863165effdc7d6c51481e71f19ca5989608963de1cc0c1aa575d92d719575908",
+    "crates/domain/tests/bml_search.rs": "0cb6bfc38fd6a7ce7da2c965c577d5fbc6fbc9c991cc6d54af31031bcc2c5245",
+    "crates/inference/tests/model_contracts.rs": "8610e358b6dcbb157d4d1395981523831f484351f68642344d3aac34d71ca708",
+    "crates/inference/tests/remote_handshake_contracts.rs": "8c97b719e5330a7d58c3d84a5f8e2183f06866c8c88483019f8717a03e1fd076",
+    "crates/runtime/tests/graph_rpc_contracts.rs": "7beed5319ec28f6a5f02924434418b19bc6a59f6bf68a8c49949c9f7b7d318c2",
+    "crates/runtime/tests/operation_attention_contracts.rs": "9e0263caf1103c9e1b615b675343ce23cfe9529327fa44e5823dc0e35e0eb146",
+    "crates/runtime/tests/operation_matmul_contracts.rs": "234d6cad722d078d3b97fb82b4b7f4f1af5a1bc9fdcd3e454fc43aca8ca165dd",
+    "crates/runtime/tests/operation_mlp_contracts.rs": "846ebadb017477b4931fb88a5385ce17cd79fc75f68ca5dc26fb870f8d6fbaf8",
+    "crates/runtime/tests/quantized_symbolic_causal_contracts.rs": "cfb816c71725f84773f86afb4638b92a247a7e19aae892d7ccb728e301126c99",
+    "crates/runtime/tests/symbolic_transport_contracts.rs": "b31283ea376cc485faa746a82d422b394cfa3b235b3fc7573c1b0ead923b8a55",
+    "crates/worker/tests/timeout_cli_contracts.rs": "a58b9b5beb8ec95aa7e101c54ff53c2b228bc378c71a46ffc5b21be8a60807f5"
+  },
+  "source_files_restored": true,
+  "verified_restored_at_utc": "2026-11-05T03:25:57.773813+00:00",
+  "positive_target_verification": "target/quality/survivor-focused.json"
+}

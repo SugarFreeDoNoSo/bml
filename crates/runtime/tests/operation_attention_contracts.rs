@@ -93,6 +93,19 @@ fn fixture(
         )
         .unwrap()
     };
+    if scratch {
+        // Consumers use the public scratch descriptor to provision enough
+        // slots; it must describe the layout accepted by the same operation.
+        let storage = compiled
+            .scratch()
+            .expect("linear attention declares its scratch");
+        assert_eq!(storage.base as usize, storage.slot as usize * size);
+        compiled
+            .validate_layout(size, storage.slot as usize + 1)
+            .unwrap();
+    } else {
+        assert!(compiled.scratch().is_none());
+    }
     compiled.validate_layout(size, 10).unwrap();
     compiled.validate_values(query, keys, values).unwrap();
     let mut buffer = ResultBuffer::new(10, size);
@@ -322,6 +335,27 @@ fn attention_rejects_bad_dimensions_addresses_profiles_and_actual_intermediates(
     assert!(narrow
         .validate_values(&[1.0; 2], &[1.0; 4], &[1.0; 4])
         .is_err());
+}
+
+#[test]
+fn attention_rejects_read_capacity_even_when_addresses_fit_u32() {
+    let checked = compile_attention_fragment_checked(
+        "capacity",
+        2,
+        4,
+        6,
+        0,
+        2,
+        1,
+        AttentionBounds::default(),
+    )
+    .unwrap();
+    // All three reads exactly fit four slots, disjoint from output slot zero.
+    checked.validate_layout(2, 4).unwrap();
+    // Only the physical buffer capacity is invalid; every address still fits
+    // the interpreter's u32 address domain and the output slot is available.
+    let error = checked.validate_layout(2, 1).unwrap_err();
+    assert_eq!(error, "attention operand exceeds buffer");
 }
 
 #[test]

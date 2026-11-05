@@ -10,6 +10,67 @@ use sha2::{Digest, Sha256};
 mod symbolic_fixture;
 
 #[test]
+fn authenticated_layer_shards_reject_independent_range_mismatches_and_empty_ranges() {
+    let source = symbolic_fixture::fixture_layers(0.25, 3);
+    let root = source.0.with_extension("semantic-weight-ranges");
+    struct Cleanup(std::path::PathBuf);
+    impl Drop for Cleanup {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let _cleanup = Cleanup(root.clone());
+    std::fs::create_dir(&root).unwrap();
+    let artifact = root.join("artifact");
+    std::fs::create_dir(&artifact).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &artifact,
+        3,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let identity = checked_identity(&artifact, None).unwrap();
+    let original = root.join("original");
+    let descriptor_hash =
+        export_layer_weights(&artifact, None, 1..3, &original, 1_000_000).unwrap();
+    VerifiedLayerWeights::open(&original, &descriptor_hash, &identity, 1..3, 1_000_000).unwrap();
+    let descriptor: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(original.join("weights.json")).unwrap()).unwrap();
+    let payload = std::fs::read(original.join("weights.bin")).unwrap();
+    for (name, start, end, empty) in [
+        ("wrong-start", 0_u32, 3_u32, false),
+        ("wrong-end", 1, 4, false),
+        ("empty-range", 1, 1, true),
+    ] {
+        let directory = root.join(name);
+        std::fs::create_dir(&directory).unwrap();
+        let mut changed = descriptor.clone();
+        changed["start"] = start.into();
+        changed["end"] = end.into();
+        let bytes = if empty { &[][..] } else { payload.as_slice() };
+        if empty {
+            changed["tensors"] = serde_json::json!([]);
+            changed["payload_length"] = 0.into();
+            changed["payload_sha256"] = format!("{:x}", Sha256::digest(bytes)).into();
+        }
+        let encoded = serde_json::to_vec(&changed).unwrap();
+        let authenticated = format!("{:x}", Sha256::digest(&encoded));
+        std::fs::write(directory.join("weights.json"), encoded).unwrap();
+        std::fs::write(directory.join("weights.bin"), bytes).unwrap();
+        // Re-authenticate each descriptor: a stale digest must not mask the
+        // independent semantic checks on its start, end, or nonempty range.
+        let requested = if empty { 1..1 } else { 1..3 };
+        let error =
+            VerifiedLayerWeights::open(&directory, &authenticated, &identity, requested, 1_000_000)
+                .err()
+                .unwrap();
+        assert_eq!(error, "shard identity, range or budget mismatch", "{name}");
+    }
+}
+
+#[test]
 fn authenticated_workers_reject_individually_invalid_model_metadata() {
     use bml_compiler::symbolic_artifact::{load_directory_authenticated, MANIFEST};
     use serde_json::json;

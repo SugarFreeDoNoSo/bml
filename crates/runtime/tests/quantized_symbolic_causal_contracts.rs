@@ -5,10 +5,14 @@ use bml_compiler::{
     gguf_compiler::InferenceCompiler,
     symbolic_artifact::{compile_directory_bounded, load_directory, BOUNDED_PROFILE},
     symbolic_bounded::{BoundedProfile, ProjectionBounds},
-    symbolic_kernels::KernelLimits,
-    HashConsedKV,
+    symbolic_kernels::{CompiledKernel, KernelLimits, Operation},
+    BmlGraph, HashConsedKV,
 };
-use bml_runtime::symbolic_causal::{SymbolicCausalModel, SymbolicLimits};
+use bml_runtime::{
+    buffer::ResultBuffer,
+    graph::{GraphLimits, ValidatedGraph},
+    symbolic_causal::{SymbolicCausalModel, SymbolicLimits},
+};
 use std::{
     path::{Path, PathBuf},
     sync::atomic::{AtomicUsize, Ordering},
@@ -66,23 +70,37 @@ fn gguf_array(kind: u32, values: Vec<Vec<u8>>) -> Vec<u8> {
     bytes
 }
 
+fn literal_row(seed: usize, row: usize, changed: bool) -> ([u8; WIDTH], f32, u16) {
+    let (half_scale, scale) = if (row + seed).is_multiple_of(2) {
+        (0x2400_u16, 1.0_f32 / 64.0)
+    } else {
+        (0xa400_u16, -1.0_f32 / 64.0)
+    };
+    let mut nibbles = [0_u8; WIDTH];
+    for (column, nibble) in nibbles.iter_mut().enumerate() {
+        *nibble = NIBBLES[(column + 3 * row + seed) % WIDTH];
+    }
+    if changed && row == 0 {
+        nibbles[0] ^= 8;
+    }
+    (nibbles, scale, half_scale)
+}
+
+fn literal_values(seed: usize, row: usize) -> Vec<f64> {
+    let (nibbles, scale, _) = literal_row(seed, row, false);
+    nibbles
+        .into_iter()
+        .map(|nibble| f64::from(scale * f32::from(i16::from(nibble) - 8)))
+        .collect()
+}
+
 fn matrix(name: &'static str, rows: usize, seed: usize, quantized: bool, changed: bool) -> Tensor {
     let mut bytes = Vec::new();
     for row in 0..rows {
         // These paired literal values encode +1/64 and -1/64 in IEEE binary16.
         // The F32 oracle uses the numeric literals, never a production decoder.
-        let (half_scale, scale) = if (row + seed).is_multiple_of(2) {
-            (0x2400_u16, 1.0_f32 / 64.0)
-        } else {
-            (0xa400_u16, -1.0_f32 / 64.0)
-        };
-        let mut nibbles = [0_u8; WIDTH];
-        for (column, nibble) in nibbles.iter_mut().enumerate() {
-            *nibble = NIBBLES[(column + 3 * row + seed) % WIDTH];
-        }
-        if changed && name == "blk.0.ffn_down.weight" && row == 0 {
-            nibbles[0] ^= 8;
-        }
+        let (nibbles, scale, half_scale) =
+            literal_row(seed, row, changed && name == "blk.0.ffn_down.weight");
         if quantized {
             bytes.extend(half_scale.to_le_bytes());
             // GGML axis zero is contiguous; low nibbles are columns 0..16,
@@ -247,6 +265,97 @@ fn cache() -> HashConsedKV {
     HashConsedKV::new(1, KV_HEADS, HEAD_DIM, CONTEXT)
 }
 
+fn execute_stored(kernel: &CompiledKernel, inputs: &[f64], external: &[f64]) -> Vec<f64> {
+    assert_eq!(inputs.len(), kernel.signature.inputs);
+    assert_eq!(external.len(), kernel.signature.external);
+    assert_eq!(kernel.graphs.len(), 1);
+    let mut constants = kernel.signature.fixed.clone();
+    constants.extend_from_slice(external);
+    let buffered = kernel.layout.uses_buffer();
+    let mut buffer = if buffered {
+        ResultBuffer::from_vec(
+            1,
+            kernel.signature.outputs,
+            vec![f64::NAN; kernel.signature.outputs],
+        )
+        .unwrap()
+    } else {
+        ResultBuffer::new(0, 0)
+    };
+    let stored = &kernel.graphs[0];
+    let graph = ValidatedGraph::new_with_external_constants(
+        BmlGraph::deserialize(&stored.serialize(), stored.threshold).unwrap(),
+        inputs.len(),
+        constants.len(),
+        usize::from(buffered),
+        if buffered {
+            kernel.signature.outputs
+        } else {
+            0
+        },
+        GraphLimits::default(),
+    )
+    .unwrap();
+    let scalar = graph
+        .execute_indexed_symbolic_with_constants(inputs, &constants, &mut buffer)
+        .unwrap();
+    let values = if buffered {
+        buffer.into_vec()
+    } else {
+        vec![scalar]
+    };
+    assert!(values.iter().all(|value| value.is_finite()));
+    values
+}
+
+fn assert_literal_rotary_frequency(artifact: &Path, cache: &HashConsedKV) {
+    let loaded = load_directory(artifact, None).unwrap();
+    let kernel = |operation, width| {
+        loaded
+            .kernels
+            .iter()
+            .find(|kernel| kernel.operation == operation && kernel.width == width)
+            .unwrap()
+    };
+    // The repeated token at positions 0 and 2 has the same one-layer input.
+    // Reuse preceding persisted BML programs to isolate frequency selection
+    // from native-versus-BML arithmetic and its precision budget.
+    let normalized = execute_stored(
+        kernel(Operation::Norm, WIDTH),
+        &literal_values(1, IDS[2] as usize),
+        &[0.5; WIDTH],
+    );
+    let pair: Vec<_> = [8, 9]
+        .into_iter()
+        .map(|row| {
+            execute_stored(
+                kernel(Operation::Dot, WIDTH),
+                &normalized,
+                &literal_values(5, row),
+            )[0]
+        })
+        .collect();
+    // K[8,9]: position / base^(within/head_dim) = 2 / 16^(8/16) = 0.5.
+    // The literal angle is independent of rotate's indexing and arithmetic.
+    let angle = 0.5_f64;
+    let expected = execute_stored(
+        kernel(Operation::Rope, 2),
+        &pair,
+        &[angle.cos(), angle.sin()],
+    );
+    let actual = cache.load_k(0, 2, 0);
+    assert_eq!(
+        actual[8..10]
+            .iter()
+            .map(|value| value.to_bits())
+            .collect::<Vec<_>>(),
+        expected
+            .iter()
+            .map(|value| (*value as f32).to_bits())
+            .collect::<Vec<_>>()
+    );
+}
+
 fn persisted(source: &Path, directory: &Path) -> SymbolicCausalModel {
     std::fs::create_dir(directory).unwrap();
     let profile = BoundedProfile {
@@ -356,6 +465,7 @@ fn persisted_q4_causal_model_matches_literal_f32_representation_across_gqa_posit
     // The repeated token has a different causal history and rotary position.
     assert_ne!(native_vectors[0], native_vectors[2]);
     assert_ne!(symbolic_vectors[0], symbolic_vectors[2]);
+    assert_literal_rotary_frequency(&directory.0.join("q4-aot"), &symbolic_q4_cache);
     assert_ne!(
         native_q4_cache.load_k(0, 0, 0),
         native_q4_cache.load_k(0, 2, 0)

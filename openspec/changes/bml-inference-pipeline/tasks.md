@@ -30,6 +30,8 @@ con reparto round-robin entre réplicas completas. Falta ejecución numérica co
 
 - [x] 8.6.2 Verificar la ruta causal completa de pesos mmap Q4_0 a programas BML persistidos mediante un modelo sintético GQA de ancho 32 y tres posiciones. C106 compara por backend los bits de logits y KV con una representación F32 escrita desde nibbles y escalas literales, carga AOT v4 con `max_nodes=0`, contrasta prefill/decode y detecta una perturbación del MLP. La prueba pasa sin modelo descargado; evidencia en `quality/evidence/quantized-symbolic-causal-contract.json`. Esto verifica equivalencia de representación por backend, no paridad global nativa/simbólica ni el diagnóstico TinyLlama pendiente.
 
+- [x] 8.6.3 Reforzar los contratos simbólicos señalados por supervivientes de la campaña congelada: frecuencia RoPE con ángulo independiente 0,5 y bits KV, presupuestos inclusivos, comprobación de intermedios por familia v2/v3, descriptores de rangos reautenticados, epsilon y metadatos de scratch/bounds usados por consumidores. Diez replays aislados compilan y fallan con las nuevas pruebas; los seis targets sin mutar pasan. Evidencia: `quality/evidence/mutation-9a-symbolic-replays.json`. Son regresiones de contratos y no un resultado aprobado de toda la campaña ni una tolerancia global de inferencia.
+
 ## 9. Pruebas de concurrencia
 
 Diagnóstico adicional de 8.6: el caso de una sola componente `x=1`, `weight=4`,

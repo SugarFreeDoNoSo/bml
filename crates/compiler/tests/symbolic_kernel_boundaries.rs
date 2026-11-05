@@ -4,6 +4,24 @@ use bml_compiler::{
 };
 
 #[test]
+fn rms_signature_rejects_invalid_epsilon_before_exposing_configuration() {
+    for epsilon in [0.0, -0.0, -1.0, f64::INFINITY, f64::NEG_INFINITY, f64::NAN] {
+        assert!(
+            Operation::Norm.signature(4, epsilon).is_err(),
+            "epsilon={epsilon}"
+        );
+        assert!(compile_operation(Operation::Norm, 4, epsilon, KernelLimits::default()).is_err());
+    }
+    let signature = Operation::Norm.signature(4, 0.5).unwrap();
+    assert_eq!(
+        (signature.inputs, signature.external, signature.outputs),
+        (4, 4, 4)
+    );
+    assert_eq!(signature.fixed, [0.25, 0.5, 0.5]);
+    assert!(compile_operation(Operation::Norm, 4, 0.5, KernelLimits::default()).is_ok());
+}
+
+#[test]
 fn fixed_width_signatures_reject_other_nonempty_widths() {
     for (operation, accepted) in [
         (Operation::Rope, 2),
