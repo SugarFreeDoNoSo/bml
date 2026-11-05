@@ -81,6 +81,25 @@ fn close(
 }
 
 #[test]
+fn asymmetric_addition_keeps_its_canonical_literal_prefix() {
+    for (left, right, canonical) in [(2.0, 5.0, [64.0, 2.0, 4.0]), (3.0, 5.0, [64.0, 2.0, 6.0])] {
+        let config = BoundedOpConfig::add(left, right).unwrap();
+        // The public profile fixes the shift to twice the left declaration.
+        // This literal oracle is independent of fixed_literals' implementation;
+        // a different shift might still preserve the mathematical sum.
+        assert_eq!(config.fixed_literals(), canonical);
+        let (builder, roots) = build(&config);
+        assert_eq!(builder.soa().const_pool, canonical);
+        for inputs in [[-left, right], [left, -right], [left, right], [0.0, 0.0]] {
+            config.validate_values(&inputs, &[]).unwrap();
+            let actual = evaluate(&builder, &roots, &inputs, &[]).unwrap();
+            assert_eq!(actual.len(), 1);
+            assert!((actual[0] - (inputs[0] + inputs[1])).abs() < 2e-10);
+        }
+    }
+}
+
+#[test]
 fn bounded_products_sums_and_dot_steps_match_independent_signed_arithmetic() {
     for (left, right) in [
         (128.0, 2.0),

@@ -1,0 +1,228 @@
+{
+  "scope": "Isolated semantic mutation replays with additional public-contract tests; not a complete mutation campaign or a passing global score.",
+  "campaign_run": 41950170549,
+  "candidate_source_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+  "worktree_base_revision": "cb290927d2727aa4fad699547df884e7fa8bdcc3",
+  "baselines": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bounded_operation_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "asymmetric_addition_keeps_its_canonical_literal_prefix"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-add_canonical_builder.log",
+      "log_sha256": "47b347aee928ae41dacfc676b53328c7beeee7766cf0e4db7b6edf53ecc80848",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_v4_accepts_the_independently_canonical_residual_prefix"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-add_canonical_persisted_v4.log",
+      "log_sha256": "e896c18a0d96867f911979ee58c8f75b01cbe42f61b0ec4a7c91bfdf046e832c",
+      "test_failed": false,
+      "compile_error": false
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bounded_transformer_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "rms_bound_getters_reconstruct_the_same_admitted_domain"
+      ],
+      "exit_code": 0,
+      "log": "target/quality/survivor-replay-baseline-rms_input_bound_one.log",
+      "log_sha256": "6a997eaee5ff25cce37ab1823629927f1aa3aa3c74f310e438adfb85fdb90097",
+      "test_failed": false,
+      "compile_error": false
+    }
+  ],
+  "replays": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bounded_operation_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "asymmetric_addition_keeps_its_canonical_literal_prefix"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-add_canonical_builder.log",
+      "log_sha256": "977c1e3e018972f34e90556f03d9e1db9daea55a8d19d0065d44a04f71cc592b",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "add_canonical_builder",
+      "candidate": "crates/domain/src/transformer/bounded_ops.rs:173:42: replace * with + in BoundedOpConfig::fixed_literals",
+      "original_source_sha256": "ee7b5e406263a6e22d604bbb4a01c23090362a0d7ff6cb696668c44dc2f7b202",
+      "mutated_source_sha256": "75df2428b552d94eaafe4db755805c3d65b1f8460548a55734b0ffc4504e172f",
+      "original_diff_sha256": "822c90c34e791c7745eb3cf87775b6bfe047c06ffa846f27e136eae398ce0c5a",
+      "original_span": {
+        "end": {
+          "column": 43,
+          "line": 173
+        },
+        "start": {
+          "column": 42,
+          "line": 173
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-compiler",
+        "--test",
+        "full_bounded_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "bounded_v4_accepts_the_independently_canonical_residual_prefix"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-add_canonical_persisted_v4.log",
+      "log_sha256": "5194c4f45d1050a64dc82f96079ec8059ae8d783d629d6155547fe7057afd598",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "add_canonical_persisted_v4",
+      "candidate": "crates/domain/src/transformer/bounded_ops.rs:173:42: replace * with + in BoundedOpConfig::fixed_literals",
+      "original_source_sha256": "ee7b5e406263a6e22d604bbb4a01c23090362a0d7ff6cb696668c44dc2f7b202",
+      "mutated_source_sha256": "75df2428b552d94eaafe4db755805c3d65b1f8460548a55734b0ffc4504e172f",
+      "original_diff_sha256": "822c90c34e791c7745eb3cf87775b6bfe047c06ffa846f27e136eae398ce0c5a",
+      "original_span": {
+        "end": {
+          "column": 43,
+          "line": 173
+        },
+        "start": {
+          "column": 42,
+          "line": 173
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bounded_transformer_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "rms_bound_getters_reconstruct_the_same_admitted_domain"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-rms_input_bound_one.log",
+      "log_sha256": "fd3580c79a5c16b62624ef727aae802c249b8190b2e384e8d43cb5ae8ccd0557",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "rms_input_bound_one",
+      "candidate": "crates/domain/src/transformer/bounded.rs:118:9: replace BoundedRmsConfig::input_bound -> f64 with 1.0",
+      "original_source_sha256": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+      "mutated_source_sha256": "38edd139093c151f5fe82908818d6d1aa21913879dce309bf5a28eae0a77ac26",
+      "original_diff_sha256": "21d24d0b7dbd8e3b562a61d3a4129d13422cc48a47bbbdbdd73a114b10e7d067",
+      "original_span": {
+        "end": {
+          "column": 25,
+          "line": 118
+        },
+        "start": {
+          "column": 9,
+          "line": 118
+        }
+      },
+      "detected": true
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "bml-domain",
+        "--test",
+        "bounded_transformer_contracts",
+        "--locked",
+        "--",
+        "--exact",
+        "rms_bound_getters_reconstruct_the_same_admitted_domain"
+      ],
+      "exit_code": 101,
+      "log": "target/quality/survivor-replay-rms_input_bound_zero.log",
+      "log_sha256": "b01c1362b8c282751a49b338d866314c20b62ad5fd9801383dea11a47656c73d",
+      "test_failed": true,
+      "compile_error": false,
+      "label": "rms_input_bound_zero",
+      "candidate": "crates/domain/src/transformer/bounded.rs:118:9: replace BoundedRmsConfig::input_bound -> f64 with 0.0",
+      "original_source_sha256": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+      "mutated_source_sha256": "90a22faf53b763bd1170b20fd0ab50bd6fcc2d2fc41578794f71dfd1ab58e5de",
+      "original_diff_sha256": "cb15dba3aeffe13bc11b822b08a87b1b55367aa0822ab5acd063220c88835db4",
+      "original_span": {
+        "end": {
+          "column": 25,
+          "line": 118
+        },
+        "start": {
+          "column": 9,
+          "line": 118
+        }
+      },
+      "detected": true
+    }
+  ],
+  "observed_at_utc": "2026-11-05T05:32:10.326058+00:00",
+  "status": "passed_focused_replays",
+  "source_override": {
+    "file": "crates/domain/src/transformer/bounded.rs",
+    "replay_file_revision": "9a6bc9680d5915576ca92528f60956efe9796cef",
+    "replay_file_sha256": "328a439c25cf59fda16e0f720267baa053bf070ba9f833b896ce8ca5f560d80b",
+    "current_base_file_sha256": "6d57cd1c4d00e9e275328667ad01c9b0624f74dee738cc24231dfb42a16c0727",
+    "reason": "Current base removed a redundant constant-capacity guard later in the same file. Getter implementation and configuration are unchanged; use the exact historical file for original candidate spans, then restore current source.",
+    "unchanged_configuration_prefix_sha256": "f364a7e8047f97e8bd911530897244725da5d9c65af80a9643ddc04752198604"
+  },
+  "initial_attempt": {
+    "status": "stopped_before_getter_replays_by_source_hash_guard",
+    "log": "target/quality/initial-wave-eight-bounded-replays-runner.log",
+    "log_sha256": "d653eef66fa1de1d612a6db31ee0a0b96ec03abc666a4b665f2ea3d997b0d903"
+  },
+  "current_source_restored_after_replays": true,
+  "patched_test_hashes": {
+    "crates/domain/tests/bounded_transformer_contracts.rs": "e00c7a73b1495f103f17d4cf4bf06f81f6bcd000263b77b8b9a9836edf8ab943",
+    "crates/domain/tests/bounded_operation_contracts.rs": "59574ec51871ab06cb6287d34c775392f112830139ad9e2a4401b16feb42fbe7",
+    "crates/compiler/tests/full_bounded_contracts.rs": "9e38e429185d2169b134aa5d8bce7c6e7eaaa65413c4a36056276845aa037b26"
+  }
+}

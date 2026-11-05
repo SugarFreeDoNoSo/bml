@@ -13,6 +13,7 @@ use bml_runtime::{
     graph::{GraphError, GraphLimits, ValidatedGraph},
     symbolic_causal::{SymbolicCausalModel, SymbolicLimits},
 };
+use sha2::{Digest, Sha256};
 use std::{
     path::PathBuf,
     sync::atomic::{AtomicUsize, Ordering},
@@ -520,6 +521,82 @@ fn complete_bounded_role_bounds_and_explicit_softmax_shift_are_enforced() {
     assert!(profile
         .validate_values(Operation::Softmax, 4, 0.5, &scores, &[])
         .is_err());
+}
+
+#[test]
+fn bounded_v4_accepts_the_independently_canonical_residual_prefix() {
+    const CANONICAL: [f64; 3] = [64.0, 2.0, 6.0];
+    let source = symbolic_fixture::fixture(0.25);
+    let profile = BoundedProfile {
+        residual: 3.0,
+        ..BoundedProfile::default()
+    };
+    let directory = artifact(&source, profile);
+    let mut manifest = directory.manifest();
+    assert_eq!(manifest.version, 4);
+    assert_eq!(manifest.bounded_profile, Some(profile));
+    let index = manifest
+        .kernels
+        .iter()
+        .position(|kernel| kernel.operation == Operation::Add && kernel.width == 1)
+        .unwrap();
+    assert_eq!(manifest.kernels[index].layout, OutputLayout::Scalars);
+    assert_eq!(manifest.kernels[index].programs.len(), 1);
+
+    // First admit the writer's complete artifact. Then supply an independently
+    // canonical prefix, so sharing a drifted formula between writer and loader
+    // cannot turn this compatibility check into a self-comparison.
+    let mut residual = {
+        let loaded = load_directory(&directory.0, None).unwrap();
+        loaded
+            .kernels
+            .into_iter()
+            .find(|kernel| kernel.operation == Operation::Add && kernel.width == 1)
+            .unwrap()
+    };
+    assert_eq!(residual.signature.external, 0);
+    residual.signature.fixed = CANONICAL.to_vec();
+    for (inputs, expected) in [
+        ([-3.0, 3.0], 0.0),
+        ([3.0, -3.0], 0.0),
+        ([3.0, 3.0], 6.0),
+        ([-3.0, -3.0], -6.0),
+    ] {
+        close(&execute(&residual, &inputs, &[]), &[expected], 2e-6);
+    }
+    // Persist the same validated program with an empty owned pool. Its
+    // descriptor binds the canonical values and records the exact program hash.
+    let program = stored(&residual).serialize();
+    let path = directory.0.join(format!("kernel_{index}_0.bmlgraph"));
+    manifest.kernels[index].fixed = CANONICAL.to_vec();
+    manifest.kernels[index].programs[0] = format!("{:x}", Sha256::digest(&program));
+    std::fs::write(&path, program).unwrap();
+    directory.save(&manifest);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(std::fs::read(&path).unwrap())),
+        manifest.kernels[index].programs[0],
+    );
+    let mut model = SymbolicCausalModel::open_artifact(
+        &directory.0,
+        None,
+        SymbolicLimits {
+            max_nodes: 0,
+            ..SymbolicLimits::default()
+        },
+    )
+    .unwrap();
+    assert_eq!(model.profile(), BOUNDED_PROFILE);
+    let mut cache = HashConsedKV::new(1, 1, 2, 3);
+    let logits = model.forward_cached(&[69, 70], &mut cache).unwrap();
+    close(&logits, &symbolic_oracle::logits(&[69, 70], true), 2e-7);
+    assert_eq!(cache.current_pos(), 2);
+    assert!(model.executed_operations().contains(&"residual_add"));
+    drop(model);
+    // A genuinely noncanonical prefix remains invalid with the same valid
+    // program digest; rejection is about profile identity, not file damage.
+    manifest.kernels[index].fixed[2] = 7.0;
+    directory.save(&manifest);
+    assert!(load_directory(&directory.0, None).is_err());
 }
 
 #[test]

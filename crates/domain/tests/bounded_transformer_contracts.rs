@@ -71,6 +71,40 @@ fn check_case(config: &BoundedRmsConfig, input: &[f64], weights: &[f64], toleran
 }
 
 #[test]
+fn rms_bound_getters_reconstruct_the_same_admitted_domain() {
+    let config = BoundedRmsConfig::new(3, 0.5, 8.0, 0.5).unwrap();
+    let input = [8.0, -4.0, 0.0];
+    let weights = [0.5, -0.25, 0.125];
+    config.validate_values(&input, &weights).unwrap();
+    // A consumer can persist the public declarations and reconstruct a
+    // configuration admitting the same signed, nonuniform data.
+    let restored = BoundedRmsConfig::new(
+        config.width(),
+        config.epsilon(),
+        config.input_bound(),
+        config.weight_bound(),
+    )
+    .unwrap();
+    restored.validate_values(&input, &weights).unwrap();
+    assert_eq!(restored.fixed_literals(), config.fixed_literals());
+    check_case(&config, &input, &weights, 2e-6);
+    check_case(&restored, &input, &weights, 2e-6);
+
+    let bound = config.input_bound();
+    config
+        .validate_values(&[bound, -bound, 0.0], &weights)
+        .unwrap();
+    assert_eq!(
+        config.validate_values(&[bound.next_up(), 0.0, 0.0], &weights),
+        Err(BoundedBuildError::Input(0))
+    );
+    assert_eq!(
+        config.validate_values(&[-bound.next_up(), 0.0, 0.0], &weights),
+        Err(BoundedBuildError::Input(0))
+    );
+}
+
+#[test]
 fn bounded_rms_executes_weight_four_that_overflows_the_legacy_expansion() {
     let config = BoundedRmsConfig::new(1, 1e-5, 16.0, 16.0).unwrap();
     check_case(&config, &[1.0], &[4.0], 1e-8);
