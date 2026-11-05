@@ -1,0 +1,287 @@
+{
+  "format_version": 1,
+  "captured_at": "2026-11-05T12:39:17.454764+00:00",
+  "base_revision": "9ff2acd33f9a7fa502254766159caf791cc53d7b",
+  "change": "Ordinary CI test/build budgets 30/180 -> 360/600 seconds, matching the complete campaign; workspace scope, jobs2, locked baseline and strict quality gate unchanged.",
+  "tested_source_sha256": {
+    "tools/ci_mutations.py": "8a1f7062fe8138f69fd51c4e4dd98f7a69f906587c103e77590427f4f8058d1d",
+    "tools/test_ci_mutations.py": "44cb013260c8af19b56fc9dcabe676b3babe033ff45f6bba495434315d8703a2"
+  },
+  "patch_sha256": "2e240b7f47a5e7ed5344fb8368d3a9c9d06a95e1b5c37f2675149cccc6440814",
+  "python_verification": {
+    "command": [
+      "python3",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tools",
+      "-p",
+      "test_*.py"
+    ],
+    "exit_code": 0,
+    "tests": 236,
+    "elapsed_seconds": 12.003,
+    "log_sha256": "fdb79fc487a67b530051fbd005c8105ee0e1c64f10e56c4dba2e07f54ebfba5a",
+    "scope": "Tooling unit/integration tests; printed mutation counts inside fixtures are not campaign outcomes."
+  },
+  "frozen_ci": {
+    "run_id": 42026331570,
+    "source_revision": "9ff2acd33f9a7fa502254766159caf791cc53d7b",
+    "conclusion": "failure",
+    "contracts": "success",
+    "coverage": {
+      "lines_percent": 90.48873897614278,
+      "functions_percent": 81.67144906743185,
+      "floors_lines_functions": [
+        52,
+        60
+      ]
+    },
+    "changed_mutation": {
+      "selected": 9,
+      "caught": 3,
+      "timeout": 6,
+      "all_builds_succeeded": true,
+      "baseline_scope": "bml-runtime only, 22.499621859s Test",
+      "negative_scope": "whole workspace, original Test cap30 seconds",
+      "raw_outcomes_sha256": "208644e7822ebd426f9ac3a94749a9abbe0881611f8a90064872e74285ed9f30"
+    },
+    "original_results_reclassified": false
+  },
+  "independent_review": {
+    "path": "review/review.json",
+    "sha256": "93e79357de7e63298b4e526af44fd2de4b5a4f2ed9aac153b65efe80332e5b52",
+    "conclusion": "Scope/budget mismatch confirmed; longer budget is reasonable but real replays of all nine are required. No guarantee that every timeout resolves."
+  },
+  "raw_archive": {
+    "path": "ordinary-ci-workspace-budget-repair.tar.gz",
+    "sha256": "34c89916c6d9df9abbb6110dfda83516c9243a8c8f83680ab91b0fd291a7cafa",
+    "bytes": 3533870,
+    "members": {
+      "frozen-ci/artifacts-42026331570-20261105T122658Z.json": {
+        "sha256": "5226cced347b2065de68c0ee2e7ff9c305d91e0e776d594f4e6b45aaab10587b",
+        "bytes": 1736
+      },
+      "frozen-ci/artifacts-42026331570-20261105T122750Z.json": {
+        "sha256": "5226cced347b2065de68c0ee2e7ff9c305d91e0e776d594f4e6b45aaab10587b",
+        "bytes": 1736
+      },
+      "frozen-ci/artifacts-42026331570-20261105T122837Z.json": {
+        "sha256": "817f395e96689b94106620ed73a82f541bb5f5a4a83ade2d0316072180ed1be9",
+        "bytes": 2576
+      },
+      "frozen-ci/artifacts/13413343577-coverage/artifact-api.json": {
+        "sha256": "327b59e7ae7a67a62a71d86b3b4a7a05efc50a52b29d5965da3ffc17da870e81",
+        "bytes": 760
+      },
+      "frozen-ci/artifacts/13413343577-coverage/artifact.zip": {
+        "sha256": "91a09d030cced6d2d6380e1e451d57d5ac04b03e5b95be6a610551e5cdd7c7ff",
+        "bytes": 1565599
+      },
+      "frozen-ci/artifacts/13413343577-coverage/extracted-report-index.json": {
+        "sha256": "d693b906d559030418ffe8e3315b76aea02d7a94eb14f600b0f0898dd0d4a338",
+        "bytes": 369
+      },
+      "frozen-ci/artifacts/13413343577-coverage/frozen-coverage-baseline.json": {
+        "sha256": "5ac019744a9c8a075c9c448ff1c4e4a7c1c1de6facdc0810c3bbcdb36a34dbd5",
+        "bytes": 316
+      },
+      "frozen-ci/artifacts/13413343577-coverage/reports/coverage-summary.json": {
+        "sha256": "c30e9c7f98ccd1cee817755a12f07137986a2c0dc79c72cb0a4433a0f90b736b",
+        "bytes": 67
+      },
+      "frozen-ci/artifacts/13413343577-coverage/reports/coverage.json": {
+        "sha256": "f713b37b4078c7e1df9f3334ac0b7ee8c52212a4e5d90411b6060a3167b9892b",
+        "bytes": 9284378
+      },
+      "frozen-ci/artifacts/13413343577-coverage/verified-artifact.json": {
+        "sha256": "760250a7f95731078eb81023be4c9122aa58c694c2ad9557ef28e19fbcab5a61",
+        "bytes": 1013
+      },
+      "frozen-ci/artifacts/13413343577-coverage/zip-members.json": {
+        "sha256": "63de07ead3f635cb099a918a7af4d442893083748b8b69f16db8bb3bf79284b2",
+        "bytes": 49
+      },
+      "frozen-ci/artifacts/13413459069-contracts-and-clippy/artifact-api.json": {
+        "sha256": "f5f8ea79296720d79ce5a1a6274e035f5c0a3ce297c8e8dd8b715a9ba231909e",
+        "bytes": 770
+      },
+      "frozen-ci/artifacts/13413459069-contracts-and-clippy/artifact.zip": {
+        "sha256": "01628966b520593d6d2fb48f046e059af70c3bed12e5983c08726a4c12846f66",
+        "bytes": 45910
+      },
+      "frozen-ci/artifacts/13413459069-contracts-and-clippy/extracted-report-index.json": {
+        "sha256": "70ec944ee5006e366e63e67b2008ef2bdbdcb65a97a2a674a86b785a70569a50",
+        "bytes": 206
+      },
+      "frozen-ci/artifacts/13413459069-contracts-and-clippy/reports/mutation-summary.json": {
+        "sha256": "06aa2fd2bb44d48e7c1ba570b646fc460ec2f7c58781598a52cf7571ed705e8a",
+        "bytes": 80
+      },
+      "frozen-ci/artifacts/13413459069-contracts-and-clippy/verified-artifact.json": {
+        "sha256": "d10d6a8128bcdf48dff0825a36372d07e23e21e8fd313b755bc7195912d68f98",
+        "bytes": 554
+      },
+      "frozen-ci/artifacts/13413459069-contracts-and-clippy/zip-members.json": {
+        "sha256": "52efb6c9eba31587b933ff33454d67cff40cf6d90d2b7c5b25ada75b29bf1e1f",
+        "bytes": 96
+      },
+      "frozen-ci/artifacts/13413683825-mutation/artifact-api.json": {
+        "sha256": "1ae4089dfe5340be1871847db93fcce6fdbda434ff8b7359db6065138a9a53d5",
+        "bytes": 759
+      },
+      "frozen-ci/artifacts/13413683825-mutation/artifact.zip": {
+        "sha256": "2a6f6b6299f6e597f133012fedb7d948ca10e426099c1adb7df2ace2425eaa5b",
+        "bytes": 259167
+      },
+      "frozen-ci/artifacts/13413683825-mutation/extracted-report-index.json": {
+        "sha256": "99c0ecb95d4f9a73aeb0b877da738e4b2f0c10c7857fa7f9b54c5893817a2b34",
+        "bytes": 1287
+      },
+      "frozen-ci/artifacts/13413683825-mutation/reports/mutants.out/mutants.json": {
+        "sha256": "b7579608b0a94fdd5788fb84deb9aa83024a144588c9b75e838f5b0e7c5b4d51",
+        "bytes": 14226
+      },
+      "frozen-ci/artifacts/13413683825-mutation/reports/mutants.out/outcomes.json": {
+        "sha256": "208644e7822ebd426f9ac3a94749a9abbe0881611f8a90064872e74285ed9f30",
+        "bytes": 17608
+      },
+      "frozen-ci/artifacts/13413683825-mutation/reports/target/quality/ci-mutation-candidates.json": {
+        "sha256": "23ac21d34336dac43ba4741f2bab9da75aca50ca2ebafd47bfd7f64ebdd4e7d3",
+        "bytes": 14227
+      },
+      "frozen-ci/artifacts/13413683825-mutation/reports/target/quality/ci-mutation-selection.json": {
+        "sha256": "9d826c85258a8792c8bad0fdfa463f414acbfc08716bb8e06b8772be552b5c53",
+        "bytes": 786
+      },
+      "frozen-ci/artifacts/13413683825-mutation/reports/target/quality/mutation-summary.json": {
+        "sha256": "29b95717315793aa70b56b93261be781f1ff7784ecdfdd0499d04bf80ba92591",
+        "bytes": 40
+      },
+      "frozen-ci/artifacts/13413683825-mutation/verified-artifact.json": {
+        "sha256": "59091f8547487a238c6f0b28043960507fba083e69da984e4d6a15afcc7f5399",
+        "bytes": 3593
+      },
+      "frozen-ci/artifacts/13413683825-mutation/zip-members.json": {
+        "sha256": "976c636e02ce5120546243f6543d91027f194630120f4c75ec61ddf295b8b292",
+        "bytes": 1916
+      },
+      "frozen-ci/changed-mutation-phases.json": {
+        "sha256": "2cbf8ae3cc3de91eb2ba99ce7328dc7e49ae68b71156f0fc7dc6c9ed53176809",
+        "bytes": 4131
+      },
+      "frozen-ci/checkpoint-20261105T122242Z.json": {
+        "sha256": "7042beed8d691e89efe861165fd017409b5d686f4cc7e3337837d6f3ada8f579",
+        "bytes": 1105
+      },
+      "frozen-ci/ci-verification.json": {
+        "sha256": "b5bce723d85344f1d51acadc3aeb2efbe415579a868e7cc551e0e5d1857f54d6",
+        "bytes": 8737
+      },
+      "frozen-ci/delivery-index.json": {
+        "sha256": "7992975f979803a8606ebdbd1d0173786e07dc65442a2b0c48b81dd1bfc4c68e",
+        "bytes": 9541
+      },
+      "frozen-ci/global-runs-in_progress-20261105T122837Z.json": {
+        "sha256": "763f11efb3fd0695809422708bf5765dfad5d8438bfb9a7bad31f23ff74d3285",
+        "bytes": 46
+      },
+      "frozen-ci/global-runs-queued-20261105T122837Z.json": {
+        "sha256": "763f11efb3fd0695809422708bf5765dfad5d8438bfb9a7bad31f23ff74d3285",
+        "bytes": 46
+      },
+      "frozen-ci/head-runs-20261105T122242Z.json": {
+        "sha256": "d1b67670f432662da652d1f469cf99b35951db3e05020e2fbc7f33823032348f",
+        "bytes": 29078
+      },
+      "frozen-ci/job-127241712425.log": {
+        "sha256": "044d6eaeb66d24229e7e421c4cfffd3972fbbc40e77731896f898e5eeea26098",
+        "bytes": 27055
+      },
+      "frozen-ci/job-127241712830.log": {
+        "sha256": "e8b79669f03a89ac13759696f840fe3fd87a6c6a0c52822a267831f79d845fed",
+        "bytes": 219892
+      },
+      "frozen-ci/job-127241712897.log": {
+        "sha256": "e99991ef9bd43cdc00d3ba1aa45edcb9d1fc7c63403d5cd16eabb96a0b2783f6",
+        "bytes": 237425
+      },
+      "frozen-ci/jobs-42026331570-20261105T122242Z.json": {
+        "sha256": "d24e0bd0b14bd24d3b22d2fb0c5397e728b84fd9f296f77d37a8a68bb4e76f7c",
+        "bytes": 8458
+      },
+      "frozen-ci/jobs-42026331570-20261105T122658Z.json": {
+        "sha256": "836da6e4b04a217023ee226bb7087f209bea46b01bbb34817f11ae3b2c5b14bb",
+        "bytes": 9202
+      },
+      "frozen-ci/jobs-42026331570-20261105T122750Z.json": {
+        "sha256": "836da6e4b04a217023ee226bb7087f209bea46b01bbb34817f11ae3b2c5b14bb",
+        "bytes": 9202
+      },
+      "frozen-ci/jobs-42026331570-20261105T122837Z.json": {
+        "sha256": "b0889b4243a821b9dbe4955544a7d8d3f93b8e8f52b3a7ba8cf34ce79cc4592c",
+        "bytes": 9574
+      },
+      "frozen-ci/local-gate-source-binding.json": {
+        "sha256": "a0a30cad8f772cb9b89a99c6f9dc57e80ba309e80a020cf8c568e65156c84f47",
+        "bytes": 1771
+      },
+      "frozen-ci/run-42026331570-20261105T122242Z.json": {
+        "sha256": "6307c0be0e28004bd8f9bda047515f7cbdaff3a720df06680dc759d3f6cdfb7d",
+        "bytes": 13615
+      },
+      "frozen-ci/run-42026331570-20261105T122658Z.json": {
+        "sha256": "6307c0be0e28004bd8f9bda047515f7cbdaff3a720df06680dc759d3f6cdfb7d",
+        "bytes": 13615
+      },
+      "frozen-ci/run-42026331570-20261105T122750Z.json": {
+        "sha256": "6307c0be0e28004bd8f9bda047515f7cbdaff3a720df06680dc759d3f6cdfb7d",
+        "bytes": 13615
+      },
+      "frozen-ci/run-42026331570-20261105T122837Z.json": {
+        "sha256": "c3730c1c5c1be2b25c1a6b2603d4d8a89f837b50def7dc1f0e6e38fbf7034e4f",
+        "bytes": 13618
+      },
+      "repair/bounded-evidence.json": {
+        "sha256": "670697959f3c33017e42995be9a9c5df095cda774b3de17fd292897111f42caa",
+        "bytes": 10609
+      },
+      "repair/diff-check.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "repair/focused-tests.log": {
+        "sha256": "cdba5ddcb8921fabb914b250b8eb24e8066c855dfdfca0ed84be19b6784531d1",
+        "bytes": 2890
+      },
+      "repair/handoff.json": {
+        "sha256": "b7661f9ec9c5379b0f0dbf4b3636f4230685846bd77e9bfe0c2d8079abd55dde",
+        "bytes": 3827
+      },
+      "repair/ordinary-workspace-timeout.patch": {
+        "sha256": "2e240b7f47a5e7ed5344fb8368d3a9c9d06a95e1b5c37f2675149cccc6440814",
+        "bytes": 3836
+      },
+      "repair/root-python-tests.log": {
+        "sha256": "fdb79fc487a67b530051fbd005c8105ee0e1c64f10e56c4dba2e07f54ebfba5a",
+        "bytes": 449
+      },
+      "review/review.json": {
+        "sha256": "93e79357de7e63298b4e526af44fd2de4b5a4f2ed9aac153b65efe80332e5b52",
+        "bytes": 32986
+      },
+      "review/review.md": {
+        "sha256": "5b778d208e44dc387af2c8f0f020dab98a1f475b6c7f94c5daa9694c3e70579d",
+        "bytes": 2852
+      }
+    }
+  },
+  "pending": [
+    "Actual nine-candidate replay with 360/600; original six Timeout stay unchanged.",
+    "Exact committed revision CI; Python-only push may yield genuine N/A mutation scope, which cannot substitute the nine replays.",
+    "New complete frozen mutation campaign and strict zero Missed/Timeout gate."
+  ],
+  "scope": "Budget repair preparation only. No complete campaign pass, no inference parity claim, no source revision retagging."
+}

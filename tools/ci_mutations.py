@@ -94,9 +94,11 @@ def run_scope(root, base, full=False):
     else:
         # Preserve a listing even if cargo is interrupted or returns an error.
         write_new(selection_file, selection)
+        # Match the complete campaign's budgets: mutants test the whole
+        # workspace even when their baseline selects fewer packages.
         command = ["cargo", "mutants", "--workspace", "--cargo-arg=--locked",
-                   "--test-workspace", "true", "--jobs", "2", "--timeout", "30",
-                   "--build-timeout", "180", *scope]
+                   "--test-workspace", "true", "--jobs", "2", "--timeout", "360",
+                   "--build-timeout", "600", *scope]
         result = subprocess.run(command, cwd=root)
         write_new(reports / "ci-mutation-execution.json",
                   {"command": command, "exit_code": result.returncode})

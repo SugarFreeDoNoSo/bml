@@ -128,8 +128,16 @@ class OrdinaryMutationScope(unittest.TestCase):
         self.assertEqual(len(cargo), 2)
         self.assertTrue(all(c[-2:] == ["--in-diff", str(self.reports / "changes.diff")]
                             for c in cargo))
-        self.assertIn("--test-workspace", cargo[1])
-        self.assertIn("--cargo-arg=--locked", cargo[1])
+        command = cargo[1]
+        self.assertEqual(command[command.index("--test-workspace") + 1], "true")
+        self.assertEqual(command[command.index("--jobs") + 1], "2")
+        self.assertEqual(command[command.index("--timeout") + 1], "360")
+        self.assertEqual(command[command.index("--build-timeout") + 1], "600")
+        self.assertIn("--workspace", command)
+        self.assertIn("--cargo-arg=--locked", command)
+        execution = json.loads((self.reports / "ci-mutation-execution.json").read_text())
+        self.assertEqual(execution, {"command": command, "exit_code": 0})
+        self.assertNotIn("--timeout", cargo[0], "listing must not become an execution")
 
     def test_listing_error_cannot_become_na(self):
         self.candidates = []
@@ -191,8 +199,20 @@ class OrdinaryMutationScope(unittest.TestCase):
                     self.reports = self.root / "target/quality"
                     self.statuses, self.baseline, self.completed = statuses, baseline, completed
                     self.exit_code = 3
-                    with self.assertRaises(SystemExit):
+                    with self.assertRaises(SystemExit) as failure:
                         self.execute()
+                    if statuses == ["Timeout"]:
+                        self.assertEqual(str(failure.exception),
+                                         "Mutation gate failed: inspect outcomes and logs")
+                        execution = json.loads((self.reports / "ci-mutation-execution.json").read_text())
+                        command = execution["command"]
+                        self.assertEqual(command[command.index("--timeout") + 1], "360")
+                        self.assertEqual(command[command.index("--build-timeout") + 1], "600")
+                        self.assertEqual(execution["exit_code"], 3)
+                        raw = json.loads((self.root / "mutants.out/outcomes.json").read_text())
+                        self.assertEqual(raw["outcomes"][1]["summary"], "Timeout")
+                        summary = json.loads((self.reports / "mutation-summary.json").read_text())
+                        self.assertEqual(summary, {"Timeout": 1})
 
     def test_nonempty_selection_without_outcomes_never_becomes_na(self):
         self.omit_outcomes = True
