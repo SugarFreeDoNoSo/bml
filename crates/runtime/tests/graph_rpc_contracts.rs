@@ -339,3 +339,9 @@ fn completed_rpc_results_publish_all_fields_or_return_unchanged() {
     assert_eq!(enough.get(2), Some(42.0));
     assert_eq!(enough.append(1.0), Err(1.0));
 }
+
+#[test]
+fn append_full_display_describes_capacity_exhaustion() {
+    let error = bml_runtime::append_only::AppendFull;
+    assert_eq!(error.to_string(), "append-only result capacity exhausted");
+}

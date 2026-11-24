@@ -181,3 +181,17 @@ fn symbolic_loader_accumulates_file_bytes_and_accepts_the_exact_total_budget() {
         .expect("64 MiB plus one byte must be rejected");
     assert_eq!(error, "artifact file exceeds its byte budget");
 }
+
+#[test]
+fn symbolic_manifest_above_one_mib_is_admitted_within_budget() {
+    let source = token_fixture::fixture_with_output_norm();
+    let output = Directory(source.0.with_extension("large-manifest"));
+    symbolic_artifact::compile_directory(&source.0, &output.0, 1, KernelLimits::default()).unwrap();
+    let manifest_path = output.0.join(symbolic_artifact::MANIFEST);
+    let mut padded = std::fs::read(&manifest_path).unwrap();
+    // Exceed 16 + 1024 * 1024 (1,048,592 bytes) while staying well inside the 16 MiB budget.
+    padded.resize(1_100_000, b' ');
+    std::fs::write(&manifest_path, &padded).unwrap();
+    let loaded = symbolic_artifact::load_directory(&output.0, None).unwrap();
+    assert_eq!(loaded.kernels.len(), 2);
+}

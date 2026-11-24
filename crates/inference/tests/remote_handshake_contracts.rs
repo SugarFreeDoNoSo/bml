@@ -279,3 +279,31 @@ fn opening_requires_a_nonempty_ordered_range_and_positive_hidden_width() {
         server.join().unwrap();
     }
 }
+
+#[test]
+fn client_setup_rejects_frame_budget_above_u32_max() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = std::thread::spawn(move || {
+        let _ = listener.accept();
+    });
+    if usize::BITS > 32 {
+        let err = LayerClient::connect(
+            address,
+            2,
+            [7; 32],
+            RemoteLimits {
+                frame_bytes: (u32::MAX as usize) + 1,
+                timeout: Duration::from_secs(3),
+                ..Default::default()
+            },
+        )
+        .err()
+        .unwrap();
+        assert!(
+            err.to_string().contains("invalid transport limits"),
+            "{err}"
+        );
+    }
+    server.join().unwrap();
+}

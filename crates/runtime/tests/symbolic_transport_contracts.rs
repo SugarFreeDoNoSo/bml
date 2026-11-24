@@ -729,3 +729,55 @@ fn source_free_sessions_keep_verified_bytes_and_reject_replaced_shards() {
     established.close().unwrap();
     task.join().unwrap();
 }
+
+#[test]
+fn authenticated_server_rejects_each_invalid_transport_limit_before_io() {
+    let absent =
+        std::env::temp_dir().join(format!("bml-auth-limits-absent-{}", std::process::id()));
+    let identity = "0".repeat(64);
+    let valid = limits();
+    for invalid in [
+        SymbolicTransportLimits {
+            frame_bytes: 80,
+            ..valid
+        },
+        SymbolicTransportLimits {
+            context: 0,
+            ..valid
+        },
+        SymbolicTransportLimits {
+            timeout: std::time::Duration::ZERO,
+            ..valid
+        },
+    ] {
+        let err = SymbolicLayerServer::new_authenticated(
+            &absent,
+            &identity,
+            0..1,
+            invalid,
+            &absent,
+            &identity,
+            1024,
+        )
+        .err()
+        .unwrap();
+        assert_eq!(err, "invalid symbolic transport limits");
+    }
+}
+
+#[test]
+fn client_connect_rejects_context_strictly_above_limit_before_network() {
+    let identity = "0".repeat(64);
+    let address: std::net::SocketAddr = "127.0.0.1:1".parse().unwrap();
+    let mut cfg = limits();
+    cfg.context = 4;
+    let err = SymbolicLayerClient::connect(address, &identity, 0..1, 6, cfg)
+        .err()
+        .unwrap();
+    assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
+    assert!(
+        err.to_string()
+            .contains("invalid symbolic client admission"),
+        "{err}"
+    );
+}

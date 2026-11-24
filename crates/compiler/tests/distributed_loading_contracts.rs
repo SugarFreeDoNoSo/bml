@@ -333,3 +333,19 @@ fn distributed_tensor_count_is_inclusive_and_independent_of_available_bytes() {
         }
     }
 }
+
+#[test]
+fn distributed_opcode_count_exceeding_remaining_bytes_is_rejected_before_decoding() {
+    let directory = Directory::new();
+    serialize_distributed(&[fixture()], &directory.0).unwrap();
+    let mut bytes = std::fs::read(directory.shard()).unwrap();
+    // Pick a count strictly above the remaining payload bytes and well below
+    // MAX_DISTRIBUTED_OPS so the remaining-bytes check is exercised alone.
+    let declared_ops = (bytes.len() as u32) + 5;
+    bytes[20..24].copy_from_slice(&declared_ops.to_le_bytes());
+    std::fs::write(directory.shard(), &bytes).unwrap();
+    assert_eq!(
+        load_distributed_fragment(&directory.shard()).err().unwrap(),
+        "distributed opcode count exceeds budget or available bytes"
+    );
+}

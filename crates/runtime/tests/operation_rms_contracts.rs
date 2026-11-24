@@ -224,3 +224,40 @@ fn independent_rms_fragments_use_distinct_owned_epsilon_on_parallel_workers() {
         }
     }
 }
+
+#[test]
+fn default_rms_wrapper_uses_quotient_weight_bound_above_small_widths() {
+    // For n_elems = 1024, k = ceil(sqrt(1024)) + 1 = 33, so 479.0 / 33.0 = 14.515...
+    // stays within the normalized weight product bound whereas 479.0 % 33.0 = 17.0
+    // would clamp to 16.0 and fail compilation.
+    let n = 1024u32;
+    let k = f64::from(n).sqrt().ceil() + 1.0;
+    let default_op = compile_rmsnorm_fragment("norm", 0, 2, n, n);
+    let expected = compile_rmsnorm_fragment_checked(
+        "norm",
+        0,
+        2,
+        n,
+        n,
+        1e-5,
+        RmsBounds {
+            input: 16.0,
+            weight: (479.0 / k).min(16.0),
+        },
+    )
+    .unwrap();
+    let clamped = compile_rmsnorm_fragment_checked(
+        "norm",
+        0,
+        2,
+        n,
+        n,
+        1e-5,
+        RmsBounds {
+            input: 16.0,
+            weight: 16.0,
+        },
+    );
+    assert!(clamped.is_err());
+    assert_eq!(default_op.const_pool.as_deref(), Some(expected.constants()));
+}

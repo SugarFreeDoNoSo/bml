@@ -307,3 +307,33 @@ fn serializer_rejects_inconsistent_fragment_count_before_writing() {
     assert!(serialize_to_dir(&result, &dir.0).is_err());
     assert!(!dir.0.join("header.bmlgraph").exists());
 }
+
+#[test]
+fn directory_loader_rejects_non_regular_entry_and_oversized_file_independently() {
+    let dir = Directory::new();
+    std::fs::create_dir(dir.0.join("header.bmlgraph")).unwrap();
+    let err = load_from_dir(&dir.0).err().unwrap();
+    assert!(
+        err.contains("graph file exceeds remaining byte budget or is not a regular file"),
+        "{err}"
+    );
+
+    let oversized = Directory::new();
+    let head = header(0, &[]);
+    oversized.put("header.bmlgraph", &head);
+    let err = load_from_dir_with_limits(
+        &oversized.0,
+        GraphLoadLimits {
+            max_total_bytes: head.len() - 1,
+            max_fragments: 0,
+            max_operations: 0,
+            max_constants: 0,
+        },
+    )
+    .err()
+    .unwrap();
+    assert!(
+        err.contains("graph file exceeds remaining byte budget or is not a regular file"),
+        "{err}"
+    );
+}

@@ -342,3 +342,32 @@ fn bounded_softmax_literals_and_graph_growth_are_independent_of_observed_values(
     assert_eq!(counts[2] - counts[1], counts[1] - counts[0]);
     assert_eq!(counts[3], counts[0] + 31 * (counts[1] - counts[0]));
 }
+
+#[test]
+fn softmax_preserves_canonical_fixed_literals_for_non_two_bound() {
+    let config = BoundedOpConfig::softmax(2, 3.0).unwrap();
+    let expected = vec![
+        64.0,
+        2.0,
+        6.0,
+        std::f64::consts::LOG2_E,
+        12.0,
+        1.0 / 6.0,
+        4.0,
+        0.5,
+        12.0,
+        24.0,
+    ];
+    assert_eq!(config.fixed_literals(), expected);
+    let (builder, _) = build(&config);
+    assert_eq!(builder.soa().const_pool, expected);
+    let e0 = (-6.0_f64).exp();
+    let denom = e0 + 1.0;
+    close(
+        &config,
+        &[-3.0, 3.0, 3.0],
+        &[],
+        &[e0 / denom, 1.0 / denom],
+        2e-6,
+    );
+}

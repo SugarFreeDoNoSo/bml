@@ -71,3 +71,33 @@ fn fragment_budget_must_fit_one_opcode_and_accepts_the_exact_boundary() {
         assert_eq!(fragment.byte_size(), size);
     }
 }
+
+#[test]
+fn program_budget_is_inclusive_at_exact_program_count() {
+    let accepted = compile_operation(
+        Operation::Add,
+        1,
+        0.5,
+        KernelLimits {
+            max_programs: 1,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    assert_eq!(accepted.graphs.len(), 1);
+    let rejected = compile_operation(
+        Operation::Add,
+        1,
+        0.5,
+        KernelLimits {
+            max_programs: 0,
+            ..Default::default()
+        },
+    )
+    .err()
+    .unwrap();
+    assert!(
+        rejected.contains("symbolic program budget exceeded"),
+        "{rejected}"
+    );
+}

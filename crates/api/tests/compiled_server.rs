@@ -237,3 +237,20 @@ async fn symbolic_http_and_sse_execute_saved_programs_with_compiled_context_limi
         }
     }
 }
+
+#[tokio::test]
+async fn server_cli_parses_layer_workers_before_reporting_missing_model() {
+    let output = tokio::time::timeout(
+        Duration::from_secs(10),
+        Command::new(env!("CARGO_BIN_EXE_bml-server"))
+            .args(["--layer-workers", "127.0.0.1:9999"])
+            .kill_on_drop(true)
+            .output(),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("--model <path> es obligatorio"), "{stderr}");
+}
