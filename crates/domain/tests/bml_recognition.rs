@@ -1,4 +1,4 @@
-use bml_domain::number::{Bml, ExactError, ExactSynthesisOptions};
+use bml_domain::number::{Bml, ExactError, ExactRational, ExactSynthesisOptions};
 
 #[test]
 fn recover_exact_proofs_from_serialized_trees() {
@@ -70,8 +70,6 @@ fn unsupported_domains_and_budgets_do_not_gain_certificates() {
 
 #[test]
 fn recognition_accepts_the_inclusive_tree_bit_limit() {
-    use bml_domain::number::ExactRational;
-
     for (code, target) in [(0, 1), (4, 2)] {
         let term = Bml::from_u64(code).unwrap();
         let options = ExactSynthesisOptions {
@@ -92,8 +90,64 @@ fn recognition_accepts_the_inclusive_tree_bit_limit() {
 }
 
 #[test]
+fn recognition_enforces_exact_recursion_depth_on_both_operands_and_repeated_variables() {
+    let options = ExactSynthesisOptions::default();
+    // exp(1) = 2 needs recursion depth 1 (root at depth 0 -> One at depth 1).
+    let two = Bml::from_u64(4).unwrap();
+    assert_eq!(
+        two.certify_exact(ExactSynthesisOptions {
+            max_recursion: 1,
+            ..options
+        })
+        .unwrap()
+        .target(),
+        &ExactRational::from_i64(2)
+    );
+    assert_eq!(
+        two.certify_exact(ExactSynthesisOptions {
+            max_recursion: 0,
+            ..options
+        }),
+        Err(ExactError::Limit)
+    );
+
+    // Near rule op(Zero, exp(2)) = 2^0 - 2 = -1: first operand (Zero) finishes at depth 1,
+    // while second operand (2 = exp(1)) recurses to depth 2.
+    let zero = Bml::from_u64(88).unwrap();
+    let near = zero.op(&two.exp2().unwrap()).unwrap();
+    assert_eq!(
+        near.certify_exact(ExactSynthesisOptions {
+            max_recursion: 2,
+            ..options
+        })
+        .unwrap()
+        .target(),
+        &ExactRational::from_i64(-1)
+    );
+    assert_eq!(
+        near.certify_exact(ExactSynthesisOptions {
+            max_recursion: 1,
+            ..options
+        }),
+        Err(ExactError::Limit)
+    );
+
+    // Negation template is op(log(op(x, exp(x))), exp(exp(x))).
+    // Mixing x = 1 and x = 2 violates the repeated-variable match guard and must
+    // fail with DomainNotJustified rather than falsely matching Neg -> InvalidProof.
+    let one = Bml::one();
+    let p_two = two.exp2().unwrap();
+    let q_mixed = one.op(&p_two).unwrap();
+    let log_q_mixed = one.op(&one.op(&q_mixed).unwrap().exp2().unwrap()).unwrap();
+    let mismatched_neg = log_q_mixed.op(&p_two.exp2().unwrap()).unwrap();
+    assert_eq!(
+        mismatched_neg.certify_exact(options),
+        Err(ExactError::DomainNotJustified)
+    );
+}
+
+#[test]
 fn raw_tree_operators_preserve_order_and_support_chaining() {
-    use bml_domain::number::ExactRational;
     let options = ExactSynthesisOptions::default();
     let a = Bml::from_decimal_str_exact("-2").unwrap().into_term();
     let b = Bml::from_decimal_str_exact("3").unwrap().into_term();

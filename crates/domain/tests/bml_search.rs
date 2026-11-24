@@ -85,6 +85,55 @@ fn strategies_are_auditable_and_selected_cost_is_minimum_among_attempts() {
 }
 
 #[test]
+fn search_strategies_certify_exact_decompositions_and_skip_power_of_two_offsets() {
+    let mut search = ExactSearcher::new(ExactSearchOptions::default());
+
+    // Exact catalogue match: only the matching entry (code 452 for 15) is attempted and certified.
+    let fifteen = search.search(&target(15));
+    let catalogue: Vec<_> = fifteen
+        .report
+        .candidates
+        .iter()
+        .filter(|c| c.strategy == ExactStrategy::Catalogue)
+        .collect();
+    assert_eq!(catalogue.len(), 1);
+    assert_eq!(catalogue[0].parameter, Some(452));
+    assert!(matches!(
+        catalogue[0].outcome,
+        CandidateOutcome::Certified(_)
+    ));
+
+    // Exact power of two (16): lower == n, so neither Sum nor Difference offset is attempted.
+    let sixteen = search.search(&target(16));
+    assert!(!sixteen
+        .report
+        .candidates
+        .iter()
+        .any(|c| matches!(c.strategy, ExactStrategy::Sum | ExactStrategy::Difference)));
+
+    // Composite non-power (12 = 8 + 4 = 16 - 4 = 2 * 6 = 3 * 4): every decomposition must certify.
+    let twelve = search.search(&target(12));
+    for (strategy, param) in [
+        (ExactStrategy::Sum, Some(8)),
+        (ExactStrategy::Difference, Some(16)),
+        (ExactStrategy::Factors, Some(2)),
+        (ExactStrategy::Factors, Some(3)),
+    ] {
+        let candidate = twelve
+            .report
+            .candidates
+            .iter()
+            .find(|c| c.strategy == strategy && c.parameter == param)
+            .unwrap_or_else(|| panic!("missing candidate ({strategy:?}, {param:?})"));
+        assert!(
+            matches!(candidate.outcome, CandidateOutcome::Certified(_)),
+            "expected certified candidate for ({strategy:?}, {param:?}), got {:?}",
+            candidate.outcome
+        );
+    }
+}
+
+#[test]
 fn budgets_limit_candidates_factorization_and_cache() {
     let base = ExactSearchOptions::default();
     let mut none = ExactSearcher::new(ExactSearchOptions {

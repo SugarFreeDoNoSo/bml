@@ -543,3 +543,110 @@ fn rational_long_carry_chains_and_input_budgets_are_enforced() {
         one
     );
 }
+
+#[test]
+fn synthesizer_enforces_exact_recursion_and_bit_limits_across_all_branches() {
+    let base = ExactSynthesisOptions::default();
+
+    // Exact bit-length guard inside Synthesizer::integer (bypassing decimal parser).
+    let four = ExactRational::from_i64(4);
+    let exact_bits = ExactSynthesisOptions {
+        rational: ExactInputLimits {
+            max_bits: 3,
+            ..base.rational
+        },
+        ..base
+    };
+    assert_eq!(
+        Bml::from_rational_exact(&four, exact_bits)
+            .unwrap()
+            .target(),
+        &four
+    );
+    assert_eq!(
+        Bml::from_rational_exact(
+            &four,
+            ExactSynthesisOptions {
+                rational: ExactInputLimits {
+                    max_bits: 2,
+                    ..base.rational
+                },
+                ..base
+            }
+        ),
+        Err(ExactError::Limit)
+    );
+
+    // Power-of-two branch (2 = 2^1): max depth 1 via Exp2 recursion.
+    assert_eq!(
+        Bml::from_decimal_str_exact_with_options(
+            "2",
+            ExactSynthesisOptions {
+                max_recursion: 1,
+                ..base
+            }
+        )
+        .unwrap()
+        .target(),
+        &ExactRational::from_i64(2)
+    );
+    assert_eq!(
+        Bml::from_decimal_str_exact_with_options(
+            "2",
+            ExactSynthesisOptions {
+                max_recursion: 0,
+                ..base
+            }
+        ),
+        Err(ExactError::Limit)
+    );
+
+    // Near-power exponent branch (3 = 2^2 - 1): exponent 2 reaches depth 2, remainder 1 reaches depth 1.
+    assert_eq!(
+        Bml::from_decimal_str_exact_with_options(
+            "3",
+            ExactSynthesisOptions {
+                max_recursion: 2,
+                ..base
+            }
+        )
+        .unwrap()
+        .target(),
+        &ExactRational::from_i64(3)
+    );
+    assert_eq!(
+        Bml::from_decimal_str_exact_with_options(
+            "3",
+            ExactSynthesisOptions {
+                max_recursion: 1,
+                ..base
+            }
+        ),
+        Err(ExactError::Limit)
+    );
+
+    // Near-power remainder branch (63509 = 2^16 - 2027): exponent 16 reaches depth 4,
+    // while remainder 2027 -> bits 11 -> rem 5 -> bits 3 -> bits 2 reaches depth 5.
+    assert_eq!(
+        Bml::from_decimal_str_exact_with_options(
+            "63509",
+            ExactSynthesisOptions {
+                max_recursion: 5,
+                ..base
+            }
+        )
+        .unwrap()
+        .target(),
+        &ExactRational::from_i64(63509)
+    );
+    assert_eq!(
+        Bml::from_decimal_str_exact_with_options(
+            "63509",
+            ExactSynthesisOptions {
+                max_recursion: 4,
+                ..base
+            }
+        ),
+        Err(ExactError::Limit)
+    );
+}

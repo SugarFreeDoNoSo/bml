@@ -1,9 +1,20 @@
-use bml_inference::remote::{LayerClient, RemoteLimits};
+#[path = "support/gguf_fixture.rs"]
+mod gguf_fixture;
+
+use bml_gguf::GgufReader;
+use bml_inference::{
+    model::Model,
+    remote::{LayerClient, RemoteLimits, RemotePipeline},
+};
 use serde_json::{json, Value};
 use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
-    sync::{Arc, Mutex},
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc, Mutex,
+    },
     thread,
     time::{Duration, Instant},
 };
@@ -306,4 +317,309 @@ fn client_setup_rejects_frame_budget_above_u32_max() {
         );
     }
     server.join().unwrap();
+}
+
+#[test]
+fn client_setup_enforces_zero_frame_zero_timeout_and_exact_u32_max_frame_budget() {
+    for (name, frame_bytes, timeout) in [
+        ("zero-frame", 0usize, Duration::from_secs(2)),
+        ("zero-timeout", 4096usize, Duration::ZERO),
+    ] {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            let mut byte = [0_u8; 1];
+            assert_eq!(
+                stream.read(&mut byte).unwrap(),
+                0,
+                "invalid transport limits must fail before sending: {name}"
+            );
+        });
+        let err = LayerClient::connect(
+            address,
+            2,
+            [7; 32],
+            RemoteLimits {
+                frame_bytes,
+                timeout,
+                ..Default::default()
+            },
+        )
+        .err()
+        .expect("invalid transport limits must be rejected");
+        assert!(
+            err.to_string().contains("invalid transport limits"),
+            "{name}: {err}"
+        );
+        server.join().unwrap();
+    }
+
+    // Exact u32::MAX frame_bytes is inclusive and must pass setup without
+    // allocating beyond the small actual handshake frame.
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        stream
+            .set_write_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        let opening = receive(&mut stream);
+        assert_eq!(opening["Open"]["context"], 2);
+        send(
+            &mut stream,
+            json!({"Ready": {"start": 0, "end": 1, "width": 4}}),
+        );
+        assert_eq!(receive(&mut stream), json!("Close"));
+        send(&mut stream, json!("Ack"));
+    });
+    let client = LayerClient::connect(
+        address,
+        2,
+        [7; 32],
+        RemoteLimits {
+            frame_bytes: u32::MAX as usize,
+            timeout: Duration::from_secs(2),
+            ..Default::default()
+        },
+    )
+    .expect("u32::MAX frame budget is inclusive");
+    client.close().unwrap();
+    server.join().unwrap();
+}
+
+#[test]
+fn receive_and_send_enforce_exact_frame_boundaries_and_reject_zero_length() {
+    let open_len = serde_json::to_vec(&json!({
+        "Open": {
+            "version": 2u32,
+            "context": 2usize,
+            "fingerprint": vec![7u8; 32],
+        }
+    }))
+    .unwrap()
+    .len();
+
+    // Send boundary: exact open_len succeeds; open_len - 1 and open_len - 2 fail before I/O.
+    for (name, frame_bytes, should_succeed) in [
+        ("send-exact", open_len, true),
+        ("send-one-short", open_len - 1, false),
+        ("send-two-short", open_len - 2, false),
+    ] {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            stream
+                .set_write_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            if should_succeed {
+                let opening = receive(&mut stream);
+                assert_eq!(opening["Open"]["context"], 2);
+                send(
+                    &mut stream,
+                    json!({"Ready": {"start": 0, "end": 1, "width": 4}}),
+                );
+                assert_eq!(receive(&mut stream), json!("Close"));
+                send(&mut stream, json!("Ack"));
+            } else {
+                let mut byte = [0_u8; 1];
+                assert_eq!(
+                    stream.read(&mut byte).unwrap(),
+                    0,
+                    "oversized outbound frame must not write to socket: {name}"
+                );
+            }
+        });
+        let result = LayerClient::connect(
+            address,
+            2,
+            [7; 32],
+            RemoteLimits {
+                frame_bytes,
+                timeout: Duration::from_secs(2),
+                ..Default::default()
+            },
+        );
+        if should_succeed {
+            result.expect(name).close().unwrap();
+        } else {
+            let err = result
+                .err()
+                .expect("outbound frame exceeding limit must fail");
+            assert!(
+                err.to_string().contains("frame size exceeds limit"),
+                "{name}: {err}"
+            );
+        }
+        server.join().unwrap();
+    }
+
+    // Receive boundary: zero-length prefix rejected; exact limit succeeds;
+    // limit + 1 and limit + 2 rejected.
+    let recv_limit = open_len + 64;
+    let base_ready =
+        serde_json::to_vec(&json!({"Ready": {"start": 0, "end": 1, "width": 4}})).unwrap();
+    assert!(base_ready.len() < recv_limit);
+    let padded_ready = |target_len: usize| -> Vec<u8> {
+        let mut bytes = base_ready.clone();
+        bytes.resize(target_len, b' ');
+        bytes
+    };
+
+    for (name, reply_bytes, should_succeed) in [
+        ("recv-zero", Vec::new(), false),
+        ("recv-exact", padded_ready(recv_limit), true),
+        ("recv-plus-one", padded_ready(recv_limit + 1), false),
+        ("recv-plus-two", padded_ready(recv_limit + 2), false),
+    ] {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            stream
+                .set_write_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            let opening = receive(&mut stream);
+            assert_eq!(opening["Open"]["context"], 2);
+            stream
+                .write_all(&(reply_bytes.len() as u32).to_le_bytes())
+                .unwrap();
+            if !reply_bytes.is_empty() {
+                let _ = stream.write_all(&reply_bytes);
+            }
+            if should_succeed {
+                assert_eq!(receive(&mut stream), json!("Close"));
+                send(&mut stream, json!("Ack"));
+            }
+        });
+        let result = LayerClient::connect(
+            address,
+            2,
+            [7; 32],
+            RemoteLimits {
+                frame_bytes: recv_limit,
+                timeout: Duration::from_secs(2),
+                ..Default::default()
+            },
+        );
+        if should_succeed {
+            result.expect(name).close().unwrap();
+        } else {
+            let err = result.err().expect("invalid inbound frame size must fail");
+            assert!(
+                err.to_string().contains("frame size exceeds limit"),
+                "{name}: {err}"
+            );
+        }
+        server.join().unwrap();
+    }
+}
+
+#[test]
+fn remote_pipeline_rejects_empty_addresses_zero_context_and_excess_layer_end() {
+    struct TempFile(PathBuf);
+    impl Drop for TempFile {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
+    static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
+    let path = std::env::temp_dir().join(format!(
+        "bml-remote-pipeline-contract-{}-{}.gguf",
+        std::process::id(),
+        NEXT_ID.fetch_add(1, Ordering::Relaxed)
+    ));
+    let _guard = TempFile(path.clone());
+    std::fs::write(&path, gguf_fixture::fixture()).unwrap();
+    let reader = GgufReader::open(&path).unwrap();
+    let model = Model::from_gguf(&reader).unwrap();
+    assert_eq!(model.config().block_count, 1);
+    assert_eq!(model.config().embedding_length, 32);
+
+    let limits = RemoteLimits {
+        frame_bytes: 4096,
+        timeout: Duration::from_secs(2),
+        ..Default::default()
+    };
+
+    // 1. Empty endpoint list alone (valid context) must fail locally.
+    let empty_err = RemotePipeline::connect(&model, &[], 4, limits)
+        .err()
+        .expect("empty remote endpoints must fail");
+    assert_eq!(
+        empty_err.to_string(),
+        "invalid remote pipeline endpoints/context"
+    );
+
+    // 2. Zero context alone (non-empty endpoint list) must fail locally before I/O.
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let done = Arc::new(AtomicBool::new(false));
+    let done_peer = Arc::clone(&done);
+    let peer = thread::spawn(move || {
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while !done_peer.load(Ordering::Acquire) {
+            match listener.accept() {
+                Ok(_) => panic!("zero context must not connect to peer"),
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    assert!(Instant::now() < deadline);
+                    thread::sleep(Duration::from_millis(5));
+                }
+                Err(error) => panic!("accept failed: {error}"),
+            }
+        }
+    });
+    let zero_ctx_err = RemotePipeline::connect(&model, &[address], 0, limits)
+        .err()
+        .expect("zero context must fail");
+    done.store(true, Ordering::Release);
+    peer.join().unwrap();
+    assert_eq!(
+        zero_ctx_err.to_string(),
+        "invalid remote pipeline endpoints/context"
+    );
+
+    // 3. Permissive peer advertising end > block_count (0..2 when block_count == 1)
+    // must be rejected even though start == 0 and width == embedding_length.
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let peer = thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        stream
+            .set_write_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        let opening = receive(&mut stream);
+        assert_eq!(opening["Open"]["context"], 4);
+        send(
+            &mut stream,
+            json!({"Ready": {"start": 0, "end": 2, "width": 32}}),
+        );
+        let mut byte = [0_u8; 1];
+        let _ = stream.read(&mut byte);
+    });
+    let excess_end_err = RemotePipeline::connect(&model, &[address], 4, limits)
+        .err()
+        .expect("layer range past block_count must fail");
+    assert_eq!(
+        excess_end_err.to_string(),
+        "remote layers must cover the model once in order"
+    );
+    peer.join().unwrap();
 }

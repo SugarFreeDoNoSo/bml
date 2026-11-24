@@ -264,3 +264,27 @@ fn decimal_syntax_and_digit_limit_have_stable_failure_precedence() {
         Err(ExactInputError::Limit)
     );
 }
+
+#[test]
+fn multiply_preflight_accepts_exact_minimum_product_bit_bound() {
+    // 2 * 2 = 4 has bit lengths 2 + 2 - 1 == 3 == max_bits.
+    let two = ExactRational::from_i64(2);
+    let exact = ExactInputLimits {
+        max_bits: 3,
+        ..ExactInputLimits::default()
+    };
+    assert_eq!(
+        two.checked_mul(&two, exact).unwrap(),
+        ExactRational::from_i64(4)
+    );
+    assert_eq!(
+        two.checked_mul(
+            &two,
+            ExactInputLimits {
+                max_bits: 2,
+                ..exact
+            }
+        ),
+        Err(ExactInputError::Limit)
+    );
+}

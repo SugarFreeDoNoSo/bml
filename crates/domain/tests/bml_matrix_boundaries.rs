@@ -1,5 +1,6 @@
 use bml_domain::number::{
-    Bml, BmlMatrix, ExactError, ExactSynthesisOptions, MatrixError, MatrixLimits, ReductionInit,
+    Bml, BmlMatrix, ExactError, ExactInputError, ExactInputLimits, ExactSynthesisOptions,
+    MatrixError, MatrixLimits, ReductionInit,
 };
 use std::error::Error;
 
@@ -186,12 +187,13 @@ fn matrix_diagnostics_preserve_typed_scalar_causes() {
 #[test]
 fn elementwise_work_budget_reports_exact_row_and_column_coordinates() {
     let one = Bml::one();
+    let zero = Bml::from_u64(88).unwrap();
     let base = MatrixLimits {
         max_elements: 6,
         ..MatrixLimits::default()
     };
     let left = BmlMatrix::new(2, 3, vec![one.clone(); 6], base).unwrap();
-    let right = BmlMatrix::new(2, 3, vec![one; 6], base).unwrap();
+    let right = BmlMatrix::new(2, 3, vec![one.clone(); 6], base).unwrap();
     let sum = left.add_with_limits(&right, base).unwrap();
     let cell_bits = sum.as_slice()[0].bit_len();
     assert!(cell_bits > 0);
@@ -201,17 +203,80 @@ fn elementwise_work_budget_reports_exact_row_and_column_coordinates() {
         ..base
     };
     assert!(left.add_with_limits(&right, exact).is_ok());
-    // Cells 0..4 consume 4 * cell_bits, so cell index 4 (row 1, column 1) exhausts work budget.
-    let tight = MatrixLimits {
-        max_work_bits: cell_bits * 4,
+    // Index 5 in a 2x3 matrix has distinct quotient (1), remainder (2), product (15), and sum (8).
+    let tight_work = MatrixLimits {
+        max_work_bits: cell_bits * 5,
         ..exact
     };
     assert_eq!(
-        left.add_with_limits(&right, tight),
+        left.add_with_limits(&right, tight_work),
         Err(MatrixError::Budget {
             row: 1,
-            column: 1,
+            column: 2,
             inner: None,
         })
+    );
+    let tight_output = MatrixLimits {
+        max_total_bits: cell_bits * 5,
+        ..exact
+    };
+    assert_eq!(
+        left.add_with_limits(&right, tight_output),
+        Err(MatrixError::Budget {
+            row: 1,
+            column: 2,
+            inner: None,
+        })
+    );
+    // Elementwise scalar failure at index 5: first five cells compute 0 + 1 = 1 (1 bit),
+    // last cell computes 1 + 1 = 2 (2 bits) exceeding rational.max_bits = 1.
+    let sparse_left = BmlMatrix::new(
+        2,
+        3,
+        vec![
+            zero.clone(),
+            zero.clone(),
+            zero.clone(),
+            zero.clone(),
+            zero,
+            one,
+        ],
+        base,
+    )
+    .unwrap();
+    let tight_scalar = MatrixLimits {
+        scalar: ExactSynthesisOptions {
+            rational: ExactInputLimits {
+                max_bits: 1,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        ..base
+    };
+    assert_eq!(
+        sparse_left.add_with_limits(&right, tight_scalar),
+        Err(MatrixError::Scalar {
+            row: 1,
+            column: 2,
+            inner: None,
+            source: ExactError::Rational(ExactInputError::Limit),
+        })
+    );
+}
+
+#[test]
+fn matmul_output_buffer_preflight_rejects_unallocatable_shape_before_work_budget() {
+    let huge_cols = usize::MAX / 2;
+    let limits = MatrixLimits {
+        max_elements: usize::MAX,
+        max_work_bits: 1,
+        ..MatrixLimits::default()
+    };
+    let left = BmlMatrix::new(1, 0, vec![], limits).unwrap();
+    let right = BmlMatrix::new(0, huge_cols, vec![], limits).unwrap();
+    assert_eq!(
+        left.matmul_with_limits(&right, limits),
+        Err(MatrixError::Limit)
     );
 }
