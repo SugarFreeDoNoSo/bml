@@ -168,3 +168,35 @@ fn generated_trees_roundtrip() {
         }
     }
 }
+
+#[test]
+fn stream_error_display_inclusive_budgets_and_full_padding_mask_are_enforced() {
+    for error in [
+        StreamError::Header,
+        StreamError::Length,
+        StreamError::Padding,
+        StreamError::Limit,
+        StreamError::WordWidth,
+    ] {
+        assert!(!error.to_string().trim().is_empty());
+    }
+    // Three trees occupying 5 total bits and maximum nesting depth 1.
+    let values = vec![Bml::one(), Bml::from_u64(4).unwrap(), Bml::one()];
+    let exact = StreamLimits {
+        max_terms: 3,
+        max_bits: 5,
+        max_depth: 1,
+    };
+    let encoded = Bml::encode_stream(&values, exact).unwrap();
+    assert_eq!(Bml::decode_stream(&encoded, exact).unwrap(), values);
+    // With 5 payload bits, all three low padding bits (0x01, 0x02, 0x04) must be rejected.
+    for pad_bit in [0x01u8, 0x02, 0x04] {
+        let mut bad = encoded.clone();
+        bad[24] |= pad_bit;
+        assert_eq!(
+            Bml::decode_stream(&bad, exact),
+            Err(StreamError::Padding),
+            "pad_bit={pad_bit:#x}"
+        );
+    }
+}

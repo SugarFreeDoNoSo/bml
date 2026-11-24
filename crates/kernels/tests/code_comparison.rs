@@ -153,3 +153,23 @@ fn preflight_preserves_first_error_and_never_modifies_inputs() {
     }
     assert_eq!(values, before);
 }
+
+#[test]
+fn compare_error_display_and_exact_inclusive_limits_hold() {
+    for error in [
+        CompareError::Length,
+        CompareError::PairLimit,
+        CompareError::BitLimit { index: 1 },
+        CompareError::BackendUnavailable(Backend::Avx2),
+        CompareError::Allocation,
+    ] {
+        assert!(!error.to_string().trim().is_empty());
+    }
+    let values = vec![Bml::one(); 3];
+    let exact = CompareLimits {
+        max_pairs: 3,
+        max_total_bits: 6,
+    };
+    let result = compare_codes(&values, &values, Backend::Scalar, exact).unwrap();
+    assert_eq!(result.orderings, vec![Ordering::Equal; 3]);
+}

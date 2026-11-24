@@ -345,3 +345,18 @@ fn append_full_display_describes_capacity_exhaustion() {
     let error = bml_runtime::append_only::AppendFull;
     assert_eq!(error.to_string(), "append-only result capacity exhausted");
 }
+
+#[test]
+fn append_only_capacity_and_pending_work_empty_state_match_configuration() {
+    use bml_runtime::{append_only::AppendOnlyResults, queue::PendingWork};
+    for expected in [0usize, 1, 3] {
+        let storage = AppendOnlyResults::new(expected).unwrap();
+        assert_eq!(storage.capacity(), expected);
+    }
+    let queue = PendingWork::new(2).unwrap();
+    assert!(queue.is_empty());
+    queue.push(7u32).unwrap();
+    assert!(!queue.is_empty());
+    assert_eq!(queue.pop(), Some(7));
+    assert!(queue.is_empty());
+}
