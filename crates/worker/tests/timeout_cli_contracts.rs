@@ -26,6 +26,31 @@ fn symbolic_timeout_must_be_positive_before_help_can_complete() {
 }
 
 #[test]
+fn unknown_option_is_rejected_before_binding_a_port() {
+    for flag in ["--not-a-worker-option", "-x"] {
+        let rejected = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+            .arg(flag)
+            .output()
+            .unwrap();
+        assert_eq!(rejected.status.code(), Some(2), "{flag}");
+        let stderr = String::from_utf8_lossy(&rejected.stderr);
+        assert!(
+            stderr.contains("unknown option:") && stderr.contains(flag),
+            "{stderr}"
+        );
+        assert!(rejected.stdout.is_empty());
+    }
+    for help in ["-h", "--help"] {
+        let output = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+            .arg(help)
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{help}");
+        assert!(String::from_utf8_lossy(&output.stdout).contains("bml-worker"));
+    }
+}
+
+#[test]
 fn symbolic_integer_options_validate_before_help() {
     for (flag, invalid, message) in [
         ("--layer-start", "4294967296", "layer start overflow"),

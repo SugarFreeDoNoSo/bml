@@ -288,7 +288,10 @@ fn main() {
                 println!("  --symbolic-timeout-seconds N: per-connection read/write timeout");
                 std::process::exit(0);
             }
-            _ => {}
+            unknown => {
+                eprintln!("unknown option: {unknown}");
+                std::process::exit(2);
+            }
         }
         i += 1;
     }
