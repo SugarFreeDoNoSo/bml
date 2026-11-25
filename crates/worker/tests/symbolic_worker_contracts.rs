@@ -97,46 +97,55 @@ fn worker_with_shard(
             "536870912",
         ]);
     }
-    let mut process = command
-        .args(["--port", "0", "--symbolic-artifact"])
-        .arg(path)
-        .args([
-            "--layer-start",
-            &start.to_string(),
-            "--layer-end",
-            &end.to_string(),
-            "--symbolic-large-budget",
-            "--symbolic-timeout-seconds",
-            "600",
-            "--symbolic-context",
-            "3",
-            "--symbolic-kv-bytes",
-            "1048576",
-        ])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    let mut line = String::new();
-    BufReader::new(process.stdout.take().unwrap())
-        .read_line(&mut line)
-        .unwrap();
+    let mut worker = Worker(
+        command
+            .args(["--port", "0", "--symbolic-artifact"])
+            .arg(path)
+            .args([
+                "--layer-start",
+                &start.to_string(),
+                "--layer-end",
+                &end.to_string(),
+                "--symbolic-large-budget",
+                "--symbolic-timeout-seconds",
+                "600",
+                "--symbolic-context",
+                "3",
+                "--symbolic-kv-bytes",
+                "1048576",
+            ])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap(),
+    );
+    let stdout = worker.0.stdout.take().unwrap();
+    let (send, receive) = std::sync::mpsc::channel();
+    let reader = std::thread::spawn(move || {
+        let mut line = String::new();
+        let result = BufReader::new(stdout).read_line(&mut line).map(|_| line);
+        let _ = send.send(result);
+    });
+    let line = match receive.recv_timeout(Duration::from_secs(10)) {
+        Ok(result) => result.unwrap(),
+        Err(error) => {
+            drop(worker);
+            reader.join().unwrap();
+            panic!("symbolic worker did not report startup within 10s: {error}");
+        }
+    };
+    reader.join().unwrap();
     if !line.starts_with("symbolic worker listening on ") {
         use std::io::Read;
+        let mut stderr = worker.0.stderr.take().unwrap();
+        let _ = worker.0.kill();
+        let _ = worker.0.wait();
         let mut error = String::new();
-        process
-            .stderr
-            .take()
-            .unwrap()
-            .read_to_string(&mut error)
-            .unwrap();
+        let _ = stderr.read_to_string(&mut error);
         panic!("unexpected worker startup: {line}; stderr: {error}");
     }
     let bound: SocketAddr = line.split_whitespace().nth(4).unwrap().parse().unwrap();
-    (
-        Worker(process),
-        SocketAddr::from(([127, 0, 0, 1], bound.port())),
-    )
+    (worker, SocketAddr::from(([127, 0, 0, 1], bound.port())))
 }
 #[test]
 fn real_worker_processes_execute_persisted_bml_ranges_with_independent_sessions() {
@@ -967,21 +976,34 @@ fn prepared_plan_starts_worker_and_rejects_invalid_or_conflicting_assignments() 
     let expected = reference
         .forward_layer_range(&input, 0, &mut cache, 0..3)
         .unwrap();
-    let mut child = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
-        .args(["--port", "0", "--prepared"])
-        .arg(&root.0)
-        .args(["--worker-index", "0", "--symbolic-context", "3"])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    let mut line = String::new();
-    BufReader::new(child.stdout.take().unwrap())
-        .read_line(&mut line)
-        .unwrap();
+    let mut _worker = Worker(
+        Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+            .args(["--port", "0", "--prepared"])
+            .arg(&root.0)
+            .args(["--worker-index", "0", "--symbolic-context", "3"])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap(),
+    );
+    let stdout = _worker.0.stdout.take().unwrap();
+    let (send, receive) = std::sync::mpsc::channel();
+    let reader = std::thread::spawn(move || {
+        let mut line = String::new();
+        let result = BufReader::new(stdout).read_line(&mut line).map(|_| line);
+        let _ = send.send(result);
+    });
+    let line = match receive.recv_timeout(Duration::from_secs(10)) {
+        Ok(result) => result.unwrap(),
+        Err(error) => {
+            drop(_worker);
+            reader.join().unwrap();
+            panic!("prepared worker did not report startup within 10s: {error}");
+        }
+    };
+    reader.join().unwrap();
     assert!(line.starts_with("symbolic worker listening on "), "{line}");
     let bound: SocketAddr = line.split_whitespace().nth(4).unwrap().parse().unwrap();
-    let _worker = Worker(child);
     let address = SocketAddr::from(([127, 0, 0, 1], bound.port()));
     let mut client = SymbolicLayerClient::connect(
         address,
