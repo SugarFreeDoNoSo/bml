@@ -49,6 +49,7 @@ async fn start(directory: &Path, weights: &Path) -> (Child, Lines<BufReader<Chil
     })
     .await
     .expect("server startup deadline");
+    assert_ne!(port, 8080, "--port 0 must bind an ephemeral port");
     (child, lines, port)
 }
 

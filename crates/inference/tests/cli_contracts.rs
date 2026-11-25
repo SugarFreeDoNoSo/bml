@@ -689,12 +689,56 @@ fn layer_worker_process_serves_real_causal_logits_and_exits_cleanly() {
     output.join().unwrap();
 }
 
+fn run_worker_expecting_exit(command: &mut Command, timeout: Duration) -> std::process::Output {
+    use std::io::Read;
+    let mut child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut out = child.stdout.take().unwrap();
+    let mut err = child.stderr.take().unwrap();
+    let stdout_thread = std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        let _ = out.read_to_end(&mut buf);
+        buf
+    });
+    let stderr_thread = std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        let _ = err.read_to_end(&mut buf);
+        buf
+    });
+    let deadline = Instant::now() + timeout;
+    let status = loop {
+        if let Some(status) = child.try_wait().unwrap() {
+            break status;
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            let stdout = stdout_thread.join().unwrap_or_default();
+            let stderr = stderr_thread.join().unwrap_or_default();
+            panic!(
+                "bml-layer-worker did not exit within {:?}; stdout={}; stderr={}",
+                timeout,
+                String::from_utf8_lossy(&stdout),
+                String::from_utf8_lossy(&stderr),
+            );
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    std::process::Output {
+        status,
+        stdout: stdout_thread.join().unwrap(),
+        stderr: stderr_thread.join().unwrap(),
+    }
+}
+
 #[test]
 fn layer_worker_cli_rejects_missing_and_invalid_limits() {
-    let help = Command::new(env!("CARGO_BIN_EXE_bml-layer-worker"))
-        .arg("--help")
-        .output()
-        .unwrap();
+    let mut help_cmd = Command::new(env!("CARGO_BIN_EXE_bml-layer-worker"));
+    help_cmd.arg("--help");
+    let help = run_worker_expecting_exit(&mut help_cmd, Duration::from_secs(10));
     assert!(help.status.success());
     assert!(String::from_utf8(help.stdout).unwrap().contains("--layers"));
     let files = Files::new();
@@ -706,12 +750,12 @@ fn layer_worker_cli_rejects_missing_and_invalid_limits() {
         vec!["--layers", "0:1", "--max-sessions", "0"],
         vec!["--layers", "0:1", "--timeout-ms", "0"],
     ] {
-        let result = Command::new(env!("CARGO_BIN_EXE_bml-layer-worker"))
-            .arg("--model")
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_bml-layer-worker"));
+        cmd.arg("--model")
             .arg(&model)
-            .args(extra)
-            .output()
-            .unwrap();
+            .args(["--listen", "127.0.0.1:0", "--once"])
+            .args(extra);
+        let result = run_worker_expecting_exit(&mut cmd, Duration::from_secs(10));
         assert!(!result.status.success());
     }
 }

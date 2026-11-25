@@ -119,7 +119,6 @@ struct WorkerState {
 }
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
     let mut port: u16 = 9999;
     let mut fragment_path: Option<PathBuf> = None;
     let mut max_payload_bytes = DEFAULT_MAX_PAYLOAD_BYTES;
@@ -136,25 +135,22 @@ fn main() {
     let mut symbolic_max_steps: Option<usize> = None;
     let mut symbolic_limits = bml_runtime::symbolic_transport::SymbolicTransportLimits::default();
 
-    let mut i = 1;
-    while i < args.len() {
-        match args[i].as_str() {
+    let mut args = std::env::args().skip(1);
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
             "--port" | "-p" => {
-                i += 1;
-                if i < args.len() {
-                    port = args[i].parse().unwrap_or(9999);
+                if let Some(value) = args.next() {
+                    port = value.parse().unwrap_or(9999);
                 }
             }
             "--fragment" | "-f" => {
-                i += 1;
-                if i < args.len() {
-                    fragment_path = Some(PathBuf::from(&args[i]));
+                if let Some(value) = args.next() {
+                    fragment_path = Some(PathBuf::from(value));
                 }
             }
             "--max-message-bytes" => {
-                i += 1;
                 max_payload_bytes = args
-                    .get(i)
+                    .next()
                     .and_then(|s| s.parse::<u32>().ok())
                     .filter(|size| *size > 0)
                     .unwrap_or_else(|| {
@@ -163,26 +159,22 @@ fn main() {
                     }) as usize;
             }
             "--symbolic-artifact" | "--symbolic-source" => {
-                let option = args[i].clone();
-                i += 1;
-                let path = args.get(i).map(PathBuf::from).unwrap_or_else(|| {
-                    eprintln!("{option} requires a path");
+                let path = args.next().map(PathBuf::from).unwrap_or_else(|| {
+                    eprintln!("{arg} requires a path");
                     std::process::exit(2);
                 });
-                if option == "--symbolic-artifact" {
+                if arg == "--symbolic-artifact" {
                     symbolic_path = Some(path);
                 } else {
                     symbolic_source = Some(path);
                 }
             }
             "--prepared" | "--worker-index" => {
-                let option = args[i].clone();
-                i += 1;
-                let value = args.get(i).unwrap_or_else(|| {
-                    eprintln!("{option} requires a value");
+                let value = args.next().unwrap_or_else(|| {
+                    eprintln!("{arg} requires a value");
                     std::process::exit(2);
                 });
-                if option == "--prepared" {
+                if arg == "--prepared" {
                     prepared_directory = Some(PathBuf::from(value));
                 } else {
                     prepared_index = Some(value.parse().unwrap_or_else(|_| {
@@ -195,16 +187,14 @@ fn main() {
             | "--symbolic-shard-sha256"
             | "--symbolic-shard-bytes"
             | "--symbolic-artifact-sha256" => {
-                let option = args[i].clone();
-                i += 1;
-                let value = args.get(i).unwrap_or_else(|| {
-                    eprintln!("{option} requires a value");
+                let value = args.next().unwrap_or_else(|| {
+                    eprintln!("{arg} requires a value");
                     std::process::exit(2);
                 });
-                match option.as_str() {
+                match arg.as_str() {
                     "--symbolic-shard" => shard_path = Some(PathBuf::from(value)),
-                    "--symbolic-shard-sha256" => shard_hash = Some(value.clone()),
-                    "--symbolic-artifact-sha256" => artifact_hash = Some(value.clone()),
+                    "--symbolic-shard-sha256" => shard_hash = Some(value),
+                    "--symbolic-artifact-sha256" => artifact_hash = Some(value),
                     _ => {
                         shard_bytes = value.parse().unwrap_or_else(|_| {
                             eprintln!("invalid shard byte budget");
@@ -219,16 +209,14 @@ fn main() {
             | "--symbolic-kv-bytes"
             | "--symbolic-max-steps"
             | "--symbolic-timeout-seconds" => {
-                let option = args[i].clone();
-                i += 1;
                 let value = args
-                    .get(i)
+                    .next()
                     .and_then(|v| v.parse::<usize>().ok())
                     .unwrap_or_else(|| {
-                        eprintln!("{option} requires a nonnegative integer");
+                        eprintln!("{arg} requires a nonnegative integer");
                         std::process::exit(2);
                     });
-                match option.as_str() {
+                match arg.as_str() {
                     "--layer-start" => {
                         symbolic_start = Some(u32::try_from(value).unwrap_or_else(|_| {
                             eprintln!("layer start overflow");
@@ -293,7 +281,6 @@ fn main() {
                 std::process::exit(2);
             }
         }
-        i += 1;
     }
 
     match (prepared_directory, prepared_index) {
@@ -1418,6 +1405,14 @@ mod connection_tests {
             }
         });
         let mut producer = NodeHandle::connect(&address.to_string()).unwrap();
+        producer
+            .stream_mut()
+            .set_read_timeout(Some(std::time::Duration::from_secs(3)))
+            .unwrap();
+        producer
+            .stream_mut()
+            .set_write_timeout(Some(std::time::Duration::from_secs(3)))
+            .unwrap();
         assert!(
             producer.steal_work().unwrap().is_none(),
             "loaded model is not pending work"

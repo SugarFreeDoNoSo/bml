@@ -312,31 +312,27 @@ struct ErrorDetail {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<String> = std::env::args().collect();
     let mut model_path: Option<PathBuf> = None;
     let mut weights_path: Option<PathBuf> = None;
     let mut port: u16 = 8080;
     let mut replicas: Vec<Vec<SocketAddr>> = Vec::new();
 
-    let mut i = 1;
-    while i < args.len() {
-        match args[i].as_str() {
+    let mut args = std::env::args().skip(1);
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
             "--model" | "-m" => {
-                i += 1;
-                if i < args.len() {
-                    model_path = Some(PathBuf::from(&args[i]));
+                if let Some(value) = args.next() {
+                    model_path = Some(PathBuf::from(value));
                 }
             }
             "--weights" => {
-                i += 1;
                 weights_path = Some(PathBuf::from(
-                    args.get(i).ok_or("--weights needs a GGUF path")?,
+                    args.next().ok_or("--weights needs a GGUF path")?,
                 ));
             }
             "--layer-workers" => {
-                i += 1;
                 let value = args
-                    .get(i)
+                    .next()
                     .ok_or("--layer-workers needs comma-separated IP:PORT endpoints")?;
                 replicas.push(
                     value
@@ -346,12 +342,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
             "--port" | "-p" => {
-                i += 1;
-                port = args[i].parse().unwrap_or(8080);
+                if let Some(value) = args.next() {
+                    port = value.parse().unwrap_or(8080);
+                }
             }
             _ => {}
         }
-        i += 1;
     }
 
     let model_path = match model_path {
@@ -847,22 +843,47 @@ mod tests {
         let addresses = listeners
             .each_ref()
             .map(|listener| listener.local_addr().unwrap());
+        let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let workers: Vec<_> = listeners
             .into_iter()
             .map(|listener| {
                 let worker_path = path.clone();
+                let worker_stop = Arc::clone(&stop);
+                listener.set_nonblocking(true).unwrap();
                 std::thread::spawn(move || {
                     let reader = bml_gguf::GgufReader::open(worker_path).unwrap();
                     let model = Model::from_gguf(&reader).unwrap();
+                    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+                    let stream = loop {
+                        match listener.accept() {
+                            Ok((stream, _)) => {
+                                stream.set_nonblocking(false).unwrap();
+                                break stream;
+                            }
+                            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                                if worker_stop.load(Ordering::Acquire)
+                                    || std::time::Instant::now() >= deadline
+                                {
+                                    return false;
+                                }
+                                std::thread::sleep(std::time::Duration::from_millis(5));
+                            }
+                            Err(error) => panic!("worker accept failed: {error}"),
+                        }
+                    };
                     // Each replica accepts exactly one batch/request. Sending both
                     // to replica zero makes the second request fail this test.
                     serve_layer_connection(
                         &model,
                         0..1,
-                        listener.accept().unwrap().0,
-                        RemoteLimits::default(),
+                        stream,
+                        RemoteLimits {
+                            timeout: std::time::Duration::from_secs(3),
+                            ..Default::default()
+                        },
                     )
                     .unwrap();
+                    true
                 })
             })
             .collect();
@@ -931,8 +952,12 @@ mod tests {
         }
         assert_eq!(streamed, expected);
         assert_eq!(done, 1);
+        stop.store(true, Ordering::Release);
         for worker in workers {
-            worker.join().unwrap();
+            assert!(
+                worker.join().unwrap(),
+                "remote worker replica must have served a request"
+            );
         }
         std::fs::remove_file(path).unwrap();
     }

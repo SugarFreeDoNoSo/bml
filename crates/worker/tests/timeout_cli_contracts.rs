@@ -109,3 +109,53 @@ fn prepared_plan_rejects_each_explicit_artifact_or_range_option_before_io() {
     }
     assert!(!absent.exists());
 }
+
+#[test]
+fn message_budget_and_orphan_shard_options_are_validated_before_binding() {
+    let zero = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+        .args(["--max-message-bytes", "0", "--help"])
+        .output()
+        .unwrap();
+    assert_eq!(zero.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&zero.stderr)
+        .contains("--max-message-bytes requires a positive u32 byte budget"));
+    assert!(zero.stdout.is_empty());
+
+    for valid_budget in ["1", "2"] {
+        let ok = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+            .args(["--max-message-bytes", valid_budget, "--help"])
+            .output()
+            .unwrap();
+        assert!(ok.status.success(), "budget={valid_budget}");
+        assert!(String::from_utf8_lossy(&ok.stdout).contains("--max-message-bytes"));
+    }
+
+    for (flag, value) in [
+        ("--port", "0"),
+        ("--fragment", "unused-before-help"),
+        ("--symbolic-shard-bytes", "1"),
+        ("--symbolic-kv-bytes", "1"),
+    ] {
+        let ok = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+            .args([flag, value, "--help"])
+            .output()
+            .unwrap();
+        assert!(ok.status.success(), "{flag}");
+        assert!(String::from_utf8_lossy(&ok.stdout).contains(flag));
+    }
+
+    for (flag, value) in [
+        ("--symbolic-shard", "absent-shard"),
+        ("--symbolic-shard-sha256", "abc"),
+        ("--symbolic-artifact-sha256", "abc"),
+    ] {
+        let rejected = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
+            .args([flag, value])
+            .output()
+            .unwrap();
+        assert_eq!(rejected.status.code(), Some(2), "{flag}");
+        assert!(String::from_utf8_lossy(&rejected.stderr)
+            .contains("symbolic shard requires --symbolic-artifact"));
+        assert!(rejected.stdout.is_empty());
+    }
+}

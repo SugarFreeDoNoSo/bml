@@ -30,6 +30,51 @@ impl Drop for Worker {
         let _ = self.0.wait();
     }
 }
+fn run_expecting_exit(command: &mut Command, timeout: Duration) -> std::process::Output {
+    use std::io::Read;
+    let mut child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut out = child.stdout.take().unwrap();
+    let mut err = child.stderr.take().unwrap();
+    let stdout_thread = std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        let _ = out.read_to_end(&mut buf);
+        buf
+    });
+    let stderr_thread = std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        let _ = err.read_to_end(&mut buf);
+        buf
+    });
+    let deadline = std::time::Instant::now() + timeout;
+    let status = loop {
+        if let Some(status) = child.try_wait().unwrap() {
+            break status;
+        }
+        if std::time::Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            let stdout = stdout_thread.join().unwrap_or_default();
+            let stderr = stderr_thread.join().unwrap_or_default();
+            panic!(
+                "worker process did not exit within {:?}; stdout={}; stderr={}",
+                timeout,
+                String::from_utf8_lossy(&stdout),
+                String::from_utf8_lossy(&stderr),
+            );
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    std::process::Output {
+        status,
+        stdout: stdout_thread.join().unwrap(),
+        stderr: stderr_thread.join().unwrap(),
+    }
+}
+
 fn worker(path: &std::path::Path, start: u32, end: u32) -> (Worker, SocketAddr) {
     worker_with_shard(path, start, end, None)
 }
@@ -646,13 +691,12 @@ fn worker_explicit_step_budget_is_enforced_regardless_of_argument_order() {
         ["--symbolic-large-budget", "--symbolic-max-steps", "1"],
         ["--symbolic-max-steps", "1", "--symbolic-large-budget"],
     ] {
-        let result = Command::new(env!("CARGO_BIN_EXE_bml-worker"))
-            .args(["--symbolic-artifact"])
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_bml-worker"));
+        cmd.args(["--port", "0", "--symbolic-artifact"])
             .arg(&directory.0)
             .args(["--layer-start", "0", "--layer-end", "3"])
-            .args(args)
-            .output()
-            .unwrap();
+            .args(args);
+        let result = run_expecting_exit(&mut cmd, Duration::from_secs(10));
         assert!(!result.status.success());
         assert!(String::from_utf8_lossy(&result.stderr).contains("resource limit"));
     }
@@ -955,12 +999,11 @@ fn prepared_plan_starts_worker_and_rejects_invalid_or_conflicting_assignments() 
     client.abort(0).unwrap();
     client.close().unwrap();
     let run = |extra: &[&str]| {
-        Command::new(env!("CARGO_BIN_EXE_bml-worker"))
-            .arg("--prepared")
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_bml-worker"));
+        cmd.args(["--port", "0", "--prepared"])
             .arg(&root.0)
-            .args(extra)
-            .output()
-            .unwrap()
+            .args(extra);
+        run_expecting_exit(&mut cmd, Duration::from_secs(10))
     };
     assert!(!run(&["--worker-index", "1"]).status.success());
     assert!(!run(&["--worker-index", "0", "--layer-start", "0"])

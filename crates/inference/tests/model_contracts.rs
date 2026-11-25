@@ -718,6 +718,32 @@ fn staged_numerical_failure_does_not_commit_partial_layer_caches() {
     );
 }
 
+fn accept_within(
+    listener: &std::net::TcpListener,
+    timeout: std::time::Duration,
+) -> std::io::Result<std::net::TcpStream> {
+    listener.set_nonblocking(true)?;
+    let deadline = std::time::Instant::now() + timeout;
+    loop {
+        match listener.accept() {
+            Ok((stream, _)) => {
+                stream.set_nonblocking(false)?;
+                return Ok(stream);
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                if std::time::Instant::now() >= deadline {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::TimedOut,
+                        "test listener accept deadline exceeded",
+                    ));
+                }
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+}
+
 #[test]
 fn tcp_layer_pipeline_matches_local_logits_and_preserves_causal_order() {
     use bml_inference::remote::{serve_layer_connection, LayerClient, RemoteLimits};
@@ -734,10 +760,14 @@ fn tcp_layer_pipeline_matches_local_logits_and_preserves_causal_order() {
     std::thread::scope(|scope| {
         let model_ref = &model;
         let a = scope.spawn(move || {
-            serve_layer_connection(model_ref, 0..1, first.accept().unwrap().0, limits)
+            let stream = accept_within(&first, std::time::Duration::from_secs(5))
+                .map_err(|e| bml_inference::Error(e.to_string()))?;
+            serve_layer_connection(model_ref, 0..1, stream, limits)
         });
         let b = scope.spawn(move || {
-            serve_layer_connection(model_ref, 1..2, second.accept().unwrap().0, limits)
+            let stream = accept_within(&second, std::time::Duration::from_secs(5))
+                .map_err(|e| bml_inference::Error(e.to_string()))?;
+            serve_layer_connection(model_ref, 1..2, stream, limits)
         });
         let mut first = LayerClient::connect(addresses[0], 4, model.fingerprint(), limits).unwrap();
         let mut second =
@@ -785,12 +815,15 @@ fn remote_layer_server_rejects_oversized_frame_before_payload_allocation() {
     let address = listener.local_addr().unwrap();
     std::thread::scope(|scope| {
         let server = scope.spawn(|| {
+            let stream = accept_within(&listener, std::time::Duration::from_secs(5))
+                .map_err(|e| bml_inference::Error(e.to_string()))?;
             serve_layer_connection(
                 &model,
                 0..1,
-                listener.accept().unwrap().0,
+                stream,
                 RemoteLimits {
                     frame_bytes: 128,
+                    timeout: std::time::Duration::from_secs(3),
                     ..Default::default()
                 },
             )
@@ -831,14 +864,15 @@ fn remote_open_rejects_another_model_revision() {
     let model = fixture.model().unwrap();
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
+    let limits = RemoteLimits {
+        timeout: std::time::Duration::from_secs(3),
+        ..Default::default()
+    };
     std::thread::scope(|scope| {
         let server = scope.spawn(|| {
-            serve_layer_connection(
-                &model,
-                0..1,
-                listener.accept().unwrap().0,
-                RemoteLimits::default(),
-            )
+            let stream = accept_within(&listener, std::time::Duration::from_secs(5))
+                .map_err(|e| bml_inference::Error(e.to_string()))?;
+            serve_layer_connection(&model, 0..1, stream, limits)
         });
         let mut wrong = model.fingerprint();
         wrong[0] ^= 1;
@@ -861,7 +895,10 @@ fn remote_coordinator_validates_prompt_and_runs_full_layer_pipeline() {
         TcpListener::bind("127.0.0.1:0").unwrap(),
     ];
     let addresses = listeners.each_ref().map(|l| l.local_addr().unwrap());
-    let limits = RemoteLimits::default();
+    let limits = RemoteLimits {
+        timeout: std::time::Duration::from_secs(3),
+        ..Default::default()
+    };
     std::thread::scope(|scope| {
         let model_ref = &model;
         let servers: Vec<_> = listeners
@@ -869,12 +906,9 @@ fn remote_coordinator_validates_prompt_and_runs_full_layer_pipeline() {
             .enumerate()
             .map(|(i, listener)| {
                 scope.spawn(move || {
-                    serve_layer_connection(
-                        model_ref,
-                        i..i + 1,
-                        listener.accept().unwrap().0,
-                        limits,
-                    )
+                    let stream = accept_within(&listener, std::time::Duration::from_secs(5))
+                        .map_err(|e| bml_inference::Error(e.to_string()))?;
+                    serve_layer_connection(model_ref, i..i + 1, stream, limits)
                 })
             })
             .collect();
@@ -1064,16 +1098,17 @@ fn remote_coordinator_rejects_an_incomplete_layer_plan() {
     let model = fixture.model().unwrap();
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = listener.local_addr().unwrap();
+    let limits = RemoteLimits {
+        timeout: std::time::Duration::from_secs(3),
+        ..Default::default()
+    };
     std::thread::scope(|scope| {
         let server = scope.spawn(|| {
-            serve_layer_connection(
-                &model,
-                0..1,
-                listener.accept().unwrap().0,
-                RemoteLimits::default(),
-            )
+            let stream = accept_within(&listener, std::time::Duration::from_secs(5))
+                .map_err(|e| bml_inference::Error(e.to_string()))?;
+            serve_layer_connection(&model, 0..1, stream, limits)
         });
-        let error = RemotePipeline::connect(&model, &[address], 4, RemoteLimits::default())
+        let error = RemotePipeline::connect(&model, &[address], 4, limits)
             .err()
             .unwrap();
         assert!(error.to_string().contains("every model layer"));
@@ -1094,6 +1129,10 @@ fn remote_coordinator_invalidates_all_stages_after_partial_commit() {
         TcpListener::bind("127.0.0.1:0").unwrap(),
     ];
     let addresses = listeners.each_ref().map(|l| l.local_addr().unwrap());
+    let limits = RemoteLimits {
+        timeout: std::time::Duration::from_secs(3),
+        ..Default::default()
+    };
     std::thread::scope(|scope| {
         let model_ref = &model;
         let servers: Vec<_> = listeners
@@ -1101,17 +1140,13 @@ fn remote_coordinator_invalidates_all_stages_after_partial_commit() {
             .enumerate()
             .map(|(i, listener)| {
                 scope.spawn(move || {
-                    serve_layer_connection(
-                        model_ref,
-                        i..i + 1,
-                        listener.accept().unwrap().0,
-                        RemoteLimits::default(),
-                    )
+                    let stream = accept_within(&listener, std::time::Duration::from_secs(5))
+                        .map_err(|e| bml_inference::Error(e.to_string()))?;
+                    serve_layer_connection(model_ref, i..i + 1, stream, limits)
                 })
             })
             .collect();
-        let mut pipeline =
-            RemotePipeline::connect(&model, &addresses, 4, RemoteLimits::default()).unwrap();
+        let mut pipeline = RemotePipeline::connect(&model, &addresses, 4, limits).unwrap();
         assert!(pipeline.decode(TOKENS[0]).is_err());
         assert_eq!(pipeline.position(), 0);
         assert!(pipeline

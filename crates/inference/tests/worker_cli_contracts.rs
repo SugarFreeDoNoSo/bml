@@ -4,11 +4,12 @@ mod gguf_fixture;
 
 use serde_json::Value;
 use std::{
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Read},
     net::{SocketAddr, TcpStream},
     path::PathBuf,
-    process::{Child, Command, Stdio},
+    process::{Child, Command, Output, Stdio},
     sync::atomic::{AtomicU64, Ordering},
+    time::{Duration, Instant},
 };
 
 static NEXT: AtomicU64 = AtomicU64::new(0);
@@ -27,6 +28,50 @@ impl Drop for ChildGuard {
             let _ = child.kill();
             let _ = child.wait();
         }
+    }
+}
+
+fn run_expecting_exit(command: &mut Command, timeout: Duration) -> Output {
+    let mut child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut out = child.stdout.take().unwrap();
+    let mut err = child.stderr.take().unwrap();
+    let stdout_thread = std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        let _ = out.read_to_end(&mut buf);
+        buf
+    });
+    let stderr_thread = std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        let _ = err.read_to_end(&mut buf);
+        buf
+    });
+    let deadline = Instant::now() + timeout;
+    let status = loop {
+        if let Some(status) = child.try_wait().unwrap() {
+            break status;
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            let stdout = stdout_thread.join().unwrap_or_default();
+            let stderr = stderr_thread.join().unwrap_or_default();
+            panic!(
+                "bml-layer-worker did not exit within {:?}; stdout={}; stderr={}",
+                timeout,
+                String::from_utf8_lossy(&stdout),
+                String::from_utf8_lossy(&stderr),
+            );
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    Output {
+        status,
+        stdout: stdout_thread.join().unwrap(),
+        stderr: stderr_thread.join().unwrap(),
     }
 }
 
@@ -130,18 +175,17 @@ fn causal_worker_enforces_u32_frame_budget_and_layer_range_bounds() {
     )));
     std::fs::write(&model.0, gguf_fixture::fixture()).unwrap();
     for bad_layers in ["1:1", "0:2"] {
-        let output = Command::new(env!("CARGO_BIN_EXE_bml-layer-worker"))
-            .args([
-                "--model",
-                model.0.to_str().unwrap(),
-                "--layers",
-                bad_layers,
-                "--listen",
-                "127.0.0.1:0",
-                "--once",
-            ])
-            .output()
-            .unwrap();
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_bml-layer-worker"));
+        cmd.args([
+            "--model",
+            model.0.to_str().unwrap(),
+            "--layers",
+            bad_layers,
+            "--listen",
+            "127.0.0.1:0",
+            "--once",
+        ]);
+        let output = run_expecting_exit(&mut cmd, Duration::from_secs(10));
         assert_eq!(output.status.code(), Some(1), "layers={bad_layers}");
         assert!(String::from_utf8_lossy(&output.stderr).contains("layer range outside model"));
         assert!(output.stdout.is_empty());

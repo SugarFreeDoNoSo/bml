@@ -308,8 +308,11 @@ mod tests {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = listener.local_addr().unwrap();
 
+        let timeout = Some(std::time::Duration::from_secs(2));
         let server_thread = thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
+            stream.set_read_timeout(timeout).unwrap();
+            stream.set_write_timeout(timeout).unwrap();
             let msg = recv_msg(&mut stream).unwrap();
             assert_eq!(msg.msg_type, MsgType::ExecuteFragment);
             assert_eq!(msg.payload, vec![1, 2, 3]);
@@ -320,6 +323,8 @@ mod tests {
         });
 
         let mut client = TcpStream::connect(addr).unwrap();
+        client.set_read_timeout(timeout).unwrap();
+        client.set_write_timeout(timeout).unwrap();
         let msg = Message::new(MsgType::ExecuteFragment, vec![1, 2, 3]);
         send_msg(&mut client, &msg).unwrap();
 
@@ -337,8 +342,11 @@ mod tests {
         let addr = listener.local_addr().unwrap();
         let addr_str = format!("127.0.0.1:{}", addr.port());
 
+        let timeout = Some(std::time::Duration::from_secs(2));
         let server_thread = thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
+            stream.set_read_timeout(timeout).unwrap();
+            stream.set_write_timeout(timeout).unwrap();
             let request = recv_msg(&mut stream);
             if request.is_ok() {
                 let response = Message::new(MsgType::HealthCheck, vec![1]); // alive
@@ -348,6 +356,8 @@ mod tests {
         });
 
         let mut node = NodeHandle::connect(&addr_str).unwrap();
+        node.stream_mut().set_read_timeout(timeout).unwrap();
+        node.stream_mut().set_write_timeout(timeout).unwrap();
         let health = node.health_check();
         // A missing request must become observable EOF at the peer, rather
         // than joining a reader while the client still owns the open socket.
@@ -367,8 +377,11 @@ mod tests {
         let addr = listener.local_addr().unwrap();
         let addr_str = format!("127.0.0.1:{}", addr.port());
 
+        let timeout = Some(std::time::Duration::from_secs(2));
         let server_thread = thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
+            stream.set_read_timeout(timeout).unwrap();
+            stream.set_write_timeout(timeout).unwrap();
             let msg = recv_msg(&mut stream).unwrap();
             assert_eq!(msg.msg_type, MsgType::ExecuteFragment);
             assert!(!msg.payload.is_empty());
@@ -380,6 +393,8 @@ mod tests {
         });
 
         let mut node = NodeHandle::connect(&addr_str).unwrap();
+        node.stream_mut().set_read_timeout(timeout).unwrap();
+        node.stream_mut().set_write_timeout(timeout).unwrap();
         node.send_fragment(&[0, 1, 2, 3]).unwrap();
         let result = node.recv_result().unwrap();
         assert!((result - 1.23456).abs() < 1e-5);
@@ -393,8 +408,11 @@ mod tests {
         let addr = listener.local_addr().unwrap();
         let addr_str = format!("127.0.0.1:{}", addr.port());
 
+        let timeout = Some(std::time::Duration::from_secs(2));
         let server_thread = thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
+            stream.set_read_timeout(timeout).unwrap();
+            stream.set_write_timeout(timeout).unwrap();
             let msg = recv_msg(&mut stream).unwrap();
             assert_eq!(msg.msg_type, MsgType::StealWork);
             // Responder con un fragmento robado
@@ -403,6 +421,8 @@ mod tests {
         });
 
         let mut node = NodeHandle::connect(&addr_str).unwrap();
+        node.stream_mut().set_read_timeout(timeout).unwrap();
+        node.stream_mut().set_write_timeout(timeout).unwrap();
         let stolen = node.steal_work().unwrap();
         assert!(stolen.is_some());
         assert_eq!(stolen.unwrap(), vec![10, 20, 30]);
@@ -423,12 +443,17 @@ mod tests {
         for request in [MsgType::HealthCheck, MsgType::StealWork] {
             let listener = TcpListener::bind("127.0.0.1:0").unwrap();
             let address = listener.local_addr().unwrap();
+            let timeout = Some(std::time::Duration::from_secs(2));
             let server = thread::spawn(move || {
                 let (mut stream, _) = listener.accept().unwrap();
+                stream.set_read_timeout(timeout).unwrap();
+                stream.set_write_timeout(timeout).unwrap();
                 assert_eq!(recv_msg(&mut stream).unwrap().msg_type, request);
                 send_msg(&mut stream, &Message::new(MsgType::ReportResult, vec![1])).unwrap();
             });
             let mut node = NodeHandle::connect(&address.to_string()).unwrap();
+            node.stream_mut().set_read_timeout(timeout).unwrap();
+            node.stream_mut().set_write_timeout(timeout).unwrap();
             let error = match request {
                 MsgType::HealthCheck => node.health_check().unwrap_err(),
                 _ => node.steal_work().unwrap_err(),
