@@ -35,6 +35,25 @@ const MAX_BYTES: usize = 64 * 1024 * 1024;
 const MAX_PROGRAMS: usize = 4096;
 const MAX_OPS: usize = 4_000_000;
 const MAX_FRAGMENTS: usize = 65_536;
+
+#[derive(Clone, Copy)]
+struct ArtifactBudgets {
+    max_manifest: usize,
+    max_file: usize,
+    max_bytes: usize,
+    max_programs: usize,
+    max_ops: usize,
+    max_fragments: usize,
+}
+
+const DEFAULT_BUDGETS: ArtifactBudgets = ArtifactBudgets {
+    max_manifest: MAX_MANIFEST,
+    max_file: MAX_FILE,
+    max_bytes: MAX_BYTES,
+    max_programs: MAX_PROGRAMS,
+    max_ops: MAX_OPS,
+    max_fragments: MAX_FRAGMENTS,
+};
 /// One operation template with an explicit output layout and fixed literals.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -153,7 +172,7 @@ fn required_kernels(
         };
         keys.insert((operation, columns));
     }
-    if model.config().n_layers > 0 || model.weight_offsets().contains_key("output_norm.weight") {
+    if model.weight_offsets().contains_key("output_norm.weight") {
         keys.insert((Operation::Norm, model.config().n_embd as usize));
     }
     if model.config().n_layers > 0 {
@@ -168,7 +187,7 @@ fn required_kernels(
                 .map(|n| n / 2)
                 .ok_or("symbolic context plan overflow")?
         };
-        if minimum > program_limit {
+        if minimum >= program_limit {
             return Err("symbolic AOT program budget exceeded".into());
         }
         keys.extend([
@@ -311,11 +330,31 @@ fn compile_context_with_rms_bounds(
     context_length: Option<u32>,
     rms_bounds: Option<RmsBounds>,
     bounded_profile: Option<BoundedProfile>,
-    mut limits: KernelLimits,
+    limits: KernelLimits,
 ) -> Result<CompiledArtifact, String> {
-    limits.max_programs = limits.max_programs.min(MAX_PROGRAMS);
-    limits.max_ops = limits.max_ops.min(MAX_OPS);
-    if limits.fragment_bytes < std::mem::size_of::<RpnOp>() || limits.fragment_bytes > MAX_FILE {
+    compile_context_with_budgets(
+        source,
+        context_length,
+        rms_bounds,
+        bounded_profile,
+        limits,
+        DEFAULT_BUDGETS,
+    )
+}
+
+fn compile_context_with_budgets(
+    source: &Path,
+    context_length: Option<u32>,
+    rms_bounds: Option<RmsBounds>,
+    bounded_profile: Option<BoundedProfile>,
+    mut limits: KernelLimits,
+    budgets: ArtifactBudgets,
+) -> Result<CompiledArtifact, String> {
+    limits.max_programs = limits.max_programs.min(budgets.max_programs);
+    limits.max_ops = limits.max_ops.min(budgets.max_ops);
+    if limits.fragment_bytes < std::mem::size_of::<RpnOp>()
+        || limits.fragment_bytes > budgets.max_file
+    {
         return Err("invalid symbolic fragment threshold".into());
     }
     let source = source.canonicalize().map_err(|e| e.to_string())?;
@@ -378,14 +417,20 @@ fn compile_context_with_rms_bounds(
         } else {
             OutputLayout::for_operation(operation)
         };
-        if compiled.layout != expected_layout || compiled.signature != signature {
+        if compiled.layout != expected_layout {
             return Err("compiler symbolic signature mismatch".into());
         }
-        remaining.max_programs -= compiled.graphs.len();
+        if compiled.signature != signature {
+            return Err("compiler symbolic signature mismatch".into());
+        }
+        remaining.max_programs = remaining
+            .max_programs
+            .checked_sub(compiled.graphs.len())
+            .ok_or("symbolic AOT program budget exceeded")?;
         let mut hashes = Vec::with_capacity(compiled.graphs.len());
         let mut files = Vec::with_capacity(compiled.graphs.len());
         for graph in compiled.graphs {
-            if graph.fragments.len() > MAX_FRAGMENTS {
+            if graph.fragments.len() > budgets.max_fragments {
                 return Err("symbolic fragment count exceeds budget".into());
             }
             remaining.max_ops -= graph.fragments.iter().map(|f| f.ops.len()).sum::<usize>();
@@ -393,7 +438,7 @@ fn compile_context_with_rms_bounds(
             bytes_used = bytes_used
                 .checked_add(bytes.len())
                 .ok_or("symbolic byte count overflow")?;
-            if bytes.len() > MAX_FILE || bytes_used > MAX_BYTES {
+            if bytes.len() > budgets.max_file || bytes_used > budgets.max_bytes {
                 return Err("symbolic artifact exceeds byte budget".into());
             }
             hashes.push(hash(&bytes));
@@ -438,7 +483,7 @@ fn compile_context_with_rms_bounds(
         kernels: descriptors,
     };
     let bytes = serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?;
-    if bytes.len() > MAX_MANIFEST {
+    if bytes.len() > budgets.max_manifest {
         return Err("symbolic manifest exceeds byte budget".into());
     }
     Ok(CompiledArtifact {
@@ -489,7 +534,21 @@ fn load_directory_inner(
     source_override: Option<&Path>,
     trusted_identity: Option<&str>,
 ) -> Result<LoadedArtifact, String> {
-    let bytes = read_bounded(&directory.join(MANIFEST), MAX_MANIFEST)?;
+    load_directory_with_budgets(
+        directory,
+        source_override,
+        trusted_identity,
+        DEFAULT_BUDGETS,
+    )
+}
+
+fn load_directory_with_budgets(
+    directory: &Path,
+    source_override: Option<&Path>,
+    trusted_identity: Option<&str>,
+    budgets: ArtifactBudgets,
+) -> Result<LoadedArtifact, String> {
+    let bytes = read_bounded(&directory.join(MANIFEST), budgets.max_manifest)?;
     if trusted_identity.is_some_and(|expected| hash(&bytes) != expected) {
         return Err("symbolic manifest identity mismatch".into());
     }
@@ -508,9 +567,9 @@ fn load_directory_inner(
         _ => return Err("unsupported symbolic artifact profile".into()),
     };
     if manifest.kernels.is_empty()
-        || manifest.kernels.len() > MAX_PROGRAMS
+        || manifest.kernels.len() > budgets.max_programs
         || manifest.fragment_bytes < std::mem::size_of::<RpnOp>()
-        || manifest.fragment_bytes > MAX_FILE
+        || manifest.fragment_bytes > budgets.max_file
     {
         return Err("unsupported symbolic artifact profile or size".into());
     }
@@ -519,11 +578,14 @@ fn load_directory_inner(
         .iter()
         .try_fold(0usize, |n, k| n.checked_add(k.programs.len()))
         .ok_or("symbolic program count overflow")?;
-    if count > MAX_PROGRAMS {
+    if count > budgets.max_programs {
         return Err("symbolic program count exceeds budget".into());
     }
     let mut compiler = if trusted_identity.is_some() {
-        if manifest.version != 4 || manifest.profile != BOUNDED_PROFILE {
+        if manifest.version != 4 {
+            return Err("source-free workers require bounded profile v4".into());
+        }
+        if manifest.profile != BOUNDED_PROFILE {
             return Err("source-free workers require bounded profile v4".into());
         }
         InferenceCompiler::from_authenticated_manifest(&manifest)?
@@ -578,7 +640,7 @@ fn load_directory_inner(
         required_kernels(
             &compiler,
             manifest.context_length,
-            MAX_PROGRAMS,
+            budgets.max_programs,
             shared_outputs,
             manifest.bounded_profile.is_some(),
             manifest
@@ -655,7 +717,7 @@ fn load_directory_inner(
         for (output, digest) in descriptor.programs.iter().enumerate() {
             let bytes = read_bounded(
                 &directory.join(format!("kernel_{index}_{output}.bmlgraph")),
-                MAX_FILE.min(MAX_BYTES - bytes_used),
+                budgets.max_file.min(budgets.max_bytes - bytes_used),
             )?;
             bytes_used += bytes.len();
             if hash(&bytes) != *digest {
@@ -664,8 +726,8 @@ fn load_directory_inner(
             let graph = BmlGraph::deserialize_with_limits(
                 &bytes,
                 manifest.fragment_bytes,
-                MAX_FRAGMENTS,
-                MAX_OPS - ops_used,
+                budgets.max_fragments,
+                budgets.max_ops - ops_used,
                 0,
             )?;
             for fragment in &graph.fragments {
@@ -698,4 +760,454 @@ fn load_directory_inner(
         manifest,
         kernels,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    struct TempFile(PathBuf);
+    impl Drop for TempFile {
+        fn drop(&mut self) {
+            let _ = fs::remove_file(&self.0);
+        }
+    }
+    struct TempDir(PathBuf);
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn gguf_string(value: &str) -> Vec<u8> {
+        let mut bytes = (value.len() as u64).to_le_bytes().to_vec();
+        bytes.extend(value.as_bytes());
+        bytes
+    }
+
+    fn gguf_array(kind: u32, values: Vec<Vec<u8>>) -> Vec<u8> {
+        let mut bytes = kind.to_le_bytes().to_vec();
+        bytes.extend((values.len() as u64).to_le_bytes());
+        bytes.extend(values.into_iter().flatten());
+        bytes
+    }
+
+    fn mini_gguf(include_output_norm: bool) -> TempFile {
+        let mut tokens = vec!["<unk>".into(), "<s>".into(), "</s>".into(), "▁".into()];
+        tokens.extend((0..256).map(|b| format!("<0x{b:02X}>")));
+        let vocab = tokens.len();
+        let mut meta = vec![
+            ("general.architecture", 8u32, gguf_string("llama")),
+            ("tokenizer.ggml.model", 8, gguf_string("llama")),
+            (
+                "tokenizer.ggml.tokens",
+                9,
+                gguf_array(8, tokens.iter().map(|t| gguf_string(t)).collect()),
+            ),
+            (
+                "tokenizer.ggml.scores",
+                9,
+                gguf_array(
+                    6,
+                    (0..vocab).map(|_| (-1f32).to_le_bytes().to_vec()).collect(),
+                ),
+            ),
+            (
+                "tokenizer.ggml.token_type",
+                9,
+                gguf_array(
+                    5,
+                    (0..vocab)
+                        .map(|i| {
+                            let kind: i32 = match i {
+                                0 => 2,
+                                1 | 2 => 3,
+                                3 => 1,
+                                _ => 6,
+                            };
+                            kind.to_le_bytes().to_vec()
+                        })
+                        .collect(),
+                ),
+            ),
+            (
+                "llama.attention.layer_norm_rms_epsilon",
+                6,
+                0.5f32.to_le_bytes().to_vec(),
+            ),
+            ("llama.rope.freq_base", 6, 16f32.to_le_bytes().to_vec()),
+        ];
+        for (name, value) in [
+            ("llama.block_count", 1u32),
+            ("llama.attention.head_count", 2),
+            ("llama.attention.head_count_kv", 1),
+            ("llama.embedding_length", 4),
+            ("llama.feed_forward_length", 4),
+            ("llama.context_length", 8),
+            ("llama.rope.dimension_count", 2),
+            ("llama.vocab_size", vocab as u32),
+            ("tokenizer.ggml.bos_token_id", 1),
+            ("tokenizer.ggml.eos_token_id", 2),
+            ("tokenizer.ggml.unknown_token_id", 0),
+        ] {
+            meta.push((name, 4, value.to_le_bytes().to_vec()));
+        }
+        let mut weights: Vec<(&str, Vec<u64>, Vec<f32>)> = vec![
+            (
+                "token_embd.weight",
+                vec![4, vocab as u64],
+                vec![0.1; 4 * vocab],
+            ),
+            ("output.weight", vec![4, vocab as u64], vec![0.1; 4 * vocab]),
+        ];
+        if include_output_norm {
+            weights.push(("output_norm.weight", vec![4], vec![0.5; 4]));
+        }
+        weights.extend([
+            ("blk.0.attn_norm.weight", vec![4], vec![0.5; 4]),
+            ("blk.0.ffn_norm.weight", vec![4], vec![0.5; 4]),
+            ("blk.0.attn_q.weight", vec![4, 4], vec![0.1; 16]),
+            ("blk.0.attn_k.weight", vec![4, 2], vec![0.1; 8]),
+            ("blk.0.attn_v.weight", vec![4, 2], vec![0.1; 8]),
+            ("blk.0.attn_output.weight", vec![4, 4], vec![0.1; 16]),
+            ("blk.0.ffn_gate.weight", vec![4, 4], vec![0.1; 16]),
+            ("blk.0.ffn_up.weight", vec![4, 4], vec![0.1; 16]),
+            ("blk.0.ffn_down.weight", vec![4, 4], vec![0.1; 16]),
+        ]);
+        let mut bytes = b"GGUF".to_vec();
+        bytes.extend(3u32.to_le_bytes());
+        bytes.extend((weights.len() as u64).to_le_bytes());
+        bytes.extend((meta.len() as u64).to_le_bytes());
+        for (name, kind, value) in meta {
+            bytes.extend(gguf_string(name));
+            bytes.extend(kind.to_le_bytes());
+            bytes.extend(value);
+        }
+        let mut data = Vec::new();
+        for (name, dims, values) in weights {
+            data.resize(data.len().div_ceil(32) * 32, 0);
+            bytes.extend(gguf_string(name));
+            bytes.extend((dims.len() as u32).to_le_bytes());
+            for dim in dims {
+                bytes.extend(dim.to_le_bytes());
+            }
+            bytes.extend(0u32.to_le_bytes());
+            bytes.extend((data.len() as u64).to_le_bytes());
+            data.extend(values.into_iter().flat_map(f32::to_le_bytes));
+        }
+        bytes.resize(bytes.len().div_ceil(32) * 32, 0);
+        bytes.extend(data);
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        let path = std::env::temp_dir().join(format!(
+            "bml_symbolic_artifact_unit_{}_{}.gguf",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::write(&path, bytes).unwrap();
+        TempFile(path)
+    }
+
+    #[test]
+    fn required_kernels_covers_layer_norm_without_output_norm_and_exact_scalar_program_limit() {
+        let gguf = mini_gguf(true);
+        let model = InferenceCompiler::open_mapped(&gguf.0).unwrap();
+        let all_keys = required_kernels(&model, 8, usize::MAX, false, false, false).unwrap();
+        let total_outputs: usize = all_keys
+            .iter()
+            .map(|&(op, width)| {
+                op.signature(width, model.rms_norm_epsilon())
+                    .unwrap()
+                    .outputs
+            })
+            .sum();
+        // Context 8 => 8*9/2 = 36 <= total_outputs < 8*9*2 = 144, catching / -> * as well as > -> ==/>.
+        assert!(total_outputs < 8 * 9 * 2);
+        assert_eq!(
+            required_kernels(&model, 8, total_outputs, false, false, false).unwrap(),
+            all_keys
+        );
+        assert_eq!(
+            required_kernels(&model, 8, total_outputs - 1, false, false, false).unwrap_err(),
+            "symbolic AOT program budget exceeded"
+        );
+    }
+
+    #[test]
+    fn compile_and_authenticated_load_enforce_exact_file_total_manifest_context_and_op_budgets() {
+        let gguf = mini_gguf(true);
+
+        // Public fragment_bytes exact upper boundary MAX_FILE (ok) and MAX_FILE + 1 (err).
+        assert!(compile(
+            &gguf.0,
+            1,
+            KernelLimits {
+                fragment_bytes: MAX_FILE,
+                ..Default::default()
+            },
+        )
+        .is_ok());
+        assert_eq!(
+            compile(
+                &gguf.0,
+                1,
+                KernelLimits {
+                    fragment_bytes: MAX_FILE + 1,
+                    ..Default::default()
+                },
+            )
+            .err()
+            .unwrap(),
+            "invalid symbolic fragment threshold"
+        );
+
+        // Exact compile byte/file/manifest boundaries using parameterized budgets.
+        let small_limits = KernelLimits {
+            fragment_bytes: 512,
+            ..Default::default()
+        };
+        let baseline = compile_context_with_budgets(
+            &gguf.0,
+            Some(2),
+            None,
+            None,
+            small_limits,
+            DEFAULT_BUDGETS,
+        )
+        .unwrap();
+        let max_kernel_bytes = baseline
+            .encoded
+            .iter()
+            .flatten()
+            .map(Vec::len)
+            .max()
+            .unwrap();
+        let total_kernel_bytes: usize = baseline.encoded.iter().flatten().map(Vec::len).sum();
+        let manifest_len = baseline.manifest_bytes.len();
+        assert!(max_kernel_bytes >= small_limits.fragment_bytes);
+        assert!(total_kernel_bytes > max_kernel_bytes);
+
+        let exact_compile_budgets = ArtifactBudgets {
+            max_file: max_kernel_bytes,
+            max_bytes: total_kernel_bytes,
+            max_manifest: manifest_len,
+            ..DEFAULT_BUDGETS
+        };
+        assert!(compile_context_with_budgets(
+            &gguf.0,
+            Some(2),
+            None,
+            None,
+            small_limits,
+            exact_compile_budgets,
+        )
+        .is_ok());
+        assert_eq!(
+            compile_context_with_budgets(
+                &gguf.0,
+                Some(2),
+                None,
+                None,
+                small_limits,
+                ArtifactBudgets {
+                    max_file: max_kernel_bytes - 1,
+                    ..exact_compile_budgets
+                },
+            )
+            .err()
+            .unwrap(),
+            "symbolic artifact exceeds byte budget"
+        );
+        assert_eq!(
+            compile_context_with_budgets(
+                &gguf.0,
+                Some(2),
+                None,
+                None,
+                small_limits,
+                ArtifactBudgets {
+                    max_bytes: total_kernel_bytes - 1,
+                    ..exact_compile_budgets
+                },
+            )
+            .err()
+            .unwrap(),
+            "symbolic artifact exceeds byte budget"
+        );
+        assert_eq!(
+            compile_context_with_budgets(
+                &gguf.0,
+                Some(2),
+                None,
+                None,
+                small_limits,
+                ArtifactBudgets {
+                    max_manifest: manifest_len - 1,
+                    ..exact_compile_budgets
+                },
+            )
+            .err()
+            .unwrap(),
+            "symbolic manifest exceeds byte budget"
+        );
+
+        // Authenticated load at exact model context_length (8) and exact total op budget.
+        let dir = TempDir(gguf.0.with_extension("auth-budget-dir"));
+        fs::create_dir(&dir.0).unwrap();
+        compile_directory_bounded(
+            &gguf.0,
+            &dir.0,
+            8,
+            BoundedProfile::default(),
+            KernelLimits::default(),
+        )
+        .unwrap();
+        let identity = checked_identity(&dir.0, None).unwrap();
+        let loaded = load_directory_authenticated(&dir.0, &identity).unwrap();
+        assert_eq!(loaded.manifest.context_length, 8);
+        let total_ops: usize = loaded
+            .kernels
+            .iter()
+            .flat_map(|k| &k.graphs)
+            .flat_map(|g| &g.fragments)
+            .map(|f| f.ops.len())
+            .sum();
+        assert!(total_ops > 10);
+        assert!(load_directory_with_budgets(
+            &dir.0,
+            None,
+            Some(&identity),
+            ArtifactBudgets {
+                max_ops: total_ops,
+                ..DEFAULT_BUDGETS
+            },
+        )
+        .is_ok());
+        assert!(load_directory_with_budgets(
+            &dir.0,
+            None,
+            Some(&identity),
+            ArtifactBudgets {
+                max_ops: total_ops - 1,
+                ..DEFAULT_BUDGETS
+            },
+        )
+        .is_err());
+
+        // Exact max_fragments, max_programs, max_file, and max_bytes on load & compile.
+        let max_graph_fragments = loaded
+            .kernels
+            .iter()
+            .flat_map(|k| &k.graphs)
+            .map(|g| g.fragments.len())
+            .max()
+            .unwrap();
+        let total_programs: usize = loaded
+            .manifest
+            .kernels
+            .iter()
+            .map(|k| k.programs.len())
+            .sum();
+        let mut disk_file_sizes = Vec::new();
+        for (index, k) in loaded.manifest.kernels.iter().enumerate() {
+            for output in 0..k.programs.len() {
+                disk_file_sizes.push(
+                    fs::metadata(dir.0.join(format!("kernel_{index}_{output}.bmlgraph")))
+                        .unwrap()
+                        .len() as usize,
+                );
+            }
+        }
+        let max_disk_file = *disk_file_sizes.iter().max().unwrap();
+        let total_disk_bytes: usize = disk_file_sizes.iter().sum();
+
+        let baseline_max_fragments = baseline
+            .encoded
+            .iter()
+            .flatten()
+            .map(|bytes| {
+                BmlGraph::deserialize_with_limits(
+                    bytes,
+                    small_limits.fragment_bytes,
+                    MAX_FRAGMENTS,
+                    MAX_OPS,
+                    0,
+                )
+                .unwrap()
+                .fragments
+                .len()
+            })
+            .max()
+            .unwrap();
+        assert!(compile_context_with_budgets(
+            &gguf.0,
+            Some(2),
+            None,
+            None,
+            small_limits,
+            ArtifactBudgets {
+                max_fragments: baseline_max_fragments,
+                ..exact_compile_budgets
+            },
+        )
+        .is_ok());
+        assert_eq!(
+            compile_context_with_budgets(
+                &gguf.0,
+                Some(2),
+                None,
+                None,
+                small_limits,
+                ArtifactBudgets {
+                    max_fragments: baseline_max_fragments - 1,
+                    ..exact_compile_budgets
+                },
+            )
+            .err()
+            .unwrap(),
+            "symbolic fragment count exceeds budget"
+        );
+
+        let exact_load_budgets = ArtifactBudgets {
+            max_file: max_disk_file.max(loaded.manifest.fragment_bytes),
+            max_bytes: total_disk_bytes,
+            max_programs: total_programs,
+            max_ops: total_ops,
+            max_fragments: max_graph_fragments,
+            ..DEFAULT_BUDGETS
+        };
+        assert!(
+            load_directory_with_budgets(&dir.0, None, Some(&identity), exact_load_budgets).is_ok()
+        );
+        assert!(load_directory_with_budgets(
+            &dir.0,
+            None,
+            Some(&identity),
+            ArtifactBudgets {
+                max_bytes: total_disk_bytes - 1,
+                ..exact_load_budgets
+            },
+        )
+        .is_err());
+        assert!(load_directory_with_budgets(
+            &dir.0,
+            None,
+            Some(&identity),
+            ArtifactBudgets {
+                max_programs: total_programs - 1,
+                ..exact_load_budgets
+            },
+        )
+        .is_err());
+        assert!(load_directory_with_budgets(
+            &dir.0,
+            None,
+            Some(&identity),
+            ArtifactBudgets {
+                max_fragments: max_graph_fragments - 1,
+                ..exact_load_budgets
+            },
+        )
+        .is_err());
+    }
 }

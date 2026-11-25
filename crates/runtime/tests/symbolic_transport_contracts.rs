@@ -781,3 +781,316 @@ fn client_connect_rejects_context_strictly_above_limit_before_network() {
         "{err}"
     );
 }
+
+#[test]
+fn authenticated_server_enforces_exact_frame_boundaries_for_header_u32_and_vector_width() {
+    let source = symbolic_fixture::fixture_gqa_custom(1, 2, 1, 6, 4, true);
+    let dir = Directory(source.0.with_extension("wide-auth-artifact"));
+    std::fs::create_dir(&dir.0).unwrap();
+    compile_directory_bounded(
+        &source.0,
+        &dir.0,
+        2,
+        BoundedProfile::default(),
+        KernelLimits::default(),
+    )
+    .unwrap();
+    let identity = bml_compiler::symbolic_artifact::checked_identity(&dir.0, None).unwrap();
+    let shard = dir.0.join("wide-shard");
+    let hash = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &dir.0,
+        None,
+        0..1,
+        &shard,
+        1_000_000,
+    )
+    .unwrap();
+
+    // n_embd = 12 => vector frame size = 12 * 8 + 9 = 105 bytes.
+    assert!(SymbolicLayerServer::new_authenticated(
+        &dir.0,
+        &identity,
+        0..1,
+        SymbolicTransportLimits {
+            frame_bytes: 105,
+            ..limits()
+        },
+        &shard,
+        &hash,
+        1_000_000,
+    )
+    .is_ok());
+    assert_eq!(
+        SymbolicLayerServer::new_authenticated(
+            &dir.0,
+            &identity,
+            0..1,
+            SymbolicTransportLimits {
+                frame_bytes: 104,
+                ..limits()
+            },
+            &shard,
+            &hash,
+            1_000_000,
+        )
+        .err()
+        .unwrap(),
+        "symbolic vector exceeds frame budget"
+    );
+    assert!(SymbolicLayerServer::new_authenticated(
+        &dir.0,
+        &identity,
+        0..1,
+        SymbolicTransportLimits {
+            frame_bytes: u32::MAX as usize,
+            ..limits()
+        },
+        &shard,
+        &hash,
+        1_000_000,
+    )
+    .is_ok());
+    if let Ok(over_u32) = usize::try_from(u64::from(u32::MAX) + 1) {
+        assert_eq!(
+            SymbolicLayerServer::new_authenticated(
+                &dir.0,
+                &identity,
+                0..1,
+                SymbolicTransportLimits {
+                    frame_bytes: over_u32,
+                    ..limits()
+                },
+                &shard,
+                &hash,
+                1_000_000,
+            )
+            .err()
+            .unwrap(),
+            "invalid symbolic transport limits"
+        );
+    }
+
+    // Small fixture (n_embd = 4 => 41 bytes) accepts exact minimum frame_bytes = 81.
+    let (_small_source, small_dir) = artifact();
+    let small_identity =
+        bml_compiler::symbolic_artifact::checked_identity(&small_dir.0, None).unwrap();
+    let small_shard = small_dir.0.join("small-shard");
+    let small_hash = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &small_dir.0,
+        None,
+        0..1,
+        &small_shard,
+        1_000_000,
+    )
+    .unwrap();
+    assert!(SymbolicLayerServer::new_authenticated(
+        &small_dir.0,
+        &small_identity,
+        0..1,
+        SymbolicTransportLimits {
+            frame_bytes: 81,
+            ..limits()
+        },
+        &small_shard,
+        &small_hash,
+        1_000_000,
+    )
+    .is_ok());
+}
+
+#[test]
+fn non_source_free_sharded_server_revalidates_source_during_open_and_rejects_cleanly() {
+    let (source, dir) = artifact();
+    let shard = dir.0.join("source-bound-shard");
+    let hash = bml_compiler::symbolic_weight_shard::export_layer_weights(
+        &dir.0,
+        None,
+        0..1,
+        &shard,
+        1_000_000,
+    )
+    .unwrap();
+    let server = Arc::new(
+        SymbolicLayerServer::new(&dir.0, None, 0..1, limits())
+            .unwrap()
+            .with_weight_shard(&shard, &hash, 1_000_000)
+            .unwrap(),
+    );
+    let identity = server.identity().to_owned();
+    let (address, task) = listener(server, 1);
+
+    // Corrupt the GGUF after admission. A non-source-free server opens through
+    // open_artifact_with_shard and replies with a status-1 rejection while
+    // serve_connection completes cleanly (Ok(())).
+    let mut gguf = std::fs::read(&source.0).unwrap();
+    let last = gguf.len() - 1;
+    gguf[last] ^= 0xff;
+    std::fs::write(&source.0, gguf).unwrap();
+
+    let err = SymbolicLayerClient::connect(address, &identity, 0..1, 3, limits())
+        .err()
+        .unwrap();
+    assert_eq!(err.kind(), io::ErrorKind::InvalidInput, "{err}");
+    assert!(
+        err.to_string()
+            .contains("referenced GGUF identity mismatch"),
+        "{err}"
+    );
+    task.join().unwrap();
+}
+
+#[test]
+fn server_rejects_trailing_payload_bytes_on_reset_and_close_frames() {
+    let (_source, dir) = artifact();
+    let server = Arc::new(SymbolicLayerServer::new(&dir.0, None, 0..1, short_limits(128)).unwrap());
+    let identity = server.identity().to_owned();
+    for bad_frame in [vec![4u8, 0u8], vec![5u8, 0u8]] {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let srv = Arc::clone(&server);
+        let task = thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            srv.serve_connection(stream)
+        });
+        let mut socket = test_socket(address);
+        test_write_frame(&mut socket, &test_open(&identity, 2));
+        let ready = test_read_frame(&mut socket).unwrap();
+        assert_eq!(ready[0], 0);
+        test_write_frame(&mut socket, &bad_frame);
+        assert!(test_read_frame(&mut socket).is_err());
+        let server_err = task.join().unwrap().unwrap_err();
+        assert_eq!(server_err.kind(), io::ErrorKind::InvalidData);
+    }
+}
+
+#[test]
+fn client_connect_and_exchange_enforce_admission_width_bounds_and_status_one_health() {
+    let addr: std::net::SocketAddr = "127.0.0.1:1".parse().unwrap();
+    // Non-hex 64-byte identity rejected before network.
+    let err = SymbolicLayerClient::connect(addr, &"g".repeat(64), 0..1, 1, limits())
+        .err()
+        .unwrap();
+    assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+    // Zero context rejected before network.
+    let err = SymbolicLayerClient::connect(addr, &"0".repeat(64), 0..1, 0, limits())
+        .err()
+        .unwrap();
+    assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+
+    let identity = "a".repeat(64);
+    let serve_handshake = |width: u32, extra_reply: Option<Vec<u8>>| {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let task = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(3)))
+                .unwrap();
+            let mut prefix = [0; 4];
+            stream.read_exact(&mut prefix).unwrap();
+            let mut open = vec![0; u32::from_le_bytes(prefix) as usize];
+            stream.read_exact(&mut open).unwrap();
+            let mut ready = vec![0u8];
+            ready.extend_from_slice(&width.to_le_bytes());
+            test_write_frame(&mut stream, &ready);
+            if let Some(reply) = extra_reply {
+                stream.read_exact(&mut prefix).unwrap();
+                let mut req = vec![0; u32::from_le_bytes(prefix) as usize];
+                stream.read_exact(&mut req).unwrap();
+                test_write_frame(&mut stream, &reply);
+            }
+        });
+        (address, task)
+    };
+
+    // width == 0 rejected.
+    let (address, task) = serve_handshake(0, None);
+    let err = SymbolicLayerClient::connect(address, &identity, 0..1, 1, short_limits(128))
+        .err()
+        .unwrap();
+    assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+    task.join().unwrap();
+
+    // width == 10 => 10 * 8 + 9 = 89 bytes: accepted at 89, rejected at 88.
+    let (address, task) = serve_handshake(10, None);
+    let ok_client =
+        SymbolicLayerClient::connect(address, &identity, 0..1, 1, short_limits(89)).unwrap();
+    drop(ok_client);
+    task.join().unwrap();
+
+    let (address, task) = serve_handshake(10, None);
+    let err = SymbolicLayerClient::connect(address, &identity, 0..1, 1, short_limits(88))
+        .err()
+        .unwrap();
+    assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+    task.join().unwrap();
+
+    // Status 1 reply returns InvalidInput with payload text and keeps client healthy.
+    let mut reject_frame = vec![1u8];
+    reject_frame.extend_from_slice(b"custom-reject");
+    let (address, task) = serve_handshake(4, Some(reject_frame));
+    let mut client =
+        SymbolicLayerClient::connect(address, &identity, 0..1, 2, short_limits(128)).unwrap();
+    let err = client.prepare(0, &[0.0; 4]).unwrap_err();
+    assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+    assert_eq!(err.to_string(), "custom-reject");
+    assert!(client.is_healthy());
+    task.join().unwrap();
+}
+
+#[test]
+fn pipeline_open_rejects_zero_context_wrong_width_and_nonzero_first_layer() {
+    let (_source, dir) = artifact();
+    let identity = bml_compiler::symbolic_artifact::checked_identity(&dir.0, None).unwrap();
+    let model_limits = SymbolicLimits {
+        max_nodes: 0,
+        ..Default::default()
+    };
+
+    // context == 0 rejected.
+    assert_eq!(
+        SymbolicPipeline::open(&dir.0, None, 0, vec![], model_limits)
+            .err()
+            .unwrap(),
+        "invalid symbolic pipeline context"
+    );
+
+    let connect_fake = |layers: std::ops::Range<u32>, width: u32| {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let task = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(3)))
+                .unwrap();
+            let mut prefix = [0; 4];
+            stream.read_exact(&mut prefix).unwrap();
+            let mut open = vec![0; u32::from_le_bytes(prefix) as usize];
+            stream.read_exact(&mut open).unwrap();
+            let mut ready = vec![0u8];
+            ready.extend_from_slice(&width.to_le_bytes());
+            test_write_frame(&mut stream, &ready);
+        });
+        let client = SymbolicLayerClient::connect(address, &identity, layers, 3, limits()).unwrap();
+        task.join().unwrap();
+        client
+    };
+
+    // Client width 5 != model n_embd 4 rejected.
+    let wrong_width = connect_fake(0..3, 5);
+    assert_eq!(
+        SymbolicPipeline::open(&dir.0, None, 3, vec![wrong_width], model_limits)
+            .err()
+            .unwrap(),
+        "incomplete or inconsistent symbolic pipeline coverage"
+    );
+
+    // Client starting at layer 1 != next 0 rejected even though end == n_layers (3).
+    let nonzero_start = connect_fake(1..3, 4);
+    assert_eq!(
+        SymbolicPipeline::open(&dir.0, None, 3, vec![nonzero_start], model_limits)
+            .err()
+            .unwrap(),
+        "incomplete or inconsistent symbolic pipeline coverage"
+    );
+}

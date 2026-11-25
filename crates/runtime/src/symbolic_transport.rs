@@ -96,10 +96,7 @@ fn u32_at(bytes: &[u8], start: usize) -> io::Result<u32> {
 }
 fn reject(message: &str, limit: usize) -> Vec<u8> {
     let mut out = vec![1];
-    let mut end = message.len().min(limit.saturating_sub(1));
-    while !message.is_char_boundary(end) {
-        end -= 1;
-    }
+    let end = message.floor_char_boundary(message.len().min(limit.saturating_sub(1)));
     out.extend_from_slice(&message.as_bytes()[..end]);
     out
 }
@@ -685,9 +682,10 @@ impl SymbolicPipeline {
                     .map_err(|e| e.to_string())?;
             }
             let logits = self.head.project_output(&hidden)?;
-            if logits.len() != self.head.compiler().vocab().len()
-                || logits.iter().any(|v| !v.is_finite())
-            {
+            if logits.len() != self.head.compiler().vocab().len() {
+                return Err("invalid symbolic pipeline logits".into());
+            }
+            if logits.iter().any(|v| !v.is_finite()) {
                 return Err("invalid symbolic pipeline logits".into());
             }
             for client in &mut self.clients {
@@ -764,5 +762,87 @@ mod tests {
         let start = request.len() - 8;
         request[start..].copy_from_slice(&f64::NAN.to_le_bytes());
         assert!(vectors(&request, 4).is_err());
+        let mut empty = vec![PREPARE];
+        empty.extend_from_slice(&7u32.to_le_bytes());
+        empty.extend_from_slice(&0u32.to_le_bytes());
+        assert_eq!(vectors(&empty, 0).unwrap(), (7, Vec::new()));
+    }
+
+    #[test]
+    fn setup_write_frame_and_reject_enforce_exact_bounds() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let mut client = TcpStream::connect(addr).unwrap();
+        let (_server, _) = listener.accept().unwrap();
+
+        let valid = SymbolicTransportLimits {
+            frame_bytes: 81,
+            context: 1,
+            timeout: Duration::from_millis(250),
+            ..Default::default()
+        };
+        setup(&client, valid).unwrap();
+        assert_eq!(
+            client.read_timeout().unwrap(),
+            Some(Duration::from_millis(250))
+        );
+        assert_eq!(
+            client.write_timeout().unwrap(),
+            Some(Duration::from_millis(250))
+        );
+        assert!(client.nodelay().unwrap());
+
+        let max_valid = SymbolicTransportLimits {
+            frame_bytes: u32::MAX as usize,
+            ..valid
+        };
+        setup(&client, max_valid).unwrap();
+
+        for invalid_limits in [
+            SymbolicTransportLimits {
+                frame_bytes: 80,
+                ..valid
+            },
+            SymbolicTransportLimits {
+                context: 0,
+                ..valid
+            },
+            SymbolicTransportLimits {
+                timeout: Duration::ZERO,
+                ..valid
+            },
+        ] {
+            assert_eq!(
+                setup(&client, invalid_limits).unwrap_err().kind(),
+                io::ErrorKind::InvalidData
+            );
+        }
+        if let Ok(over_u32) = usize::try_from(u64::from(u32::MAX) + 1) {
+            assert_eq!(
+                setup(
+                    &client,
+                    SymbolicTransportLimits {
+                        frame_bytes: over_u32,
+                        ..valid
+                    }
+                )
+                .unwrap_err()
+                .kind(),
+                io::ErrorKind::InvalidData
+            );
+        }
+
+        assert_eq!(
+            write_frame(&mut client, &[], 16).unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+        assert_eq!(
+            write_frame(&mut client, &[1, 2], 1).unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+
+        assert_eq!(reject("éé", 2), vec![1]);
+        assert_eq!(reject("éé", 3), vec![1, 0xc3, 0xa9]);
+        assert_eq!(reject("aé", 3), vec![1, b'a']);
     }
 }

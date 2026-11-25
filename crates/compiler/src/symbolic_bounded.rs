@@ -340,13 +340,17 @@ pub fn compile_operation(
     }
     let config = profile.config(op, width)?;
     let nodes = dag(&config, 0)?.0.len();
-    if nodes > limits.max_nodes || nodes > u32::MAX as usize {
+    if nodes > limits.max_nodes {
         return Err("symbolic node budget exceeded".into());
     }
+    let _ = u32::try_from(nodes).map_err(|_| "symbolic node budget exceeded")?;
     let layout = BoundedProfile::output_layout(op);
     let signature = profile.signature(op, width, epsilon, layout)?;
     let (mut soa, roots, external) = dag(&config, nodes)?;
-    if soa.len() != nodes || soa.const_pool != config.fixed_literals() {
+    if soa.len() != nodes {
+        return Err("bounded symbolic construction changed".into());
+    }
+    if soa.const_pool != config.fixed_literals() {
         return Err("bounded symbolic construction changed".into());
     }
     let prefix = soa.const_pool.len();
@@ -410,4 +414,171 @@ pub fn compile_operation(
     };
     program.const_pool.clear();
     finish_with_basis(op, width, layout, vec![program], signature, limits, true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_values_base_signature_signature_and_compile_enforce_exact_boundaries() {
+        let profile = BoundedProfile::default();
+
+        // Dot dimension and zero-width checks.
+        assert_eq!(
+            profile
+                .validate_values(Operation::Dot, 2, 0.5, &[0.0], &[0.0, 0.0])
+                .unwrap_err(),
+            "bounded dot context dimensions differ"
+        );
+        assert_eq!(
+            profile
+                .validate_values(Operation::Dot, 2, 0.5, &[0.0, 0.0], &[0.0])
+                .unwrap_err(),
+            "bounded dot context dimensions differ"
+        );
+        assert_eq!(
+            profile
+                .validate_values(Operation::Dot, 0, 0.5, &[], &[])
+                .unwrap_err(),
+            "bounded dot context dimensions differ"
+        );
+
+        // base_signature width & constant index bounds.
+        assert_eq!(
+            profile.base_signature(Operation::Dot, 0, 0.5).unwrap_err(),
+            "invalid bounded symbolic width"
+        );
+        let u32_max = u32::MAX as usize;
+        if let Ok(over_u32) = usize::try_from(u64::from(u32::MAX) + 1) {
+            assert_eq!(
+                profile
+                    .base_signature(Operation::Dot, over_u32, 0.5)
+                    .unwrap_err(),
+                "invalid bounded symbolic width"
+            );
+            assert_eq!(
+                profile
+                    .signature(Operation::Dot, over_u32, 0.5, OutputLayout::Scalars)
+                    .unwrap_err(),
+                "invalid bounded symbolic shape/layout"
+            );
+        }
+        assert_eq!(
+            profile
+                .base_signature(Operation::Dot, u32_max, 0.5)
+                .unwrap_err(),
+            "bounded constant context index overflow"
+        );
+        assert_eq!(
+            profile
+                .signature(Operation::Dot, u32_max, 0.5, OutputLayout::Scalars)
+                .unwrap_err(),
+            "bounded constant context index overflow"
+        );
+
+        let fixed_len = profile
+            .base_signature(Operation::Dot, 1, 0.5)
+            .unwrap()
+            .fixed
+            .len();
+        let exact_max_width = u32_max + 1 - fixed_len;
+        let max_sig = profile
+            .base_signature(Operation::Dot, exact_max_width, 0.5)
+            .unwrap();
+        assert_eq!(max_sig.external, exact_max_width);
+        assert_eq!(
+            profile
+                .base_signature(Operation::Dot, exact_max_width + 1, 0.5)
+                .unwrap_err(),
+            "bounded constant context index overflow"
+        );
+
+        // signature historical_buffer check rejects non-Norm/Softmax Buffer and Norm/Softmax Scalars.
+        assert_eq!(
+            profile
+                .signature(Operation::Add, 1, 0.5, OutputLayout::Buffer)
+                .unwrap_err(),
+            "invalid bounded symbolic shape/layout"
+        );
+        assert_eq!(
+            profile
+                .signature(Operation::Norm, 4, 0.5, OutputLayout::Scalars)
+                .unwrap_err(),
+            "invalid bounded symbolic shape/layout"
+        );
+
+        // compile_operation program, fragment_bytes, and exact node-budget boundaries.
+        let op_size = std::mem::size_of::<RpnOp>();
+        assert_eq!(
+            compile_operation(
+                Operation::Add,
+                1,
+                0.5,
+                profile,
+                KernelLimits {
+                    max_programs: 0,
+                    ..Default::default()
+                },
+            )
+            .err()
+            .unwrap(),
+            "bounded symbolic program/fragment budget exceeded"
+        );
+        assert_eq!(
+            compile_operation(
+                Operation::Add,
+                1,
+                0.5,
+                profile,
+                KernelLimits {
+                    fragment_bytes: op_size - 1,
+                    ..Default::default()
+                },
+            )
+            .err()
+            .unwrap(),
+            "bounded symbolic program/fragment budget exceeded"
+        );
+        assert!(compile_operation(
+            Operation::Add,
+            1,
+            0.5,
+            profile,
+            KernelLimits {
+                fragment_bytes: op_size,
+                ..Default::default()
+            },
+        )
+        .is_ok());
+
+        let config = profile.config(Operation::Add, 1).unwrap();
+        let actual_nodes = dag(&config, 0).unwrap().0.len();
+        assert!(compile_operation(
+            Operation::Add,
+            1,
+            0.5,
+            profile,
+            KernelLimits {
+                max_nodes: actual_nodes,
+                ..Default::default()
+            },
+        )
+        .is_ok());
+        assert_eq!(
+            compile_operation(
+                Operation::Add,
+                1,
+                0.5,
+                profile,
+                KernelLimits {
+                    max_nodes: actual_nodes - 1,
+                    ..Default::default()
+                },
+            )
+            .err()
+            .unwrap(),
+            "symbolic node budget exceeded"
+        );
+    }
 }

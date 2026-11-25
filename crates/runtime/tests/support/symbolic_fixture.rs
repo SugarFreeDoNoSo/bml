@@ -187,3 +187,221 @@ pub fn fixture_layers_with_output(embedding: f32, layers: u32, output_token: usi
     std::fs::write(&path, bytes).unwrap();
     Fixture(path)
 }
+
+#[allow(dead_code)]
+pub fn fixture_gqa_custom(
+    layers: u32,
+    n_heads: u32,
+    kv_heads: u32,
+    head_dim: u32,
+    ffn_dim: u32,
+    include_output_norm: bool,
+) -> Fixture {
+    assert!(layers > 0);
+    assert!(n_heads > 0 && kv_heads > 0 && n_heads.is_multiple_of(kv_heads));
+    assert!(head_dim > 0 && head_dim.is_multiple_of(2));
+    let n_embd = n_heads * head_dim;
+    let kv_dim = kv_heads * head_dim;
+    let mut tokens = vec!["<unk>".into(), "<s>".into(), "</s>".into(), "▁".into()];
+    tokens.extend((0..256).map(|b| format!("<0x{b:02X}>")));
+    let vocab = tokens.len();
+    let mut meta = vec![
+        ("general.architecture", 8u32, string("llama")),
+        ("tokenizer.ggml.model", 8, string("llama")),
+        (
+            "tokenizer.ggml.tokens",
+            9,
+            array(8, tokens.iter().map(|t| string(t)).collect()),
+        ),
+        (
+            "tokenizer.ggml.scores",
+            9,
+            array(
+                6,
+                (0..vocab).map(|_| (-1f32).to_le_bytes().to_vec()).collect(),
+            ),
+        ),
+        (
+            "tokenizer.ggml.token_type",
+            9,
+            array(
+                5,
+                (0..vocab)
+                    .map(|i| {
+                        let kind: i32 = match i {
+                            0 => 2,
+                            1 | 2 => 3,
+                            3 => 1,
+                            _ => 6,
+                        };
+                        kind.to_le_bytes().to_vec()
+                    })
+                    .collect(),
+            ),
+        ),
+        (
+            "llama.attention.layer_norm_rms_epsilon",
+            6,
+            0.5f32.to_le_bytes().to_vec(),
+        ),
+        ("llama.rope.freq_base", 6, 16f32.to_le_bytes().to_vec()),
+    ];
+    for (name, value) in [
+        ("llama.block_count", layers),
+        ("llama.attention.head_count", n_heads),
+        ("llama.attention.head_count_kv", kv_heads),
+        ("llama.embedding_length", n_embd),
+        ("llama.feed_forward_length", ffn_dim),
+        ("llama.context_length", 8),
+        ("llama.rope.dimension_count", head_dim),
+        ("llama.vocab_size", vocab as u32),
+        ("tokenizer.ggml.bos_token_id", 1),
+        ("tokenizer.ggml.eos_token_id", 2),
+        ("tokenizer.ggml.unknown_token_id", 0),
+    ] {
+        meta.push((name, 4, value.to_le_bytes().to_vec()));
+    }
+    let e = n_embd as usize;
+    let kvd = kv_dim as usize;
+    let f = ffn_dim as usize;
+    let mut embedding = vec![0f32; e * vocab];
+    for i in 0..e {
+        embedding[69 * e + i] = ((i as f32) * 0.07 - 0.2).clamp(-0.35, 0.35);
+        embedding[70 * e + i] = (0.25 - (i as f32) * 0.06).clamp(-0.35, 0.35);
+    }
+    let mut head = vec![0f32; e * vocab];
+    for i in 0..e {
+        head[i * e + i] = 0.5;
+    }
+    head[69 * e] = 0.4;
+    head[70 * e + (e - 1)] = -0.35;
+
+    let mut q = vec![0f32; e * e];
+    for r in 0..e {
+        q[r * e + r] = 0.25;
+        q[r * e + ((r + 1) % e)] = -0.1;
+    }
+    let mut k = vec![0f32; e * kvd];
+    let mut v = vec![0f32; e * kvd];
+    for r in 0..kvd {
+        let head_idx = r / head_dim as usize;
+        let sign = if head_idx.is_multiple_of(2) {
+            1.0
+        } else {
+            -1.0
+        };
+        k[r * e + (r % e)] = 0.2 * sign;
+        k[r * e + ((r + 2) % e)] = 0.15 * (head_idx as f32 + 1.0);
+        v[r * e + ((r + 1) % e)] = 0.25 * sign;
+        v[r * e + ((r + 3) % e)] = -0.1 * (head_idx as f32 + 1.0);
+    }
+    let mut attn_out = vec![0f32; e * e];
+    for r in 0..e {
+        attn_out[r * e + r] = 0.25;
+    }
+    let mut gate = vec![0f32; e * f];
+    let mut up = vec![0f32; e * f];
+    let mut down = vec![0f32; f * e];
+    for r in 0..f {
+        gate[r * e + (r % e)] = 0.25;
+        up[r * e + ((r + 1) % e)] = -0.25;
+    }
+    for r in 0..e {
+        down[r * f + (r % f)] = 0.25;
+    }
+
+    let mut weights: Vec<(String, Vec<u64>, Vec<f32>)> = vec![
+        (
+            "token_embd.weight".into(),
+            vec![n_embd as u64, vocab as u64],
+            embedding,
+        ),
+        (
+            "output.weight".into(),
+            vec![n_embd as u64, vocab as u64],
+            head,
+        ),
+    ];
+    if include_output_norm {
+        weights.push((
+            "output_norm.weight".into(),
+            vec![n_embd as u64],
+            vec![0.5; e],
+        ));
+    }
+    let layer0: Vec<(&str, Vec<u64>, Vec<f32>)> = vec![
+        ("blk.0.attn_norm.weight", vec![n_embd as u64], vec![0.5; e]),
+        ("blk.0.ffn_norm.weight", vec![n_embd as u64], vec![0.5; e]),
+        ("blk.0.attn_q.weight", vec![n_embd as u64, n_embd as u64], q),
+        ("blk.0.attn_k.weight", vec![n_embd as u64, kv_dim as u64], k),
+        ("blk.0.attn_v.weight", vec![n_embd as u64, kv_dim as u64], v),
+        (
+            "blk.0.attn_output.weight",
+            vec![n_embd as u64, n_embd as u64],
+            attn_out,
+        ),
+        (
+            "blk.0.ffn_gate.weight",
+            vec![n_embd as u64, ffn_dim as u64],
+            gate,
+        ),
+        (
+            "blk.0.ffn_up.weight",
+            vec![n_embd as u64, ffn_dim as u64],
+            up,
+        ),
+        (
+            "blk.0.ffn_down.weight",
+            vec![ffn_dim as u64, n_embd as u64],
+            down,
+        ),
+    ];
+    for (name, dims, values) in &layer0 {
+        weights.push(((*name).to_owned(), dims.clone(), values.clone()));
+    }
+    for layer in 1..layers {
+        for (name, dims, values) in &layer0 {
+            if let Some(suffix) = name.strip_prefix("blk.0.") {
+                weights.push((
+                    format!("blk.{layer}.{suffix}"),
+                    dims.clone(),
+                    values
+                        .iter()
+                        .map(|val| val * (1.0 + 0.1 * layer as f32))
+                        .collect(),
+                ));
+            }
+        }
+    }
+    let mut bytes = b"GGUF".to_vec();
+    bytes.extend(3u32.to_le_bytes());
+    bytes.extend((weights.len() as u64).to_le_bytes());
+    bytes.extend((meta.len() as u64).to_le_bytes());
+    for (name, kind, value) in meta {
+        bytes.extend(string(name));
+        bytes.extend(kind.to_le_bytes());
+        bytes.extend(value);
+    }
+    let mut data = Vec::new();
+    for (name, dims, values) in weights {
+        data.resize(data.len().div_ceil(32) * 32, 0);
+        bytes.extend(string(&name));
+        bytes.extend((dims.len() as u32).to_le_bytes());
+        for dim in dims {
+            bytes.extend(dim.to_le_bytes());
+        }
+        bytes.extend(0u32.to_le_bytes());
+        bytes.extend((data.len() as u64).to_le_bytes());
+        data.extend(values.into_iter().flat_map(f32::to_le_bytes));
+    }
+    bytes.resize(bytes.len().div_ceil(32) * 32, 0);
+    bytes.extend(data);
+    static CUSTOM_NEXT: AtomicUsize = AtomicUsize::new(0);
+    let path = std::env::temp_dir().join(format!(
+        "bml_symbolic_custom_{}_{}.gguf",
+        std::process::id(),
+        CUSTOM_NEXT.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::write(&path, bytes).unwrap();
+    Fixture(path)
+}

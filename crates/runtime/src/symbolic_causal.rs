@@ -179,10 +179,9 @@ impl Kernel {
                 .collect::<Vec<_>>();
             &joined
         };
-        let mut result = if self.layout == OutputLayout::Scalars {
-            Vec::with_capacity(self.outputs)
-        } else {
-            Vec::new()
+        let mut result = match self.layout {
+            OutputLayout::Scalars => Vec::with_capacity(self.outputs),
+            OutputLayout::Buffer | OutputLayout::IndexedBuffer => Vec::new(),
         };
         for program in &self.programs {
             let mut buffer = if self.layout.uses_buffer() {
@@ -875,5 +874,62 @@ impl SymbolicCausalModel {
         let logits = self.project_output(&hidden)?;
         cache.advance_by(count);
         Ok(logits)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn kernel_compile_sets_checked_real_only_for_bounded_rms_norm_and_execute_rejects_nonfinite() {
+        let limits = SymbolicLimits::default();
+        let bounded_norm = Kernel::compile(
+            Operation::Norm,
+            4,
+            0.5,
+            Some(RmsBounds {
+                input: 8.0,
+                weight: 1.0,
+            }),
+            None,
+            limits,
+            (100_000, 100),
+        )
+        .unwrap();
+        assert!(bounded_norm.checked_real);
+
+        let bounded_dot = Kernel::compile(
+            Operation::Dot,
+            4,
+            0.5,
+            Some(RmsBounds {
+                input: 8.0,
+                weight: 1.0,
+            }),
+            None,
+            limits,
+            (100_000, 100),
+        )
+        .unwrap();
+        assert!(!bounded_dot.checked_real);
+
+        let mut legacy_norm =
+            Kernel::compile(Operation::Norm, 4, 0.5, None, None, limits, (100_000, 100)).unwrap();
+        assert!(!legacy_norm.checked_real);
+
+        // Matching external length with non-finite input or external must fail in execute().
+        assert_eq!(
+            legacy_norm
+                .execute(&[f64::NAN, 0.0, 0.0, 0.0], &[0.5, 0.5, 0.5, 0.5])
+                .unwrap_err(),
+            "invalid symbolic context"
+        );
+        assert_eq!(
+            legacy_norm
+                .execute(&[0.25, 0.0, 0.0, 0.0], &[f64::INFINITY, 0.5, 0.5, 0.5])
+                .unwrap_err(),
+            "invalid symbolic context"
+        );
     }
 }

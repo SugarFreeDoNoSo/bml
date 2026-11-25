@@ -389,3 +389,55 @@ fn symbolic_numerical_and_construction_limits_are_explicit() {
         assert_eq!(cache.current_pos(), 0);
     }
 }
+
+#[test]
+fn multi_kv_head_gqa_and_row_indexed_bounded_projection_errors_match_contract() {
+    let gqa = symbolic_fixture::fixture_gqa_custom(1, 4, 2, 2, 4, true);
+    let expected = InferenceCompiler::open_mapped(&gqa.0)
+        .unwrap()
+        .forward(&[69, 70])
+        .unwrap();
+
+    // Open in legacy v2, bounded-RMS v3, and full bounded v4 modes and compare
+    // against native InferenceCompiler for multi-KV-head GQA (n_heads=4, kv_heads=2).
+    let mut legacy = SymbolicCausalModel::open(&gqa.0, SymbolicLimits::default()).unwrap();
+    let legacy_logits = legacy.forward(&[69, 70]).unwrap();
+    assert_eq!(legacy_logits.len(), expected.len());
+    for (i, (&actual, &reference)) in legacy_logits.iter().zip(&expected).enumerate() {
+        assert!(
+            (actual - reference).abs() < 1e-4,
+            "legacy GQA logit {i}: actual={actual}, reference={reference}"
+        );
+    }
+
+    let mut rms = SymbolicCausalModel::open_with_rms_bounds(
+        &gqa.0,
+        SymbolicLimits::default(),
+        bml_compiler::symbolic_kernels::RmsBounds {
+            input: 8.0,
+            weight: 1.0,
+        },
+    )
+    .unwrap();
+    let rms_logits = rms.forward(&[69, 70]).unwrap();
+    for (i, (&actual, &reference)) in rms_logits.iter().zip(&expected).enumerate() {
+        assert!(
+            (actual - reference).abs() < 1e-4,
+            "rms GQA logit {i}: actual={actual}, reference={reference}"
+        );
+    }
+
+    // Trigger bounded projection validation failure on row 2 (not row 0) of blk.0.attn_k.weight
+    // (attn_q rows <= 0.25, attn_k rows 0..2 <= 0.20, attn_k row 2 has weight 0.30).
+    let tight = bml_compiler::symbolic_bounded::BoundedProfile {
+        projection_weight: 0.26,
+        ..Default::default()
+    };
+    let mut bounded =
+        SymbolicCausalModel::open_bounded(&gqa.0, SymbolicLimits::default(), tight).unwrap();
+    let err = bounded.forward(&[69]).unwrap_err();
+    assert!(
+        err.contains("blk.0.attn_k.weight row 2:"),
+        "expected row 2 failure, got: {err}"
+    );
+}
