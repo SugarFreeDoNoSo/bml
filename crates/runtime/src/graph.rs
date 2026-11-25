@@ -306,9 +306,12 @@ fn execute_checked_ops(
     stack: &mut Vec<f64>,
     buffer: &mut ResultBuffer,
 ) -> Result<(), GraphError> {
-    let mut position = 0;
-    while position < ops.len() {
-        match ops[position] {
+    let mut skip_until = 0;
+    for (position, op) in ops.iter().enumerate() {
+        if position < skip_until {
+            continue;
+        }
+        match *op {
             RpnOp::One => stack.push(1.0),
             RpnOp::Zero => stack.push(0.0),
             RpnOp::VarIndexed { base } => {
@@ -325,7 +328,7 @@ fn execute_checked_ops(
             RpnOp::FAdd | RpnOp::FMul => {
                 let right = stack.pop().ok_or(GraphError::Stack)?;
                 let left = stack.pop().ok_or(GraphError::Stack)?;
-                let value = if matches!(ops[position], RpnOp::FAdd) {
+                let value = if matches!(*op, RpnOp::FAdd) {
                     left + right
                 } else {
                     left * right
@@ -341,7 +344,7 @@ fn execute_checked_ops(
                 let offset = stack.pop().ok_or(GraphError::Stack)?;
                 let index = bml_compiler::rpn::context_index(base, offset)
                     .ok_or(GraphError::Reference)? as usize;
-                let context = if matches!(ops[position], RpnOp::ContextVarIndexed { .. }) {
+                let context = if matches!(*op, RpnOp::ContextVarIndexed { .. }) {
                     inputs
                 } else {
                     constants
@@ -399,11 +402,9 @@ fn execute_checked_ops(
                     stack.push(f64::from(index));
                     execute_checked_ops(body, inputs, constants, stack, buffer)?;
                 }
-                position = end;
-                continue;
+                skip_until = end;
             }
         }
-        position += 1;
     }
     Ok(())
 }

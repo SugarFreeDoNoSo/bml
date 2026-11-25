@@ -43,28 +43,39 @@ pub(crate) fn compact_stage(dag: NodeSoA, roots: Vec<u32>) -> (NodeSoA, Vec<u32>
 // stack. Other shared values retain stable relative positions until their
 // last consumer. This changes only stack administration, never BML operands.
 pub(crate) fn linearize_stage(dag: &NodeSoA, root: u32) -> RpnProgram {
-    let mut pending = vec![(root, false)];
-    let mut visited = vec![false; dag.len()];
+    enum Visit {
+        Enter(u32),
+        Emit(u32),
+    }
+    let mut pending = vec![Visit::Enter(root)];
+    let mut expanded = vec![false; dag.len()];
     let mut order = Vec::new();
     let mut uses = vec![0usize; dag.len()];
     uses[root as usize] = 1;
-    while let Some((node, expanded)) = pending.pop() {
-        let index = node as usize;
-        if visited[index] {
-            continue;
+    while let Some(step) = pending.pop() {
+        match step {
+            Visit::Enter(node) => {
+                let index = node as usize;
+                if expanded[index] {
+                    continue;
+                }
+                expanded[index] = true;
+                match dag.kinds[index] {
+                    NodeKind::Bml => {
+                        pending.push(Visit::Emit(node));
+                        pending.push(Visit::Enter(dag.rights[index]));
+                        pending.push(Visit::Enter(dag.lefts[index]));
+                    }
+                    _ => order.push(node),
+                }
+            }
+            Visit::Emit(node) => {
+                let index = node as usize;
+                uses[dag.lefts[index] as usize] += 1;
+                uses[dag.rights[index] as usize] += 1;
+                order.push(node);
+            }
         }
-        if dag.kinds[index] == NodeKind::Bml && !expanded {
-            pending.push((node, true));
-            pending.push((dag.rights[index], false));
-            pending.push((dag.lefts[index], false));
-            continue;
-        }
-        visited[index] = true;
-        if dag.kinds[index] == NodeKind::Bml {
-            uses[dag.lefts[index] as usize] += 1;
-            uses[dag.rights[index] as usize] += 1;
-        }
-        order.push(node);
     }
     let mut program = RpnProgram::new();
     let mut stack = Vec::<u32>::new();

@@ -452,9 +452,12 @@ pub(crate) fn evaluate_indexed_ops(
     ctx: &bml_domain::EvalContext,
     depth: usize,
 ) -> Result<(), ()> {
-    let mut i = 0usize;
-    while i < ops.len() {
-        match ops[i] {
+    let mut skip_until = 0;
+    for (i, op) in ops.iter().enumerate() {
+        if i < skip_until {
+            continue;
+        }
+        match *op {
             RpnOp::One => stack.push(1.0),
             RpnOp::Zero => stack.push(0.0),
             RpnOp::Var(id) => stack.push(ctx.get_var(id)),
@@ -462,7 +465,7 @@ pub(crate) fn evaluate_indexed_ops(
             RpnOp::ContextVarIndexed { base } | RpnOp::ContextConstIndexed { base } => {
                 let offset = stack.pop().ok_or(())?;
                 let value = context_index(base, offset).map_or(f64::NAN, |id| {
-                    if matches!(ops[i], RpnOp::ContextVarIndexed { .. }) {
+                    if matches!(*op, RpnOp::ContextVarIndexed { .. }) {
                         ctx.get_var(id)
                     } else {
                         ctx.get_const(id)
@@ -473,7 +476,7 @@ pub(crate) fn evaluate_indexed_ops(
             RpnOp::Bml | RpnOp::FAdd | RpnOp::FMul | RpnOp::FMax => {
                 let right = stack.pop().ok_or(())?;
                 let left = stack.pop().ok_or(())?;
-                stack.push(match ops[i] {
+                stack.push(match *op {
                     RpnOp::Bml => bml_domain::bml_base_op(left, right),
                     RpnOp::FAdd => left + right,
                     RpnOp::FMax => finite_max(left, right),
@@ -513,11 +516,9 @@ pub(crate) fn evaluate_indexed_ops(
                     stack.push(f64::from(index));
                     evaluate_indexed_ops(body, stack, ctx, depth + 1)?;
                 }
-                i = end;
-                continue;
+                skip_until = end;
             }
         }
-        i += 1;
     }
     Ok(())
 }
@@ -633,68 +634,55 @@ pub fn linearize_outputs(
     // program. Const/Var indices refer to the caller's execution context, not
     // necessarily to the owned pool, so they are checked by the runtime.
     let mut reachable = vec![false; soa.len()];
-    let mut pending_ids = Vec::new();
     for &root in roots {
-        if root as usize >= soa.len() {
+        let Some(mark) = reachable.get_mut(root as usize) else {
             return Err("unknown DAG output node".into());
-        }
-        pending_ids.push(root);
+        };
+        *mark = true;
     }
-    while let Some(id) = pending_ids.pop() {
-        let index = id as usize;
-        if reachable[index] {
+    for index in (0..soa.len()).rev() {
+        if !reachable[index] || soa.kinds[index] != NodeKind::Bml {
             continue;
         }
-        if soa.kinds[index] == NodeKind::Bml {
-            let left = soa.lefts[index];
-            let right = soa.rights[index];
-            if left >= id || right >= id {
-                return Err("DAG children must precede their parent".into());
-            }
-            pending_ids.push(right);
-            pending_ids.push(left);
+        let id = index as u32;
+        let left = soa.lefts[index];
+        let right = soa.rights[index];
+        if left >= id || right >= id {
+            return Err("DAG children must precede their parent".into());
         }
-        reachable[index] = true;
+        reachable[left as usize] = true;
+        reachable[right as usize] = true;
     }
 
     let mut program = RpnProgram::new();
     program.const_pool.clone_from(&soa.const_pool);
     let mut slots = vec![None; soa.len()];
-    let mut pending = Vec::new();
     let mut height = 0usize;
-    for (output, &root) in roots.iter().enumerate() {
-        pending.push((root, false));
-        while let Some((id, expanded)) = pending.pop() {
-            let index = id as usize;
-            if slots[index].is_some() {
-                continue;
-            }
-            if soa.kinds[index] == NodeKind::Bml && !expanded {
-                pending.push((id, true));
-                pending.push((soa.rights[index], false));
-                pending.push((soa.lefts[index], false));
-                continue;
-            }
-            match soa.kinds[index] {
-                NodeKind::One => program.push(RpnOp::One),
-                NodeKind::Zero => program.push(RpnOp::Zero),
-                NodeKind::Var(var) => program.push(RpnOp::Var(var)),
-                NodeKind::Const(value) => program.push(RpnOp::Const(value)),
-                NodeKind::Bml => {
-                    let left = slots[soa.lefts[index] as usize].unwrap();
-                    let right = slots[soa.rights[index] as usize].unwrap();
-                    program.push(RpnOp::Pick {
-                        depth: (height - 1 - left) as u32,
-                    });
-                    program.push(RpnOp::Pick {
-                        depth: (height - right) as u32,
-                    });
-                    program.push(RpnOp::Bml);
-                }
-            }
-            slots[index] = Some(height);
-            height += 1;
+    for (index, &is_reachable) in reachable.iter().enumerate() {
+        if !is_reachable {
+            continue;
         }
+        match soa.kinds[index] {
+            NodeKind::One => program.push(RpnOp::One),
+            NodeKind::Zero => program.push(RpnOp::Zero),
+            NodeKind::Var(var) => program.push(RpnOp::Var(var)),
+            NodeKind::Const(value) => program.push(RpnOp::Const(value)),
+            NodeKind::Bml => {
+                let left = slots[soa.lefts[index] as usize].unwrap();
+                let right = slots[soa.rights[index] as usize].unwrap();
+                program.push(RpnOp::Pick {
+                    depth: (height - 1 - left) as u32,
+                });
+                program.push(RpnOp::Pick {
+                    depth: (height - right) as u32,
+                });
+                program.push(RpnOp::Bml);
+            }
+        }
+        slots[index] = Some(height);
+        height += 1;
+    }
+    for (output, &root) in roots.iter().enumerate() {
         program.push(RpnOp::Pick {
             depth: (height - 1 - slots[root as usize].unwrap()) as u32,
         });
