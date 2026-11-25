@@ -1,0 +1,89 @@
+{
+  "version": 2,
+  "skills": {
+    "cpu-cache-opt": {
+      "source": "mohitmishra786/low-level-dev-skills",
+      "commit": "18f29518a47fda070e6ec1268cb577692fae9a10",
+      "sourceType": "github",
+      "skillPath": "skills/low-level-programming/cpu-cache-opt/SKILL.md",
+      "computedHash": "7fb4abfb2d525d1d93ff9e6f7513af974dd9536eee124eea03c2c29027ecce32"
+    },
+    "docker-build-strategies": {
+      "source": "docker/skills",
+      "commit": "5cf37e721e6190622b4dc2d81d4cd7f15933ee9c",
+      "sourceType": "github",
+      "skillPath": "skills/docker-build-strategies/SKILL.md",
+      "computedHash": "a9cc5c3839d60ec8e7ca390292e1d4784bc69cf962413cb17364e7b5a46783e1"
+    },
+    "github-actions-templates": {
+      "source": "wshobson/agents",
+      "commit": "c96b5f6552dba32e4492307493ee613581430715",
+      "sourceType": "github",
+      "skillPath": "plugins/cicd-automation/skills/github-actions-templates/SKILL.md",
+      "computedHash": "4cfaaba2a265ae01444e6d0b4f629ef6ce190c6ca336c83c99b8a9afec70f702"
+    },
+    "modern-python": {
+      "source": "trailofbits/skills",
+      "commit": "149d7b21f4067765b82e67029730b42d228ef4b4",
+      "sourceType": "github",
+      "skillPath": "plugins/modern-python/skills/modern-python/SKILL.md",
+      "computedHash": "6f78e1948cc291dfc71672a87f83a02de3cec01545ed289312ce432d129ec00b"
+    },
+    "property-based-testing": {
+      "source": "trailofbits/skills",
+      "commit": "149d7b21f4067765b82e67029730b42d228ef4b4",
+      "sourceType": "github",
+      "skillPath": "plugins/property-based-testing/skills/property-based-testing/SKILL.md",
+      "computedHash": "1fadba845ba4a8f8916bb58f5b61dda6142780851ffb6a5a5ff82574b7798bfa"
+    },
+    "python-testing-patterns": {
+      "source": "wshobson/agents",
+      "commit": "c96b5f6552dba32e4492307493ee613581430715",
+      "sourceType": "github",
+      "skillPath": "plugins/python-development/skills/python-testing-patterns/SKILL.md",
+      "computedHash": "8113c05a831d4872c9294b0df26a335c09af423ee2e23d8b9b6817b300d96796"
+    },
+    "rust-async-patterns": {
+      "source": "wshobson/agents",
+      "commit": "c96b5f6552dba32e4492307493ee613581430715",
+      "sourceType": "github",
+      "skillPath": "plugins/systems-programming/skills/rust-async-patterns/SKILL.md",
+      "computedHash": "286b73077a434af5844dd480e5b98026bea5b31fcfafce3c04405a7392331601"
+    },
+    "rust-best-practices": {
+      "source": "apollographql/skills",
+      "commit": "9dda1397730370aeb8df4ff8f2015c34c86b5003",
+      "sourceType": "github",
+      "skillPath": "skills/rust-best-practices/SKILL.md",
+      "computedHash": "7e12e68aa50152eb7ba9ea1f88ca5380c846ea0175f8ab6788bb79b7faf12ca0"
+    },
+    "rust-profiling": {
+      "source": "mohitmishra786/low-level-dev-skills",
+      "commit": "18f29518a47fda070e6ec1268cb577692fae9a10",
+      "sourceType": "github",
+      "skillPath": "skills/rust/rust-profiling/SKILL.md",
+      "computedHash": "b6bea637f15a899156b80ec98853399848eb49129d257bc1a44f51e00dd62cd5"
+    },
+    "rust-review": {
+      "source": "trailofbits/skills",
+      "commit": "149d7b21f4067765b82e67029730b42d228ef4b4",
+      "sourceType": "github",
+      "skillPath": "plugins/rust-review/skills/rust-review/SKILL.md",
+      "computedHash": "76c1eca6f7544650022e51013ab967a6672845ea46d56de600caff171fa924cd"
+    },
+    "rust-testing": {
+      "source": "affaan-m/ECC",
+      "commit": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+      "sourceType": "github",
+      "skillPath": "skills/rust-testing/SKILL.md",
+      "computedHash": "4a16853504a8d9ee1af3abb29e4db9b506ddc46f5ef6bafff45193a1a1a1e520"
+    },
+    "rust-unsafe": {
+      "source": "mohitmishra786/low-level-dev-skills",
+      "commit": "18f29518a47fda070e6ec1268cb577692fae9a10",
+      "sourceType": "github",
+      "skillPath": "skills/rust/rust-unsafe/SKILL.md",
+      "computedHash": "89f47691380ae37547be09b13b4615b23dea72a17dde07ef19622143e978dcf5"
+    }
+  }
+}
