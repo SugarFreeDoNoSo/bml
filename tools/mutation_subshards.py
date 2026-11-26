@@ -775,19 +775,71 @@ def mutation_progress(root):
     return {"active_mutant": None, "newest_log": newest, "raw_progress": progress}
 
 
+def diagnostic_status(process):
+    """Do not follow a PID-directory or status symlink in diagnostic metadata."""
+    try:
+        status = process / "status"
+        if process.is_symlink() or status.is_symlink():
+            return None
+        return optional_text(status)
+    except OSError:
+        return None
+
+
+def diagnostic_parent_index(proc_root):
+    """Bounded PPid fallback when task/*/children is unavailable.
+
+    Some kernels do not expose task/*/children. Read only process status
+    metadata, retain only parent/child IDs, and never emit unrelated processes.
+    Like the primary sampler, this is a best-effort diagnostic snapshot.
+    """
+    parents = {}
+    try:
+        for index, process in enumerate(proc_root.iterdir()):
+            if index >= 4096:
+                break
+            name = process.name
+            if not name.isascii() or not name.isdecimal() or len(name) > 10 or name.startswith("0"):
+                continue
+            status = diagnostic_status(process)
+            fields = dict(line.split(":", 1) for line in (status or "").splitlines() if ":" in line)
+            parent = fields.get("PPid", "").strip()
+            if fields.get("Pid", "").strip() == name and parent.isascii() \
+                    and parent.isdecimal() and len(parent) <= 10 and str(int(parent)) == parent:
+                parents.setdefault(int(parent), []).append(int(name))
+    except OSError:
+        pass
+    return parents
+
+
 def diagnostic_sample(pid, root, proc_root=Path("/proc"), cgroup_root=Path("/sys/fs/cgroup")):
     """Only this PID subtree, cgroup counters and disk; never argv/env/secrets."""
-    processes, pending, seen = [], [pid], set()
+    processes, pending, seen = [], [(pid, None)], set()
+    parents = None
     while pending and len(seen) < 256:
-        current = pending.pop()
+        current, expected_parent = pending.pop()
         if current in seen:
             continue
         seen.add(current)
-        status = optional_text(proc_root / str(current) / "status")
+        process = proc_root / str(current)
+        try:
+            if process.is_symlink() or (process / "status").is_symlink():
+                continue
+        except OSError:
+            continue
+        status = diagnostic_status(process)
         fields = dict(line.split(":", 1) for line in (status or "").splitlines() if ":" in line)
+        # Recheck the observed parent edge before using the cached index.
+        # Missing/mismatched fields must not create a row or bridge. Procfs
+        # remains a best-effort observation, not an atomic identity snapshot.
+        if expected_parent is not None and (
+                fields.get("Pid", "").strip() != str(current)
+                or fields.get("PPid", "").strip() != str(expected_parent)):
+            continue
         values = {key: value.strip() if (value := fields.get(key)) is not None
                   and len(value) <= 64 else None for key in ("State", "VmRSS", "VmHWM", "Threads")}
         processes.append({"pid": current, **values})
+        children_available = False
         try:
             # A cargo-mutants worker thread can own the running cargo child.
             for index, children in enumerate((proc_root / str(current) / "task").glob("*/children")):
@@ -795,14 +847,20 @@ def diagnostic_sample(pid, root, proc_root=Path("/proc"), cgroup_root=Path("/sys
                 if index >= 1024 or available <= 0:
                     break
                 text = optional_text(children)
+                children_available |= text is not None
                 found = (int(x) for x in (text or "").split() if x.isdecimal() and len(x) <= 10)
                 for child in found:
-                    pending.append(child)
+                    pending.append((child, None))
                     available -= 1
                     if available <= 0:
                         break
         except OSError:
             pass
+        if not children_available and fields.get("Pid", "").strip() == str(current):
+            if parents is None:
+                parents = diagnostic_parent_index(proc_root)
+            available = 256 - len(seen) - len(pending)
+            pending.extend((child, current) for child in parents.get(current, [])[:available])
     cgroup = {}
     for name in ("memory.current", "memory.peak", "memory.max", "memory.events", "pids.current"):
         try:

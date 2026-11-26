@@ -651,6 +651,177 @@ class DiagnosticTelemetry(unittest.TestCase):
             self.assertIsNone(missing["disk_available_bytes"])
             self.assertTrue(all(value is None for value in missing["cgroup"].values()))
 
+    def test_subtree_falls_back_to_parent_ids_when_kernel_has_no_children_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            proc, source, cgroup = root / "proc", root / "source", root / "cgroup"
+            source.mkdir()
+            for pid, parent in [(123, 1), (200, 123), (300, 200), (400, 1)]:
+                process = proc / str(pid)
+                (process / "task" / str(pid)).mkdir(parents=True)
+                (process / "status").write_text(
+                    f"Pid:\t{pid}\nPPid:\t{parent}\nState:\tS (sleeping)\nVmRSS:\t8 kB\n")
+                (process / "environ").write_text("SECRET")
+                (process / "cmdline").write_text("SECRET")
+            # Unreadable or malformed metadata cannot invent descendants.
+            (proc / "500").mkdir()
+            (proc / "600").mkdir()
+            (proc / "600/status").write_text("PPid:\tinvalid\n")
+            (proc / "700").mkdir()
+            (proc / "700/status").write_text("Pid:\t701\nPPid:\t123\n")
+            sample = sub.diagnostic_sample(123, source, proc, cgroup)
+            self.assertEqual({row["pid"] for row in sample["processes"]}, {123, 200, 300})
+            self.assertNotIn("SECRET", sub.diagnostic_json(sample))
+
+    def test_parent_fallback_reads_bounded_status_metadata_only(self):
+        proc = Path("/fake-proc")
+        entries = (proc / str(pid) for pid in range(1, 5001))
+        with patch.object(Path, "iterdir", return_value=entries), \
+                patch.object(Path, "is_symlink", return_value=False), \
+                patch.object(sub, "optional_text", side_effect=lambda path:
+                             f"Pid:\t{path.parent.name}\nPPid:\t1\n") as read:
+            parents = sub.diagnostic_parent_index(proc)
+        self.assertEqual(len(parents[1]), 4096)
+        self.assertEqual(read.call_count, 4096)
+        self.assertTrue(all(call.args[0].name == "status" for call in read.call_args_list))
+
+    def test_parent_fallback_bounds_discarded_directory_entries_too(self):
+        proc = Path("/fake-proc")
+        entries = (proc / f"not-a-pid-{i}" for i in range(5000))
+        with patch.object(Path, "iterdir", return_value=entries), \
+                patch.object(sub, "optional_text") as read:
+            self.assertEqual(sub.diagnostic_parent_index(proc), {})
+        read.assert_not_called()
+        # At most the first over-limit entry is consumed to detect the bound.
+        self.assertEqual(next(entries), proc / "not-a-pid-4097")
+
+    @staticmethod
+    def process_status(proc, pid, parent):
+        process = proc / str(pid)
+        process.mkdir(parents=True, exist_ok=True)
+        status = process / "status"
+        status.write_text(f"Pid:\t{pid}\nPPid:\t{parent}\nState:\tS (sleeping)\n")
+        return status
+
+    def test_readable_empty_children_interface_does_not_scan_other_processes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            proc = root / "proc"
+            self.process_status(proc, 123, 1)
+            self.process_status(proc, 200, 123)
+            task = proc / "123/task/123"
+            task.mkdir(parents=True)
+            (task / "children").write_text("")
+            with patch.object(sub, "diagnostic_parent_index",
+                              side_effect=AssertionError("readable children must be authoritative")):
+                sample = sub.diagnostic_sample(123, root, proc, root / "cgroup")
+            self.assertEqual([row["pid"] for row in sample["processes"]], [123])
+
+    def test_parent_fallback_rechecks_disappeared_reparented_and_mismatched_pids(self):
+        for changed in (None, "Pid:\t200\nPPid:\t1\n", "Pid:\t999\nPPid:\t123\n"):
+            with self.subTest(status=changed), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                proc = root / "proc"
+                self.process_status(proc, 123, 1)
+                status = self.process_status(proc, 200, 123)
+                self.process_status(proc, 300, 200)
+                real_index = sub.diagnostic_parent_index
+
+                def index_then_change(directory):
+                    result = real_index(directory)
+                    if changed is None:
+                        status.unlink()
+                    else:
+                        status.write_text(changed)
+                    return result
+
+                with patch.object(sub, "diagnostic_parent_index", side_effect=index_then_change), \
+                        patch.object(sub, "optional_text", wraps=sub.optional_text) as read:
+                    sample = sub.diagnostic_sample(123, root, proc, root / "cgroup")
+                self.assertEqual([row["pid"] for row in sample["processes"]], [123])
+                # Grandchild status was indexed once, never visited through a stale parent.
+                self.assertEqual(sum(call.args[0] == proc / "300/status"
+                                     for call in read.call_args_list), 1)
+
+    def test_parent_fallback_discards_symlinks_and_never_reads_their_targets(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            proc = root / "proc"
+            self.process_status(proc, 123, 1)
+            target = root / "outside"
+            target.mkdir()
+            (target / "status").write_text("Pid:\t200\nPPid:\t123\nSECRET")
+            (proc / "200").symlink_to(target, target_is_directory=True)
+            (proc / "300").mkdir()
+            (proc / "300/status").symlink_to(target / "status")
+            with patch.object(sub, "optional_text", wraps=sub.optional_text) as read:
+                sample = sub.diagnostic_sample(123, root, proc, root / "cgroup")
+            self.assertEqual([row["pid"] for row in sample["processes"]], [123])
+            self.assertFalse(any(call.args[0] in (proc / "200/status", proc / "300/status", target / "status")
+                                 for call in read.call_args_list))
+
+    def test_parent_fallback_keeps_bounds_and_avoids_duplicate_cycle_rows(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            proc = root / "proc"
+            self.process_status(proc, 123, 200)
+            self.process_status(proc, 200, 123)
+            cycle = sub.diagnostic_sample(123, root, proc, root / "cgroup")
+            self.assertEqual([row["pid"] for row in cycle["processes"]], [123, 200])
+            for pid in range(200, 500):
+                self.process_status(proc, pid, 123)
+            with patch.object(sub, "diagnostic_parent_index", wraps=sub.diagnostic_parent_index) as index:
+                sample = sub.diagnostic_sample(123, root, proc, root / "cgroup")
+            ids = [row["pid"] for row in sample["processes"]]
+            self.assertEqual(len(ids), 256)
+            self.assertEqual(len(set(ids)), 256)
+            self.assertIn(123, ids)
+            self.assertTrue(set(ids) <= {123, *range(200, 500)})
+            index.assert_called_once()
+
+    def test_parent_fallback_does_not_invent_descendants_when_interfaces_are_unreadable(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            proc = root / "proc"
+            self.process_status(proc, 123, 1)
+            self.process_status(proc, 200, 123)
+            task = proc / "123/task/123"
+            task.mkdir(parents=True)
+            (task / "children").write_text("200")
+            with patch.object(Path, "open", side_effect=PermissionError("metadata unavailable")):
+                sample = sub.diagnostic_sample(123, root, proc, root / "cgroup")
+            self.assertEqual([row["pid"] for row in sample["processes"]], [123])
+            self.assertTrue(all(sample["processes"][0][key] is None
+                                for key in ("State", "VmRSS", "VmHWM", "Threads")))
+            self.assertEqual(sub.diagnostic_parent_index(root / "missing-proc"), {})
+
+    def test_parent_fallback_uses_readable_status_without_retrying_denied_children(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            proc = root / "proc"
+            self.process_status(proc, 123, 1)
+            self.process_status(proc, 200, 123)
+            self.process_status(proc, 300, 1)
+            task = proc / "123/task/123"
+            task.mkdir(parents=True)
+            denied = task / "children"
+            denied.write_text("200")
+            real_open = Path.open
+            attempts = []
+
+            def open_metadata(path, *args, **kwargs):
+                attempts.append(path)
+                if path == denied:
+                    raise PermissionError("children unavailable")
+                return real_open(path, *args, **kwargs)
+
+            with patch.object(Path, "open", open_metadata):
+                sample = sub.diagnostic_sample(123, root, proc, root / "cgroup")
+            self.assertEqual({row["pid"] for row in sample["processes"]}, {123, 200})
+            self.assertEqual(attempts.count(denied), 1)
+            self.assertNotIn(proc / "300/cmdline", attempts)
+            self.assertNotIn(proc / "300/environ", attempts)
+
     def test_progress_is_observed_without_claiming_newest_log_is_active(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
