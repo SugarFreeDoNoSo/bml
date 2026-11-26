@@ -401,6 +401,96 @@ mod tests {
         }
     }
 
+    fn computed_index_operation(arithmetic: RpnOp, constants: [f64; 2]) -> OperationFragment {
+        let mut fragment = operation(0, 4);
+        fragment.const_pool = Some(constants.to_vec());
+        fragment.fragment.ops = vec![
+            RpnOp::Const(0),
+            RpnOp::Const(1),
+            arithmetic,
+            RpnOp::VarIndexed { base: 0 },
+            RpnOp::Zero,
+            RpnOp::StoreResult { slot: 4 },
+        ];
+        fragment
+    }
+
+    #[test]
+    fn computed_integer_indices_preserve_independence_and_actual_conflicts() {
+        let context = EvalContext::new(&[], &[]);
+        // Literal addresses 2 + 3 = 5 and 2 * 3 = 6 straddle a slot boundary.
+        // Metadata deliberately stays unrelated to the actual indexed reads.
+        for (arithmetic, read_slot, value) in [(RpnOp::FAdd, 2, 17.0), (RpnOp::FMul, 3, 23.0)] {
+            let mut buffer = ResultBuffer::from_vec(
+                6,
+                2,
+                vec![
+                    11.0, -1.0, -1.0, -1.0, -1.0, 17.0, 23.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+                ],
+            )
+            .unwrap();
+            let mut fragments = [
+                computed_index_operation(arithmetic, [2.0, 3.0]),
+                operation(0, 5),
+            ];
+            let accesses = analyze(&fragments, &context, &buffer).unwrap();
+            let mut reads = vec![false; 6];
+            reads[read_slot] = true;
+            assert_eq!(accesses[0].reads, reads, "arithmetic={arithmetic:?}");
+            assert_eq!(
+                accesses[0].writes,
+                [false, false, false, false, true, false]
+            );
+            assert_eq!(
+                wave_ranges(&accesses, 2).collect::<Vec<_>>(),
+                [std::ops::Range { start: 0, end: 2 }]
+            );
+            run_wave(
+                &fragments,
+                &accesses,
+                &mut buffer,
+                |worker, fragment, view| {
+                    let bound = fragment.context(&context);
+                    let mut hot = HotLoop::with_capacity(accesses[worker].stack_capacity);
+                    hot.execute_fragment_store(&fragment.fragment, &bound, view);
+                    assert_eq!(hot.stack_depth(), 0);
+                },
+            );
+            assert_eq!(
+                buffer.data(),
+                &[11.0, -1.0, -1.0, -1.0, -1.0, 17.0, 23.0, -1.0, value, -1.0, 12.0, -1.0]
+            );
+
+            // A later write to the actual input slot must still end the wave.
+            fragments[1] = operation(0, read_slot as u32);
+            let accesses = analyze(&fragments, &context, &buffer).unwrap();
+            assert_eq!(wave_ranges(&accesses, 2).collect::<Vec<_>>(), [0..1, 1..2]);
+        }
+    }
+
+    #[test]
+    fn overflowing_and_fractional_index_arithmetic_keeps_conservative_dependencies() {
+        let context = EvalContext::new(&[], &[]);
+        let buffer = ResultBuffer::new(6, 2);
+        for (arithmetic, constants) in [
+            (RpnOp::FAdd, [f64::from(u32::MAX), 1.0]),
+            (RpnOp::FMul, [65536.0, 65536.0]),
+            (RpnOp::FAdd, [0.5, 1.0]),
+            (RpnOp::FMul, [0.5, 3.0]),
+        ] {
+            let fragments = [
+                computed_index_operation(arithmetic, constants),
+                operation(0, 5),
+            ];
+            let accesses = analyze(&fragments, &context, &buffer).unwrap();
+            assert_eq!(
+                accesses[0].reads, [true; 6],
+                "arithmetic={arithmetic:?}, constants={constants:?}"
+            );
+            assert_eq!(wave_ranges(&accesses, 2).collect::<Vec<_>>(), [0..1, 1..2]);
+        }
+    }
+
     #[test]
     fn malformed_and_stack_carrying_programs_are_not_partitioned() {
         let context = EvalContext::new(&[], &[]);
