@@ -773,7 +773,7 @@ mod tests {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = listener.local_addr().unwrap();
         let mut client = TcpStream::connect(addr).unwrap();
-        let (_server, _) = listener.accept().unwrap();
+        let (server, _) = listener.accept().unwrap();
 
         let valid = SymbolicTransportLimits {
             frame_bytes: 81,
@@ -781,15 +781,20 @@ mod tests {
             timeout: Duration::from_millis(250),
             ..Default::default()
         };
+        // The OS may round a socket timeout to its timer resolution. Compare
+        // setup with independent standard-library setters on the peer socket;
+        // both timeouts must still be set to the requested nonzero duration.
+        server.set_read_timeout(Some(valid.timeout)).unwrap();
+        server.set_write_timeout(Some(valid.timeout)).unwrap();
+        let expected_read = server.read_timeout().unwrap();
+        let expected_write = server.write_timeout().unwrap();
+        assert!(expected_read.is_some());
+        assert!(expected_write.is_some());
+        assert_eq!(client.read_timeout().unwrap(), None);
+        assert_eq!(client.write_timeout().unwrap(), None);
         setup(&client, valid).unwrap();
-        assert_eq!(
-            client.read_timeout().unwrap(),
-            Some(Duration::from_millis(250))
-        );
-        assert_eq!(
-            client.write_timeout().unwrap(),
-            Some(Duration::from_millis(250))
-        );
+        assert_eq!(client.read_timeout().unwrap(), expected_read);
+        assert_eq!(client.write_timeout().unwrap(), expected_write);
         assert!(client.nodelay().unwrap());
 
         let max_valid = SymbolicTransportLimits {
