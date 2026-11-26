@@ -492,6 +492,62 @@ mod tests {
     }
 
     #[test]
+    fn supported_loop_bodies_preserve_independent_waves_and_literal_outputs() {
+        let context = EvalContext::new(&[], &[]);
+        for count in [0, 3] {
+            let fragments = [1, 2].map(|output| {
+                let mut fragment = operation(0, output);
+                fragment.fragment.ops = vec![
+                    RpnOp::One,
+                    RpnOp::Drop,
+                    // The five-instruction body follows this header at pc=2.
+                    RpnOp::Loop { count, body_len: 5 },
+                    RpnOp::Drop,
+                    RpnOp::Zero,
+                    RpnOp::VarIndexed { base: 0 },
+                    RpnOp::Zero,
+                    RpnOp::StoreResult { slot: output },
+                    RpnOp::One,
+                    RpnOp::Drop,
+                ];
+                fragment
+            });
+            let mut buffer = ResultBuffer::from_vec(3, 1, vec![13.0, -1.0, -2.0]).unwrap();
+            let accesses = analyze(&fragments, &context, &buffer)
+                .expect("independent, balanced, one-level loop bodies are analyzable");
+            for (worker, access) in accesses.iter().enumerate() {
+                assert_eq!(access.reads, [count != 0, false, false]);
+                let mut writes = [false; 3];
+                writes[worker + 1] = count != 0;
+                assert_eq!(access.writes, writes);
+            }
+            assert_eq!(
+                wave_ranges(&accesses, 2).collect::<Vec<_>>(),
+                [std::ops::Range { start: 0, end: 2 }]
+            );
+            run_wave(
+                &fragments,
+                &accesses,
+                &mut buffer,
+                |worker, fragment, view| {
+                    let mut hot = HotLoop::with_capacity(accesses[worker].stack_capacity);
+                    hot.execute_fragment_store(&fragment.fragment, &context, view);
+                    assert_eq!(hot.stack_depth(), 0);
+                },
+            );
+            assert_eq!(
+                buffer.data(),
+                if count == 0 {
+                    &[13.0, -1.0, -2.0]
+                } else {
+                    &[13.0, 13.0, 13.0]
+                },
+                "count={count}"
+            );
+        }
+    }
+
+    #[test]
     fn malformed_and_stack_carrying_programs_are_not_partitioned() {
         let context = EvalContext::new(&[], &[]);
         let buffer = ResultBuffer::new(4, 1);
