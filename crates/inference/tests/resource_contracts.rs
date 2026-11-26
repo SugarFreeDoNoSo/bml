@@ -273,6 +273,40 @@ fn autonomous_metadata_profile_rejects_unrecognized_llama_parameters() {
 }
 
 #[test]
+fn autonomous_metadata_profile_rejects_noncausal_attention() {
+    use bml_gguf::GgufMetadataValue;
+    use bml_inference::model::Model;
+
+    let files = Files::new();
+    let source = files.path("causal-profile.gguf");
+    std::fs::write(&source, fixture()).unwrap();
+    let reader = GgufReader::open(&source).unwrap();
+    let mut metadata = reader.metadata().clone();
+    let key = "llama.attention.causal";
+
+    // The supported profile is causal both by default and when explicit.
+    assert!(!metadata.contains_key(key));
+    let (config, _) = Model::profile_metadata(&metadata).unwrap();
+    metadata.insert(key.into(), GgufMetadataValue::Bool(true));
+    assert_eq!(Model::profile_metadata(&metadata).unwrap().0, config);
+
+    // Noncausal attention must not silently become causal execution, and
+    // truthy values of the wrong GGUF type must not bypass admission.
+    for value in [
+        GgufMetadataValue::Bool(false),
+        GgufMetadataValue::U32(1),
+        GgufMetadataValue::String("true".into()),
+    ] {
+        metadata.insert(key.into(), value.clone());
+        let error = Model::profile_metadata(&metadata).unwrap_err().to_string();
+        assert_eq!(
+            error, "only causal Llama attention is supported",
+            "{key}={value:?}"
+        );
+    }
+}
+
+#[test]
 fn normalized_resources_preserve_compressed_rows_and_model_identity() {
     let files = Files::new();
     let bytes = files.resources();
