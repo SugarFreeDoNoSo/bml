@@ -507,6 +507,49 @@ parcial no acredita el control. Los criterios, las variantes de features y los
 límites de cobertura se describen en [los controles de calidad](QUALITY.md).
 La entrega sigue abierta mientras falte esa evidencia final.
 
+### Preflight de alcance Release 1.0
+
+`tools/release_mutation_preflight.py` ofrece únicamente `prepare` y `verify`,
+con el perfil explícito `release-1.0` y la base de entrega anterior. Lista el
+inventario global y las 64 particiones round-robin por separado, comprueba su
+unión exacta y conserva fuentes, identidades y hashes. No ejecuta baselines,
+mutantes ni workflows, ni genera comandos de ejecución. Su esquema es un plan
+de preflight; el runner histórico no lo acepta como manifiesto de campaña.
+El perfil histórico y su base `40b3f1be2d3f97028b741750ed61ab72f501a555`
+permanecen intactos.
+
+Desde un checkout limpio del SHA que se quiere analizar, usando destinos nuevos:
+
+```sh
+BML_PREFLIGHT_HEAD=$(git rev-parse HEAD)
+BML_RELEASE_BASE=deec3aa8d2516ae19e335a5af77e6c38f8a854d8
+mkdir -p target/quality/release-preflight
+python3 tools/mutation_diff.py "$BML_RELEASE_BASE" target/quality/release-preflight/scope.diff
+python3 tools/release_mutation_preflight.py prepare --profile release-1.0 \
+  --revision "$BML_PREFLIGHT_HEAD" --base "$BML_RELEASE_BASE" \
+  --diff target/quality/release-preflight/scope.diff \
+  --output target/quality/release-preflight/plan.json \
+  > target/quality/release-preflight/receipt.json
+BML_PREFLIGHT_PLAN_SHA=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["plan_file_sha256"])' \
+  < target/quality/release-preflight/receipt.json)
+python3 tools/release_mutation_preflight.py verify --profile release-1.0 \
+  --revision "$BML_PREFLIGHT_HEAD" --base "$BML_RELEASE_BASE" \
+  --diff target/quality/release-preflight/scope.diff \
+  --plan target/quality/release-preflight/plan.json --plan-file-sha256 "$BML_PREFLIGHT_PLAN_SHA"
+```
+
+Conservar el recibo y su digest fuera del plan: los hashes internos por sí solos
+no prueban que nadie haya recortado el inventario y recalculado esos hashes.
+`--root` permite analizar otra copia limpia; el SHA de las fuentes analizadas
+y los hashes de la herramienta productora se registran por separado. Una
+propuesta externa sin commit no se atribuye al SHA del código analizado.
+
+Los presupuestos 30/180 del comando de entrega anterior y 360/600 del runner
+histórico corresponden a rutas de ejecución diferentes. El preflight no elige
+uno, no los cambia y no permite afirmar su suficiencia. La reconciliación de
+esa ejecución y su medición quedan pendientes, junto con el cierre de 6.2;
+aprobar este listado no equivale a aprobar una campaña.
+
 ## Alcance de la entrega
 
 `bml-model` y el artefacto descrito aquí son las entradas del nuevo motor.
