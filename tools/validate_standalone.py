@@ -70,6 +70,10 @@ def dependencies(program_headers, dynamic_section, ldd_output):
         direct = re.fullmatch(r"(/[^\n]+?) \(0x[0-9a-fA-F]+\)", line)
         if mapped:
             name, location = mapped.groups()
+            if name == interpreter:
+                if not os.path.samefile(interpreter, absolute_runtime_path(location)):
+                    raise ValueError(f"mapped interpreter resolves to a different file: {location}")
+                name = PurePosixPath(interpreter).name
         elif direct:
             location = direct[1]
             name = PurePosixPath(location).name

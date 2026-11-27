@@ -47,6 +47,30 @@ class DependencyTests(unittest.TestCase):
                                           "/lib/x86_64-linux-gnu/libm.so.6",
                                           "/lib64/ld-linux-x86-64.so.2"])
 
+    def test_mapped_interpreter_is_also_a_needed_library(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "ld-linux-x86-64.so.2"
+            target.touch()
+            loader = root / "lib64" / target.name
+            loader.parent.mkdir()
+            loader.symlink_to(target)
+            headers = f"[Requesting program interpreter: {loader}]"
+            dynamic = DYNAMIC + f"(NEEDED) Shared library: [{target.name}]"
+            original = "/lib64/ld-linux-x86-64.so.2"
+            mapped = LDD.replace(original, f"{loader} => {target}")
+            result = standalone.dependencies(headers, dynamic, mapped)
+            self.assertEqual(set(result["paths"]), {
+                str(loader), str(target), "/lib/x86_64-linux-gnu/libm.so.6",
+                "/lib/x86_64-linux-gnu/libc.so.6",
+            })
+            other = root / "other" / target.name
+            other.parent.mkdir()
+            other.touch()
+            for mapping in (f"{other} => {target}", f"{loader} => {other}"):
+                with self.subTest(mapping=mapping), self.assertRaises(ValueError):
+                    standalone.dependencies(headers, dynamic, LDD.replace(original, mapping))
+
     def test_missing_ambiguous_or_relative_dependencies_are_rejected(self):
         for output in [
             LDD.replace("/lib/x86_64-linux-gnu/libm.so.6", "not found"),
