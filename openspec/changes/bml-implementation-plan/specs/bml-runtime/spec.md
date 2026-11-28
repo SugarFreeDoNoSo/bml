@@ -11,11 +11,12 @@ El sistema SHALL inicializar todos los buffers de memoria una sola vez al arranc
 El sistema SHALL mantener el código máquina del hot loop por debajo de 32 KiB
 (32.768 bytes) y acreditar su comportamiento L1i mediante el protocolo experimental
 siguiente sobre la ruta real `Runtime::execute_sub_fragments` y su dispatcher.
-La evidencia SHALL identificar revisión, binario, toolchain, CPU, sistema, cargas
-y comandos, conservando disassembly y contadores originales. El tamaño del
-bytecode RPN no SHALL contabilizarse como tamaño de instrucciones máquina ni
-atribuirse a L1i. El resultado SHALL limitarse al hardware y carga medidos;
-no SHALL presentarse como una garantía universal de ausencia de expulsiones.
+
+#### Scenario: Procedencia y alcance de la medición
+- **WHEN** se presenta una medición del hot loop
+- **THEN** la evidencia SHALL identificar revisión, binario, toolchain, CPU, sistema, cargas y comandos, conservando disassembly y contadores originales
+- **AND** el tamaño del bytecode RPN no SHALL contabilizarse como tamaño de instrucciones máquina ni atribuirse a L1i
+- **AND** el resultado SHALL limitarse al hardware y carga medidos; no SHALL presentarse como una garantía universal de ausencia de expulsiones.
 
 #### Scenario: Medición del tamaño del hot loop
 - **WHEN** se inspecciona el ejecutable release enlazado de la carga real

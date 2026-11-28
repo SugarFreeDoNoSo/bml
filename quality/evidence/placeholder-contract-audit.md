@@ -70,7 +70,21 @@ en esta auditoría. Los kernels simbólicos siguen siendo fallibles y acotados.
 | E05 | `SymbolicPipeline`, workers por rango y CLI `distribute`, `prepare-shards`, `deploy-shards`; sustituyen los embeddings fabricados y el hidden interpretado como logits del camino distribuido posterior. | C100–C104: GQA de tres capas, rangos 1/2/3, sesiones KV, identidad y programas persistidos con `max_nodes=0`; error de confirmación invalida sin afirmar rollback remoto. [Stories15M](distributed-stories-real.json), [workers sin GGUF](source-free-shard-stories.json) y [SSH loopback](ssh-loopback-shards.json) documentan una posición real. | **Parcial**: faltan ejecución entre hosts distintos e inferencia simbólica completa del modelo mayor. El coordinador aún abre el GGUF para embeddings y cabeza; no describirlo como fuente-free. |
 | E06 | Cierre G1 y tarea 8.5.9, que abarca APIs consumidoras y toda sustitución pública. | La matriz precedente evita usar ausencia de callers, un grep sin resultados o un gate verde como prueba de corrección. H01 y E05 conservan límites y trabajo verificable pendientes. | **Pendiente**: no cambiar 8.5.9 ni archivar a partir de este informe. |
 
-## Qué falta y cómo comprobarlo
+## Actualización de estado — 2026-11-28
+
+La matriz anterior y los pasos originales siguientes conservan el alcance del
+snapshot auditado. El diagnóstico de dos posiciones `[1,29958]` solicitado en
+el punto H01 **ya fue completado históricamente** en
+[bml-inference-pipeline/8.6.5](../../openspec/changes/bml-inference-pipeline/tasks.md).
+No debe repetirse para cumplir el pendiente distinto 8.6.7: éste requiere los
+inputs originales y los dos casos Hello/Hi completos, según
+[REAL_PROMPT_DIAGNOSTICS.md](../../docs/REAL_PROMPT_DIAGNOSTICS.md).
+8.6, 8.5.8 y 8.5.9 continúan abiertas; el diagnóstico anterior no acredita
+paridad actual, modelos mayores ni ejecución entre hosts distintos.
+La [conciliación vigente](../../docs/OPENSPEC_RECONCILIATION.md) registra los
+estados sin modificar la evidencia histórica ni crear otra casilla.
+
+## Qué faltaba y cómo comprobarlo en el snapshot original
 
 1. **H01, inferencia real adicional.** Conservar el BOS como diagnóstico. Crear
    un nuevo AOT/campaña para `[1,29958]` con contexto 2 y cotas explícitas; los

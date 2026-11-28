@@ -7,7 +7,7 @@
 //! has a closed-form result derived directly from the embedding and head.
 
 use bml_gguf::GgufDataType;
-use bml_inference::model::{Config, Model, NativeToken, Operation, Session};
+use bml_inference::model::{project_f32_rows, Config, Model, NativeToken, Operation, Session};
 use bml_inference::tokenizer::TokenizerSpec;
 use bml_inference::{Result, Tensor};
 
@@ -345,6 +345,244 @@ fn native_two_layers(session: &mut Session<'_>, token: u32) -> Result<Vec<f32>> 
     let step = step.layer(0)?;
     let step = step.layer(1)?;
     step.finish()
+}
+
+#[test]
+fn fragment_projection_preserves_signed_zero_reduction_cast_and_tails() {
+    let negative_zeros = project_f32_rows(&bytes(&[1.0; 15]), 3, 5, &[-0.0; 5]).unwrap();
+    assert!(negative_zeros
+        .iter()
+        .all(|value| value.to_bits() == (-0.0f32).to_bits()));
+
+    // F64 loses the middle unit at 2^54; cancellation before that unit retains
+    // it. These two rows distinguish column order from a reassociated reduction.
+    let huge = 2.0f32.powi(54);
+    let ordered = project_f32_rows(
+        &bytes(&[huge, 1.0, -huge, huge, -huge, 1.0]),
+        2,
+        3,
+        &[1.0; 3],
+    )
+    .unwrap();
+    assert_eq!(
+        ordered.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+        [0, 1.0f32.to_bits()]
+    );
+
+    // Products and accumulation stay F64 until the final F32 cast. Three
+    // quarters of an F32 ulp round up; an exact half rounds to even.
+    let rounded = project_f32_rows(
+        &bytes(&[
+            1.0,
+            2.0f32.powi(-24),
+            2.0f32.powi(-25),
+            1.0,
+            2.0f32.powi(-24),
+            0.0,
+        ]),
+        2,
+        3,
+        &[1.0; 3],
+    )
+    .unwrap();
+    assert_eq!(rounded[0].to_bits(), 1.0f32.to_bits() + 1);
+    assert_eq!(rounded[1].to_bits(), 1.0f32.to_bits());
+
+    let subnormal = f32::from_bits(1);
+    assert_eq!(
+        project_f32_rows(&bytes(&[1.0, 1.0]), 1, 2, &[subnormal; 2]).unwrap()[0].to_bits(),
+        2
+    );
+    assert_eq!(
+        project_f32_rows(&bytes(&[0.25]), 1, 1, &[-subnormal]).unwrap()[0].to_bits(),
+        (-0.0f32).to_bits()
+    );
+
+    // Both dimensions have tails outside groups of four; the last column and
+    // last row each contribute to the closed-form integer outputs.
+    let tail = project_f32_rows(
+        &bytes(&(1..=5).flat_map(|row| [row as f32; 5]).collect::<Vec<_>>()),
+        5,
+        5,
+        &[1.0, 2.0, 3.0, 4.0, 5.0],
+    )
+    .unwrap();
+    assert_eq!(tail, [15.0, 30.0, 45.0, 60.0, 75.0]);
+}
+
+#[test]
+fn fragment_projection_rejects_invalid_sizes_nonfinite_values_and_overflow() {
+    for (rows, cols, weights, input) in [
+        (0, 1, vec![], vec![1.0]),
+        (1, 0, vec![], vec![]),
+        (1, 1, vec![0_u8; 3], vec![1.0]),
+        (1, 1, vec![0_u8; 5], vec![1.0]),
+        (1, 1, bytes(&[1.0]), vec![]),
+        (usize::MAX, 2, vec![], vec![]),
+        (1, usize::MAX, vec![], vec![]),
+    ] {
+        assert!(project_f32_rows(&weights, rows, cols, &input).is_err());
+    }
+    for invalid in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+        assert!(project_f32_rows(&bytes(&[1.0]), 1, 1, &[invalid]).is_err());
+        for input in [0.0, 1.0, -1.0] {
+            assert!(project_f32_rows(&bytes(&[invalid]), 1, 1, &[input]).is_err());
+        }
+    }
+    assert!(project_f32_rows(&bytes(&[f32::MAX]), 1, 1, &[2.0]).is_err());
+}
+
+#[test]
+fn fragment_output_tensor_selects_the_validated_untied_or_tied_head() {
+    let mut fixture = Fixture::tiny(2, 1, false);
+    let expected = fixture.weight("output.weight").bytes.as_ptr();
+    let model = fixture.model().unwrap();
+    assert_eq!(model.output_tensor().name, "output.weight");
+    assert_eq!(model.output_tensor().data.as_ptr(), expected);
+    assert_eq!(model.output_tensor().dims, [4, VOCAB as u64]);
+    drop(model);
+    fixture
+        .weights
+        .retain(|weight| weight.name != "output.weight");
+    let expected = fixture.weight("token_embd.weight").bytes.as_ptr();
+    let model = fixture.model().unwrap();
+    assert_eq!(model.output_tensor().name, "token_embd.weight");
+    assert_eq!(model.output_tensor().data.as_ptr(), expected);
+}
+
+#[test]
+fn fragment_output_projection_matches_monolithic_prefill_and_decode_bits() {
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    let mut session = model.session(4).unwrap();
+    let mut ordinary = model.session(4).unwrap();
+    let head = model.output_tensor();
+    let cols = model.config().embedding_length;
+    for (position, token) in TOKENS.into_iter().enumerate() {
+        let logits = session
+            .begin_token(token)
+            .unwrap()
+            .layer(0)
+            .unwrap()
+            .layer(1)
+            .unwrap()
+            .finish_with_output_projection(|normalized| {
+                let mut joined = Vec::new();
+                for rows in [0..1, 1..130, 130..VOCAB] {
+                    joined.extend(project_f32_rows(
+                        &head.data[rows.start * cols * 4..rows.end * cols * 4],
+                        rows.len(),
+                        cols,
+                        normalized,
+                    )?);
+                }
+                Ok(joined)
+            })
+            .unwrap();
+        let expected = ordinary.decode(token).unwrap();
+        assert_eq!(
+            logits.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+        );
+        assert_eq!(session.position(), position + 1);
+    }
+}
+
+#[test]
+fn fragment_output_projection_receives_the_original_final_normalization_once() {
+    let fixture = Fixture::tiny(2, 1, true);
+    let model = fixture.model().unwrap();
+    let mut session = model.session(2).unwrap();
+    session
+        .begin_token(TOKENS[0])
+        .unwrap()
+        .layer(0)
+        .unwrap()
+        .layer(1)
+        .unwrap()
+        .finish_with_output_projection(|normalized| {
+            // Empty layer projections preserve the embedding. Its squared mean
+            // is 1.875 and epsilon is .125, hence the F32 scale is 1/sqrt(2).
+            let scale = 2.0f64.sqrt().recip() as f32;
+            let expected = [
+                0.5 * scale * 1.25,
+                -scale * 0.75,
+                1.5 * scale * 0.5,
+                2.0 * scale * 1.5,
+            ];
+            assert_eq!(
+                normalized.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+                expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+            );
+            project_f32_rows(model.output_tensor().data, VOCAB, 4, normalized)
+        })
+        .unwrap();
+    assert_eq!(session.position(), 1);
+}
+
+#[test]
+fn fragment_output_projection_failure_or_invalid_logits_preserves_committed_prefix() {
+    let fixture = Fixture::tiny(2, 1, false);
+    let model = fixture.model().unwrap();
+    let mut session = model.session(4).unwrap();
+    session.decode(TOKENS[0]).unwrap();
+    for invalid in [
+        Err(bml_inference::Error("projection peer failed".into())),
+        Ok(vec![0.0; VOCAB - 1]),
+        Ok(vec![0.0; VOCAB + 1]),
+        Ok(vec![f32::NAN; VOCAB]),
+        Ok(vec![f32::INFINITY; VOCAB]),
+    ] {
+        let result = session
+            .begin_token(TOKENS[1])
+            .unwrap()
+            .layer(0)
+            .unwrap()
+            .layer(1)
+            .unwrap()
+            .finish_with_output_projection(|_| invalid);
+        assert!(result.is_err());
+        assert_eq!(session.position(), 1);
+    }
+    let recovered = session.decode(TOKENS[2]).unwrap();
+    let expected = model
+        .session(4)
+        .unwrap()
+        .prefill(&[TOKENS[0], TOKENS[2]])
+        .unwrap();
+    assert_eq!(
+        recovered.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+        expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+    );
+    assert_eq!(session.position(), 2);
+}
+
+#[test]
+fn fragment_output_projection_is_not_called_before_layers_or_failed_normalization() {
+    let mut fixture = Fixture::tiny(2, 1, true);
+    let model = fixture.model().unwrap();
+    let mut session = model.session(2).unwrap();
+    assert!(session
+        .begin_token(TOKENS[0])
+        .unwrap()
+        .finish_with_output_projection(|_| panic!("incomplete layer plan called projection"))
+        .is_err());
+    assert_eq!(session.position(), 0);
+    drop(session);
+    drop(model);
+    fixture.weight("output_norm.weight").bytes = bytes(&[f32::MAX; 4]);
+    let model = fixture.model().unwrap();
+    let mut session = model.session(2).unwrap();
+    assert!(session
+        .begin_token(TOKENS[0])
+        .unwrap()
+        .layer(0)
+        .unwrap()
+        .layer(1)
+        .unwrap()
+        .finish_with_output_projection(|_| panic!("failed normalization called projection"))
+        .is_err());
+    assert_eq!(session.position(), 0);
 }
 
 #[test]

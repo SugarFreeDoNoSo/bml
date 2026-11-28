@@ -13,9 +13,11 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
-const USAGE: &str = "bml-model <inspect|run|export|compile> --model FILE [options]\n\
+const USAGE: &str =
+    "bml-model <inspect|run|export|compile|compile-fragments> --model FILE [options]\n\
 run: --prompt TEXT | --tokens ID,ID  --predict N --context N --logits\n\
 export/compile: --output FILE (must not exist)\n\
+compile-fragments: --output NEW_DIRECTORY --target BUILD_DIRECTORY --workers 1..8\n\
 compile: requires this BML source distribution and the pinned Rust toolchain;\n\
 the resulting Linux x86_64 executable requires neither at runtime.";
 
@@ -96,7 +98,30 @@ struct RunOutput {
 /// A model-specific sequence of native token operations emitted by AOT.
 pub type NativeToken = fn(&mut Session<'_>, u32) -> Result<Vec<f32>>;
 
+type TokenEvaluator<'a> = dyn FnMut(&mut Session<'_>, u32) -> Result<Vec<f32>> + 'a;
+
 fn execute(model: &Model<'_>, args: &Arguments, native: Option<NativeToken>) -> Result<RunOutput> {
+    execute_with(model, args, native, None)
+}
+
+struct PreparedRun<'a> {
+    prompt_tokens: Vec<u32>,
+    predict: usize,
+    context: usize,
+    include_logits: bool,
+    session: Session<'a>,
+}
+
+fn execute_with(
+    model: &Model<'_>,
+    args: &Arguments,
+    native: Option<NativeToken>,
+    forward: Option<&mut TokenEvaluator<'_>>,
+) -> Result<RunOutput> {
+    execute_prepared(model, prepare_run(model, args)?, native, forward)
+}
+
+fn prepare_run<'a>(model: &'a Model<'a>, args: &Arguments) -> Result<PreparedRun<'a>> {
     if args.values.contains_key("--tokens") && args.values.contains_key("--prompt") {
         return Err(Error("use either --prompt or --tokens".into()));
     }
@@ -134,9 +159,37 @@ fn execute(model: &Model<'_>, args: &Arguments, native: Option<NativeToken>) -> 
             "prompt plus requested generation exceeds context or is empty".into(),
         ));
     }
-    let mut session = model.session(context)?;
+    Ok(PreparedRun {
+        prompt_tokens,
+        predict,
+        context,
+        include_logits: args.logits,
+        session: model.session(context)?,
+    })
+}
+
+fn execute_prepared(
+    model: &Model<'_>,
+    prepared: PreparedRun<'_>,
+    native: Option<NativeToken>,
+    mut forward: Option<&mut TokenEvaluator<'_>>,
+) -> Result<RunOutput> {
+    let PreparedRun {
+        prompt_tokens,
+        predict,
+        context,
+        include_logits,
+        mut session,
+    } = prepared;
     let start = Instant::now();
-    let mut scores = if let Some(evaluate) = native {
+    let mut scores = if let Some(evaluate) = forward.as_mut() {
+        let mut scores = Vec::new();
+        for &token in &prompt_tokens {
+            drop(scores);
+            scores = evaluate(&mut session, token)?;
+        }
+        scores
+    } else if let Some(evaluate) = native {
         let mut scores = Vec::new();
         for &token in &prompt_tokens {
             drop(scores);
@@ -147,7 +200,7 @@ fn execute(model: &Model<'_>, args: &Arguments, native: Option<NativeToken>) -> 
         session.prefill(&prompt_tokens)?
     };
     let prefill_ms = start.elapsed().as_secs_f64() * 1000.0;
-    let mut logits = args.logits.then(|| vec![scores.clone()]);
+    let mut logits = include_logits.then(|| vec![scores.clone()]);
     let mut tokens = Vec::new();
     let mut bytes = Vec::new();
     let eos_id = model.tokenizer().spec().eos_id;
@@ -164,7 +217,9 @@ fn execute(model: &Model<'_>, args: &Arguments, native: Option<NativeToken>) -> 
         tokens.push(token);
         bytes.extend(model.tokenizer().token_piece_bytes(token, true)?);
         drop(scores);
-        scores = if let Some(evaluate) = native {
+        scores = if let Some(evaluate) = forward.as_mut() {
+            evaluate(&mut session, token)?
+        } else if let Some(evaluate) = native {
             evaluate(&mut session, token)?
         } else {
             session.decode(token)?
@@ -221,10 +276,20 @@ pub fn main_cli() -> Result<()> {
             "--logits",
         ],
         "export" | "compile" => &["--model", "--output"],
+        "compile-fragments" => &["--model", "--output", "--target", "--workers"],
         _ => return Err(Error(format!("unknown command: {command}\n{USAGE}"))),
     };
     let args = Arguments::parse(args, allowed)?;
     let path = Path::new(args.required("--model")?);
+    if command == "compile-fragments" {
+        let reader = GgufReader::open(path)?;
+        return print_json(&crate::native_fragment_build::compile(
+            &reader,
+            Path::new(args.required("--output")?),
+            Path::new(args.required("--target")?),
+            args.number("--workers", 2)?,
+        )?);
+    }
     if command == "export" || command == "compile" {
         let reader = GgufReader::open(path)?;
         let output = Path::new(args.required("--output")?);
@@ -308,6 +373,183 @@ pub fn run_embedded_with_arguments(
         ));
     }
     print_json(&execute(&model, &args, Some(evaluate))?)
+}
+
+/// Entry point of the opt-in generated coordinator, separate from monolithic ELF.
+/// The default spawns only compiled, hash-bound sibling head-fragment executables.
+/// `tcp-test` instead connects to separately launched workers on literal loopback.
+pub fn fragmented_embedded_main(resource_sha256: &str, plan: &[Operation], fragments_json: &str) {
+    let result = (|| {
+        let args = Arguments::parse(
+            process_arguments()?,
+            &[
+                "--prompt",
+                "--tokens",
+                "--predict",
+                "--context",
+                "--logits",
+                "--mode",
+                "--fragment-endpoints",
+            ],
+        )?;
+        let mode = args
+            .values
+            .get("--mode")
+            .cloned()
+            .unwrap_or_else(|| "fragments".into());
+        if !matches!(mode.as_str(), "monolithic" | "fragments" | "tcp-test") {
+            return Err(Error("invalid fragment execution mode".into()));
+        }
+        let endpoints = match (mode.as_str(), args.values.get("--fragment-endpoints")) {
+            ("tcp-test", Some(addresses)) => {
+                let values = addresses.split(',').collect::<Vec<_>>();
+                if values.is_empty() || values.len() > 8 {
+                    return Err(Error(
+                        "tcp-test requires one to eight fragment endpoints".into(),
+                    ));
+                }
+                values
+                    .into_iter()
+                    .map(|address| {
+                        crate::native_fragment_tcp::parse_loopback_endpoint(address, false)
+                    })
+                    .collect::<Result<Vec<_>>>()?
+            }
+            ("tcp-test", None) => {
+                return Err(Error("tcp-test requires --fragment-endpoints".into()))
+            }
+            (_, Some(_)) => {
+                return Err(Error(
+                    "--fragment-endpoints requires explicit --mode tcp-test".into(),
+                ))
+            }
+            (_, None) => Vec::new(),
+        };
+        let artifact = Artifact::open("/proc/self/exe")?;
+        if artifact.resource_sha256() != resource_sha256 {
+            return Err(Error("coordinator resource identity mismatch".into()));
+        }
+        let model = artifact.model()?;
+        if model.plan() != plan {
+            return Err(Error("coordinator execution plan mismatch".into()));
+        }
+        let context = args.number("--context", model.config().context_length.min(256))?;
+        if context == 0 || context > 256 {
+            return Err(Error("fragment context must be in 1..256".into()));
+        }
+        let mut args = args;
+        args.values.insert("--context".into(), context.to_string());
+        let fragments: Vec<crate::native_fragments::FragmentExecutable> =
+            serde_json::from_str(fragments_json)?;
+        crate::native_fragments::layout(&fragments)?;
+        let tensor = model.output_tensor();
+        if tensor.dtype != bml_gguf::GgufDataType::F32 {
+            return Err(Error(
+                "fragment coordinator requires an F32 output tensor".into(),
+            ));
+        }
+        for fragment in &fragments {
+            let d = &fragment.descriptor;
+            if d.source_sha256 != artifact.manifest().source_sha256
+                || d.tensor_name != tensor.name
+                || d.total_rows != model.config().vocab_size
+                || d.cols != model.config().embedding_length
+            {
+                return Err(Error(
+                    "fragment descriptor differs from coordinator model".into(),
+                ));
+            }
+            let start = d
+                .row_start
+                .checked_mul(d.cols)
+                .and_then(|n| n.checked_mul(4))
+                .ok_or_else(|| Error("fragment byte offset overflow".into()))?;
+            let end = d
+                .row_end
+                .checked_mul(d.cols)
+                .and_then(|n| n.checked_mul(4))
+                .ok_or_else(|| Error("fragment byte extent overflow".into()))?;
+            d.validate(
+                tensor
+                    .data
+                    .get(start..end)
+                    .ok_or_else(|| Error("fragment row extent outside head".into()))?,
+            )?;
+        }
+        // Validate all request/diagnostic/KV quotas and allocate the local
+        // session before consuming single-use TCP worker connections.
+        let prepared = if mode == "tcp-test" {
+            let prepared = prepare_run(&model, &args)?;
+            if prepared
+                .prompt_tokens
+                .iter()
+                .any(|&token| token as usize >= model.config().vocab_size)
+            {
+                return Err(Error("tcp-test prompt token is outside vocabulary".into()));
+            }
+            Some(prepared)
+        } else {
+            None
+        };
+        let exe = std::env::current_exe()?;
+        let directory = exe
+            .parent()
+            .ok_or_else(|| Error("coordinator directory unavailable".into()))?;
+        let mut group = if mode == "fragments" {
+            Some(crate::native_fragments::ProjectionGroup::spawn(
+                directory, &fragments,
+            )?)
+        } else {
+            None
+        };
+        let mut tcp_group = if mode == "tcp-test" {
+            Some(crate::native_fragment_tcp::TcpProjectionGroup::connect(
+                &endpoints, &fragments,
+            )?)
+        } else {
+            None
+        };
+        let mut all_logits_bits: Vec<Vec<u32>> = Vec::new();
+        let mut forwarded_token_ids = Vec::new();
+        let mut forward = |session: &mut Session<'_>, token| {
+            let mut step = session.begin_token(token)?;
+            for layer in 0..model.config().block_count {
+                step = step.layer(layer)?;
+            }
+            let logits = if let Some(group) = group.as_mut() {
+                step.finish_with_output_projection(|input| group.project(input))?
+            } else if let Some(group) = tcp_group.as_mut() {
+                step.finish_with_output_projection(|input| group.project(input))?
+            } else {
+                step.finish()?
+            };
+            all_logits_bits.push(logits.iter().map(|v| v.to_bits()).collect());
+            forwarded_token_ids.push(token);
+            Ok(logits)
+        };
+        let run = if let Some(prepared) = prepared {
+            execute_prepared(&model, prepared, None, Some(&mut forward))?
+        } else {
+            execute_with(&model, &args, None, Some(&mut forward))?
+        };
+        // Release sockets on success before the independently launched workers
+        // wait for their next request; no external process is killed here.
+        drop(tcp_group);
+        let scope = if mode == "tcp-test" {
+            "native-output-head-rows-v1; loopback-only TCP test; descriptor integrity, not peer authentication; full coordinator resources retained"
+        } else {
+            "native-output-head-rows-v1; local-processes; full coordinator resources retained"
+        };
+        print_json(
+            &serde_json::json!({"mode":mode,"run":run,"all_logits_bits":all_logits_bits,
+            "forwarded_token_ids":forwarded_token_ids,"source_sha256":artifact.manifest().source_sha256,
+            "fragment_executables":fragments,"scope":scope}),
+        )
+    })();
+    if let Err(error) = result {
+        eprintln!("bml-fragment-coordinator: {error}");
+        std::process::exit(1);
+    }
 }
 
 fn file_hash(path: &Path) -> Result<String> {

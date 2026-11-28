@@ -8,6 +8,10 @@
 
 pub mod driver;
 pub mod model;
+pub mod native_fragment_build;
+pub mod native_fragment_protocol;
+pub mod native_fragment_tcp;
+pub mod native_fragments;
 pub mod remote;
 pub mod resources;
 pub mod tokenizer;

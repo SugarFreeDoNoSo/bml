@@ -501,6 +501,15 @@ impl<'a> Model<'a> {
         self.project(self.output, &normalized)
     }
 
+    /// Return the validated output matrix, including the tied embedding fallback.
+    ///
+    /// Rows are vocabulary entries and axis zero contains the embedding columns.
+    /// Borrowing selected rows does not remove weights from this model: a
+    /// coordinator using this API still retains its complete model resources.
+    pub fn output_tensor(&self) -> &Tensor<'a> {
+        &self.tensors[self.output]
+    }
+
     /// Create an independent causal session for one fixed, nonempty layer range.
     /// Currently retains this full model and allocates full-model KV under the
     /// supplied budget; this API does not claim memory sharding of model weights.
@@ -531,25 +540,22 @@ impl<'a> Model<'a> {
                 resource.name
             )));
         }
+        if resource.dtype == GgufDataType::F32 {
+            return project_f32_rows(
+                resource.data,
+                resource.dims[1] as usize,
+                resource.dims[0] as usize,
+                input,
+            );
+        }
         let mut output = zeros(resource.dims[1] as usize)?;
         for (row, result) in output.iter_mut().enumerate() {
-            *result = if resource.dtype == GgufDataType::F32 {
-                // F32 needs no intermediate row allocation or copy.
-                encoded_row(resource, row)?
-                    .as_chunks::<4>()
-                    .0
-                    .iter()
-                    .zip(input)
-                    .map(|(bytes, &x)| f64::from(f32::from_le_bytes(*bytes)) * f64::from(x))
-                    .sum::<f64>() as f32
-            } else {
-                let weights = self.row(tensor, row)?;
-                input
-                    .iter()
-                    .zip(weights)
-                    .map(|(&x, w)| f64::from(x) * f64::from(w))
-                    .sum::<f64>() as f32
-            };
+            let weights = self.row(tensor, row)?;
+            *result = input
+                .iter()
+                .zip(weights)
+                .map(|(&x, w)| f64::from(x) * f64::from(w))
+                .sum::<f64>() as f32;
         }
         finite(&output, &resource.name)?;
         Ok(output)
@@ -566,6 +572,52 @@ impl<'a> Model<'a> {
         finite(&output, "RMSNorm")?;
         Ok(output)
     }
+}
+
+/// Project contiguous little-endian F32 rows using the model's scalar kernel.
+///
+/// Each row visits columns in storage order, widens both operands to F64,
+/// performs the existing Rust F64 `sum` (negative-zero seed on the pinned
+/// toolchain), and casts only the final sum to F32. No row copy, FMA or
+/// reassociation is requested. Splitting whole rows preserves this order.
+///
+/// Dimensions must be nonzero and match the exact weight/input lengths. Size
+/// arithmetic is checked; non-finite inputs, weights and outputs are rejected.
+/// The caller must additionally impose its own frame, work and memory budgets.
+pub fn project_f32_rows(
+    weights_le: &[u8],
+    rows: usize,
+    cols: usize,
+    input: &[f32],
+) -> Result<Vec<f32>> {
+    if rows == 0 || cols == 0 {
+        return Err(Error("F32 projection dimensions must be nonzero".into()));
+    }
+    let row_bytes = cols
+        .checked_mul(std::mem::size_of::<f32>())
+        .ok_or_else(|| Error("F32 projection dimensions overflow".into()))?;
+    let expected_bytes = rows
+        .checked_mul(row_bytes)
+        .ok_or_else(|| Error("F32 projection dimensions overflow".into()))?;
+    if weights_le.len() != expected_bytes || input.len() != cols {
+        return Err(Error("F32 projection shape or byte length mismatch".into()));
+    }
+    finite(input, "F32 projection input")?;
+    let mut output = zeros(rows)?;
+    for (weights, result) in weights_le.chunks_exact(row_bytes).zip(&mut output) {
+        *result = weights
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(input)
+            .map(|(bytes, &x)| f64::from(f32::from_le_bytes(*bytes)) * f64::from(x))
+            .sum::<f64>() as f32;
+    }
+    // Every weight participates in its row. A non-finite weight times a finite
+    // input is non-finite (including infinity times zero), so this also rejects
+    // non-finite stored weights without a second scan of the weight payload.
+    finite(&output, "F32 projection")?;
+    Ok(output)
 }
 
 /// Mutable causal attention state, independent from other sessions.
@@ -657,13 +709,39 @@ impl TokenStep<'_, '_> {
     /// Apply final normalization and output projection, then commit one token.
     /// All model layers must have succeeded in order before this call.
     pub fn finish(self) -> Result<Vec<f32>> {
+        let model = self.session.model;
+        self.finish_with_output_projection(|normalized| model.project(model.output, normalized))
+    }
+
+    /// Finish a token using an explicitly supplied output projection.
+    ///
+    /// All layers and the original final RMSNorm run locally before `project`
+    /// receives the normalized F32 activation. The callback must return exactly
+    /// one finite logit per vocabulary entry. Its failure or invalid output
+    /// leaves the committed position unchanged, like an ordinary kernel failure.
+    /// This hook does not certify a remote peer's weights or numerical results;
+    /// the transport/consumer must authenticate and verify its own artifacts.
+    /// The coordinator still retains its complete model, including the head.
+    pub fn finish_with_output_projection<F>(self, project: F) -> Result<Vec<f32>>
+    where
+        F: FnOnce(&[f32]) -> Result<Vec<f32>>,
+    {
         if self.next_layer != self.session.model.config.block_count {
             return Err(Error(
                 "native token plan ended before all layers executed".into(),
             ));
         }
         let model = self.session.model;
-        let logits = model.final_logits(&self.hidden)?;
+        if self.hidden.len() != model.config.embedding_length {
+            return Err(Error("hidden state width mismatch".into()));
+        }
+        finite(&self.hidden, "final hidden state")?;
+        let normalized = model.normalize(model.output_norm, &self.hidden)?;
+        let logits = project(&normalized)?;
+        if logits.len() != model.config.vocab_size {
+            return Err(Error("output projection vocabulary length mismatch".into()));
+        }
+        finite(&logits, "output projection")?;
         self.session.position += 1;
         Ok(logits)
     }
